@@ -396,7 +396,7 @@ export default function NutritionScreen() {
         {/* Promo Banner linking to Asesoría (Matching Frontend) */}
         <PromoBanner
           type="nutrition"
-          onPress={() => router.push('/(tabs)/profile' as any)}
+          onPress={() => router.push('/asesoria' as any)}
         />
 
         {/* Date Navigator */}
@@ -555,7 +555,7 @@ export default function NutritionScreen() {
         plan={nutritionPlan}
         latestWeight={latestWeight}
         onClose={() => setShowNutritionCoachModal(false)}
-        onNavigateAsesoria={() => router.push('/(tabs)/profile' as any)}
+        onNavigateAsesoria={() => router.push('/asesoria' as any)}
       />
 
       {/* 2. Meal Copy Modal */}

@@ -155,6 +155,18 @@ export default function RootLayout() {
           <Stack.Screen name="terms" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="legal-notice" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="cookies" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="profile" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="settings" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="asesoria" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="appearance" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="challenges" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="notifications" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="progress" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="support" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="social-networks" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="physical-profile-editor" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="two-factor-setup" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="workout" options={{ headerShown: false, animation: 'slide_from_right' }} />
         </Stack>
         <DynamicIslandTimer />
         <RestTimerModal />

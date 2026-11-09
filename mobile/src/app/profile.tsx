@@ -15,6 +15,7 @@ import {
   Dimensions,
   StyleProp,
   ViewStyle,
+  BackHandler,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -145,6 +146,27 @@ export default function ProfileScreen() {
       setUsername(userProfile.username);
     }
   }, [userProfile?.username]);
+
+  // Navegación hacia atrás segura (soporta botón UI y hardware back / gesto en Android)
+  const handleBack = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/hub');
+    }
+  };
+
+  useEffect(() => {
+    const onHardwareBack = () => {
+      handleBack();
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onHardwareBack);
+    return () => sub.remove();
+  }, []);
 
   // Manejo de dirty state
   const handleUsernameChange = (text: string) => {
@@ -338,7 +360,7 @@ export default function ProfileScreen() {
   const cardBgColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)';
 
   return (
-    <AnimatedScreen header={<GlobalHeader title="Editar Perfil" showBackButton />} paddingHorizontal={16} paddingBottom={insets.bottom + 100}>
+    <AnimatedScreen header={<GlobalHeader title="Editar Perfil" showBackButton onBackPress={handleBack} />} paddingHorizontal={16} paddingBottom={insets.bottom + 100}>
       <View style={styles.container}>
         {/* 1. SECCIÓN DE IDENTIDAD & AVATAR ESTILO FRONTEND */}
         <View style={styles.identitySection}>

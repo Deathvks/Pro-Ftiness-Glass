@@ -60,24 +60,27 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
         }).start();
     };
 
-    const flattenedUserStyle = style ? StyleSheet.flatten(style) : {};
+    const flattenedUserStyle: ViewStyle = (style ? StyleSheet.flatten(style) : {}) || {};
     
     // Si no tiene flex ni width, le damos width fijo. Si tiene flex, forzamos width 100% interno.
-    const defaultStyle: ViewStyle = {
-        alignItems: 'center', 
-        justifyContent: 'center'
-    };
-    
     const hasPadding = flattenedUserStyle.padding !== undefined || flattenedUserStyle.paddingHorizontal !== undefined;
     
+    let defaultWidth: number | undefined = undefined;
+    let defaultHeight: number | undefined = undefined;
     if (flattenedUserStyle.width === undefined && flattenedUserStyle.flex === undefined && !hasPadding) {
-        defaultStyle.width = 36;
+        defaultWidth = 36;
     }
     if (flattenedUserStyle.height === undefined && !hasPadding) {
-        defaultStyle.height = 36;
+        defaultHeight = 36;
     }
 
-    const finalStyle = { ...defaultStyle, ...flattenedUserStyle };
+    const finalStyle: ViewStyle = { 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        ...(defaultWidth !== undefined ? { width: defaultWidth } : {}),
+        ...(defaultHeight !== undefined ? { height: defaultHeight } : {}),
+        ...flattenedUserStyle 
+    };
     const finalBorderRadius = (finalStyle.borderRadius as number) ?? 18;
 
     return (
@@ -85,8 +88,9 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
             onPress={onPress}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
+            disabled={disabled}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={[{ flex: finalStyle.flex, width: finalStyle.width, alignSelf: finalStyle.alignSelf }]}
+            style={[{ flex: finalStyle.flex, width: finalStyle.width, height: finalStyle.height, alignSelf: finalStyle.alignSelf }]}
         >
             <Animated.View style={[finalStyle, {
                 position: 'relative', 
@@ -99,18 +103,22 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
                 borderColor: finalStyle.borderColor !== undefined ? finalStyle.borderColor : (isLight ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.12)'),
             }]}>
                 <GlassView 
+                    pointerEvents="none"
                     glassEffectStyle="regular"
                     colorScheme={isLight ? 'light' : 'dark'}
                     style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius }]} 
                 />
-                <Animated.View style={[
-                    StyleSheet.absoluteFill,
-                    { 
-                        borderRadius: finalBorderRadius,
-                        backgroundColor: color || (isLight ? '#ffffff' : '#000000'),
-                        opacity: bgOpacityAnim
-                    }
-                ]} />
+                <Animated.View 
+                    pointerEvents="none"
+                    style={[
+                        StyleSheet.absoluteFill,
+                        { 
+                            borderRadius: finalBorderRadius,
+                            backgroundColor: color || (isLight ? '#ffffff' : '#000000'),
+                            opacity: bgOpacityAnim
+                        }
+                    ]} 
+                />
                 
                 {children}
             </Animated.View>

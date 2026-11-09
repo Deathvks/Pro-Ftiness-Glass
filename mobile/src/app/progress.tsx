@@ -60,7 +60,7 @@ export default function ProgressScreen() {
       if (router.canGoBack()) {
         router.back();
       } else {
-        router.replace('/');
+        router.replace('/(tabs)');
       }
     }
   };

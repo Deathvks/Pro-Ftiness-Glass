@@ -8,6 +8,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { AiInfoModal } from '@/components/modals/AiInfoModal';
 import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 
@@ -111,7 +112,7 @@ export default function GlobalHeader({
     }, [scrollY]);
 
     return (
-        <View style={{ position: 'relative', zIndex: 100 }}>
+        <View style={{ position: 'relative', zIndex: 100 }} pointerEvents="box-none">
             {/* Fondo Liquid Glass nativo (UIGlassEffect) en iOS 26+ */}
             {glassAvailable ? (
                 <GlassView
@@ -159,6 +160,7 @@ export default function GlobalHeader({
             )}
 
             <View 
+                pointerEvents="box-none"
                 style={{ 
                     flexDirection: 'row', 
                     alignItems: 'center', 
@@ -169,17 +171,26 @@ export default function GlobalHeader({
                 }}
             >
             {/* Left: Profile or Back Button & Title */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, marginRight: 8 }}>
+            <View pointerEvents="box-none" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, marginRight: 8 }}>
                 {showBackButton ? (
-                    <GlassButton onPress={() => {
-                        if (onBackPress) {
-                            onBackPress();
-                        } else if (router.canGoBack()) {
-                            router.back();
-                        } else {
-                            router.replace('/');
-                        }
-                    }} theme={theme} colors={colors} noShadow>
+                    <GlassButton 
+                        onPress={() => {
+                            try {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            } catch {}
+                            if (onBackPress) {
+                                onBackPress();
+                            } else if (router.canGoBack()) {
+                                router.back();
+                            } else {
+                                router.replace('/(tabs)');
+                            }
+                        }} 
+                        theme={theme} 
+                        colors={colors} 
+                        noShadow
+                        style={{ width: 40, height: 40, borderRadius: 20 }}
+                    >
                         <ChevronLeft size={24} color={colors.text} />
                     </GlassButton>
                 ) : (
