@@ -31,6 +31,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import apiClient from '@/services/apiClient';
 import { getExerciseList } from '@/services/exerciseService';
 
@@ -59,6 +60,7 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
   const colors = useAppColors();
   const theme = useAppStore((state) => state.theme);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
 
   const [loading, setLoading] = useState(true);
   const [info, setInfo] = useState<{
@@ -106,8 +108,11 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
           style={[
             styles.modalSheet,
             {
-              backgroundColor: isDark ? 'rgba(18, 18, 24, 0.96)' : 'rgba(255, 255, 255, 0.96)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: isIOS
+                ? (isDark ? '#1C1C1E' : '#F2F2F7')
+                : (isDark ? 'rgba(18, 18, 24, 0.96)' : 'rgba(255, 255, 255, 0.96)'),
+              borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+              borderWidth: isIOS ? 0 : 1,
               paddingBottom: Math.max(insets.bottom + 16, 24),
             },
           ]}
@@ -118,7 +123,7 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
           {/* Header */}
           <View style={styles.sheetHeader}>
             <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={[styles.sheetTitle, { color: colors.text }]} numberOfLines={1}>
+              <Text style={[styles.sheetTitle, { color: colors.text }, isIOS && { fontWeight: '700' }]} numberOfLines={1}>
                 {exerciseName}
               </Text>
               <Text style={[styles.sheetSubtitle, { color: colors.textSecondary }]}>
@@ -129,7 +134,7 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
               onPress={onClose}
               style={[
                 styles.closeIconBtn,
-                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' },
+                { backgroundColor: isIOS ? (isDark ? '#2C2C2E' : '#E5E5EA') : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)') },
               ]}
             >
               <X size={18} color={colors.text} />
@@ -148,10 +153,15 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
             >
               {/* Record Personal */}
               {info?.pr && (
-                <GlassView
-                  style={[styles.prCard, { borderColor: 'rgba(234, 179, 8, 0.3)' }]}
-                  glassEffectStyle="regular"
-                  tintColor="rgba(234, 179, 8, 0.1)"
+                <View
+                  style={[
+                    styles.prCard,
+                    {
+                      backgroundColor: 'rgba(234, 179, 8, 0.12)',
+                      borderColor: 'rgba(234, 179, 8, 0.3)',
+                      borderWidth: isIOS ? 0 : 1,
+                    },
+                  ]}
                 >
                   <View style={styles.prLeft}>
                     <Award size={20} color="#eab308" />
@@ -167,7 +177,7 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
                       {info.pr.date ? new Date(info.pr.date).toLocaleDateString() : ''}
                     </Text>
                   </View>
-                </GlassView>
+                </View>
               )}
 
               {/* Rutinas en las que aparece */}
@@ -183,12 +193,13 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
                         style={[
                           styles.routineTag,
                           {
-                            backgroundColor: isDark
-                              ? 'rgba(255, 255, 255, 0.06)'
-                              : 'rgba(0, 0, 0, 0.05)',
-                            borderColor: isDark
-                              ? 'rgba(255, 255, 255, 0.1)'
-                              : 'rgba(0, 0, 0, 0.06)',
+                            backgroundColor: isIOS
+                              ? (isDark ? '#2C2C2E' : '#FFFFFF')
+                              : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)'),
+                            borderColor: isIOS
+                              ? 'transparent'
+                              : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'),
+                            borderWidth: isIOS ? 0 : 1,
                           },
                         ]}
                       >
@@ -211,12 +222,13 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
                       style={[
                         styles.historyItem,
                         {
-                          backgroundColor: isDark
-                            ? 'rgba(255, 255, 255, 0.04)'
-                            : 'rgba(0, 0, 0, 0.03)',
-                          borderColor: isDark
-                            ? 'rgba(255, 255, 255, 0.08)'
-                            : 'rgba(0, 0, 0, 0.05)',
+                          backgroundColor: isIOS
+                            ? (isDark ? '#2C2C2E' : '#FFFFFF')
+                            : (isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)'),
+                          borderColor: isIOS
+                            ? 'transparent'
+                            : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)'),
+                          borderWidth: isIOS ? 0 : 1,
                         },
                       ]}
                     >
@@ -267,6 +279,7 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
   const colors = useAppColors();
   const theme = useAppStore((state) => state.theme);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [catalogExercises, setCatalogExercises] = useState<any[]>([]);
@@ -362,8 +375,11 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
           style={[
             styles.modalSheet,
             {
-              backgroundColor: isDark ? 'rgba(18, 18, 24, 0.98)' : 'rgba(255, 255, 255, 0.98)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: isIOS
+                ? (isDark ? '#1C1C1E' : '#F2F2F7')
+                : (isDark ? 'rgba(18, 18, 24, 0.98)' : 'rgba(255, 255, 255, 0.98)'),
+              borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+              borderWidth: isIOS ? 0 : 1,
               paddingBottom: Math.max(insets.bottom + 16, 24),
               maxHeight: '90%',
             },
@@ -375,7 +391,7 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
           {/* Header */}
           <View style={styles.sheetHeader}>
             <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={[styles.sheetTitle, { color: colors.text }]}>Transferir Datos</Text>
+              <Text style={[styles.sheetTitle, { color: colors.text }, isIOS && { fontWeight: '700' }]}>Transferir Datos</Text>
               <Text style={[styles.sheetSubtitle, { color: colors.textSecondary }]}>
                 Mueve el historial y rutinas hacia un ejercicio oficial
               </Text>
@@ -384,7 +400,7 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
               onPress={onClose}
               style={[
                 styles.closeIconBtn,
-                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' },
+                { backgroundColor: isIOS ? (isDark ? '#2C2C2E' : '#E5E5EA') : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)') },
               ]}
             >
               <X size={18} color={colors.text} />
@@ -393,14 +409,19 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
             {/* Origen Box */}
-            <GlassView
-              style={[styles.transferBox, { borderColor: colors.tint + '40' }]}
-              glassEffectStyle="regular"
-              tintColor={colors.tint + '15'}
+            <View
+              style={[
+                styles.transferBox,
+                {
+                  backgroundColor: colors.tint + '15',
+                  borderColor: colors.tint + '40',
+                  borderWidth: isIOS ? 0 : 1,
+                },
+              ]}
             >
               <Text style={[styles.transferLabel, { color: colors.tint }]}>ORIGEN (MANUAL)</Text>
               <Text style={[styles.transferName, { color: colors.text }]}>{sourceName}</Text>
-            </GlassView>
+            </View>
 
             <View style={styles.arrowCenter}>
               <ArrowRight size={22} color={colors.textSecondary} style={{ transform: [{ rotate: '90deg' }] }} />
@@ -413,10 +434,15 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
               </Text>
 
               {selectedTarget ? (
-                <GlassView
-                  style={[styles.selectedTargetCard, { borderColor: colors.tint + '50' }]}
-                  glassEffectStyle="regular"
-                  tintColor={colors.tint + '15'}
+                <View
+                  style={[
+                    styles.selectedTargetCard,
+                    {
+                      backgroundColor: colors.tint + '15',
+                      borderColor: colors.tint + '50',
+                      borderWidth: isIOS ? 0 : 1,
+                    },
+                  ]}
                 >
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.selectedTargetName, { color: colors.text }]}>
@@ -432,19 +458,20 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
                   >
                     <Text style={styles.removeTargetText}>Cambiar</Text>
                   </TouchableOpacity>
-                </GlassView>
+                </View>
               ) : (
                 <View>
                   <View
                     style={[
                       styles.searchInputContainer,
                       {
-                        backgroundColor: isDark
-                          ? 'rgba(255, 255, 255, 0.05)'
-                          : 'rgba(0, 0, 0, 0.04)',
-                        borderColor: isDark
-                          ? 'rgba(255, 255, 255, 0.12)'
-                          : 'rgba(0, 0, 0, 0.08)',
+                        backgroundColor: isIOS
+                          ? (isDark ? '#2C2C2E' : '#FFFFFF')
+                          : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)'),
+                        borderColor: isIOS
+                          ? 'transparent'
+                          : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                        borderWidth: isIOS ? 0 : 1,
                       },
                     ]}
                   >
@@ -470,12 +497,13 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
                       style={[
                         styles.searchResultsContainer,
                         {
-                          backgroundColor: isDark
-                            ? 'rgba(28, 28, 36, 0.98)'
-                            : 'rgba(245, 245, 247, 0.98)',
-                          borderColor: isDark
-                            ? 'rgba(255, 255, 255, 0.12)'
-                            : 'rgba(0, 0, 0, 0.08)',
+                          backgroundColor: isIOS
+                            ? (isDark ? '#2C2C2E' : '#FFFFFF')
+                            : (isDark ? 'rgba(28, 28, 36, 0.98)' : 'rgba(245, 245, 247, 0.98)'),
+                          borderColor: isIOS
+                            ? 'transparent'
+                            : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                          borderWidth: isIOS ? 0 : 1,
                         },
                       ]}
                     >
@@ -570,7 +598,7 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
               <View
                 style={[
                   styles.warningBox,
-                  { backgroundColor: 'rgba(234, 179, 8, 0.12)', borderColor: 'rgba(234, 179, 8, 0.25)' },
+                  { backgroundColor: 'rgba(234, 179, 8, 0.12)', borderColor: 'rgba(234, 179, 8, 0.25)', borderWidth: isIOS ? 0 : 1 },
                 ]}
               >
                 <AlertTriangle size={18} color="#eab308" style={{ marginTop: 2 }} />
@@ -585,7 +613,7 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
               <TouchableOpacity
                 style={[
                   styles.cancelBtn,
-                  { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' },
+                  { backgroundColor: isIOS ? (isDark ? '#2C2C2E' : '#E5E5EA') : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)') },
                 ]}
                 onPress={onClose}
               >
@@ -619,8 +647,10 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
 // ==========================================
 export const ManualExercisesView: React.FC = () => {
   const colors = useAppColors();
-  const theme = useAppStore((state) => state.theme);
+  const theme = useAppStore((state) => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
+  const iosTertiaryBg = isDark ? '#2C2C2E' : '#F2F2F7';
 
   const [exercises, setExercises] = useState<ManualExerciseItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -719,7 +749,7 @@ export const ManualExercisesView: React.FC = () => {
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Dumbbell size={22} color={colors.tint} />
-            <Text style={[styles.title, { color: colors.text }]}>Ejercicios Manuales</Text>
+            <Text style={[styles.title, { color: colors.text }, isIOS && { fontWeight: '700' }]}>Ejercicios Manuales</Text>
           </View>
           <Text style={[styles.description, { color: colors.textSecondary }]}>
             Ejercicios creados fuera del catálogo oficial. Puedes fusionar su historial con ejercicios oficiales o eliminarlos.
@@ -744,8 +774,13 @@ export const ManualExercisesView: React.FC = () => {
           style={[
             styles.searchBar,
             {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: isIOS
+                ? (isDark ? '#1C1C1E' : '#FFFFFF')
+                : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)'),
+              borderColor: isIOS
+                ? 'transparent'
+                : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+              borderWidth: isIOS ? 0 : 1,
             },
           ]}
         >
@@ -771,16 +806,25 @@ export const ManualExercisesView: React.FC = () => {
           <ActivityIndicator size="large" color={colors.tint} />
         </View>
       ) : filteredExercises.length === 0 ? (
-        <GlassView
+        <View
           style={[
             styles.emptyCard,
-            { borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)' },
+            getAppleCardSurfaceStyle(theme, 20),
+            !isIOS && {
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+            },
           ]}
-          glassEffectStyle="regular"
-          tintColor={isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'}
         >
+          {shouldUseContentGlass(theme) && (
+            <GlassView
+              style={StyleSheet.absoluteFill}
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+            />
+          )}
           <Dumbbell size={36} color={colors.textSecondary} style={{ marginBottom: 12, opacity: 0.7 }} />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+          <Text style={[styles.emptyTitle, { color: colors.text }, isIOS && { fontWeight: '700' }]}>
             {exercises.length === 0
               ? 'No tienes ejercicios manuales'
               : 'No se encontraron coincidencias'}
@@ -790,22 +834,32 @@ export const ManualExercisesView: React.FC = () => {
               ? 'Cuando agregues un ejercicio que no esté en la biblioteca durante un entreno o rutina, aparecerá aquí.'
               : 'Prueba a buscar con otro término.'}
           </Text>
-        </GlassView>
+        </View>
       ) : (
         <View style={styles.grid}>
           {filteredExercises.map((ex) => (
-            <GlassView
+            <View
               key={ex.name}
               style={[
                 styles.card,
-                { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
+                getAppleCardSurfaceStyle(theme, 20),
+                !isIOS && {
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.65)',
+                },
               ]}
-              glassEffectStyle="regular"
-              tintColor={isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.65)'}
             >
+              {shouldUseContentGlass(theme) && (
+                <GlassView
+                  style={StyleSheet.absoluteFill}
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                />
+              )}
+
               {/* Card Top: Name + Actions */}
               <View style={styles.cardHeader}>
-                <Text style={[styles.exerciseName, { color: colors.text }]} numberOfLines={1}>
+                <Text style={[styles.exerciseName, { color: colors.text }, isIOS && { fontWeight: '700' }]} numberOfLines={1}>
                   {ex.name}
                 </Text>
 
@@ -822,7 +876,7 @@ export const ManualExercisesView: React.FC = () => {
                   <TouchableOpacity
                     style={[
                       styles.smallIconBtn,
-                      { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' },
+                      { backgroundColor: isIOS ? iosTertiaryBg : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)') },
                     ]}
                     onPress={() => setInfoExercise(ex.name)}
                   >
@@ -845,7 +899,7 @@ export const ManualExercisesView: React.FC = () => {
                   <View
                     style={[
                       styles.statBadge,
-                      { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)' },
+                      { backgroundColor: isIOS ? iosTertiaryBg : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)') },
                     ]}
                   >
                     <Dumbbell size={11} color={colors.textSecondary} />
@@ -859,7 +913,7 @@ export const ManualExercisesView: React.FC = () => {
                   <View
                     style={[
                       styles.statBadge,
-                      { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)' },
+                      { backgroundColor: isIOS ? iosTertiaryBg : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)') },
                     ]}
                   >
                     <Text style={[styles.rLetter, { color: colors.tint }]}>R</Text>
@@ -884,7 +938,7 @@ export const ManualExercisesView: React.FC = () => {
                   </Text>
                 )}
               </View>
-            </GlassView>
+            </View>
           ))}
         </View>
       )}
@@ -937,6 +991,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 14,
+    borderCurve: 'continuous',
     marginTop: 2,
   },
   deleteAllText: {
@@ -949,6 +1004,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 44,
     borderRadius: 16,
+    borderCurve: 'continuous',
     borderWidth: 1,
     paddingHorizontal: 14,
     marginBottom: 16,
@@ -966,10 +1022,12 @@ const styles = StyleSheet.create({
   emptyCard: {
     padding: 32,
     borderRadius: 24,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     marginTop: 8,
+    overflow: 'hidden',
   },
   emptyTitle: {
     fontSize: 16,
@@ -990,6 +1048,7 @@ const styles = StyleSheet.create({
   card: {
     padding: 16,
     borderRadius: 22,
+    borderCurve: 'continuous',
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -1013,14 +1072,16 @@ const styles = StyleSheet.create({
   smallIconBtn: {
     width: 34,
     height: 34,
-    borderRadius: 12,
+    borderRadius: 10,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
   },
   transferBtn: {
     paddingHorizontal: 12,
     height: 34,
-    borderRadius: 12,
+    borderRadius: 10,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1041,6 +1102,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 10,
+    borderCurve: 'continuous',
   },
   statBadgeText: {
     fontSize: 11,
@@ -1064,6 +1126,7 @@ const styles = StyleSheet.create({
   modalSheet: {
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
+    borderCurve: 'continuous',
     borderWidth: 1,
     borderBottomWidth: 0,
     paddingHorizontal: 20,
@@ -1111,6 +1174,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 14,
     borderRadius: 18,
+    borderCurve: 'continuous',
     borderWidth: 1,
     marginBottom: 16,
   },
@@ -1150,6 +1214,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
+    borderCurve: 'continuous',
     borderWidth: 1,
   },
   routineTagText: {
@@ -1163,6 +1228,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 14,
+    borderCurve: 'continuous',
     borderWidth: 1,
     marginBottom: 6,
   },
@@ -1189,6 +1255,7 @@ const styles = StyleSheet.create({
   transferBox: {
     padding: 16,
     borderRadius: 20,
+    borderCurve: 'continuous',
     borderWidth: 1,
     alignItems: 'center',
   },
@@ -1212,6 +1279,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 14,
     borderRadius: 18,
+    borderCurve: 'continuous',
     borderWidth: 1,
   },
   selectedTargetName: {
@@ -1227,6 +1295,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
+    borderCurve: 'continuous',
     backgroundColor: 'rgba(239, 68, 68, 0.12)',
   },
   removeTargetText: {
@@ -1239,12 +1308,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 44,
     borderRadius: 16,
+    borderCurve: 'continuous',
     borderWidth: 1,
     paddingHorizontal: 14,
   },
   searchResultsContainer: {
     marginTop: 6,
     borderRadius: 16,
+    borderCurve: 'continuous',
     borderWidth: 1,
     maxHeight: 180,
     overflow: 'hidden',
@@ -1252,7 +1323,7 @@ const styles = StyleSheet.create({
   searchResultItem: {
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   resultItemName: {
     fontSize: 13,
@@ -1267,7 +1338,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     gap: 12,
     paddingTop: 12,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(150, 150, 150, 0.15)',
   },
   checkboxRow: {
@@ -1300,6 +1371,7 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 12,
     borderRadius: 16,
+    borderCurve: 'continuous',
     borderWidth: 1,
     marginTop: 14,
   },
@@ -1317,7 +1389,8 @@ const styles = StyleSheet.create({
   cancelBtn: {
     flex: 1,
     height: 46,
-    borderRadius: 18,
+    borderRadius: 16,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1328,7 +1401,8 @@ const styles = StyleSheet.create({
   confirmBtn: {
     flex: 1,
     height: 46,
-    borderRadius: 18,
+    borderRadius: 16,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
   },

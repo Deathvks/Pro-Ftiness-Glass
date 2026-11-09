@@ -314,16 +314,21 @@ export function RoutineVolumeFilterModal({
           style={[
             styles.modalCard,
             {
-              backgroundColor: isDark ? 'rgba(20, 20, 22, 0.96)' : 'rgba(250, 250, 252, 0.98)',
-              borderColor: colors.border,
+              backgroundColor: isIOS
+                ? (isDark ? '#1C1C1E' : '#F2F2F7')
+                : (isDark ? 'rgba(20, 20, 22, 0.96)' : 'rgba(250, 250, 252, 0.98)'),
+              borderColor: isIOS ? 'transparent' : colors.border,
+              borderWidth: isIOS ? 0 : 1,
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-          />
+          {shouldUseContentGlass(theme) && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
+            />
+          )}
 
           <View style={styles.grabberContainer}>
             <View
@@ -334,9 +339,9 @@ export function RoutineVolumeFilterModal({
             />
           </View>
 
-          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }, isIOS && { fontWeight: '700' }]}>
                 Recuento Semanal de Series
               </Text>
               <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
@@ -359,16 +364,17 @@ export function RoutineVolumeFilterModal({
                   style={[
                     styles.routineFilterCard,
                     {
-                      backgroundColor: isDark
-                        ? 'rgba(255, 255, 255, 0.04)'
-                        : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: colors.border,
+                      backgroundColor: isIOS
+                        ? (isDark ? '#2C2C2E' : '#FFFFFF')
+                        : (isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)'),
+                      borderColor: isIOS ? 'transparent' : colors.border,
+                      borderWidth: isIOS ? 0 : 1,
                     },
                   ]}
                 >
                   <View style={styles.routineFilterTop}>
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.routineFilterName, { color: colors.text }]} numberOfLines={1}>
+                      <Text style={[styles.routineFilterName, { color: colors.text }, isIOS && { fontWeight: '700' }]} numberOfLines={1}>
                         {r.name}
                       </Text>
                       <Text style={[styles.routineFilterStats, { color: colors.textSecondary }]}>
@@ -439,7 +445,9 @@ export function RoutineVolumeFilterModal({
                           style={[
                             styles.exerciseFilterRow,
                             {
-                              backgroundColor: included
+                              backgroundColor: isIOS
+                                ? (isDark ? '#3A3A3C' : '#F2F2F7')
+                                : included
                                 ? isDark
                                   ? 'rgba(255, 255, 255, 0.04)'
                                   : 'rgba(255, 255, 255, 0.7)'
@@ -447,7 +455,8 @@ export function RoutineVolumeFilterModal({
                                 ? 'rgba(0, 0, 0, 0.2)'
                                 : 'rgba(0, 0, 0, 0.03)',
                               opacity: included ? 1 : 0.45,
-                              borderColor: colors.border,
+                              borderColor: isIOS ? 'transparent' : colors.border,
+                              borderWidth: isIOS ? 0 : 1,
                             },
                           ]}
                         >
@@ -524,6 +533,7 @@ export function WeeklyMuscleVolumeCard({
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
+  const iosTertiaryBg = isDark ? '#2C2C2E' : '#F2F2F7';
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedMuscle, setSelectedMuscle] = useState<any | null>(null);
@@ -677,7 +687,7 @@ export function WeeklyMuscleVolumeCard({
         style={[
           styles.cardHeaderButton,
           isExpanded && {
-            borderBottomWidth: 1,
+            borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
           },
         ]}
@@ -687,7 +697,7 @@ export function WeeklyMuscleVolumeCard({
             <Activity size={22} color={colors.tint} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>
+            <Text style={[styles.cardTitle, { color: colors.text }, isIOS && { fontWeight: '700' }]}>
               Volumen muscular semanal
             </Text>
             <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={2}>
@@ -707,7 +717,7 @@ export function WeeklyMuscleVolumeCard({
               <View
                 style={[
                   styles.rangePill,
-                  { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)' },
+                  { backgroundColor: isIOS ? iosTertiaryBg : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)') },
                 ]}
               >
                 <Text style={[styles.rangePillText, { color: colors.textSecondary }]}>
@@ -736,7 +746,7 @@ export function WeeklyMuscleVolumeCard({
             <View
               style={[
                 styles.bentoTile,
-                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)' },
+                { backgroundColor: isIOS ? iosTertiaryBg : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)') },
               ]}
             >
               <Text style={[styles.bentoNumber, { color: colors.text }]}>
@@ -763,6 +773,8 @@ export function WeeklyMuscleVolumeCard({
                   backgroundColor:
                     volumeData.reviewCount > 0
                       ? 'rgba(245, 158, 11, 0.12)'
+                      : isIOS
+                      ? iosTertiaryBg
                       : isDark
                       ? 'rgba(255, 255, 255, 0.05)'
                       : 'rgba(0, 0, 0, 0.04)',
@@ -792,6 +804,7 @@ export function WeeklyMuscleVolumeCard({
                 {
                   backgroundColor: colors.tint + '15',
                   borderColor: colors.tint + '30',
+                  borderWidth: isIOS ? 0 : 1,
                 },
               ]}
               activeOpacity={0.75}
@@ -828,15 +841,18 @@ export function WeeklyMuscleVolumeCard({
                   style={[
                     styles.muscleCard,
                     {
-                      backgroundColor: isDark
+                      backgroundColor: isIOS
+                        ? iosTertiaryBg
+                        : isDark
                         ? 'rgba(255, 255, 255, 0.04)'
                         : 'rgba(255, 255, 255, 0.7)',
-                      borderColor: statusColor + '30',
+                      borderColor: isIOS ? 'transparent' : statusColor + '30',
+                      borderWidth: isIOS ? 0 : 1,
                     },
                   ]}
                 >
                   <View style={styles.muscleTopRow}>
-                    <Text style={[styles.muscleName, { color: colors.text }]}>{row.label}</Text>
+                    <Text style={[styles.muscleName, { color: colors.text }, isIOS && { fontWeight: '700' }]}>{row.label}</Text>
                     <View style={[styles.statusBadge, { backgroundColor: statusColor + '18' }]}>
                       {row.status === 'green' ? (
                         <CheckCircle2 size={10} color={statusColor} />
@@ -900,16 +916,21 @@ export function WeeklyMuscleVolumeCard({
               style={[
                 styles.modalCard,
                 {
-                  backgroundColor: isDark ? 'rgba(20, 20, 22, 0.96)' : 'rgba(250, 250, 252, 0.98)',
-                  borderColor: colors.border,
+                  backgroundColor: isIOS
+                    ? (isDark ? '#1C1C1E' : '#F2F2F7')
+                    : (isDark ? 'rgba(20, 20, 22, 0.96)' : 'rgba(250, 250, 252, 0.98)'),
+                  borderColor: isIOS ? 'transparent' : colors.border,
+                  borderWidth: isIOS ? 0 : 1,
                 },
               ]}
             >
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-              />
+              {shouldUseContentGlass(theme) && (
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
+                />
+              )}
 
               <View style={styles.grabberContainer}>
                 <View
@@ -920,10 +941,10 @@ export function WeeklyMuscleVolumeCard({
                 />
               </View>
 
-              <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <View style={[styles.modalHeader, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Text style={[styles.modalTitle, { color: colors.text }]}>
+                    <Text style={[styles.modalTitle, { color: colors.text }, isIOS && { fontWeight: '700' }]}>
                       {selectedMuscle.label}
                     </Text>
                     <View
@@ -970,15 +991,16 @@ export function WeeklyMuscleVolumeCard({
                       style={[
                         styles.contributorRow,
                         {
-                          backgroundColor: isDark
-                            ? 'rgba(255, 255, 255, 0.04)'
-                            : 'rgba(0, 0, 0, 0.03)',
-                          borderColor: colors.border,
+                          backgroundColor: isIOS
+                            ? (isDark ? '#2C2C2E' : '#FFFFFF')
+                            : (isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)'),
+                          borderColor: isIOS ? 'transparent' : colors.border,
+                          borderWidth: isIOS ? 0 : 1,
                         },
                       ]}
                     >
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.contribExName, { color: colors.text }]} numberOfLines={1}>
+                        <Text style={[styles.contribExName, { color: colors.text }, isIOS && { fontWeight: '700' }]} numberOfLines={1}>
                           {c.exerciseName}
                         </Text>
                         <Text style={[styles.contribRoutineName, { color: colors.textSecondary }]} numberOfLines={1}>
@@ -1013,6 +1035,7 @@ export function WeeklyMuscleVolumeCard({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 24,
+    borderCurve: 'continuous',
     borderWidth: 1,
     marginBottom: 20,
     overflow: 'hidden',
@@ -1028,7 +1051,8 @@ const styles = StyleSheet.create({
   headerIconCircle: {
     width: 42,
     height: 42,
-    borderRadius: 15,
+    borderRadius: 12,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1039,7 +1063,7 @@ const styles = StyleSheet.create({
   },
   cardSubtitle: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     lineHeight: 16,
     marginTop: 3,
   },
@@ -1055,7 +1079,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: 10,
+    borderCurve: 'continuous',
   },
   goalPillText: {
     fontSize: 10.5,
@@ -1064,7 +1089,8 @@ const styles = StyleSheet.create({
   rangePill: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: 10,
+    borderCurve: 'continuous',
   },
   rangePillText: {
     fontSize: 10.5,
@@ -1082,7 +1108,8 @@ const styles = StyleSheet.create({
   bentoTile: {
     flex: 1,
     padding: 10,
-    borderRadius: 16,
+    borderRadius: 14,
+    borderCurve: 'continuous',
     alignItems: 'center',
   },
   bentoNumber: {
@@ -1100,7 +1127,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: 42,
-    borderRadius: 16,
+    borderRadius: 14,
+    borderCurve: 'continuous',
     borderWidth: 1,
   },
   fullFilterBtnText: {
@@ -1121,7 +1149,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   muscleCard: {
-    borderRadius: 16,
+    borderRadius: 14,
+    borderCurve: 'continuous',
     borderWidth: 1,
     padding: 12,
   },
@@ -1197,6 +1226,7 @@ const styles = StyleSheet.create({
     maxHeight: '85%',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
+    borderCurve: 'continuous',
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -1216,7 +1246,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 14,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   modalTitle: {
     fontSize: 17,
@@ -1240,7 +1270,8 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
   },
   routineFilterCard: {
-    borderRadius: 20,
+    borderRadius: 18,
+    borderCurve: 'continuous',
     borderWidth: 1,
     padding: 14,
   },
@@ -1267,6 +1298,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+    borderCurve: 'continuous',
   },
   quickPillText: {
     fontSize: 10.5,
@@ -1278,6 +1310,7 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 10,
     borderRadius: 12,
+    borderCurve: 'continuous',
     borderWidth: 1,
   },
   filterCheck: {
@@ -1302,6 +1335,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
+    borderCurve: 'continuous',
   },
   setsPillText: {
     fontSize: 10.5,
@@ -1313,6 +1347,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 12,
     borderRadius: 14,
+    borderCurve: 'continuous',
     borderWidth: 1,
     gap: 10,
   },

@@ -5,17 +5,17 @@ import { Image } from 'expo-image';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
-import { 
-  Play, Globe, Users, Lock, Clock, Dumbbell, CalendarClock, 
-  CheckCircle, Edit, Copy, Trash2, Share2, Folder, Link2, Activity 
+import {
+  Play, Globe, Users, Lock, Clock, Dumbbell, CalendarClock,
+  CheckCircle, Edit, Copy, Trash2, Share2, Folder, Link2, Activity
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
-import { 
-  getContrastTextColor, 
-  calculateRoutineEstimatedTime, 
-  groupExercises, 
-  getDisplayImageUrl 
+import {
+  getContrastTextColor,
+  calculateRoutineEstimatedTime,
+  groupExercises,
+  getDisplayImageUrl
 } from '@/utils/routineHelpers';
 
 interface RoutineCardProps {
@@ -34,9 +34,9 @@ interface RoutineCardProps {
   lastUsedDate?: Date | null;
 }
 
-export function RoutineCard({ 
-  routine, 
-  onPressStart, 
+export function RoutineCard({
+  routine,
+  onPressStart,
   onPressEdit,
   onPressDuplicate,
   onPressDelete,
@@ -57,6 +57,9 @@ export function RoutineCard({
   const iconBadgeBg = isDark
     ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.06)')
     : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.05)');
+  const innerPillBg = isDark
+    ? (isIOS ? '#3A3A3C' : 'rgba(255, 255, 255, 0.06)')
+    : (isIOS ? '#E5E5EA' : 'rgba(0, 0, 0, 0.05)');
   const startTextColor = getContrastTextColor(colors.tint);
 
   const exercises = routine.exercises || routine.RoutineExercises || [];
@@ -99,9 +102,9 @@ export function RoutineCard({
 
   return (
     <View style={[
-      styles.card, 
+      styles.card,
       getAppleCardSurfaceStyle(theme, 20),
-      { 
+      {
         overflow: 'hidden',
         borderColor: isActive ? colors.tint : (isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)')),
         borderWidth: isActive ? 2 : (isIOS ? 0 : 1),
@@ -110,21 +113,21 @@ export function RoutineCard({
         backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.65)',
       },
     ]}>
-      {/* iOS Liquid Glass Effect Background */}
+      {/* iOS Liquid Glass Effect Background on photo themes */}
       {shouldUseContentGlass(theme) && (
-        <GlassView 
-          glassEffectStyle="regular" 
-          colorScheme={isDark ? 'dark' : 'light'} 
-          style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]} 
+        <GlassView
+          glassEffectStyle="regular"
+          colorScheme={isDark ? 'dark' : 'light'}
+          style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
         />
       )}
 
       {/* 1. IMAGEN DE CABECERA (SI TIENE) */}
       {imageSrc && (
         <View style={styles.imageContainer}>
-          <Image 
-            source={{ uri: imageSrc }} 
-            style={styles.imageCover} 
+          <Image
+            source={{ uri: imageSrc }}
+            style={styles.imageCover}
             contentFit="cover"
             transition={200}
           />
@@ -151,7 +154,7 @@ export function RoutineCard({
 
         {/* TÍTULO Y BADGES DE ESTADO */}
         <View style={styles.titleRow}>
-          <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
+          <Text style={[styles.title, { color: colors.text }, isIOS && { fontWeight: '700' }]} numberOfLines={2}>
             {routine.name}
           </Text>
 
@@ -214,8 +217,8 @@ export function RoutineCard({
         {/* BARRA DE ACCIONES INLINE */}
         <View style={styles.actionsBar}>
           {/* Privacidad */}
-          <TouchableOpacity 
-            style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]}
             onPress={onPressPrivacy}
             activeOpacity={0.7}
             accessibilityLabel="Privacidad de rutina"
@@ -225,8 +228,8 @@ export function RoutineCard({
 
           {/* Compartir entreno */}
           {onPressShare && (
-            <TouchableOpacity 
-              style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]}
               onPress={onPressShare}
               activeOpacity={0.7}
               accessibilityLabel="Compartir entreno"
@@ -236,8 +239,8 @@ export function RoutineCard({
           )}
 
           {/* Editar */}
-          <TouchableOpacity 
-            style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]}
             onPress={onPressEdit}
             activeOpacity={0.7}
             accessibilityLabel="Editar rutina"
@@ -246,8 +249,8 @@ export function RoutineCard({
           </TouchableOpacity>
 
           {/* Duplicar */}
-          <TouchableOpacity 
-            style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]}
             onPress={onPressDuplicate}
             activeOpacity={0.7}
             accessibilityLabel="Duplicar rutina"
@@ -309,8 +312,8 @@ export function RoutineCard({
           <View style={{ flex: 1 }} />
 
           {/* Eliminar */}
-          <TouchableOpacity 
-            style={[styles.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]} 
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}
             onPress={onPressDelete}
             activeOpacity={0.7}
             accessibilityLabel="Eliminar rutina"
@@ -335,7 +338,7 @@ export function RoutineCard({
                   <Activity size={13} color={colors.tint} />
                   <Text style={[styles.volumeHeaderTitle, { color: colors.textSecondary }]}>
                     Recuento semanal:{' '}
-                    <Text style={{ color: colors.text, fontWeight: '800' }}>
+                    <Text style={{ color: colors.text, fontWeight: '700' }}>
                       {volumeInclusionStats
                         ? volumeInclusionStats.status === 'all'
                           ? `Todos (${volumeInclusionStats.total})`
@@ -370,7 +373,7 @@ export function RoutineCard({
                         <Text style={[styles.exerciseName, { color: colors.text }]} numberOfLines={1}>
                           {ex.name || ex.exercise?.name || 'Ejercicio'}
                         </Text>
-                        <View style={[styles.repsPill, { backgroundColor: iconBadgeBg }]}>
+                        <View style={[styles.repsPill, { backgroundColor: innerPillBg }]}>
                           <Text style={[styles.repsPillText, { color: colors.textSecondary }]}>
                             {ex.sets}×{ex.reps}
                           </Text>
@@ -399,48 +402,52 @@ export function RoutineCard({
             isCompletedToday ? {
               backgroundColor: isDark ? 'rgba(34, 197, 94, 0.14)' : 'rgba(34, 197, 94, 0.1)',
               borderColor: 'rgba(34, 197, 94, 0.35)',
-              borderWidth: 1,
+              borderWidth: isIOS ? 0 : 1,
             } : isActive ? {
               backgroundColor: colors.tint,
               borderColor: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.8)',
-              borderWidth: 1.2,
+              borderWidth: isIOS ? 0 : 1.2,
               shadowColor: colors.tint,
               shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: isDark ? 0.5 : 0.3,
+              shadowOpacity: isIOS ? 0.2 : (isDark ? 0.5 : 0.3),
               shadowRadius: 10,
               elevation: 5,
             } : isBlockedByOtherWorkout ? {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+              backgroundColor: isIOS ? iconBadgeBg : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)'),
               borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-              borderWidth: 1,
+              borderWidth: isIOS ? 0 : 1,
             } : {
               backgroundColor: colors.tint,
               borderColor: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.85)',
-              borderWidth: 1.2,
+              borderWidth: isIOS ? 0 : 1.2,
               shadowColor: colors.tint,
               shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: isDark ? 0.45 : 0.28,
+              shadowOpacity: isIOS ? 0.2 : (isDark ? 0.45 : 0.28),
               shadowRadius: 10,
               elevation: 5,
             }
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
-          {/* Reflejo superior Liquid Glass */}
-          <View
-            style={[
-              styles.buttonHighlight,
-              {
-                backgroundColor: isDark
-                  ? 'rgba(255, 255, 255, 0.22)'
-                  : 'rgba(255, 255, 255, 0.45)',
-              },
-            ]}
-          />
+          {!isActive && !isCompletedToday && isBlockedByOtherWorkout && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+          )}
+          {/* Reflejo superior Liquid Glass en Android */}
+          {!isIOS && (
+            <View
+              style={[
+                styles.buttonHighlight,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255, 255, 255, 0.22)'
+                    : 'rgba(255, 255, 255, 0.45)',
+                },
+              ]}
+            />
+          )}
 
           <View style={styles.mainButtonInner}>
             {isActive ? (
@@ -482,6 +489,7 @@ export function RoutineCard({
 const styles = StyleSheet.create({
   card: {
     borderRadius: 28,
+    borderCurve: 'continuous',
     marginBottom: 16,
     position: 'relative',
   },
@@ -509,6 +517,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
+    borderCurve: 'continuous',
   },
   floatingFolderText: {
     color: '#ffffff',
@@ -525,6 +534,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
+    borderCurve: 'continuous',
     marginBottom: 8,
   },
   folderTextNoImg: {
@@ -555,6 +565,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 8,
+    borderCurve: 'continuous',
   },
   badgePillText: {
     fontSize: 10,
@@ -579,6 +590,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
+    borderCurve: 'continuous',
   },
   statPillText: {
     fontSize: 11,
@@ -590,6 +602,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
+    borderCurve: 'continuous',
   },
   storiesPillText: {
     fontSize: 11,
@@ -606,6 +619,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -616,13 +630,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 7,
     borderRadius: 12,
+    borderCurve: 'continuous',
   },
   volumePillText: {
     fontSize: 11,
     fontWeight: '800',
   },
   previewBox: {
-    borderRadius: 18,
+    borderRadius: 16,
+    borderCurve: 'continuous',
     padding: 12,
     marginBottom: 14,
   },
@@ -632,7 +648,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingBottom: 8,
     marginBottom: 8,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   volumeHeaderTitle: {
     fontSize: 11.5,
@@ -682,7 +698,8 @@ const styles = StyleSheet.create({
   },
   mainButton: {
     height: 48,
-    borderRadius: 20,
+    borderRadius: 16,
+    borderCurve: 'continuous',
     overflow: 'hidden',
     position: 'relative',
     justifyContent: 'center',
@@ -703,7 +720,7 @@ const styles = StyleSheet.create({
   },
   mainButtonText: {
     fontSize: 14,
-    fontWeight: '900',
+    fontWeight: '800',
     letterSpacing: -0.2,
   },
 });

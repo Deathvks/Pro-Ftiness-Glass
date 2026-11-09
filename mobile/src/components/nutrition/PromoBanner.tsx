@@ -13,6 +13,8 @@ import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getContrastTextColor } from '@/utils/routineHelpers';
 
 interface PromoBannerProps {
   type?: 'nutrition' | 'training' | 'routines';
@@ -26,6 +28,7 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
   const userProfile = useAppStore(state => state.userProfile);
 
   // If user already has a trainer, hide the promotional banner
@@ -56,43 +59,53 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({
         activeOpacity={0.88}
         style={[
           styles.glassWrapper,
-          {
+          getAppleCardSurfaceStyle(theme, 20),
+          !isIOS && {
             borderColor: colors.tint + '35',
             backgroundColor: colors.card,
           },
         ]}
       >
-        {/* iOS Liquid Glass layer */}
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
-        />
+        {/* iOS Liquid Glass layer only on photo themes */}
+        {shouldUseContentGlass(theme) && (
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
 
-        {/* Ambient subtle glow background */}
-        <View
-          style={[
-            styles.ambientGlow,
-            { backgroundColor: colors.tint + (isDark ? '18' : '10') },
-          ]}
-          pointerEvents="none"
-        />
+        {/* Ambient subtle glow background on non-iOS */}
+        {!isIOS && (
+          <View
+            style={[
+              styles.ambientGlow,
+              { backgroundColor: colors.tint + (isDark ? '18' : '10') },
+            ]}
+            pointerEvents="none"
+          />
+        )}
 
         <View style={styles.contentRow}>
+          {isIOS && (
+            <View style={[styles.iosIconSquircle, { backgroundColor: colors.tint + '18' }]}>
+              <Sparkles size={18} color={colors.tint} />
+            </View>
+          )}
           <View style={styles.textContainer}>
             <View style={styles.titleRow}>
-              <Text style={[styles.title, { color: colors.text }]}>
+              <Text style={[styles.title, { color: colors.text }, isIOS && { fontWeight: '700' }]}>
                 {content.title}
               </Text>
-              <Sparkles size={16} color={colors.tint} style={{ marginLeft: 6 }} />
+              {!isIOS && <Sparkles size={16} color={colors.tint} style={{ marginLeft: 6 }} />}
             </View>
             <Text style={[styles.description, { color: colors.textSecondary }]}>
               {content.desc}
             </Text>
           </View>
 
-          <View style={[styles.chevronCircle, { backgroundColor: colors.tint }]}>
-            <ChevronRight size={18} color="#000" strokeWidth={3} />
+          <View style={[styles.chevronCircle, { backgroundColor: isIOS ? colors.tint + '18' : colors.tint }, isIOS && { shadowOpacity: 0 }]}>
+            <ChevronRight size={18} color={isIOS ? colors.tint : getContrastTextColor(colors.tint)} strokeWidth={2.5} />
           </View>
         </View>
       </TouchableOpacity>
@@ -106,6 +119,7 @@ const styles = StyleSheet.create({
   },
   glassWrapper: {
     borderRadius: 24,
+    borderCurve: 'continuous',
     borderWidth: 1,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -127,6 +141,14 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
+  iosIconSquircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   textContainer: {
     flex: 1,
   },
@@ -141,14 +163,14 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   description: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '500',
-    lineHeight: 16,
+    lineHeight: 17,
   },
   chevronCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',

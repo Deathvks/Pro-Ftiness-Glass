@@ -1,6 +1,6 @@
 /* mobile/src/components/routines/RoutinesTabs.tsx */
 import React from 'react';
-import { ScrollView, Text, StyleSheet } from 'react-native';
+import { ScrollView, Text, StyleSheet, Platform } from 'react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { BookCopy, Compass, Dumbbell, Flame } from 'lucide-react-native';
@@ -18,9 +18,10 @@ interface RoutinesTabsProps {
 export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: RoutinesTabsProps) {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
-  const accentColor = colors.tint; 
+  const accentColor = colors.tint;
   const userProfile = useAppStore(state => state.userProfile || (state as any).user);
   const isAdmin = userProfile?.role === 'admin';
+  const isIOS = Platform.OS === 'ios';
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
@@ -34,35 +35,37 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
+      style={styles.scrollView}
       contentContainerStyle={styles.container}
     >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.key;
         const Icon = tab.icon;
-        
+        const activeForeground = isIOS ? accentColor : getContrastTextColor(accentColor);
+
         return (
           <GlassButton
             key={tab.key}
             onPress={() => onChangeTab(tab.key)}
             theme={theme}
             noShadow={true}
-            color={isActive ? accentColor : undefined}
+            color={isActive ? (isIOS ? accentColor + '22' : accentColor) : undefined}
             style={[
-              styles.tab, 
-              { borderColor: isActive ? accentColor : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)') }
+              styles.tab,
+              { borderColor: isActive ? (isIOS ? accentColor + '50' : accentColor) : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)') }
             ]}
           >
-            <Icon 
-              size={16} 
-              color={isActive ? getContrastTextColor(accentColor) : colors.textSecondary} 
-              style={{ marginRight: 6 }} 
+            <Icon
+              size={16}
+              color={isActive ? activeForeground : colors.textSecondary}
+              style={{ marginRight: 6 }}
             />
             <Text
               style={[
                 styles.tabText,
-                { 
-                  color: isActive ? getContrastTextColor(accentColor) : colors.textSecondary, 
-                  fontWeight: isActive ? '700' : '500' 
+                {
+                  color: isActive ? activeForeground : colors.textSecondary,
+                  fontWeight: isActive ? '700' : '500'
                 }
               ]}
             >
@@ -80,23 +83,23 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
         }}
         theme={theme}
         noShadow={true}
-        color={activeTab === 'quickCardio' ? accentColor : undefined}
+        color={activeTab === 'quickCardio' ? (isIOS ? accentColor + '22' : accentColor) : undefined}
         style={[
-          styles.tab, 
-          { borderColor: activeTab === 'quickCardio' ? accentColor : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)') }
+          styles.tab,
+          { borderColor: activeTab === 'quickCardio' ? (isIOS ? accentColor + '50' : accentColor) : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)') }
         ]}
       >
-        <Flame 
-          size={16} 
-          color={activeTab === 'quickCardio' ? getContrastTextColor(accentColor) : colors.textSecondary} 
-          style={{ marginRight: 6 }} 
+        <Flame
+          size={16}
+          color={activeTab === 'quickCardio' ? (isIOS ? accentColor : getContrastTextColor(accentColor)) : colors.textSecondary}
+          style={{ marginRight: 6 }}
         />
         <Text
           style={[
             styles.tabText,
-            { 
-              color: activeTab === 'quickCardio' ? getContrastTextColor(accentColor) : colors.textSecondary, 
-              fontWeight: activeTab === 'quickCardio' ? '700' : '500' 
+            {
+              color: activeTab === 'quickCardio' ? (isIOS ? accentColor : getContrastTextColor(accentColor)) : colors.textSecondary,
+              fontWeight: activeTab === 'quickCardio' ? '700' : '500'
             }
           ]}
         >
@@ -108,8 +111,11 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    marginHorizontal: -16,
+  },
   container: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     height: 40,
     gap: 8,
   },
@@ -119,7 +125,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 40,
     borderRadius: 20,
-    marginRight: 8,
+    borderCurve: 'continuous',
   },
   tabText: {
     fontSize: 14,

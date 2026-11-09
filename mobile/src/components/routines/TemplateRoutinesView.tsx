@@ -8,6 +8,7 @@ import {
   ScrollView,
   TextInput,
   Alert,
+  Platform,
 } from 'react-native';
 import {
   Compass,
@@ -24,6 +25,7 @@ import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 
 const DEFAULT_TEMPLATES = [
@@ -101,6 +103,10 @@ export function TemplateRoutinesView() {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
+  const innerSurfaceBg = isIOS
+    ? (isDark ? '#2C2C2E' : '#F2F2F7')
+    : (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)');
 
   const createRoutine = useAppStore(state => state.createRoutine);
   const startWorkout = useAppStore(state => state.startWorkout);
@@ -238,8 +244,11 @@ export function TemplateRoutinesView() {
         style={[
           styles.searchWrap,
           {
-            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-            borderColor: colors.border,
+            backgroundColor: isIOS
+              ? (isDark ? '#1C1C1E' : '#FFFFFF')
+              : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)'),
+            borderColor: isIOS ? 'transparent' : colors.border,
+            borderWidth: isIOS ? 0 : 1,
           },
         ]}
       >
@@ -264,8 +273,13 @@ export function TemplateRoutinesView() {
               style={[
                 styles.folderPill,
                 {
-                  backgroundColor: isAct ? colors.tint : isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                  borderColor: isAct ? colors.tint : colors.border,
+                  backgroundColor: isAct
+                    ? colors.tint
+                    : isIOS
+                    ? (isDark ? '#1C1C1E' : '#FFFFFF')
+                    : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
+                  borderColor: isAct ? colors.tint : (isIOS ? 'transparent' : colors.border),
+                  borderWidth: isIOS ? 0 : 1,
                 },
               ]}
               activeOpacity={0.7}
@@ -274,7 +288,7 @@ export function TemplateRoutinesView() {
                 style={[
                   styles.folderPillText,
                   { color: isAct ? '#000' : colors.textSecondary },
-                  isAct && { fontWeight: '900' },
+                  isAct && { fontWeight: isIOS ? '700' : '900' },
                 ]}
               >
                 {f === 'all' ? 'Todas' : f}
@@ -284,7 +298,7 @@ export function TemplateRoutinesView() {
         })}
       </ScrollView>
 
-      {/* Listado de tarjetas de plantillas con Liquid Glass */}
+      {/* Listado de tarjetas de plantillas */}
       <View style={{ gap: 12 }}>
         {filteredTemplates.map(item => {
           const isCopied = copiedIds[item.id];
@@ -294,7 +308,8 @@ export function TemplateRoutinesView() {
               key={item.id}
               style={[
                 styles.templateCard,
-                {
+                getAppleCardSurfaceStyle(theme, 20),
+                !isIOS && {
                   backgroundColor: isDark
                     ? 'rgba(255, 255, 255, 0.03)'
                     : 'rgba(255, 255, 255, 0.65)',
@@ -302,16 +317,18 @@ export function TemplateRoutinesView() {
                 },
               ]}
             >
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-              />
+              {shouldUseContentGlass(theme) && (
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 24 }]}
+                />
+              )}
 
               <View style={styles.templateTop}>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={[styles.templateName, { color: colors.text }]} numberOfLines={1}>
+                    <Text style={[styles.templateName, { color: colors.text }, isIOS && { fontWeight: '700' }]} numberOfLines={1}>
                       {item.name}
                     </Text>
                     <View style={[styles.categoryPill, { backgroundColor: colors.tint + '15' }]}>
@@ -327,7 +344,7 @@ export function TemplateRoutinesView() {
               </View>
 
               {/* Lista compacta de ejercicios */}
-              <View style={[styles.exList, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}>
+              <View style={[styles.exList, { backgroundColor: innerSurfaceBg }]}>
                 {item.exercises.map((ex, exIdx) => (
                   <View key={exIdx} style={styles.exRow}>
                     <Text style={[styles.exName, { color: colors.text }]} numberOfLines={1}>
@@ -350,6 +367,7 @@ export function TemplateRoutinesView() {
                     {
                       backgroundColor: isCopied ? 'rgba(16, 185, 129, 0.15)' : colors.tint + '15',
                       borderColor: isCopied ? 'rgba(16, 185, 129, 0.35)' : colors.tint + '35',
+                      borderWidth: isIOS ? 0 : 1,
                     },
                   ]}
                 >
@@ -388,7 +406,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 44,
-    borderRadius: 18,
+    borderRadius: 16,
+    borderCurve: 'continuous',
     borderWidth: 1,
     paddingHorizontal: 14,
   },
@@ -401,6 +420,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 14,
+    borderCurve: 'continuous',
     borderWidth: 1,
   },
   folderPillText: {
@@ -409,6 +429,7 @@ const styles = StyleSheet.create({
   },
   templateCard: {
     borderRadius: 24,
+    borderCurve: 'continuous',
     borderWidth: 1,
     padding: 16,
     overflow: 'hidden',
@@ -440,6 +461,7 @@ const styles = StyleSheet.create({
   },
   exList: {
     borderRadius: 14,
+    borderCurve: 'continuous',
     padding: 10,
     gap: 6,
     marginBottom: 12,
@@ -472,6 +494,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 10,
     borderRadius: 14,
+    borderCurve: 'continuous',
     borderWidth: 1,
   },
   copyBtnText: {
@@ -486,6 +509,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 14,
+    borderCurve: 'continuous',
   },
   startBtnText: {
     fontSize: 12,

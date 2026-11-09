@@ -55,7 +55,10 @@ export default function RoutinesScreen() {
   const theme = useAppStore((state) => state.theme);
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const iconBadgeBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
+  const isIOS = Platform.OS === 'ios';
+  const iconBadgeBg = isDark
+    ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.06)')
+    : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.05)');
 
   // Zustand Store
   const routines = useAppStore((state) => state.routines || []);
@@ -422,11 +425,13 @@ export default function RoutinesScreen() {
     });
   };
 
+  const createBtnForeground = isIOS ? colors.tint : getContrastTextColor(colors.tint);
+
   return (
     <AnimatedScreen header={<GlobalHeader />}>
       {/* 1. TÍTULO Y SUBTÍTULO */}
       <View style={styles.headerTitleContainer}>
-        <Text style={[styles.mainTitle, { color: colors.text }]}>Rutinas</Text>
+        <Text style={[styles.mainTitle, { color: colors.text }, isIOS && { fontWeight: '700' }]}>Rutinas</Text>
         <Text style={[styles.mainSubtitle, { color: colors.textSecondary }]}>
           Crea, edita y gestiona tus rutinas de entrenamiento.
         </Text>
@@ -442,14 +447,14 @@ export default function RoutinesScreen() {
           <GlassButton
             noShadow={true}
             theme={theme}
-            color={colors.tint}
+            color={isIOS ? colors.tint + '28' : colors.tint}
             onPress={handleCreateRoutineClick}
             style={styles.createRoutineBtn}
           >
             <View style={styles.createRoutineInner}>
-              <Plus size={18} color={getContrastTextColor(colors.tint)} style={{ marginRight: 6 }} strokeWidth={2.5} />
+              <Plus size={18} color={createBtnForeground} style={{ marginRight: 6 }} strokeWidth={2.5} />
               <Text
-                style={[styles.createRoutineBtnText, { color: getContrastTextColor(colors.tint) }]}
+                style={[styles.createRoutineBtnText, { color: createBtnForeground }]}
                 numberOfLines={1}
               >
                 Crear Rutina
@@ -530,7 +535,7 @@ export default function RoutinesScreen() {
             style={[
               styles.progressBanner,
               getAppleCardSurfaceStyle(theme || 'oled', 20),
-              Platform.OS !== 'ios' && { borderColor: colors.tint + '35' },
+              !isIOS && { borderColor: colors.tint + '35' },
             ]}
           >
             {shouldUseContentGlass(theme || 'oled') && (
@@ -540,20 +545,22 @@ export default function RoutinesScreen() {
                 colorScheme={isDark ? 'dark' : 'light'}
               />
             )}
-            <View
-              style={[
-                styles.progressGlow,
-                { backgroundColor: colors.tint + (isDark ? '15' : '08') },
-              ]}
-              pointerEvents="none"
-            />
+            {!isIOS && (
+              <View
+                style={[
+                  styles.progressGlow,
+                  { backgroundColor: colors.tint + (isDark ? '15' : '08') },
+                ]}
+                pointerEvents="none"
+              />
+            )}
             <View style={styles.progressInner}>
-              <View style={[styles.progressIconBox, { backgroundColor: colors.tint }]}>
-                <TrendingUp size={20} color="#000" strokeWidth={2.5} />
+              <View style={[styles.progressIconBox, { backgroundColor: isIOS ? colors.tint + '18' : colors.tint }]}>
+                <TrendingUp size={20} color={isIOS ? colors.tint : '#000'} strokeWidth={2.5} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <View style={styles.progressTitleRow}>
-                  <Text style={[styles.progressTitle, { color: colors.text }]}>
+                  <Text style={[styles.progressTitle, { color: colors.text }, isIOS && { fontWeight: '700' }]}>
                     Ver Tu Progreso
                   </Text>
                   <View style={[styles.progressBadge, { backgroundColor: colors.tint + '20' }]}>
@@ -589,9 +596,9 @@ export default function RoutinesScreen() {
             style={[
               styles.searchContainer,
               {
-                backgroundColor: isDark ? (Platform.OS === 'ios' ? '#1C1C1E' : 'rgba(255, 255, 255, 0.05)') : (Platform.OS === 'ios' ? '#FFFFFF' : 'rgba(0, 0, 0, 0.04)'),
-                borderColor: Platform.OS === 'ios' ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
-                borderWidth: Platform.OS === 'ios' ? 0 : 1,
+                backgroundColor: isDark ? (isIOS ? '#1C1C1E' : 'rgba(255, 255, 255, 0.05)') : (isIOS ? '#FFFFFF' : 'rgba(0, 0, 0, 0.04)'),
+                borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                borderWidth: isIOS ? 0 : 1,
               },
             ]}
           >
@@ -652,16 +659,23 @@ export default function RoutinesScreen() {
               })
             ) : (
               /* ESTADO VACÍO */
-              <GlassView
+              <View
                 style={[
                   styles.emptyCard,
-                  {
+                  getAppleCardSurfaceStyle(theme || 'oled', 20),
+                  !isIOS && {
                     borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
                   },
                 ]}
-                glassEffectStyle="regular"
-                tintColor={isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'}
               >
+                {shouldUseContentGlass(theme || 'oled') && (
+                  <GlassView
+                    style={StyleSheet.absoluteFill}
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                  />
+                )}
                 <View style={[styles.emptyIconBox, { backgroundColor: iconBadgeBg }]}>
                   <Folder size={32} color={colors.textSecondary} />
                 </View>
@@ -681,7 +695,7 @@ export default function RoutinesScreen() {
                     ¡Haz clic en <Text style={{ color: colors.tint }}>"Crear Rutina"</Text> para empezar!
                   </Text>
                 </TouchableOpacity>
-              </GlassView>
+              </View>
             )}
           </View>
         </>
@@ -761,7 +775,7 @@ const styles = StyleSheet.create({
   },
   mainSubtitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     marginTop: 4,
   },
   actionButtonsContainer: {
@@ -777,6 +791,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 46,
     borderRadius: 20,
+    borderCurve: 'continuous',
   },
   createRoutineInner: {
     flexDirection: 'row',
@@ -785,12 +800,13 @@ const styles = StyleSheet.create({
   },
   createRoutineBtnText: {
     fontSize: 15,
-    fontWeight: '900',
+    fontWeight: '800',
   },
   aiBtn: {
     paddingHorizontal: 18,
     height: 46,
     borderRadius: 20,
+    borderCurve: 'continuous',
   },
   aiBtnInner: {
     flexDirection: 'row',
@@ -810,6 +826,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     borderRadius: 16,
+    borderCurve: 'continuous',
   },
   toolBtnInner: {
     flexDirection: 'row',
@@ -824,6 +841,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 16,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -832,6 +850,7 @@ const styles = StyleSheet.create({
   },
   progressBanner: {
     borderRadius: 22,
+    borderCurve: 'continuous',
     borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 16,
@@ -846,13 +865,14 @@ const styles = StyleSheet.create({
   progressInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
+    padding: 16,
     gap: 12,
   },
   progressIconBox: {
     width: 42,
     height: 42,
-    borderRadius: 14,
+    borderRadius: 12,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -863,32 +883,34 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   progressTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '900',
     letterSpacing: -0.2,
   },
   progressBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 10,
+    borderRadius: 8,
+    borderCurve: 'continuous',
   },
   progressBadgeText: {
     fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.4,
+    fontWeight: '800',
+    letterSpacing: 0.3,
     textTransform: 'uppercase',
   },
   progressDesc: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
-    lineHeight: 15,
+    lineHeight: 16,
     marginTop: 2,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 46,
-    borderRadius: 18,
+    borderRadius: 16,
+    borderCurve: 'continuous',
     borderWidth: 1,
     paddingHorizontal: 14,
     marginBottom: 14,
@@ -906,16 +928,19 @@ const styles = StyleSheet.create({
   },
   emptyCard: {
     borderRadius: 28,
+    borderCurve: 'continuous',
     borderWidth: 1,
     padding: 32,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
+    overflow: 'hidden',
   },
   emptyIconBox: {
     width: 60,
     height: 60,
-    borderRadius: 22,
+    borderRadius: 18,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,

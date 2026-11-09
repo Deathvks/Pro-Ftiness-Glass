@@ -1,6 +1,6 @@
 /* mobile/src/components/routines/FolderList.tsx */
 import React from 'react';
-import { ScrollView, Text, StyleSheet } from 'react-native';
+import { ScrollView, Text, StyleSheet, Platform } from 'react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { Folder, FolderOpen } from 'lucide-react-native';
@@ -17,7 +17,8 @@ export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderLi
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const accentColor = colors.tint; 
+  const accentColor = colors.tint;
+  const isIOS = Platform.OS === 'ios';
 
   const allOptions = [
     { id: 'all', label: 'Todas' },
@@ -29,45 +30,47 @@ export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderLi
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
+      style={styles.scrollView}
       contentContainerStyle={styles.container}
     >
       {allOptions.map((opt) => {
         const isActive = selectedFolder === opt.id;
         const isNamedFolder = opt.id !== 'all' && opt.id !== 'uncategorized';
-        
+        const activeForeground = isIOS ? accentColor : getContrastTextColor(accentColor);
+
         return (
           <GlassButton
             key={opt.id}
             onPress={() => onSelectFolder(opt.id)}
             theme={theme}
             noShadow={true}
-            color={isActive ? accentColor : undefined}
+            color={isActive ? (isIOS ? accentColor + '22' : accentColor) : undefined}
             style={[
-              styles.tab, 
-              { borderColor: isActive ? accentColor : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)') }
+              styles.tab,
+              { borderColor: isActive ? (isIOS ? accentColor + '50' : accentColor) : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)') }
             ]}
           >
             {isNamedFolder && (
               isActive ? (
-                <FolderOpen 
-                  size={14} 
-                  color={getContrastTextColor(accentColor)} 
-                  style={{ marginRight: 6 }} 
+                <FolderOpen
+                  size={14}
+                  color={activeForeground}
+                  style={{ marginRight: 6 }}
                 />
               ) : (
-                <Folder 
-                  size={14} 
-                  color={colors.textSecondary} 
-                  style={{ marginRight: 6 }} 
+                <Folder
+                  size={14}
+                  color={colors.textSecondary}
+                  style={{ marginRight: 6 }}
                 />
               )
             )}
             <Text
               style={[
                 styles.tabText,
-                { 
-                  color: isActive ? getContrastTextColor(accentColor) : colors.textSecondary, 
-                  fontWeight: isActive ? '700' : '500' 
+                {
+                  color: isActive ? activeForeground : colors.textSecondary,
+                  fontWeight: isActive ? '700' : '500'
                 }
               ]}
             >
@@ -81,8 +84,11 @@ export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderLi
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    marginHorizontal: -16,
+  },
   container: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 6,
     gap: 8,
   },
@@ -92,7 +98,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 38,
     borderRadius: 19,
-    marginRight: 8,
+    borderCurve: 'continuous',
   },
   tabText: {
     fontSize: 13,
