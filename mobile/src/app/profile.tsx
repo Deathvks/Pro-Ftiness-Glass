@@ -1,11 +1,10 @@
 /* mobile/src/app/profile.tsx */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   TextInput,
-  Image,
   StyleSheet,
   Alert,
   Modal,
@@ -17,6 +16,7 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
@@ -133,6 +133,9 @@ export default function ProfileScreen() {
 
   const [username, setUsername] = useState(userProfile?.username || '');
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [avatarTimestamp, setAvatarTimestamp] = useState<number>(Date.now());
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const isPickingRef = useRef(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -154,27 +157,74 @@ export default function ProfileScreen() {
     return getUserRoleRingConfig(userProfile, userProfile);
   }, [userProfile]);
 
-  // URL final de imagen
+  // URL final de imagen con cache-busting dinámico
   const displayImageUri = useMemo(() => {
     if (selectedImageUri) return selectedImageUri;
     const raw = userProfile?.profile_image_url;
     if (!raw) return null;
-    if (raw.startsWith('http') || raw.startsWith('blob:')) return raw;
+    if (raw.startsWith('http') || raw.startsWith('blob:')) {
+      return `${raw}${raw.includes('?') ? '&' : '?'}t=${avatarTimestamp}`;
+    }
     const sep = raw.startsWith('/') ? '' : '/';
-    return `${BACKEND_BASE_URL}${sep}${raw}`;
-  }, [selectedImageUri, userProfile?.profile_image_url]);
+    return `${BACKEND_BASE_URL}${sep}${raw}?t=${avatarTimestamp}`;
+  }, [selectedImageUri, userProfile?.profile_image_url, avatarTimestamp]);
+
+  // Subir y guardar foto de perfil inmediatamente
+  const uploadAndSaveAvatar = async (imageUri: string) => {
+    setIsUploadingAvatar(true);
+    try {
+      const filename = imageUri.split('/').pop() || `avatar_${Date.now()}.jpg`;
+      const match = /\.([a-zA-Z0-9]+)$/.exec(filename);
+      const ext = match ? match[1].toLowerCase() : 'jpg';
+      const type = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+      const safeName = filename.includes('.') ? filename : `${filename}.${ext}`;
+
+      const formData = new FormData();
+      formData.append('profileImage', {
+        uri: imageUri,
+        name: safeName,
+        type,
+      } as any);
+
+      const response = await updateUserAccount(formData);
+
+      if (response && response.profile_image_url) {
+        useAppStore.getState().setUserProfile(response);
+      }
+      await useAppStore.getState().fetchInitialData();
+
+      setAvatarTimestamp(Date.now());
+      setSelectedImageUri(null);
+      setIsDirty(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('¡Foto actualizada!', 'Tu foto de perfil se ha guardado y actualizado correctamente.');
+    } catch (error: any) {
+      console.error('Error al subir foto de perfil:', error);
+      Alert.alert('Error', error.message || 'No se pudo guardar la foto de perfil.');
+      setSelectedImageUri(null);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   // Selección de foto de perfil con ImagePicker nativo
   const handlePickImage = async () => {
+    if (isPickingRef.current || isUploadingAvatar) return;
+    isPickingRef.current = true;
+
     try {
       Haptics.selectionAsync();
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permiso denegado',
-          'Se necesita acceso a tus fotos para cambiar la imagen de perfil.'
-        );
-        return;
+
+      // En iOS solicitamos permisos. En Android 13+ el Photo Picker nativo no requiere permisos de almacenamiento.
+      if (Platform.OS === 'ios') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert(
+            'Permiso denegado',
+            'Se necesita acceso a tus fotos para cambiar la imagen de perfil.'
+          );
+          return;
+        }
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -185,12 +235,15 @@ export default function ProfileScreen() {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setSelectedImageUri(result.assets[0].uri);
-        setIsDirty(true);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        const pickedAsset = result.assets[0];
+        setSelectedImageUri(pickedAsset.uri);
+        await uploadAndSaveAvatar(pickedAsset.uri);
       }
     } catch (e: any) {
+      console.error('Error al seleccionar imagen:', e);
       Alert.alert('Error', e.message || 'No se pudo seleccionar la foto.');
+    } finally {
+      isPickingRef.current = false;
     }
   };
 
@@ -289,7 +342,12 @@ export default function ProfileScreen() {
       <View style={styles.container}>
         {/* 1. SECCIÓN DE IDENTIDAD & AVATAR ESTILO FRONTEND */}
         <View style={styles.identitySection}>
-          <TouchableOpacity onPress={handlePickImage} activeOpacity={0.9} style={styles.avatarTouch}>
+          <TouchableOpacity
+            onPress={handlePickImage}
+            activeOpacity={0.9}
+            style={styles.avatarTouch}
+            disabled={isUploadingAvatar}
+          >
             <LinearGradient
               colors={roleConfig.colors}
               start={{ x: 0, y: 0 }}
@@ -299,17 +357,34 @@ export default function ProfileScreen() {
               <View style={[styles.avatarInnerPadding, { backgroundColor: isDark ? '#121214' : '#ffffff' }]}>
                 <View style={[styles.avatarImageWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
                   {displayImageUri ? (
-                    <Image source={{ uri: displayImageUri }} style={styles.avatarImage} />
+                    <Image
+                      source={{ uri: displayImageUri }}
+                      style={styles.avatarImage}
+                      contentFit="cover"
+                      transition={200}
+                    />
                   ) : (
                     <User size={46} color={colors.textSecondary} strokeWidth={1.8} style={{ opacity: 0.6 }} />
+                  )}
+                  {isUploadingAvatar && (
+                    <View style={styles.avatarLoadingOverlay}>
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    </View>
                   )}
                 </View>
               </View>
             </LinearGradient>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={handlePickImage} activeOpacity={0.7} style={styles.editPhotoBtn}>
-            <Text style={[styles.editPhotoText, { color: colors.tint }]}>Editar foto</Text>
+          <TouchableOpacity
+            onPress={handlePickImage}
+            activeOpacity={0.7}
+            style={styles.editPhotoBtn}
+            disabled={isUploadingAvatar}
+          >
+            <Text style={[styles.editPhotoText, { color: colors.tint }]}>
+              {isUploadingAvatar ? 'Guardando foto...' : 'Editar foto'}
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.nameRow}>
@@ -828,7 +903,12 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+  },
+  avatarLoadingOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   editPhotoBtn: {
     marginTop: 8,
