@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { UserPlus, Check, X, Clock } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { SocialUserAvatar } from './SocialUserAvatar';
 import { getContrastTextColor } from '@/utils/routineHelpers';
 
@@ -11,6 +12,10 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
+  const tertiarySurface = isDark
+    ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.04)')
+    : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.03)');
   const accentTextColor = getContrastTextColor(colors.tint);
 
   const socialRequests = useAppStore(state => state.socialRequests) || { received: [], sent: [] };
@@ -36,12 +41,21 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
   return (
     <View style={styles.container}>
       {/* 1. SOLICITUDES RECIBIDAS */}
-      <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', marginBottom: 20 }]}>
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-        />
+      <View
+        style={[
+          styles.card,
+          getAppleCardSurfaceStyle(theme, 20),
+          !isIOS && { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
+          { marginBottom: 20 },
+        ]}
+      >
+        {shouldUseContentGlass(theme) && (
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+          />
+        )}
 
         <View style={styles.headerRow}>
           <Text style={[styles.title, { color: colors.text }]}>Solicitudes Recibidas</Text>
@@ -56,7 +70,7 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
           <View
             style={[
               styles.emptyBox,
-              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' },
+              { backgroundColor: tertiarySurface },
             ]}
           >
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
@@ -77,8 +91,9 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
                   style={[
                     styles.userRow,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                      backgroundColor: tertiarySurface,
+                      borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)'),
+                      borderWidth: isIOS ? 0 : 1,
                     },
                   ]}
                 >
@@ -124,12 +139,20 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
 
       {/* 2. SOLICITUDES ENVIADAS */}
       {sent.length > 0 && (
-        <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-          />
+        <View
+          style={[
+            styles.card,
+            getAppleCardSurfaceStyle(theme, 20),
+            !isIOS && { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
+          ]}
+        >
+          {shouldUseContentGlass(theme) && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+            />
+          )}
 
           <Text style={[styles.title, { color: colors.text, marginBottom: 12 }]}>
             Solicitudes Enviadas
@@ -148,8 +171,9 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
                   style={[
                     styles.userRow,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                      backgroundColor: tertiarySurface,
+                      borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)'),
+                      borderWidth: isIOS ? 0 : 1,
                     },
                   ]}
                 >

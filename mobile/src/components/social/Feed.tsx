@@ -9,6 +9,7 @@ import {
   Alert,
   ScrollView,
   Image,
+  Platform,
 } from 'react-native';
 import {
   Flame,
@@ -37,6 +38,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import socialService from '@/services/socialService';
 import * as userService from '@/services/userService';
 import { forkRoutine } from '@/services/routineService';
@@ -96,6 +98,10 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
+  const tertiarySurface = isDark
+    ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.04)')
+    : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.03)');
   const accentTextColor = getContrastTextColor(colors.tint);
 
   const userProfile = useAppStore(state => state.userProfile);
@@ -429,23 +435,26 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
         </TouchableOpacity>
       </View>
 
-      {/* Info Card (Liquid Glass) */}
+      {/* Info Card (Liquid Glass / Apple Elevated Surface) */}
       {showFeedInfo && (
         <View
           style={[
             styles.infoBox,
-            {
+            getAppleCardSurfaceStyle(theme, 20),
+            !isIOS && {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 22 }]}
-          />
+          {shouldUseContentGlass(theme) && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 22 }]}
+            />
+          )}
           <View style={styles.infoBoxInner}>
-            <View style={[styles.infoCardItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.5)' }]}>
+            <View style={[styles.infoCardItem, { backgroundColor: tertiarySurface }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Flame size={15} color="#f97316" fill="#f97316" />
                 <Text style={[styles.infoCardTitle, { color: colors.text }]}>Global</Text>
@@ -455,7 +464,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
               </Text>
             </View>
 
-            <View style={[styles.infoCardItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.5)' }]}>
+            <View style={[styles.infoCardItem, { backgroundColor: tertiarySurface }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <MapPin size={15} color="#10b981" />
                 <Text style={[styles.infoCardTitle, { color: colors.text }]}>Mi Gimnasio / Ciudad</Text>
@@ -465,7 +474,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
               </Text>
             </View>
 
-            <View style={[styles.infoCardItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.5)' }]}>
+            <View style={[styles.infoCardItem, { backgroundColor: tertiarySurface }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Users size={15} color="#3b82f6" />
                 <Text style={[styles.infoCardTitle, { color: colors.text }]}>Amigos</Text>
@@ -644,16 +653,19 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
         <View
           style={[
             styles.subContextCard,
-            {
+            getAppleCardSurfaceStyle(theme, 18),
+            !isIOS && {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-          />
+          {shouldUseContentGlass(theme) && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 18 : 20 }]}
+            />
+          )}
           <View style={styles.subContextContent}>
             <View style={styles.subContextTextRow}>
               <View style={[styles.subContextIconCircle, { backgroundColor: colors.tint + '18' }]}>
@@ -672,7 +684,8 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                   styles.subContextPillBtn,
                   {
                     backgroundColor: colors.tint + '18',
-                    borderColor: colors.tint + '35',
+                    borderColor: isIOS ? 'transparent' : colors.tint + '35',
+                    borderWidth: isIOS ? 0 : 1,
                   },
                 ]}
               >
@@ -689,7 +702,8 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                   styles.subContextPillBtn,
                   {
                     backgroundColor: colors.tint + '18',
-                    borderColor: colors.tint + '35',
+                    borderColor: isIOS ? 'transparent' : colors.tint + '35',
+                    borderWidth: isIOS ? 0 : 1,
                   },
                 ]}
               >
@@ -707,16 +721,19 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
         <View
           style={[
             styles.subContextCard,
-            {
+            getAppleCardSurfaceStyle(theme, 18),
+            !isIOS && {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-          />
+          {shouldUseContentGlass(theme) && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 18 : 20 }]}
+            />
+          )}
           <View style={styles.subContextContent}>
             <View style={styles.subContextTextRow}>
               <View style={[styles.subContextIconCircle, { backgroundColor: 'rgba(59, 130, 246, 0.18)' }]}>
@@ -734,7 +751,8 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                 styles.subContextPillBtn,
                 {
                   backgroundColor: colors.tint + '18',
-                  borderColor: colors.tint + '35',
+                  borderColor: isIOS ? 'transparent' : colors.tint + '35',
+                  borderWidth: isIOS ? 0 : 1,
                 },
               ]}
             >
@@ -758,16 +776,19 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
         <View
           style={[
             styles.gymCtaCard,
-            {
+            getAppleCardSurfaceStyle(theme, 20),
+            !isIOS && {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-          />
+          {shouldUseContentGlass(theme) && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+            />
+          )}
           <View style={[styles.gymCtaIcon, { backgroundColor: colors.tint + '18' }]}>
             <MapPin size={28} color={colors.tint} />
           </View>
@@ -794,8 +815,9 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
               style={[
                 styles.secondaryBtn,
                 {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                  backgroundColor: tertiarySurface,
+                  borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'),
+                  borderWidth: isIOS ? 0 : 1,
                 },
               ]}
             >
@@ -819,16 +841,19 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
       <View
         style={[
           styles.gymHeaderCard,
-          {
+          getAppleCardSurfaceStyle(theme, 20),
+          !isIOS && {
             borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
           },
         ]}
       >
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-        />
+        {shouldUseContentGlass(theme) && (
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+          />
+        )}
 
         {/* Ambient gym photo background */}
         {gymPhoto && !gymBgError ? (
@@ -837,7 +862,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             style={[
               StyleSheet.absoluteFill,
               {
-                borderRadius: 28,
+                borderRadius: isIOS ? 20 : 28,
                 opacity: isDark ? 0.16 : 0.08,
               },
             ]}
@@ -1077,16 +1102,19 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                     style={[
                       styles.athleteCard,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.6)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                        backgroundColor: tertiarySurface,
+                        borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)'),
+                        borderWidth: isIOS ? 0 : 1,
                       },
                     ]}
                   >
-                    <GlassView
-                      glassEffectStyle="regular"
-                      colorScheme={isDark ? 'dark' : 'light'}
-                      style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                    />
+                    {shouldUseContentGlass(theme) && (
+                      <GlassView
+                        glassEffectStyle="regular"
+                        colorScheme={isDark ? 'dark' : 'light'}
+                        style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 16 : 20 }]}
+                      />
+                    )}
                     <SocialUserAvatar user={member} size={38} />
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={[styles.athleteCardName, { color: colors.text }]} numberOfLines={1}>
@@ -1238,16 +1266,19 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
         <View
           style={[
             styles.postCard,
-            {
+            getAppleCardSurfaceStyle(theme, 20),
+            !isIOS && {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-          />
+          {shouldUseContentGlass(theme) && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+            />
+          )}
 
           {/* Author Header */}
           <View style={styles.authorHeader}>
@@ -1335,8 +1366,9 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             style={[
               styles.workoutSummaryBox,
               {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                backgroundColor: tertiarySurface,
+                borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)'),
+                borderWidth: isIOS ? 0 : 1,
               },
             ]}
           >
@@ -1455,10 +1487,12 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                         ? {
                             backgroundColor: btn.color + '20',
                             borderColor: btn.color + '60',
+                            borderWidth: 1,
                           }
                         : {
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                            backgroundColor: tertiarySurface,
+                            borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)'),
+                            borderWidth: isIOS ? 0 : 1,
                           },
                     ]}
                   >
@@ -1507,10 +1541,11 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
               style={[
                 styles.commentToggleBtn,
                 areCommentsOpen
-                  ? { backgroundColor: colors.tint + '20', borderColor: colors.tint + '50' }
+                  ? { backgroundColor: colors.tint + '20', borderColor: colors.tint + '50', borderWidth: 1 }
                   : {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                      backgroundColor: tertiarySurface,
+                      borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)'),
+                      borderWidth: isIOS ? 0 : 1,
                     },
               ]}
             >
@@ -1542,7 +1577,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                         style={[
                           styles.commentBubble,
                           {
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                            backgroundColor: tertiarySurface,
                           },
                         ]}
                       >
@@ -1569,7 +1604,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
               )}
 
               {/* Input row */}
-              <View style={[styles.commentInputRow, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)' }]}>
+              <View style={[styles.commentInputRow, { backgroundColor: tertiarySurface }]}>
                 <TextInput
                   value={activeCommentInput[log.id] || ''}
                   onChangeText={txt => setActiveCommentInput(prev => ({ ...prev, [log.id]: txt }))}
@@ -1613,17 +1648,20 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
         <View
           style={[
             styles.emptyCard,
-            {
+            getAppleCardSurfaceStyle(theme, 20),
+            !isIOS && {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-          />
-          <View style={[styles.emptyIconCircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+          {shouldUseContentGlass(theme) && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+            />
+          )}
+          <View style={[styles.emptyIconCircle, { backgroundColor: tertiarySurface }]}>
             {scope === 'gym' ? (
               <Building2 size={32} color="#10b981" />
             ) : scope === 'friends' ? (

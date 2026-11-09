@@ -27,6 +27,7 @@ import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import { GlassButton } from '@/components/ui/GlassButton';
@@ -526,13 +527,19 @@ export default function RoutinesScreen() {
           <TouchableOpacity
             activeOpacity={0.88}
             onPress={() => router.push('/progress' as any)}
-            style={[styles.progressBanner, { borderColor: colors.tint + '35' }]}
+            style={[
+              styles.progressBanner,
+              getAppleCardSurfaceStyle(theme || 'oled', 20),
+              Platform.OS !== 'ios' && { borderColor: colors.tint + '35' },
+            ]}
           >
-            <GlassView
-              style={StyleSheet.absoluteFill}
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-            />
+            {shouldUseContentGlass(theme || 'oled') && (
+              <GlassView
+                style={StyleSheet.absoluteFill}
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+              />
+            )}
             <View
               style={[
                 styles.progressGlow,
@@ -582,8 +589,9 @@ export default function RoutinesScreen() {
             style={[
               styles.searchContainer,
               {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                backgroundColor: isDark ? (Platform.OS === 'ios' ? '#1C1C1E' : 'rgba(255, 255, 255, 0.05)') : (Platform.OS === 'ios' ? '#FFFFFF' : 'rgba(0, 0, 0, 0.04)'),
+                borderColor: Platform.OS === 'ios' ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                borderWidth: Platform.OS === 'ios' ? 0 : 1,
               },
             ]}
           >

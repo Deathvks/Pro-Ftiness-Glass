@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { Trophy, Medal, Flame } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import apiClient from '@/services/apiClient';
 import LevelBadge from '@/components/LevelBadge';
 import { SocialUserAvatar } from './SocialUserAvatar';
@@ -17,6 +18,7 @@ export function Leaderboard({ onNavigateProfile }: LeaderboardProps) {
   const colors = useAppColors();
   const userProfile = useAppStore((state: any) => state.userProfile);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
 
   const socialLeaderboard = useAppStore((state: any) => state.socialLeaderboard);
   const fetchLeaderboard = useAppStore((state: any) => state.fetchLeaderboard);
@@ -138,9 +140,9 @@ export function Leaderboard({ onNavigateProfile }: LeaderboardProps) {
             backgroundColor: isMe
               ? colors.tint + '18'
               : isDark
-              ? 'rgba(255, 255, 255, 0.03)'
-              : 'rgba(0, 0, 0, 0.02)',
-            borderWidth: isMe ? 1.5 : 0,
+              ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.03)')
+              : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.02)'),
+            borderWidth: isMe ? (isIOS ? 1 : 1.5) : 0,
             borderColor: isMe ? colors.tint + '50' : 'transparent',
             marginVertical: isMe ? 3 : 0,
           },
@@ -187,16 +189,19 @@ export function Leaderboard({ onNavigateProfile }: LeaderboardProps) {
       <View
         style={[
           styles.card,
-          {
+          getAppleCardSurfaceStyle(theme, 20),
+          !isIOS && {
             borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
           },
         ]}
       >
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-        />
+        {shouldUseContentGlass(theme) && (
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 32 }]}
+          />
+        )}
 
         {renderHeader()}
 

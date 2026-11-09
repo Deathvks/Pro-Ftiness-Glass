@@ -26,7 +26,9 @@ import { GlassButton } from '@/components/ui/GlassButton';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getThemeBaseBackground } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
+import ThemeBackground from '@/components/ThemeBackground';
 import { PrivacyModal } from '@/components/modals/PrivacyModal';
 import { getContrastTextColor } from '@/utils/routineHelpers';
 
@@ -232,8 +234,14 @@ export default function SocialScreen() {
     mainScrollRef.current?.scrollTo?.({ y: 260, animated: true });
   };
 
+  const bgColor =
+    colors.background === 'transparent'
+      ? getThemeBaseBackground(theme)
+      : colors.background;
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: bgColor }}>
+      <ThemeBackground />
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
         <GlobalHeader title="Comunidad" scrollY={scrollY} />
       </View>
@@ -338,7 +346,7 @@ export default function SocialScreen() {
                     onPress={() => handleTabChange(tab.id)}
                     theme={theme}
                     noShadow={true}
-                    color={isActive ? colors.tint : undefined}
+                    color={isActive ? (Platform.OS === 'ios' ? colors.tint + '22' : colors.tint) : undefined}
                     style={[
                       styles.tabPill,
                       {
@@ -361,7 +369,7 @@ export default function SocialScreen() {
                         styles.tabText,
                         {
                           color: isActive ? colors.tint : colors.textSecondary,
-                          fontWeight: isActive ? '800' : '600',
+                          fontWeight: isActive ? (Platform.OS === 'ios' ? '700' : '800') : '600',
                         },
                       ]}
                     >

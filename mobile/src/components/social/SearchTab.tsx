@@ -7,12 +7,14 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { Search, UserPlus, Check, Clock } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import { GlassButton } from '@/components/ui/GlassButton';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { SocialUserAvatar } from './SocialUserAvatar';
 import { getContrastTextColor } from '@/utils/routineHelpers';
 
@@ -26,6 +28,10 @@ export function SearchTab({
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
+  const tertiarySurface = isDark
+    ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.04)')
+    : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.03)');
   const accentTextColor = getContrastTextColor(colors.tint);
 
   const userProfile = useAppStore(state => state.userProfile);
@@ -107,12 +113,21 @@ export function SearchTab({
 
       {/* Results Card */}
       {socialSearchResults.length > 0 && (
-        <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', marginTop: 16 }]}>
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-          />
+        <View
+          style={[
+            styles.card,
+            getAppleCardSurfaceStyle(theme, 20),
+            !isIOS && { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
+            { marginTop: 16 },
+          ]}
+        >
+          {shouldUseContentGlass(theme) && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+            />
+          )}
 
           <View style={styles.resultsHeader}>
             <Text style={[styles.title, { color: colors.text }]}>Resultados</Text>
@@ -150,8 +165,9 @@ export function SearchTab({
                   style={[
                     styles.userRow,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                      backgroundColor: tertiarySurface,
+                      borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)'),
+                      borderWidth: isIOS ? 0 : 1,
                     },
                   ]}
                 >
@@ -206,7 +222,8 @@ export function SearchTab({
         <View
           style={[
             styles.emptyCard,
-            {
+            getAppleCardSurfaceStyle(theme, 20),
+            !isIOS && {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
               backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
             },

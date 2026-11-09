@@ -1,9 +1,10 @@
 /* mobile/src/components/routines/RoutineCard.tsx */
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { 
   Play, Globe, Users, Lock, Clock, Dumbbell, CalendarClock, 
   CheckCircle, Edit, Copy, Trash2, Share2, Folder, Link2, Activity 
@@ -48,11 +49,14 @@ export function RoutineCard({
   isBlockedByOtherWorkout,
   lastUsedDate,
 }: RoutineCardProps) {
-  const theme = useAppStore(state => state.theme);
+  const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const userProfile = useAppStore(state => state.userProfile || (state as any).user);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const iconBadgeBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
+  const isIOS = Platform.OS === 'ios';
+  const iconBadgeBg = isDark
+    ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.06)')
+    : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.05)');
   const startTextColor = getContrastTextColor(colors.tint);
 
   const exercises = routine.exercises || routine.RoutineExercises || [];
@@ -96,19 +100,24 @@ export function RoutineCard({
   return (
     <View style={[
       styles.card, 
+      getAppleCardSurfaceStyle(theme, 20),
       { 
         overflow: 'hidden',
-        borderColor: isActive ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+        borderColor: isActive ? colors.tint : (isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)')),
+        borderWidth: isActive ? 2 : (isIOS ? 0 : 1),
+      },
+      !isIOS && {
         backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.65)',
-        borderWidth: isActive ? 2 : 1,
-      }
+      },
     ]}>
       {/* iOS Liquid Glass Effect Background */}
-      <GlassView 
-        glassEffectStyle="regular" 
-        colorScheme={isDark ? 'dark' : 'light'} 
-        style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} 
-      />
+      {shouldUseContentGlass(theme) && (
+        <GlassView 
+          glassEffectStyle="regular" 
+          colorScheme={isDark ? 'dark' : 'light'} 
+          style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]} 
+        />
+      )}
 
       {/* 1. IMAGEN DE CABECERA (SI TIENE) */}
       {imageSrc && (
@@ -312,7 +321,7 @@ export function RoutineCard({
 
         {/* LISTA PREVIA DE EJERCICIOS CON SUPERSERIES Y BANNER DE RECUENTO */}
         {exerciseGroups.length > 0 && (
-          <View style={[styles.previewBox, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)', borderWidth: 1 }]}>
+          <View style={[styles.previewBox, { backgroundColor: iconBadgeBg, borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)'), borderWidth: isIOS ? 0 : 1 }]}>
             {onPressVolumeFilter && (
               <TouchableOpacity
                 onPress={onPressVolumeFilter}

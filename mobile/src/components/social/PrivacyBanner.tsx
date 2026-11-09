@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Globe, Lock, Check, X, Settings } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 
 interface PrivacyBannerProps {
   privacy: 'public' | 'private';
@@ -15,22 +16,26 @@ export function PrivacyBanner({ privacy, onNavigate }: PrivacyBannerProps) {
   const colors = useAppColors();
   const isPublic = privacy === 'public';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
 
   return (
     <View
       style={[
         styles.container,
-        {
+        getAppleCardSurfaceStyle(theme, 20),
+        !isIOS && {
           borderColor: isPublic ? colors.tint + '50' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
           borderWidth: 1,
         },
       ]}
     >
-      <GlassView
-        glassEffectStyle="regular"
-        colorScheme={isDark ? 'dark' : 'light'}
-        style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-      />
+      {shouldUseContentGlass(theme) && (
+        <GlassView
+          glassEffectStyle="regular"
+          colorScheme={isDark ? 'dark' : 'light'}
+          style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 24 }]}
+        />
+      )}
 
       <View style={styles.content}>
         {/* Left Icon Badge */}
@@ -38,11 +43,11 @@ export function PrivacyBanner({ privacy, onNavigate }: PrivacyBannerProps) {
           style={[
             styles.iconBadge,
             {
-              backgroundColor: isPublic ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'),
+              backgroundColor: isPublic ? colors.tint : (isDark ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.1)') : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.08)')),
             },
           ]}
         >
-          {isPublic ? <Globe size={24} color="#ffffff" /> : <Lock size={24} color={colors.textSecondary} />}
+          {isPublic ? <Globe size={isIOS ? 21 : 24} color="#ffffff" /> : <Lock size={isIOS ? 21 : 24} color={colors.textSecondary} />}
         </View>
 
         {/* Text and Description */}
@@ -91,8 +96,9 @@ export function PrivacyBanner({ privacy, onNavigate }: PrivacyBannerProps) {
             style={[
               styles.button,
               {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                backgroundColor: isDark ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.08)') : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.06)'),
+                borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                borderWidth: isIOS ? 0 : 1,
               },
             ]}
           >
@@ -109,7 +115,8 @@ export function PrivacyBanner({ privacy, onNavigate }: PrivacyBannerProps) {
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 24,
+    borderRadius: Platform.OS === 'ios' ? 20 : 24,
+    borderCurve: 'continuous',
     overflow: 'hidden',
     marginBottom: 20,
     backgroundColor: 'transparent',
@@ -121,9 +128,10 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   iconBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 18,
+    width: Platform.OS === 'ios' ? 42 : 48,
+    height: Platform.OS === 'ios' ? 42 : 48,
+    borderRadius: Platform.OS === 'ios' ? 12 : 18,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
@@ -133,7 +141,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 17,
-    fontWeight: '800',
+    fontWeight: Platform.OS === 'ios' ? '700' : '800',
+    letterSpacing: -0.3,
     marginBottom: 6,
   },
   description: {
@@ -155,11 +164,12 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 999,
+    borderCurve: 'continuous',
     borderWidth: 1,
   },
   buttonText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: Platform.OS === 'ios' ? '600' : '700',
   },
 });

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { Users, UserX, ChevronLeft, ChevronRight, Search } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import { GlassButton } from '@/components/ui/GlassButton';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { SocialUserAvatar } from './SocialUserAvatar';
 import { ConfirmationModal } from './ConfirmationModal';
 
@@ -17,6 +18,10 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
+  const tertiarySurface = isDark
+    ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.04)')
+    : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.03)');
 
   const socialFriends = useAppStore(state => state.socialFriends) || [];
   const removeFriend = useAppStore(state => state.removeFriend);
@@ -76,12 +81,20 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
         onCancel={() => setDeleteModal({ visible: false, friendId: null })}
       />
 
-      <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-        />
+      <View
+        style={[
+          styles.card,
+          getAppleCardSurfaceStyle(theme, 20),
+          !isIOS && { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
+        ]}
+      >
+        {shouldUseContentGlass(theme) && (
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+          />
+        )}
 
         {/* Title */}
         <View style={styles.header}>
@@ -97,7 +110,7 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
           <View
             style={[
               styles.emptyState,
-              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' },
+              { backgroundColor: tertiarySurface },
             ]}
           >
             <View style={[styles.emptyIconBox, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)' }]}>
@@ -114,7 +127,7 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
               onPress={onSwitchToSearch}
               theme={theme}
               noShadow={true}
-              color={colors.tint}
+              color={isIOS ? colors.tint + '22' : colors.tint}
               style={[
                 styles.searchPeopleBtn,
                 { borderColor: colors.tint },
@@ -141,8 +154,9 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
                   style={[
                     styles.userRow,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                      backgroundColor: tertiarySurface,
+                      borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)'),
+                      borderWidth: isIOS ? 0 : 1,
                     },
                   ]}
                 >

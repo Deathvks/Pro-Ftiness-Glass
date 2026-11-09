@@ -31,6 +31,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -293,6 +294,7 @@ export function RoutineVolumeFilterModal({
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
 
   const { exclusions, toggleExercise, setRoutineAll } = useWeeklyVolumeExclusions();
 
@@ -521,6 +523,7 @@ export function WeeklyMuscleVolumeCard({
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedMuscle, setSelectedMuscle] = useState<any | null>(null);
@@ -650,7 +653,8 @@ export function WeeklyMuscleVolumeCard({
     <View
       style={[
         styles.container,
-        {
+        getAppleCardSurfaceStyle(theme, 20),
+        !isIOS && {
           borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
           backgroundColor: isDark
             ? 'rgba(255, 255, 255, 0.03)'
@@ -658,11 +662,13 @@ export function WeeklyMuscleVolumeCard({
         },
       ]}
     >
-      <GlassView
-        glassEffectStyle="regular"
-        colorScheme={isDark ? 'dark' : 'light'}
-        style={[StyleSheet.absoluteFill, { borderRadius: 26 }]}
-      />
+      {shouldUseContentGlass(theme) && (
+        <GlassView
+          glassEffectStyle="regular"
+          colorScheme={isDark ? 'dark' : 'light'}
+          style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 26 }]}
+        />
+      )}
 
       {/* Header Interactivo (Solapado / Resumen por defecto - Idéntico al frontend) */}
       <TouchableOpacity
