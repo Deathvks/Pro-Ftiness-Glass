@@ -33,8 +33,8 @@ import { getThemeBaseBackground } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import ThemeBackground from '@/components/ThemeBackground';
 import { BugReportModal } from '@/components/modals/BugReportModal';
+import { APP_VERSION } from '@/config/version';
 
-const APP_VERSION = '7.8.0';
 const SUPPORT_EMAIL = 'soporte@profitnessglass.es';
 const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419';
 const DEFAULT_APK_URL = 'https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.1.0/app-release.apk';
