@@ -484,42 +484,12 @@ export default function SettingsScreen() {
     );
   };
 
-  // Gestión de 2FA
+  // Gestión de 2FA -> Navega a la pantalla completa de configuración 2FA
   const handleManage2FA = () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
-
-    if (userProfile?.two_factor_enabled) {
-      Alert.alert(
-        'Seguridad 2FA Activa',
-        'Tu cuenta está protegida con verificación en dos pasos mediante códigos de seguridad.\n\n¿Deseas desactivar la verificación en dos pasos?',
-        [
-          { text: 'Mantener activo', style: 'cancel' },
-          {
-            text: 'Desactivar 2FA',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await disable2FA();
-                setUserProfile({ ...userProfile, two_factor_enabled: false });
-                useAppStore.getState().showToast?.('2FA desactivado correctamente');
-              } catch {
-                Alert.alert('Error', 'No se pudo desactivar el 2FA. Inténtalo de nuevo.');
-              }
-            },
-          },
-        ]
-      );
-    } else {
-      Alert.alert(
-        'Verificación en 2 pasos (2FA)',
-        'La verificación en dos pasos añade una capa extra de protección a tu cuenta solicitando un código temporal al iniciar sesión desde dispositivos nuevos.\n\nPuedes activarla vinculando tu cuenta de correo o una aplicación autenticadora (Google Authenticator, Authy, etc.).',
-        [
-          { text: 'Entendido', style: 'default' },
-        ]
-      );
-    }
+    router.push('/two-factor-setup');
   };
 
   // Sesiones: revocar
@@ -704,24 +674,6 @@ export default function SettingsScreen() {
         {/* ========================================================= */}
         {activeTab !== null && (
           <View style={styles.sectionDetailContainer}>
-            {/* Botón rápido Volver al Menú */}
-            <TouchableOpacity
-              onPress={handleBackToMenu}
-              activeOpacity={0.7}
-              style={[
-                styles.backBreadcrumb,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  borderColor: glassBorder,
-                },
-              ]}
-            >
-              <ChevronLeft size={16} color={colors.textSecondary} />
-              <Text style={[styles.backBreadcrumbText, { color: colors.textSecondary }]}>
-                Volver a Ajustes
-              </Text>
-            </TouchableOpacity>
-
             {/* ================= 1. ENTRENAMIENTO ================= */}
             {activeTab === 'workout' && (
               <View style={styles.cardsStack}>
@@ -1109,7 +1061,7 @@ export default function SettingsScreen() {
 
                   <View style={styles.switchItemsList}>
                     <TouchableOpacity
-                      onPress={() => router.push('/profile')}
+                      onPress={() => router.push('/physical-profile-editor')}
                       activeOpacity={0.7}
                       style={[styles.settingRowItem, { backgroundColor: subtleItemBg }]}
                     >
