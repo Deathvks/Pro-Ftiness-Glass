@@ -35,7 +35,7 @@ import * as Haptics from 'expo-haptics';
 import apiClient from '@/services/apiClient';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import { getThemeBaseBackground } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import ThemeBackground from '@/components/ThemeBackground';
@@ -207,7 +207,7 @@ export default function ChallengesScreen() {
   const userProfile = useAppStore(state => state.userProfile);
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const accentText = getContrastColor(colors.tint, theme);
+  const tabContrastTextColor = getContrastTextColor(colors.tint);
   const glassBorder = isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)';
 
   const [challenges, setChallenges] = useState<Challenge[]>([]);
@@ -426,7 +426,7 @@ export default function ChallengesScreen() {
               style={[
                 styles.tabBtnText,
                 {
-                  color: activeTab === 'daily' ? accentText : colors.textSecondary,
+                  color: activeTab === 'daily' ? tabContrastTextColor : colors.textSecondary,
                   fontWeight: activeTab === 'daily' ? '800' : '600',
                 },
               ]}
@@ -453,7 +453,7 @@ export default function ChallengesScreen() {
               style={[
                 styles.tabBtnText,
                 {
-                  color: activeTab === 'general' ? accentText : colors.textSecondary,
+                  color: activeTab === 'general' ? tabContrastTextColor : colors.textSecondary,
                   fontWeight: activeTab === 'general' ? '800' : '600',
                 },
               ]}
@@ -480,7 +480,7 @@ export default function ChallengesScreen() {
               style={[
                 styles.tabBtnText,
                 {
-                  color: activeTab === 'completed' ? accentText : colors.textSecondary,
+                  color: activeTab === 'completed' ? tabContrastTextColor : colors.textSecondary,
                   fontWeight: activeTab === 'completed' ? '800' : '600',
                 },
               ]}

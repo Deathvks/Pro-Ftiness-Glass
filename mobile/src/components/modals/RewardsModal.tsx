@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 
 interface RewardsModalProps {
   visible: boolean;
@@ -61,7 +61,7 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
   const colors = useAppColors();
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const accentText = getContrastColor(colors.tint, theme);
+  const tintContrastText = getContrastTextColor(colors.tint);
 
   if (!visible) return null;
 
@@ -257,7 +257,7 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
                             <Text
                               style={[
                                 styles.applyBtnText,
-                                { color: isActive ? accentText : colors.text },
+                                { color: isActive ? tintContrastText : colors.text },
                               ]}
                             >
                               {isActive ? '✓ Tema Activo' : 'Usar este Tema'}
