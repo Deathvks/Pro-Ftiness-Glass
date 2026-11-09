@@ -179,41 +179,44 @@ export default function WorkoutScreen() {
 
   // Manejador del botón Atrás
   const handleBackClick = () => {
-    if (hasWorkoutStarted) {
-      Alert.alert(
-        'Entrenamiento en curso',
-        '¿Deseas minimizar la sesión para seguir navegando por la app o descartarla por completo?',
-        [
-          {
-            text: 'Minimizar y navegar',
-            onPress: handleMinimizeWorkout,
-          },
-          {
-            text: 'Descartar sesión',
-            style: 'destructive',
-            onPress: () => {
-              try {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              } catch {}
-              stopWorkout();
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/(tabs)');
-              }
-            },
-          },
-          { text: 'Seguir entrenando', style: 'cancel' },
-        ]
-      );
-    } else {
+    // Si el cronómetro no se ha iniciado y está a 0, salir directamente sin pedir confirmación de "Seguir entrenando"
+    if (timerSeconds === 0) {
       stopWorkout();
       if (router.canGoBack()) {
         router.back();
       } else {
         router.replace('/(tabs)');
       }
+      return;
     }
+
+    // A partir del segundo 1 (timerSeconds >= 1), preguntar si desea minimizar para continuar o descartar
+    Alert.alert(
+      'Entrenamiento en curso',
+      '¿Deseas minimizar la sesión para seguir navegando por la app o descartarla por completo?',
+      [
+        {
+          text: 'Minimizar y navegar',
+          onPress: handleMinimizeWorkout,
+        },
+        {
+          text: 'Descartar sesión',
+          style: 'destructive',
+          onPress: () => {
+            try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            } catch {}
+            stopWorkout();
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)');
+            }
+          },
+        },
+        { text: 'Seguir entrenando', style: 'cancel' },
+      ]
+    );
   };
 
   // Manejador para Finalizar Entrenamiento

@@ -86,7 +86,21 @@ export default function RoutinesScreen() {
   const [volumeFilterRoutine, setVolumeFilterRoutine] = useState<any | null>(null);
   const [shareData, setShareData] = useState<any | null>(null);
 
-  const isAnyWorkoutActive = activeWorkout !== null && activeWorkout !== undefined;
+  const workoutStartTime = useAppStore(state => state.workoutStartTime);
+  const workoutAccumulatedTime = useAppStore(state => state.workoutAccumulatedTime);
+  const isWorkoutPaused = useAppStore(state => state.isWorkoutPaused);
+
+  const isWorkoutTimerActive = useMemo(() => {
+    if (!activeWorkout) return false;
+    const accumulated = workoutAccumulatedTime || 0;
+    if (!workoutStartTime || isWorkoutPaused) {
+      return accumulated >= 1;
+    }
+    const current = Math.floor((Date.now() - workoutStartTime) / 1000);
+    return (accumulated + current) >= 1;
+  }, [activeWorkout, workoutStartTime, workoutAccumulatedTime, isWorkoutPaused]);
+
+  const isAnyWorkoutActive = activeWorkout !== null && activeWorkout !== undefined && isWorkoutTimerActive;
 
   // Mapa de última fecha de uso por rutina
   const lastUsedMap = useMemo(() => {

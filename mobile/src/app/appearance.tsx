@@ -214,6 +214,7 @@ export default function AppearanceScreen() {
   const { width: windowWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
+  const isMobile = windowWidth < 600;
   const isNarrow = windowWidth < 380;
   const isTablet = windowWidth >= 680;
 
@@ -458,7 +459,7 @@ export default function AppearanceScreen() {
 
       <Animated.ScrollView
         contentContainerStyle={{
-          paddingHorizontal: Math.max(16, (windowWidth - 640) / 2),
+          paddingHorizontal: isMobile ? 14 : Math.max(16, (windowWidth - 640) / 2),
           paddingTop: insets.top + 52,
           paddingBottom: insets.bottom + 40,
         }}
@@ -469,7 +470,7 @@ export default function AppearanceScreen() {
         scrollEventThrottle={16}
       >
         {/* ================= 1. MIS TEMAS (ARRIBA Y DESPLEGABLE) ================= */}
-        <GlassSurface radius={28} isDark={isDark} borderColor={glassBorder} style={[styles.card, { padding: isNarrow ? 16 : 22 }]}>
+        <GlassSurface radius={28} isDark={isDark} borderColor={glassBorder} style={[styles.card, { padding: isMobile ? 16 : 22 }]}>
           <Pressable
             onPress={() => setIsMyThemesOpen(!isMyThemesOpen)}
             style={styles.myThemesHeaderRow}
@@ -520,6 +521,81 @@ export default function AppearanceScreen() {
                 const STIcon = st.icon;
                 const pillText = isDark ? st.textDark : st.textLight;
                 const isSingle = st.variants.length === 1;
+                const showButtonsBelow = isMobile && !isSingle;
+
+                const renderVariantButton = (v: typeof st.variants[0], isFullWidth: boolean) => {
+                  if (isUnlocked) {
+                    const isBtnActive = (themePreference === v.id || activeTheme === v.id) && !isTestingTheme;
+                    const label = isSingle ? (isBtnActive ? 'Activo' : 'Aplicar') : v.label;
+                    return (
+                      <Pressable
+                        key={v.id}
+                        onPress={() => handleThemeClick(v.id)}
+                        style={({ pressed }) => [
+                          isFullWidth && { flex: 1 },
+                          { transform: [{ scale: pressed ? 0.94 : 1 }] },
+                        ]}
+                      >
+                        <GlassSurface
+                          radius={14}
+                          isDark={isDark}
+                          borderColor={isBtnActive ? st.tint : glassBorder}
+                          tintColor={isBtnActive ? st.tint : isDark ? '#ffffff' : '#000000'}
+                          tintOpacity={isBtnActive ? 0.9 : 0.08}
+                          style={isFullWidth ? styles.pillFullWidth : isSingle ? styles.pillLarge : styles.pillSmall}
+                        >
+                          <Text
+                            style={[
+                              isFullWidth ? styles.pillFullWidthText : isSingle ? styles.pillLargeText : styles.pillSmallText,
+                              { color: isBtnActive ? '#ffffff' : pillText },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {label}
+                          </Text>
+                        </GlassSurface>
+                      </Pressable>
+                    );
+                  }
+
+                  const isThisTesting = themeTest?.name === v.id;
+                  return (
+                    <Pressable
+                      key={v.id}
+                      onPress={() => handleTest(v.id)}
+                      disabled={isTestingTheme}
+                      style={({ pressed }) => [
+                        isFullWidth && { flex: 1 },
+                        {
+                          opacity: isTestingTheme && !isThisTesting ? 0.8 : 1,
+                          transform: [{ scale: pressed ? 0.94 : 1 }],
+                        },
+                      ]}
+                    >
+                      <GlassSurface
+                        radius={14}
+                        isDark={isDark}
+                        borderColor={st.tint + '4D'}
+                        tintColor={st.tint}
+                        tintOpacity={0.2}
+                        style={[
+                          isFullWidth ? styles.pillFullWidth : isSingle ? styles.pillLarge : styles.pillSmall,
+                          isSingle && !isFullWidth && { minWidth: 100 },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            isFullWidth ? styles.pillFullWidthText : isSingle ? styles.pillLargeText : styles.pillSmallText,
+                            { color: st.tint },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {isThisTesting ? `Probando ${themeTest?.timeLeft}s` : v.testLabel}
+                        </Text>
+                      </GlassSurface>
+                    </Pressable>
+                  );
+                };
 
                 return (
                   <View
@@ -535,7 +611,7 @@ export default function AppearanceScreen() {
                         : { backgroundColor: subtleBg, borderColor: 'transparent' },
                     ]}
                   >
-                    <View style={[styles.themeRowInner, isNarrow && { flexDirection: 'column', alignItems: 'stretch' }]}>
+                    <View style={styles.themeRowInner}>
                       <View style={styles.themeRowLeft}>
                         <View
                           style={[
@@ -551,7 +627,7 @@ export default function AppearanceScreen() {
                         >
                           <STIcon size={20} color={isUnlocked ? st.tint : colors.textSecondary} />
                         </View>
-                        <View style={{ flex: 1 }}>
+                        <View style={{ flex: 1, minWidth: 0 }}>
                           <Text
                             style={[styles.themeRowTitle, { color: isUnlocked ? st.tint : colors.text }]}
                             numberOfLines={1}
@@ -578,68 +654,18 @@ export default function AppearanceScreen() {
                         </View>
                       </View>
 
-                      <View style={[styles.variantButtonsRow, isNarrow && { justifyContent: 'flex-end', marginTop: 8 }]}>
-                        {st.variants.map(v => {
-                          if (isUnlocked) {
-                            const isBtnActive = (themePreference === v.id || activeTheme === v.id) && !isTestingTheme;
-                            const label = isSingle ? (isBtnActive ? 'Activo' : 'Aplicar') : v.label;
-                            return (
-                              <Pressable
-                                key={v.id}
-                                onPress={() => handleThemeClick(v.id)}
-                                style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.94 : 1 }] })}
-                              >
-                                <GlassSurface
-                                  radius={16}
-                                  isDark={isDark}
-                                  borderColor={isBtnActive ? st.tint : glassBorder}
-                                  tintColor={isBtnActive ? st.tint : isDark ? '#ffffff' : '#000000'}
-                                  tintOpacity={isBtnActive ? 0.9 : 0.08}
-                                  style={isSingle ? styles.pillLarge : styles.pillSmall}
-                                >
-                                  <Text
-                                    style={[
-                                      isSingle ? styles.pillLargeText : styles.pillSmallText,
-                                      { color: isBtnActive ? '#ffffff' : pillText },
-                                    ]}
-                                  >
-                                    {label}
-                                  </Text>
-                                </GlassSurface>
-                              </Pressable>
-                            );
-                          }
-
-                          const isThisTesting = themeTest?.name === v.id;
-                          return (
-                            <Pressable
-                              key={v.id}
-                              onPress={() => handleTest(v.id)}
-                              disabled={isTestingTheme}
-                              style={({ pressed }) => ({
-                                opacity: isTestingTheme && !isThisTesting ? 0.8 : 1,
-                                transform: [{ scale: pressed ? 0.94 : 1 }],
-                              })}
-                            >
-                              <GlassSurface
-                                radius={16}
-                                isDark={isDark}
-                                borderColor={st.tint + '4D'}
-                                tintColor={st.tint}
-                                tintOpacity={0.2}
-                                style={[isSingle ? styles.pillLarge : styles.pillSmall, isSingle && { minWidth: 100 }]}
-                              >
-                                <Text
-                                  style={[isSingle ? styles.pillLargeText : styles.pillSmallText, { color: st.tint }]}
-                                >
-                                  {isThisTesting ? `Probando ${themeTest?.timeLeft}s` : v.testLabel}
-                                </Text>
-                              </GlassSurface>
-                            </Pressable>
-                          );
-                        })}
-                      </View>
+                      {!showButtonsBelow && (
+                        <View style={styles.variantButtonsRow}>
+                          {st.variants.map(v => renderVariantButton(v, false))}
+                        </View>
+                      )}
                     </View>
+
+                    {showButtonsBelow && (
+                      <View style={styles.variantButtonsRowMobile}>
+                        {st.variants.map(v => renderVariantButton(v, true))}
+                      </View>
+                    )}
 
                     {isGroupActive && (
                       <View style={styles.themeInfoRow}>
@@ -654,11 +680,11 @@ export default function AppearanceScreen() {
                         <Pressable
                           onPress={handleToggleGalaxyEffects}
                           style={({ pressed }) => [
-                            styles.switchRow,
+                            styles.galaxySwitchRow,
                             { transform: [{ scale: pressed ? 0.98 : 1 }] },
                           ]}
                         >
-                          <View style={styles.switchInfo}>
+                          <View style={styles.galaxySwitchInfo}>
                             <View style={[styles.switchIconBox, { backgroundColor: st.tint + '20' }]}>
                               <MeteorIcon size={16} color={st.tint} />
                             </View>
@@ -707,13 +733,13 @@ export default function AppearanceScreen() {
         </GlassSurface>
 
         {/* ================= 2. APARIENCIA DE LA APP ================= */}
-        <GlassSurface radius={28} isDark={isDark} borderColor={glassBorder} style={[styles.card, { padding: isNarrow ? 16 : 22 }]}>
+        <GlassSurface radius={28} isDark={isDark} borderColor={glassBorder} style={[styles.card, { padding: isMobile ? 16 : 22 }]}>
           <SectionTitle icon={Palette} title="Apariencia de la App" />
 
           {/* Temas Base */}
           <View style={{ marginBottom: 26 }}>
             <SubHeading>Tema Principal</SubHeading>
-            <View style={[styles.themeGrid, isNarrow && { flexWrap: 'wrap' }]}>
+            <View style={[styles.themeGrid, isMobile && { flexWrap: 'wrap' }]}>
               {BASE_THEMES.map(mode => {
                 const isActive = themePreference === mode.id && !isTestingTheme && !isSpecialActive;
                 const ModeIcon = mode.icon;
@@ -724,7 +750,7 @@ export default function AppearanceScreen() {
                     onPress={() => handleThemeClick(mode.id)}
                     style={({ pressed }) => [
                       styles.themeTileWrap,
-                      isNarrow && { width: '48%', flex: undefined, marginBottom: 8 },
+                      isMobile && { width: '48%', flex: undefined, marginBottom: 8 },
                       { transform: [{ scale: pressed ? 0.96 : isActive ? 1.04 : 1 }] },
                     ]}
                   >
@@ -1152,10 +1178,45 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
   },
+  variantButtonsRowMobile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
+    width: '100%',
+  },
+  pillFullWidth: {
+    paddingVertical: 9,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  pillFullWidthText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   galaxySwitchContainer: {
     marginTop: 10,
-    paddingTop: 6,
+    paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  galaxySwitchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    paddingHorizontal: 0,
+    gap: 8,
+  },
+  galaxySwitchInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
+    marginRight: 6,
   },
 
   pillLarge: {

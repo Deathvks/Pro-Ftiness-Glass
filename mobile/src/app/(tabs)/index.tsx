@@ -165,6 +165,9 @@ export default function Dashboard() {
   const bodyWeightLog = useAppStore(state => state.bodyWeightLog) || [];
   const routines = useAppStore(state => state.routines) || [];
   const activeWorkout = useAppStore(state => state.activeWorkout);
+  const workoutStartTime = useAppStore(state => state.workoutStartTime);
+  const workoutAccumulatedTime = useAppStore(state => state.workoutAccumulatedTime);
+  const isWorkoutPaused = useAppStore(state => state.isWorkoutPaused);
   const workoutLog = useAppStore(state => state.workoutLog) || [];
   const completedRoutineIdsToday = useAppStore(state => state.completedRoutineIdsToday) || [];
   const startWorkout = useAppStore(state => state.startWorkout);
@@ -174,6 +177,17 @@ export default function Dashboard() {
   const updateTodayBodyWeight = useAppStore(state => state.updateTodayBodyWeight);
   const addGamificationEvents = useAppStore(state => state.addGamificationEvents);
   const fetchDataForDate = useAppStore(state => state.fetchDataForDate);
+
+  // El entrenamiento solo cuenta como activo y visible a partir del segundo 1
+  const isWorkoutTimerActive = useMemo(() => {
+    if (!activeWorkout) return false;
+    const accumulated = workoutAccumulatedTime || 0;
+    if (!workoutStartTime || isWorkoutPaused) {
+      return accumulated >= 1;
+    }
+    const current = Math.floor((Date.now() - workoutStartTime) / 1000);
+    return (accumulated + current) >= 1;
+  }, [activeWorkout, workoutStartTime, workoutAccumulatedTime, isWorkoutPaused]);
 
   const nutritionLog = useAppStore(state => state.nutritionLog) || [];
   const waterLog = useAppStore(state => state.waterLog);
@@ -491,7 +505,7 @@ export default function Dashboard() {
   };
 
   const handleStartCardio = (name: string) => {
-    if (activeWorkout) {
+    if (activeWorkout && isWorkoutTimerActive) {
       Alert.alert(
         'Entrenamiento en curso',
         `Ya tienes una sesión activa (${activeWorkout.routineName || 'Entrenamiento'}). ¿Deseas volver a ella o descartarla para iniciar este cardio?`,
@@ -655,8 +669,8 @@ export default function Dashboard() {
         </View>
       </TouchableOpacity>
 
-      {/* 3. BANNER DE ENTRENAMIENTO EN CURSO */}
-      {activeWorkout && (
+      {/* 3. BANNER DE ENTRENAMIENTO EN CURSO (solo si el cronómetro ha iniciado >= 1s) */}
+      {activeWorkout && isWorkoutTimerActive && (
         <View style={{ marginBottom: 16 }}>
           <View
             style={[
@@ -1171,7 +1185,7 @@ export default function Dashboard() {
                     router.push('/workout');
                     return;
                   }
-                  if (activeWorkout) {
+                  if (activeWorkout && isWorkoutTimerActive) {
                     Alert.alert(
                       'Entrenamiento en curso',
                       `Ya tienes una sesión activa (${activeWorkout.routineName || 'Entrenamiento'}). ¿Deseas volver a ella o descartarla para iniciar "${routine.name}"?`,

@@ -106,6 +106,19 @@ export function TemplateRoutinesView() {
   const startWorkout = useAppStore(state => state.startWorkout);
   const stopWorkout = useAppStore(state => state.stopWorkout);
   const activeWorkout = useAppStore(state => state.activeWorkout);
+  const workoutStartTime = useAppStore(state => (state as any).workoutStartTime);
+  const workoutAccumulatedTime = useAppStore(state => (state as any).workoutAccumulatedTime);
+  const isWorkoutPaused = useAppStore(state => (state as any).isWorkoutPaused);
+
+  const isWorkoutTimerActive = useMemo(() => {
+    if (!activeWorkout) return false;
+    const accumulated = workoutAccumulatedTime || 0;
+    if (!workoutStartTime || isWorkoutPaused) {
+      return accumulated >= 1;
+    }
+    const current = Math.floor((Date.now() - workoutStartTime) / 1000);
+    return (accumulated + current) >= 1;
+  }, [activeWorkout, workoutStartTime, workoutAccumulatedTime, isWorkoutPaused]);
 
   const [query, setQuery] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string>('all');
@@ -184,27 +197,32 @@ export function TemplateRoutinesView() {
         router.push('/workout');
         return;
       }
-      Alert.alert(
-        'Entrenamiento en curso',
-        `Ya tienes una sesión activa (${activeWorkout.routineName || 'Entrenamiento'}). ¿Deseas volver a ella o descartarla para iniciar la plantilla "${template.name}"?`,
-        [
-          {
-            text: 'Volver a la sesión',
-            onPress: () => router.push('/workout'),
-          },
-          {
-            text: 'Descartar e iniciar plantilla',
-            style: 'destructive',
-            onPress: async () => {
-              if (stopWorkout) stopWorkout();
-              if (startWorkout) await startWorkout(routineObj);
-              router.push('/workout');
+      if (isWorkoutTimerActive) {
+        Alert.alert(
+          'Entrenamiento en curso',
+          `Ya tienes una sesión activa (${activeWorkout.routineName || 'Entrenamiento'}). ¿Deseas volver a ella o descartarla para iniciar la plantilla "${template.name}"?`,
+          [
+            {
+              text: 'Volver a la sesión',
+              onPress: () => router.push('/workout'),
             },
-          },
-          { text: 'Cancelar', style: 'cancel' },
-        ]
-      );
-      return;
+            {
+              text: 'Descartar e iniciar plantilla',
+              style: 'destructive',
+              onPress: async () => {
+                if (stopWorkout) stopWorkout();
+                if (startWorkout) await startWorkout(routineObj);
+                router.push('/workout');
+              },
+            },
+            { text: 'Cancelar', style: 'cancel' },
+          ]
+        );
+        return;
+      } else {
+        // Cronómetro no iniciado (0s): descartar silenciosamente la anterior y abrir la nueva
+        if (stopWorkout) stopWorkout();
+      }
     }
 
     if (startWorkout) {
