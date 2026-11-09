@@ -100,95 +100,112 @@ interface ChallengeCardProps {
 }
 
 function ChallengeCard({ challenge, isDark, colors }: ChallengeCardProps) {
-  const percentage = Math.min((challenge.progress / challenge.target) * 100, 100);
-  const isCompleted = challenge.completed;
+  const isCompleted = Boolean(challenge.completed);
+  const target = challenge.target || 1;
+  const progress = isCompleted ? target : (challenge.progress || 0);
+  const percentage = isCompleted
+    ? 100
+    : Math.min(Math.round((progress / target) * 100), 100);
 
   return (
     <View
       style={[
         styles.challengeCard,
         {
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+          backgroundColor: isCompleted
+            ? colors.tint + '1E'
+            : isDark
+            ? 'rgba(255, 255, 255, 0.05)'
+            : 'rgba(0, 0, 0, 0.03)',
           borderColor: isCompleted
-            ? colors.tint + '44'
+            ? colors.tint + '55'
             : isDark
             ? 'rgba(255, 255, 255, 0.08)'
             : 'rgba(0, 0, 0, 0.05)',
         },
       ]}
     >
-      {/* Sutil relleno de progreso de fondo */}
+      {/* Sutil relleno de progreso de fondo que cubre toda la tarjeta cuando está completada */}
       <View
         pointerEvents="none"
         style={[
           styles.cardProgressFill,
+          isCompleted
+            ? StyleSheet.absoluteFillObject
+            : {
+                top: 0,
+                left: 0,
+                bottom: 0,
+                width: `${percentage}%`,
+              },
           {
-            width: `${percentage}%`,
-            backgroundColor: isCompleted ? colors.tint + '1A' : colors.tint + '0C',
+            backgroundColor: isCompleted ? colors.tint + '1E' : colors.tint + '0E',
           },
         ]}
       />
 
-      <View style={styles.cardHeaderRow}>
-        <View style={{ flex: 1, marginRight: 10 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
-              {challenge.title}
+      <View style={styles.cardInnerContent}>
+        <View style={styles.cardHeaderRow}>
+          <View style={{ flex: 1, marginRight: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+                {challenge.title}
+              </Text>
+              {isCompleted && <CheckCircle2 size={16} color={colors.tint} />}
+            </View>
+            <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>
+              {challenge.desc}
             </Text>
-            {isCompleted && <CheckCircle2 size={16} color={colors.tint} />}
           </View>
-          <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>
-            {challenge.desc}
-          </Text>
-        </View>
 
-        <View
-          style={[
-            styles.xpBadge,
-            {
-              backgroundColor: colors.tint + '1E',
-              borderColor: colors.tint + '33',
-            },
-          ]}
-        >
-          <Text style={[styles.xpBadgeText, { color: colors.tint }]}>
-            +{challenge.xp || 25} XP
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.cardProgressSection}>
-        <View style={styles.progressLabelRow}>
-          <Text
-            style={[
-              styles.progressStatusText,
-              { color: isCompleted ? colors.tint : colors.text },
-            ]}
-          >
-            {isCompleted ? '¡Completado!' : 'Progreso'}
-          </Text>
-          <Text style={[styles.progressCountText, { color: colors.textSecondary }]}>
-            {challenge.progress} / {challenge.target}
-          </Text>
-        </View>
-
-        <View
-          style={[
-            styles.progressBarTrack,
-            {
-              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.35)' : 'rgba(0, 0, 0, 0.08)',
-            },
-          ]}
-        >
           <View
             style={[
-              styles.progressBarFill,
+              styles.xpBadge,
               {
-                width: `${percentage}%`,
-                backgroundColor: isCompleted ? '#10b981' : colors.tint,
+                backgroundColor: colors.tint + '1E',
+                borderColor: colors.tint + '33',
               },
             ]}
-          />
+          >
+            <Text style={[styles.xpBadgeText, { color: colors.tint }]}>
+              +{challenge.xp || 25} XP
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.cardProgressSection}>
+          <View style={styles.progressLabelRow}>
+            <Text
+              style={[
+                styles.progressStatusText,
+                { color: isCompleted ? colors.tint : colors.text },
+              ]}
+            >
+              {isCompleted ? '¡Completado!' : 'Progreso'}
+            </Text>
+            <Text style={[styles.progressCountText, { color: colors.textSecondary }]}>
+              {progress} / {target}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.progressBarTrack,
+              {
+                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.35)' : 'rgba(0, 0, 0, 0.08)',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.progressBarFill,
+                {
+                  width: `${percentage}%`,
+                  backgroundColor: isCompleted ? '#10b981' : colors.tint,
+                },
+              ]}
+            />
+          </View>
         </View>
       </View>
     </View>
@@ -900,9 +917,11 @@ const styles = StyleSheet.create({
   },
   challengeCard: {
     borderRadius: 20,
-    padding: 14,
     borderWidth: 1,
     overflow: 'hidden',
+  },
+  cardInnerContent: {
+    padding: 14,
   },
   cardProgressFill: {
     position: 'absolute',
