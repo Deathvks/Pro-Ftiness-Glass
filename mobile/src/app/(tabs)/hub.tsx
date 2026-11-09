@@ -209,7 +209,7 @@ export default function Hub() {
             title="Soporte"
             description="Ayuda, descargas y app info"
             colors={colors}
-            onPress={() => Alert.alert('Soporte', 'Próximamente en la app móvil')}
+            onPress={() => router.push('/support' as any)}
           />
 
           <HubButton
