@@ -598,6 +598,10 @@ export const getFeed = async (req, res) => {
                       name: myGym.name || null,
                       city: myGym.city || null,
                       address: myGym.address || null,
+                      image: myGym.image || null,
+                      logo: myGym.logo || null,
+                      brand: myGym.brand || null,
+                      brandColor: myGym.brandColor || null,
                       isVerified: !!myGym.isVerified
                   }
                 : null,

@@ -124,6 +124,8 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
   const [sendingRequestId, setSendingRequestId] = useState<any>(null);
   const [showGymModal, setShowGymModal] = useState(false);
   const [gymLogoError, setGymLogoError] = useState(false);
+  const [gymPhotoError, setGymPhotoError] = useState(false);
+  const [gymBgError, setGymBgError] = useState(false);
 
   const scopeRef = useRef(scope);
   const gymFilterRef = useRef(gymFilter);
@@ -132,10 +134,19 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
   // Active gym resolution
   const myCurrentGym = useMemo(() => {
     const fromProfile = parseProfileGym(userProfile?.gym_data);
-    if (fromProfile) return enrichGymWithMedia(fromProfile);
-    if (gymMeta?.myGym) return enrichGymWithMedia(gymMeta.myGym);
-    return null;
+    const fromMeta = gymMeta?.myGym;
+    if (!fromProfile && !fromMeta) return null;
+    return enrichGymWithMedia({
+      ...(fromMeta || {}),
+      ...(fromProfile || {}),
+    });
   }, [userProfile?.gym_data, gymMeta?.myGym]);
+
+  useEffect(() => {
+    setGymPhotoError(false);
+    setGymLogoError(false);
+    setGymBgError(false);
+  }, [myCurrentGym?.name, myCurrentGym?.image, gymMeta?.myGym?.name]);
 
   // Load feed from backend
   const loadFeed = async (
@@ -798,9 +809,11 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
       );
     }
 
-    const activeGym = gymMeta?.myGym || myCurrentGym || {};
+    const activeGym = myCurrentGym || (gymMeta?.myGym ? enrichGymWithMedia(gymMeta.myGym) : null) || {};
     const sameGymCount = gymMeta?.sameGymCount || 0;
     const sameCityCount = gymMeta?.sameCityCount || 0;
+    const gymPhoto = activeGym.image || activeGym.photo;
+    const gymLogo = activeGym.logo;
 
     return (
       <View
@@ -817,6 +830,23 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
           style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
         />
 
+        {/* Ambient gym photo background */}
+        {gymPhoto && !gymBgError ? (
+          <ExpoImage
+            source={{ uri: gymPhoto }}
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                borderRadius: 28,
+                opacity: isDark ? 0.16 : 0.08,
+              },
+            ]}
+            contentFit="cover"
+            onError={() => setGymBgError(true)}
+            transition={200}
+          />
+        ) : null}
+
         {/* Gym info top - Responsive */}
         <View style={styles.gymInfoTopCol}>
           <View style={styles.gymMainInfoWrapper}>
@@ -829,9 +859,29 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                 },
               ]}
             >
-              {activeGym.logo && !gymLogoError ? (
+              {gymPhoto && !gymPhotoError ? (
+                <>
+                  <ExpoImage
+                    source={{ uri: gymPhoto }}
+                    style={styles.gymPhotoCoverImg}
+                    contentFit="cover"
+                    onError={() => setGymPhotoError(true)}
+                    transition={180}
+                  />
+                  {gymLogo && gymLogo !== gymPhoto && !gymLogoError ? (
+                    <View style={styles.gymLogoBadgeCorner}>
+                      <ExpoImage
+                        source={{ uri: gymLogo }}
+                        style={styles.gymLogoBadgeImg}
+                        contentFit="contain"
+                        onError={() => setGymLogoError(true)}
+                      />
+                    </View>
+                  ) : null}
+                </>
+              ) : gymLogo && !gymLogoError ? (
                 <ExpoImage
-                  source={{ uri: activeGym.logo }}
+                  source={{ uri: gymLogo }}
                   style={styles.gymLogoImg}
                   contentFit="contain"
                   onError={() => setGymLogoError(true)}
@@ -1891,14 +1941,36 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   gymBadgeIconBox: {
-    width: 46,
-    height: 46,
+    width: 48,
+    height: 48,
     borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    padding: 6,
+    position: 'relative',
+  },
+  gymPhotoCoverImg: {
+    width: '100%',
+    height: '100%',
+  },
+  gymLogoBadgeCorner: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 6,
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#ffffff',
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gymLogoBadgeImg: {
+    width: '100%',
+    height: '100%',
   },
   gymLogoImg: {
     width: '100%',
