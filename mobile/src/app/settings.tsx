@@ -75,6 +75,15 @@ import * as notificationService from '@/services/notificationService';
 import { logoutUser, disable2FA } from '@/services/authService';
 import { getExerciseList } from '@/services/exerciseService';
 import {
+  subscribeToOfflineDownload,
+  startOfflineDownloadSession,
+  cancelOfflineDownloadSession,
+  deleteOfflineExercises,
+  getOfflineStorageStats,
+  OfflineDownloadState,
+  OfflineStorageStats,
+} from '@/services/offlineExerciseService';
+import {
   SETTINGS_SECTIONS,
   SettingsSection,
   PUSH_OPTIONS,
@@ -184,16 +193,46 @@ export default function SettingsScreen() {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [revokingSessionId, setRevokingSessionId] = useState<number | string | null>(null);
 
-  // Modo offline stats
-  const [offlineDownloaded, setOfflineDownloaded] = useState(false);
-  const [exerciseCount, setExerciseCount] = useState(160);
-  const [isDownloadingOffline, setIsDownloadingOffline] = useState(false);
-  const [offlineProgress, setOfflineProgress] = useState(0);
+  // Modo offline stats sincronizados con el servicio global de descargas
+  const [offlineStats, setOfflineStats] = useState<OfflineStorageStats>({
+    isDownloaded: false,
+    imageCount: 0,
+    exerciseCount: 160,
+    totalBytes: 0,
+    formattedSize: '~45 MB',
+    lastDownloadedAt: null,
+  });
+  const [offlineDownloadState, setOfflineDownloadState] = useState<OfflineDownloadState>({
+    isDownloading: false,
+    progress: { current: 0, total: 100, percent: 0, bytesDownloaded: 0 },
+    error: null,
+    result: null,
+  });
 
-  // Cargar estado inicial almacenado
+  // Suscribirse al servicio de descarga en segundo plano
+  useEffect(() => {
+    const unsub = subscribeToOfflineDownload(state => {
+      setOfflineDownloadState(state);
+      if (!state.isDownloading) {
+        getOfflineStorageStats().then(setOfflineStats).catch(() => {});
+      }
+    });
+    getOfflineStorageStats().then(setOfflineStats).catch(() => {});
+    return () => {
+      if (unsub) unsub();
+    };
+  }, []);
+
+  // Cargar estado inicial almacenado y redirección si venimos de la barra flotante
   useEffect(() => {
     try {
       if (typeof localStorage !== 'undefined') {
+        const targetTab = localStorage.getItem('pfg_settings_target_tab');
+        if (targetTab && SETTINGS_SECTIONS.some(s => s.id === targetTab)) {
+          localStorage.removeItem('pfg_settings_target_tab');
+          setActiveTab(targetTab as any);
+        }
+
         const savedVis = localStorage.getItem('globalWorkoutVisibility');
         if (savedVis === 'public' || savedVis === 'friends' || savedVis === 'private') {
           setWorkoutVisibility(savedVis);
@@ -205,14 +244,6 @@ export default function SettingsScreen() {
         const savedScope = localStorage.getItem('pfg_social_feed_scope');
         if (savedScope === 'global' || savedScope === 'gym' || savedScope === 'friends') {
           setDefaultFeedScope(savedScope);
-        }
-        const savedOffline = localStorage.getItem('pfg_offline_exercises_ready');
-        if (savedOffline === 'true') {
-          setOfflineDownloaded(true);
-        }
-        const savedCount = localStorage.getItem('pfg_offline_exercises_count');
-        if (savedCount) {
-          setExerciseCount(parseInt(savedCount, 10) || 160);
         }
       }
     } catch {}
@@ -426,58 +457,49 @@ export default function SettingsScreen() {
     }
   };
 
-  // Modo offline: descarga real de ejercicios y guardado local
+  // Modo offline: descarga en segundo plano gestionada por el servicio global
   const handleStartOfflineDownload = async () => {
-    if (isDownloadingOffline) return;
-    setIsDownloadingOffline(true);
-    setOfflineProgress(15);
     try {
-      useAppStore.getState().showToast?.('Descargando catálogo completo de ejercicios...');
-      const data = await getExerciseList();
-      const exercises = Array.isArray(data) ? data : [];
-      setOfflineProgress(70);
-
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('pfg_offline_exercises_cache', JSON.stringify(exercises));
-        localStorage.setItem('pfg_offline_exercises_count', String(exercises.length));
-        localStorage.setItem('pfg_offline_exercises_ready', 'true');
-        localStorage.setItem('pfg_offline_exercises_date', new Date().toISOString());
-      }
-      setOfflineProgress(100);
-      setOfflineDownloaded(true);
-      setExerciseCount(exercises.length);
-      useAppStore.getState().showToast?.(`¡Biblioteca offline lista: ${exercises.length} ejercicios guardados!`);
-      try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      useAppStore.getState().showToast?.('Descargando ejercicios en segundo plano...');
+      const res = await startOfflineDownloadSession();
+      if (res) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
-    } catch (err) {
-      console.warn('Error descargando biblioteca offline:', err);
-      Alert.alert('Descarga Offline', 'No se pudieron descargar los ejercicios. Comprueba tu conexión e inténtalo de nuevo.');
-    } finally {
-      setIsDownloadingOffline(false);
+        useAppStore.getState().showToast?.(`¡Biblioteca offline lista: ${res.exerciseCount} ejercicios guardados!`);
+      }
+    } catch (err: any) {
+      if (err?.message !== 'Descarga cancelada') {
+        Alert.alert('Descarga Offline', 'No se pudieron descargar los ejercicios. Comprueba tu conexión a internet.');
+      }
     }
+  };
+
+  const handleCancelOfflineDownload = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    cancelOfflineDownloadSession();
+    useAppStore.getState().showToast?.('Descarga cancelada.');
   };
 
   const handleDeleteOfflineCache = () => {
     Alert.alert(
       'Liberar espacio offline',
-      '¿Seguro que deseas eliminar todos los ejercicios guardados en la memoria local?',
+      '¿Seguro que deseas eliminar todos los ejercicios y recursos multimedia guardados en la memoria local?',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Eliminar y liberar espacio',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             try {
-              if (typeof localStorage !== 'undefined') {
-                localStorage.removeItem('pfg_offline_exercises_cache');
-                localStorage.removeItem('pfg_offline_exercises_count');
-                localStorage.removeItem('pfg_offline_exercises_ready');
-                localStorage.removeItem('pfg_offline_exercises_date');
-              }
-            } catch {}
-            setOfflineDownloaded(false);
-            useAppStore.getState().showToast?.('Espacio offline liberado correctamente.');
+              await deleteOfflineExercises();
+              const stats = await getOfflineStorageStats();
+              setOfflineStats(stats);
+              useAppStore.getState().showToast?.('Espacio offline liberado correctamente.');
+            } catch {
+              Alert.alert('Error', 'No se pudo liberar el espacio offline.');
+            }
           },
         },
       ]
@@ -773,7 +795,9 @@ export default function SettingsScreen() {
                           Modo sin conexión y Búnker
                         </Text>
                         <Text style={[styles.rowItemSubtitle, { color: colors.textSecondary }]}>
-                          {offlineDownloaded ? 'Biblioteca offline guardada (~45 MB)' : 'Descarga los ejercicios para entrenar sin cobertura'}
+                          {offlineStats.isDownloaded
+                            ? `Biblioteca offline guardada (${offlineStats.formattedSize})`
+                            : 'Descarga los ejercicios para entrenar sin cobertura'}
                         </Text>
                       </View>
                       <ChevronRight size={18} color={colors.textSecondary} />
@@ -861,37 +885,37 @@ export default function SettingsScreen() {
                     ]}
                   >
                     <View style={styles.storageStatusHeader}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, marginRight: 8 }}>
                         <View
                           style={[
                             styles.statusDotBox,
                             {
-                              backgroundColor: offlineDownloaded
+                              backgroundColor: offlineStats.isDownloaded
                                 ? 'rgba(16, 185, 129, 0.2)'
-                                : isDownloadingOffline
+                                : offlineDownloadState.isDownloading
                                 ? colors.tint + '20'
                                 : 'rgba(245, 158, 11, 0.2)',
                             },
                           ]}
                         >
-                          {offlineDownloaded ? (
+                          {offlineStats.isDownloaded ? (
                             <CheckCircle2 size={20} color="#10b981" />
-                          ) : isDownloadingOffline ? (
-                            <RefreshCw size={20} color={colors.tint} />
+                          ) : offlineDownloadState.isDownloading ? (
+                            <ActivityIndicator size="small" color={colors.tint} />
                           ) : (
                             <AlertCircle size={20} color="#f59e0b" />
                           )}
                         </View>
-                        <View>
-                          <Text style={[styles.storageStatusTitle, { color: colors.text }]}>
-                            {isDownloadingOffline
-                              ? `Descargando... ${offlineProgress}%`
-                              : offlineDownloaded
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.storageStatusTitle, { color: colors.text }]} numberOfLines={1}>
+                            {offlineDownloadState.isDownloading
+                              ? `Descargando... ${offlineDownloadState.progress.percent}%`
+                              : offlineStats.isDownloaded
                               ? 'Biblioteca offline lista'
                               : 'Sin descargar en este dispositivo'}
                           </Text>
-                          <Text style={[styles.storageStatusSub, { color: colors.textSecondary }]}>
-                            Memoria interna local del dispositivo
+                          <Text style={[styles.storageStatusSub, { color: colors.textSecondary }]} numberOfLines={1}>
+                            Almacenamiento interno local del dispositivo
                           </Text>
                         </View>
                       </View>
@@ -900,8 +924,10 @@ export default function SettingsScreen() {
                         style={[
                           styles.storagePill,
                           {
-                            backgroundColor: offlineDownloaded
+                            backgroundColor: offlineStats.isDownloaded
                               ? 'rgba(16, 185, 129, 0.15)'
+                              : offlineDownloadState.isDownloading
+                              ? colors.tint + '20'
                               : 'rgba(245, 158, 11, 0.15)',
                           },
                         ]}
@@ -909,78 +935,271 @@ export default function SettingsScreen() {
                         <Text
                           style={[
                             styles.storagePillText,
-                            { color: offlineDownloaded ? '#10b981' : '#f59e0b' },
+                            {
+                              color: offlineStats.isDownloaded
+                                ? '#10b981'
+                                : offlineDownloadState.isDownloading
+                                ? colors.tint
+                                : '#f59e0b',
+                            },
                           ]}
                         >
-                          {offlineDownloaded ? 'Disponible' : 'Pendiente'}
+                          {offlineStats.isDownloaded
+                            ? 'Disponible'
+                            : offlineDownloadState.isDownloading
+                            ? `${offlineDownloadState.progress.percent}%`
+                            : 'No descargado'}
                         </Text>
                       </View>
                     </View>
 
-                    {/* Métricas */}
+                    {/* Métricas Responsivas (2x2 en móviles, 4x1 en tablets) */}
                     <View style={styles.metricsGrid}>
-                      <View style={[styles.metricItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }]}>
+                      <View
+                        style={[
+                          styles.metricItem,
+                          {
+                            width: isMobile ? '48.5%' : '23.5%',
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                          },
+                        ]}
+                      >
                         <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>EJERCICIOS</Text>
                         <Text style={[styles.metricValue, { color: colors.text }]}>
-                          {offlineDownloaded ? exerciseCount : `${exerciseCount}+`}
+                          {offlineStats.isDownloaded ? offlineStats.exerciseCount : '160+'}
                         </Text>
                         <Text style={[styles.metricSub, { color: colors.textSecondary }]}>
-                          {offlineDownloaded ? 'Guardados' : 'Disponibles'}
+                          {offlineStats.isDownloaded ? 'Guardados' : 'Disponibles'}
                         </Text>
                       </View>
-                      <View style={[styles.metricItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }]}>
+
+                      <View
+                        style={[
+                          styles.metricItem,
+                          {
+                            width: isMobile ? '48.5%' : '23.5%',
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                          },
+                        ]}
+                      >
                         <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>MULTIMEDIA</Text>
-                        <Text style={[styles.metricValue, { color: colors.text }]}>GIFs / Vídeos</Text>
-                        <Text style={[styles.metricSub, { color: colors.textSecondary }]}>Técnicas HD</Text>
-                      </View>
-                      <View style={[styles.metricItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }]}>
-                        <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>ESPACIO</Text>
-                        <Text style={[styles.metricValue, { color: colors.text }]}>~45 MB</Text>
-                        <Text style={[styles.metricSub, { color: colors.textSecondary }]}>Memoria local</Text>
-                      </View>
-                      <View style={[styles.metricItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }]}>
-                        <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>ESTADO</Text>
-                        <Text style={[styles.metricValue, { color: offlineDownloaded ? '#10b981' : '#f59e0b' }]}>
-                          {offlineDownloaded ? 'Activo' : 'Sin bajar'}
+                        <Text style={[styles.metricValue, { color: colors.text }]}>
+                          {offlineStats.isDownloaded ? `${offlineStats.imageCount} items` : 'GIFs / HD'}
                         </Text>
-                        <Text style={[styles.metricSub, { color: colors.textSecondary }]}>Almacén</Text>
+                        <Text style={[styles.metricSub, { color: colors.textSecondary }]}>
+                          {offlineStats.isDownloaded ? 'En caché local' : 'Para descargar'}
+                        </Text>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.metricItem,
+                          {
+                            width: isMobile ? '48.5%' : '23.5%',
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                          },
+                        ]}
+                      >
+                        <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>ESPACIO</Text>
+                        <Text style={[styles.metricValue, { color: colors.text }]}>
+                          {offlineStats.isDownloaded ? offlineStats.formattedSize : '~45 MB'}
+                        </Text>
+                        <Text style={[styles.metricSub, { color: colors.textSecondary }]}>
+                          {offlineStats.isDownloaded ? 'En memoria' : 'Descarga WiFi'}
+                        </Text>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.metricItem,
+                          {
+                            width: isMobile ? '48.5%' : '23.5%',
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                          },
+                        ]}
+                      >
+                        <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>ESTADO</Text>
+                        <Text
+                          style={[
+                            styles.metricValue,
+                            { color: offlineStats.isDownloaded ? '#10b981' : '#f59e0b' },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {offlineStats.isDownloaded
+                            ? offlineStats.lastDownloadedAt
+                              ? new Date(offlineStats.lastDownloadedAt).toLocaleDateString()
+                              : 'Activo'
+                            : 'Pendiente'}
+                        </Text>
+                        <Text style={[styles.metricSub, { color: colors.textSecondary }]}>
+                          {offlineStats.isDownloaded ? 'Última sinc.' : 'Sin bajar'}
+                        </Text>
                       </View>
                     </View>
+
+                    {/* Banners informativos como en el frontend */}
+                    {!offlineStats.isDownloaded && !offlineDownloadState.isDownloading && (
+                      <View
+                        style={[
+                          styles.bannerBox,
+                          {
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            borderColor: 'rgba(245, 158, 11, 0.25)',
+                          },
+                        ]}
+                      >
+                        <Sparkles size={18} color="#f59e0b" style={{ marginTop: 2 }} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.bannerTitle, { color: '#f59e0b' }]}>
+                            Biblioteca lista para descargar
+                          </Text>
+                          <Text style={[styles.bannerText, { color: colors.textSecondary }]}>
+                            Al pulsar el botón inferior se guardarán los ~160 ejercicios y recursos (~45 MB) en la memoria de tu dispositivo. Podrás consultar técnicas y animaciones sin cobertura ni gastar datos.
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+
+                    {offlineStats.isDownloaded && !offlineDownloadState.isDownloading && (
+                      <View
+                        style={[
+                          styles.bannerBox,
+                          {
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderColor: 'rgba(16, 185, 129, 0.25)',
+                          },
+                        ]}
+                      >
+                        <CheckCircle2 size={18} color="#10b981" style={{ marginTop: 2 }} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.bannerTitle, { color: '#10b981' }]}>
+                            Modo sin conexión activo (0 ms de espera)
+                          </Text>
+                          <Text style={[styles.bannerText, { color: colors.textSecondary }]}>
+                            Tienes {offlineStats.exerciseCount} ejercicios guardados localmente ({offlineStats.formattedSize}). Funcionan con fluidez inmediata en sótanos sin cobertura o modo avión.
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Barra de progreso interactiva si está descargando */}
+                    {offlineDownloadState.isDownloading && (
+                      <View style={styles.downloadingContainer}>
+                        <View style={styles.downloadingHeaderRow}>
+                          <Text style={[styles.downloadingHeaderLeft, { color: colors.textSecondary }]}>
+                            Descargando recursos ({offlineDownloadState.progress.current} de{' '}
+                            {offlineDownloadState.progress.total})...
+                          </Text>
+                          <Text style={[styles.downloadingHeaderRight, { color: colors.tint }]}>
+                            {offlineDownloadState.progress.percent}%
+                          </Text>
+                        </View>
+
+                        <View
+                          style={[
+                            styles.downloadingProgressBarTrack,
+                            {
+                              backgroundColor: isDark
+                                ? 'rgba(255, 255, 255, 0.1)'
+                                : 'rgba(0, 0, 0, 0.08)',
+                            },
+                          ]}
+                        >
+                          <View
+                            style={[
+                              styles.downloadingProgressBarFill,
+                              {
+                                width: `${offlineDownloadState.progress.percent}%`,
+                                backgroundColor: colors.tint,
+                              },
+                            ]}
+                          />
+                        </View>
+
+                        <View style={styles.downloadingFooterRow}>
+                          <Text style={[styles.downloadingFooterText, { color: colors.textSecondary }]}>
+                            Memoria guardada:{' '}
+                            {(
+                              (offlineDownloadState.progress.bytesDownloaded || 0) /
+                              (1024 * 1024)
+                            ).toFixed(1)}{' '}
+                            MB
+                          </Text>
+                          <TouchableOpacity
+                            onPress={handleCancelOfflineDownload}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={styles.cancelDownloadText}>Cancelar descarga</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
 
                     {/* Acciones de descarga */}
                     <View style={styles.offlineActionsRow}>
-                      {!offlineDownloaded && !isDownloadingOffline && (
+                      {offlineDownloadState.isDownloading ? (
+                        <View
+                          style={[
+                            styles.primaryActionBtn,
+                            { backgroundColor: colors.tint, opacity: 0.75 },
+                          ]}
+                        >
+                          <ActivityIndicator
+                            size="small"
+                            color={activeTintContrast}
+                            style={{ marginRight: 8 }}
+                          />
+                          <Text style={[styles.primaryActionBtnText, { color: activeTintContrast }]}>
+                            Descargando en segundo plano ({offlineDownloadState.progress.percent}%)
+                          </Text>
+                        </View>
+                      ) : offlineStats.isDownloaded ? (
+                        <View style={styles.offlineButtonsRow}>
+                          <TouchableOpacity
+                            onPress={handleStartOfflineDownload}
+                            activeOpacity={0.8}
+                            style={[
+                              styles.primaryActionBtn,
+                              { flex: 1, backgroundColor: colors.tint },
+                            ]}
+                          >
+                            <RefreshCw
+                              size={18}
+                              color={activeTintContrast}
+                              style={{ marginRight: 6 }}
+                            />
+                            <Text style={[styles.primaryActionBtnText, { color: activeTintContrast }]}>
+                              Actualizar biblioteca
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={handleDeleteOfflineCache}
+                            activeOpacity={0.8}
+                            style={[
+                              styles.dangerActionBtn,
+                              { borderColor: 'rgba(239, 68, 68, 0.3)', paddingHorizontal: 14 },
+                            ]}
+                          >
+                            <Trash2 size={16} color="#ef4444" style={{ marginRight: 6 }} />
+                            <Text style={styles.dangerActionBtnText}>Liberar espacio</Text>
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
                         <TouchableOpacity
                           onPress={handleStartOfflineDownload}
                           activeOpacity={0.8}
                           style={[styles.primaryActionBtn, { backgroundColor: colors.tint }]}
                         >
-                          <Download size={18} color={activeTintContrast} style={{ marginRight: 6 }} />
+                          <Download
+                            size={18}
+                            color={activeTintContrast}
+                            style={{ marginRight: 6 }}
+                          />
                           <Text style={[styles.primaryActionBtnText, { color: activeTintContrast }]}>
                             Descargar biblioteca (~45 MB)
                           </Text>
-                        </TouchableOpacity>
-                      )}
-
-                      {isDownloadingOffline && (
-                        <View style={styles.downloadingProgressBarContainer}>
-                          <View style={[styles.downloadingProgressBarTrack, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)' }]}>
-                            <View style={[styles.downloadingProgressBarFill, { width: `${offlineProgress}%`, backgroundColor: colors.tint }]} />
-                          </View>
-                          <Text style={[styles.downloadingText, { color: colors.textSecondary }]}>
-                            Guardando recursos en memoria... {offlineProgress}%
-                          </Text>
-                        </View>
-                      )}
-
-                      {offlineDownloaded && (
-                        <TouchableOpacity
-                          onPress={handleDeleteOfflineCache}
-                          activeOpacity={0.8}
-                          style={[styles.dangerActionBtn, { borderColor: 'rgba(239, 68, 68, 0.3)' }]}
-                        >
-                          <Trash2 size={16} color="#ef4444" style={{ marginRight: 6 }} />
-                          <Text style={styles.dangerActionBtnText}>Liberar espacio / Borrar caché</Text>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -2034,13 +2253,16 @@ const styles = StyleSheet.create({
   },
   metricsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     gap: 8,
   },
   metricItem: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 16,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   metricLabel: {
     fontSize: 9,
@@ -2048,7 +2270,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   metricValue: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '900',
     marginTop: 2,
   },
@@ -2056,8 +2278,65 @@ const styles = StyleSheet.create({
     fontSize: 9,
     marginTop: 1,
   },
-  offlineActionsRow: {
+  bannerBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
     marginTop: 4,
+  },
+  bannerTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  bannerText: {
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  downloadingContainer: {
+    gap: 6,
+    paddingTop: 4,
+  },
+  downloadingHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  downloadingHeaderLeft: {
+    fontSize: 11,
+    fontWeight: '700',
+    flex: 1,
+  },
+  downloadingHeaderRight: {
+    fontSize: 13,
+    fontWeight: '900',
+    marginLeft: 8,
+  },
+  downloadingFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  downloadingFooterText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  cancelDownloadText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#ef4444',
+  },
+  offlineActionsRow: {
+    marginTop: 6,
+  },
+  offlineButtonsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
   },
   primaryActionBtn: {
     flexDirection: 'row',

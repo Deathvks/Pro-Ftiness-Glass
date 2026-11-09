@@ -15,6 +15,7 @@ import { getThemeBaseBackground } from '@/constants/theme';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { DynamicIslandTimer } from '@/components/workout/DynamicIslandTimer';
 import { RestTimerModal } from '@/components/workout/RestTimerModal';
+import { OfflineDownloadFloatingBar } from '@/components/OfflineDownloadFloatingBar';
 import GalaxyStarBackground from '@/components/ui/GalaxyStarBackground';
 
 SplashScreen.preventAutoHideAsync();
@@ -157,6 +158,7 @@ export default function RootLayout() {
         </Stack>
         <DynamicIslandTimer />
         <RestTimerModal />
+        <OfflineDownloadFloatingBar />
         <ToastContainer />
         <GalaxyStarBackground />
       </ThemeProvider>
