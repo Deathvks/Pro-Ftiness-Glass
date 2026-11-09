@@ -42,68 +42,90 @@ export const Colors = {
   },
   galaxy: {
     background: 'transparent',
-    card: 'rgba(10, 10, 26, 0.65)',
-    text: '#e0e0ff',
-    textSecondary: '#b0b0d0',
-    textMuted: '#8080a0',
+    card: 'rgba(10, 10, 26, 0.70)',
+    text: '#f8fafc',
+    textSecondary: '#94a3b8',
+    textMuted: '#64748b',
     border: 'rgba(168, 85, 247, 0.35)',
     tint: '#a855f7',
-    tabBar: 'rgba(10, 10, 26, 0.85)',
-    tabBarInactive: '#8080a0',
+    tabBar: 'rgba(10, 10, 26, 0.88)',
+    tabBarInactive: '#94a3b8',
     success: '#10B981',
     warning: '#fbbf24',
   },
   ocean: {
     background: 'transparent',
-    card: 'rgba(255, 255, 255, 0.65)',
-    text: '#0f172a',
-    textSecondary: '#475569',
-    textMuted: '#94a3b8',
-    border: 'rgba(255, 255, 255, 0.3)',
+    card: 'rgba(240, 249, 255, 0.75)',
+    text: '#082f49',
+    textSecondary: '#0c4a6e',
+    textMuted: '#0284c7',
+    border: 'rgba(14, 165, 233, 0.35)',
     tint: '#0ea5e9',
-    tabBar: 'rgba(240, 249, 255, 0.85)',
-    tabBarInactive: '#94a3b8',
+    tabBar: 'rgba(240, 249, 255, 0.92)',
+    tabBarInactive: '#0c4a6e',
     success: '#10B981',
     warning: '#f59e0b',
   },
   'ocean-dark': {
     background: 'transparent',
-    card: 'rgba(12, 74, 110, 0.65)',
+    card: 'rgba(8, 47, 73, 0.75)',
     text: '#f0f9ff',
     textSecondary: '#bae6fd',
     textMuted: '#7dd3fc',
-    border: 'rgba(14, 165, 233, 0.2)',
-    tint: '#38bdf8',
-    tabBar: 'rgba(8, 47, 73, 0.85)',
+    border: 'rgba(14, 165, 233, 0.35)',
+    tint: '#0ea5e9',
+    tabBar: 'rgba(8, 47, 73, 0.90)',
     tabBarInactive: '#7dd3fc',
     success: '#10B981',
     warning: '#f59e0b',
   },
   desert: {
     background: 'transparent',
-    card: 'rgba(255, 255, 255, 0.65)',
-    text: '#451a03',
-    textSecondary: '#78350f',
-    textMuted: '#b45309',
-    border: 'rgba(251, 191, 36, 0.3)',
-    tint: '#d97706',
-    tabBar: 'rgba(254, 252, 232, 0.85)',
-    tabBarInactive: '#b45309',
+    card: 'rgba(253, 248, 245, 0.75)',
+    text: '#5c4033',
+    textSecondary: '#8b5a2b',
+    textMuted: '#cd853f',
+    border: 'rgba(210, 180, 140, 0.35)',
+    tint: '#d2b48c',
+    tabBar: 'rgba(253, 248, 245, 0.92)',
+    tabBarInactive: '#8b5a2b',
     success: '#10B981',
     warning: '#f59e0b',
   },
   'desert-dark': {
     background: 'transparent',
-    card: 'rgba(69, 26, 3, 0.65)',
-    text: '#fefce8',
-    textSecondary: '#fde047',
-    textMuted: '#fcd34d',
-    border: 'rgba(245, 158, 11, 0.2)',
-    tint: '#fbbf24',
-    tabBar: 'rgba(23, 23, 23, 0.85)',
-    tabBarInactive: '#fcd34d',
+    card: 'rgba(44, 30, 22, 0.75)',
+    text: '#f5deb3',
+    textSecondary: '#deb887',
+    textMuted: '#d2b48c',
+    border: 'rgba(210, 180, 140, 0.35)',
+    tint: '#d2b48c',
+    tabBar: 'rgba(44, 30, 22, 0.90)',
+    tabBarInactive: '#deb887',
     success: '#10B981',
     warning: '#f59e0b',
+  }
+};
+
+export const getThemeBaseBackground = (theme: string): string => {
+  switch (theme) {
+    case 'desert':
+      return '#fdf8f5';
+    case 'desert-dark':
+      return '#2c1e16';
+    case 'ocean':
+      return '#f0f9ff';
+    case 'ocean-dark':
+      return '#082f49';
+    case 'galaxy':
+      return '#080814';
+    case 'light':
+      return '#F3F4F6';
+    case 'oled':
+      return '#000000';
+    case 'dark':
+    default:
+      return '#0f172a';
   }
 };
 export const MaxContentWidth = 960;

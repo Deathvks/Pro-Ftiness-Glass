@@ -59,6 +59,11 @@ const useAppStore = create((set, get) => ({
         if (haptics !== null) {
             try { set({ hapticsEnabled: JSON.parse(haptics) }); } catch(e){}
         }
+
+        const galaxyEffects = localStorage.getItem('galaxyEffectsEnabled');
+        if (galaxyEffects !== null) {
+            try { set({ galaxyEffectsEnabled: JSON.parse(galaxyEffects) }); } catch(e){}
+        }
         
                 const tours = ['tourCompleted', 'nutritionTourCompleted', 'routineTourCompleted', 'socialTourCompleted', 'hubTourCompleted'];
         tours.forEach(tour => {
@@ -146,6 +151,13 @@ const useAppStore = create((set, get) => ({
     setAccent: (accent) => {
         set({ accent });
         if (typeof localStorage !== 'undefined') if (typeof localStorage !== 'undefined') localStorage.setItem('accent', accent);
+    },
+    galaxyEffectsEnabled: (typeof localStorage !== 'undefined' && localStorage.getItem('galaxyEffectsEnabled') !== null)
+        ? localStorage.getItem('galaxyEffectsEnabled') === 'true'
+        : true,
+    setGalaxyEffectsEnabled: (enabled) => {
+        set({ galaxyEffectsEnabled: enabled });
+        if (typeof localStorage !== 'undefined') localStorage.setItem('galaxyEffectsEnabled', JSON.stringify(enabled));
     },
     ...createAuthSlice(set, get),
     ...createDataSlice(set, get),

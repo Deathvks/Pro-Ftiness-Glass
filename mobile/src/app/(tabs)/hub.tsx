@@ -22,7 +22,7 @@ import {
   ChevronRight 
 } from 'lucide-react-native';
 
-const HubButton = ({ icon: Icon, title, description, onPress, badge = false, isComingSoon = false, colors }: any) => {
+const HubButton = ({ icon: Icon, title, description, onPress, badge = false, isComingSoon = false, colors, rightContent }: any) => {
   const theme = useAppStore(state => state.theme) || 'oled';
   return (
     <GlassButton
@@ -63,16 +63,36 @@ const HubButton = ({ icon: Icon, title, description, onPress, badge = false, isC
         )}
       </View>
     </View>
-    <ChevronRight size={20} color={colors.textSecondary} style={{ opacity: 0.5 }} />
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+      {rightContent}
+      <ChevronRight size={20} color={colors.textSecondary} style={{ opacity: 0.5 }} />
+    </View>
   </GlassButton>
   );
 };
 
 export default function Hub() {
   const setTheme = useAppStore(state => state.setTheme);
+  const theme = useAppStore(state => state.theme);
+  const themePreference = useAppStore(state => state.themePreference);
   const colors = useAppColors();
   const userProfile = useAppStore(state => state.userProfile);
   const router = useRouter();
+
+  const getThemeLabel = (t: string) => {
+    switch (t) {
+      case 'galaxy': return 'Galaxia';
+      case 'desert': return 'Desierto';
+      case 'desert-dark': return 'Desierto';
+      case 'ocean': return 'Océano';
+      case 'ocean-dark': return 'Océano';
+      case 'oled': return 'OLED';
+      case 'dark': return 'Oscuro';
+      case 'light': return 'Claro';
+      case 'system': return 'Sistema';
+      default: return 'Tema';
+    }
+  };
   
   const isAdmin = userProfile?.role === 'admin';
   const isTrainer = userProfile?.role === 'trainer' || isAdmin;
@@ -148,6 +168,30 @@ export default function Hub() {
             description="Temas, acentos y colores"
             colors={colors}
             onPress={() => router.push('/appearance')}
+            rightContent={
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginRight: 4 }}>
+                <View style={{
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderRadius: 12,
+                  backgroundColor: colors.tint + '1A',
+                  borderWidth: 1,
+                  borderColor: colors.tint + '33',
+                }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: colors.tint }}>
+                    {getThemeLabel(themePreference || theme)}
+                  </Text>
+                </View>
+                <View style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: 6,
+                  backgroundColor: colors.tint,
+                  borderWidth: 2,
+                  borderColor: 'rgba(255, 255, 255, 0.4)',
+                }} />
+              </View>
+            }
           />
 
           <HubButton

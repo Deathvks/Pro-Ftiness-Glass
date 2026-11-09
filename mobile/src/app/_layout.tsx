@@ -10,6 +10,7 @@ import { initLocalStorage } from '@/utils/localStoragePolyfill';
 import useAppStore, { resolveTheme, applyNativeColorScheme } from '@/store/useAppStore';
 import ThemeBackground from '@/components/ThemeBackground';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getThemeBaseBackground } from '@/constants/theme';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { DynamicIslandTimer } from '@/components/workout/DynamicIslandTimer';
 import { RestTimerModal } from '@/components/workout/RestTimerModal';
@@ -133,7 +134,7 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background === 'transparent' ? (isDark ? '#0a0a1a' : '#f8fafc') : colors.background }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background }}>
       <ThemeProvider value={NavigationTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <ThemeBackground />
