@@ -35,9 +35,9 @@ const TAB_CONFIG: Record<string, { label: string; icon: any }> = {
 };
 
 const TAB_KEYS = ['index', 'social', 'nutrition', 'routines', 'hub'];
-const PADDING_H = 8;
-const DROP_WIDTH = 50;
-const DROP_HEIGHT = 44;
+const PADDING_H = 10;
+const DROP_WIDTH = 44;
+const DROP_HEIGHT = 42;
 
 export function FloatingLiquidGlassTabBar({
   state,
@@ -93,8 +93,8 @@ export function FloatingLiquidGlassTabBar({
       }),
       Animated.sequence([
         Animated.parallel([
-          Animated.timing(scaleX, { toValue: 1.20, duration: 110, useNativeDriver: true }),
-          Animated.timing(scaleY, { toValue: 0.82, duration: 110, useNativeDriver: true }),
+          Animated.timing(scaleX, { toValue: 0.90, duration: 100, useNativeDriver: true }),
+          Animated.timing(scaleY, { toValue: 0.90, duration: 100, useNativeDriver: true }),
         ]),
         Animated.parallel([
           Animated.spring(scaleX, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true }),
@@ -156,8 +156,8 @@ export function FloatingLiquidGlassTabBar({
 
         // Tensión líquida al presionar y arrastrar
         Animated.parallel([
-          Animated.timing(scaleX, { toValue: 1.24, duration: 90, useNativeDriver: true }),
-          Animated.timing(scaleY, { toValue: 0.80, duration: 90, useNativeDriver: true }),
+          Animated.timing(scaleX, { toValue: 0.90, duration: 80, useNativeDriver: true }),
+          Animated.timing(scaleY, { toValue: 0.90, duration: 80, useNativeDriver: true }),
         ]).start();
       },
       onPanResponderMove: (_evt, gestureState) => {
@@ -399,9 +399,9 @@ const styles = StyleSheet.create({
   },
   liquidDrop: {
     position: 'absolute',
-    top: 7, // (60 - 44) / 2 = 8, 7 para alineación óptica vertical perfecta
+    top: 9, // (60 - 42) / 2 = 9
     left: 0,
-    borderRadius: 22,
+    borderRadius: 21,
     borderWidth: 1,
     borderTopWidth: 1.5,
     overflow: 'hidden',
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
   },
   liquidDropGradient: {
     ...StyleSheet.absoluteFill,
-    borderRadius: 22,
+    borderRadius: 21,
   },
   tabButton: {
     flex: 1,
