@@ -20,8 +20,15 @@ export default function AppTabs() {
         tabBar={(props) => <FloatingLiquidGlassTabBar {...props} />}
         screenOptions={{
           headerShown: false,
+          tabBarShowLabel: false,
           tabBarStyle: {
-            display: 'none',
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: 'transparent',
+            elevation: 0,
+            borderTopWidth: 0,
           },
         }}
       >
