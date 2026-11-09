@@ -32,6 +32,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -307,39 +308,13 @@ export function RoutineVolumeFilterModal({
   if (!visible) return null;
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View
-          style={[
-            styles.modalCard,
-            {
-              backgroundColor: isIOS
-                ? (isDark ? '#1C1C1E' : '#F2F2F7')
-                : (isDark ? 'rgba(20, 20, 22, 0.96)' : 'rgba(250, 250, 252, 0.98)'),
-              borderColor: isIOS ? 'transparent' : colors.border,
-              borderWidth: isIOS ? 0 : 1,
-            },
-          ]}
-        >
-          {shouldUseContentGlass(theme) && (
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-            />
-          )}
-
-          <View style={styles.grabberContainer}>
-            <View
-              style={[
-                styles.grabber,
-                { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' },
-              ]}
-            />
-          </View>
-
-          <View style={[styles.modalHeader, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+    <SwipeableBottomSheet
+      visible={visible}
+      onClose={onClose}
+      isDark={isDark}
+      backgroundColor={isDark ? '#141418' : '#FAFAFC'}
+    >
+      <View style={[styles.modalHeader, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.modalTitle, { color: colors.text }, isIOS && { fontWeight: '700' }]}>
                 Recuento Semanal de Series
@@ -513,9 +488,7 @@ export function RoutineVolumeFilterModal({
               );
             })}
           </ScrollView>
-        </View>
-      </View>
-    </Modal>
+    </SwipeableBottomSheet>
   );
 }
 
@@ -909,39 +882,13 @@ export function WeeklyMuscleVolumeCard({
 
       {/* Modal Desglose por Músculo */}
       {selectedMuscle && (
-        <Modal visible transparent animationType="slide" onRequestClose={() => setSelectedMuscle(null)}>
-          <View style={styles.modalOverlay}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setSelectedMuscle(null)} />
-            <View
-              style={[
-                styles.modalCard,
-                {
-                  backgroundColor: isIOS
-                    ? (isDark ? '#1C1C1E' : '#F2F2F7')
-                    : (isDark ? 'rgba(20, 20, 22, 0.96)' : 'rgba(250, 250, 252, 0.98)'),
-                  borderColor: isIOS ? 'transparent' : colors.border,
-                  borderWidth: isIOS ? 0 : 1,
-                },
-              ]}
-            >
-              {shouldUseContentGlass(theme) && (
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-                />
-              )}
-
-              <View style={styles.grabberContainer}>
-                <View
-                  style={[
-                    styles.grabber,
-                    { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' },
-                  ]}
-                />
-              </View>
-
-              <View style={[styles.modalHeader, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+        <SwipeableBottomSheet
+          visible={!!selectedMuscle}
+          onClose={() => setSelectedMuscle(null)}
+          isDark={isDark}
+          backgroundColor={isDark ? '#141418' : '#FAFAFC'}
+        >
+          <View style={[styles.modalHeader, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={[styles.modalTitle, { color: colors.text }, isIOS && { fontWeight: '700' }]}>
@@ -1016,9 +963,7 @@ export function WeeklyMuscleVolumeCard({
                   ))
                 )}
               </ScrollView>
-            </View>
-          </View>
-        </Modal>
+        </SwipeableBottomSheet>
       )}
 
       {/* Modal Selector de Inclusiones / Exclusiones */}

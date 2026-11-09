@@ -302,7 +302,7 @@ export default function SocialLinksScreen() {
       <Animated.ScrollView
         contentContainerStyle={{
           paddingHorizontal: isMobile ? 16 : Math.max(16, (windowWidth - 640) / 2),
-          paddingTop: insets.top + 52,
+          paddingTop: insets.top + 72,
           paddingBottom: insets.bottom + 40,
         }}
         showsVerticalScrollIndicator={false}

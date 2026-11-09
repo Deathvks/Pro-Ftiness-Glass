@@ -146,7 +146,7 @@ export default function RootLayout() {
         <ThemeBackground />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="routine-editor" options={{ presentation: 'fullScreenModal', headerShown: false }} />
+          <Stack.Screen name="routine-editor" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
           <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="register" options={{ headerShown: false, animation: 'fade' }} />

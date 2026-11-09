@@ -666,7 +666,7 @@ export default function SettingsScreen() {
       <Animated.ScrollView
         contentContainerStyle={{
           paddingHorizontal: isMobile ? 14 : Math.max(16, (windowWidth - 640) / 2),
-          paddingTop: insets.top + 52,
+          paddingTop: insets.top + 72,
           paddingBottom: insets.bottom + 40,
         }}
         showsVerticalScrollIndicator={false}

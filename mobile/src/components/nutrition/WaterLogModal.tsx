@@ -1,19 +1,18 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
-  Pressable,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { X, Droplets, Plus, Minus, GlassWater } from 'lucide-react-native';
-import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
 
 interface WaterLogModalProps {
   visible: boolean;
@@ -33,9 +32,16 @@ export const WaterLogModal: React.FC<WaterLogModalProps> = ({
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
 
   const [quantity, setQuantity] = useState(initialQuantity);
   const [mode, setMode] = useState<'ml' | 'glasses'>('ml');
+
+  useEffect(() => {
+    if (visible) {
+      setQuantity(initialQuantity);
+    }
+  }, [visible, initialQuantity]);
 
   const glasses = useMemo(() => Math.floor(quantity / 250), [quantity]);
   const glassSize = 250;
@@ -62,366 +68,297 @@ export const WaterLogModal: React.FC<WaterLogModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-        <Pressable
+    <SwipeableBottomSheet
+      visible={visible}
+      onClose={onClose}
+      isDark={isDark}
+      backgroundColor={colors.card}
+    >
+      <View style={styles.card}>
+        {/* Close Button */}
+        <TouchableOpacity
+          onPress={onClose}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={[
-            StyleSheet.absoluteFill,
+            styles.closeButton,
             {
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: 20,
-              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.45)' : 'rgba(255, 255, 255, 0.25)',
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
             },
           ]}
-          onPress={onClose}
+          activeOpacity={0.7}
         >
-          <Pressable
-            onPress={e => e.stopPropagation()}
+          <X size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
+
+        {/* Icon badge */}
+        <View
+          style={[
+            styles.iconBadge,
+            {
+              backgroundColor: isDark ? 'rgba(59, 130, 246, 0.16)' : 'rgba(59, 130, 246, 0.12)',
+              borderColor: isDark ? 'rgba(59, 130, 246, 0.35)' : 'rgba(59, 130, 246, 0.25)',
+              borderWidth: isIOS ? 0 : 1.5,
+            },
+          ]}
+        >
+          <Droplets size={30} color="#3b82f6" strokeWidth={2} />
+        </View>
+
+        <Text style={[styles.title, { color: colors.text }]}>Registro de Agua</Text>
+
+        {/* Mode Switcher */}
+        <View
+          style={[
+            styles.modeSwitcher,
+            {
+              backgroundColor: isIOS
+                ? isDark
+                  ? 'rgba(118, 118, 128, 0.24)'
+                  : 'rgba(118, 118, 128, 0.12)'
+                : isDark
+                  ? 'rgba(255, 255, 255, 0.06)'
+                  : 'rgba(0, 0, 0, 0.04)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+              borderWidth: isIOS ? 0 : 1,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            onPress={() => {
+              try {
+                Haptics.selectionAsync();
+              } catch {}
+              setMode('ml');
+            }}
             style={[
-              styles.cardWrapper,
-              {
-                backgroundColor: colors.card,
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
-                borderWidth: 1,
+              styles.modeBtn,
+              mode === 'ml' && {
+                backgroundColor: isIOS ? (isDark ? '#636366' : '#FFFFFF') : colors.tint,
               },
             ]}
+            activeOpacity={0.8}
           >
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFill}
-            />
-            <View style={styles.card}>
-              {/* Close Button (Liquid Glass) */}
-              <TouchableOpacity
-                onPress={onClose}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={[
-                  styles.closeButton,
-                  {
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                  },
-                ]}
-                activeOpacity={0.7}
-              >
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
-                />
-                <X size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
+            <Text
+              style={[
+                styles.modeBtnText,
+                {
+                  color:
+                    mode === 'ml'
+                      ? isIOS
+                        ? colors.text
+                        : getContrastTextColor(colors.tint)
+                      : colors.textSecondary,
+                },
+              ]}
+            >
+              Mililitros
+            </Text>
+          </TouchableOpacity>
 
-              {/* Icon badge (Liquid Glass) */}
-              <View
-                style={[
-                  styles.iconBadge,
-                  {
-                    backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)',
-                    borderColor: isDark ? 'rgba(59, 130, 246, 0.35)' : 'rgba(59, 130, 246, 0.25)',
-                  },
-                ]}
-              >
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 22 }]}
-                />
-                <Droplets size={32} color="#3b82f6" strokeWidth={1.8} />
+          <TouchableOpacity
+            onPress={() => {
+              try {
+                Haptics.selectionAsync();
+              } catch {}
+              setMode('glasses');
+            }}
+            style={[
+              styles.modeBtn,
+              mode === 'glasses' && {
+                backgroundColor: isIOS ? (isDark ? '#636366' : '#FFFFFF') : colors.tint,
+              },
+            ]}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.modeBtnText,
+                {
+                  color:
+                    mode === 'glasses'
+                      ? isIOS
+                        ? colors.text
+                        : getContrastTextColor(colors.tint)
+                      : colors.textSecondary,
+                },
+              ]}
+            >
+              Vasos
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Main Adjuster Row */}
+        <View style={styles.counterRow}>
+          <TouchableOpacity
+            onPress={() => (mode === 'ml' ? handleAdjustMl(-250) : handleAdjustGlasses(-1))}
+            style={[
+              styles.adjustCircle,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                borderWidth: isIOS ? 0 : 1,
+              },
+              getAppleSheetCardStyle(isDark, 25),
+            ]}
+            activeOpacity={0.7}
+          >
+            <Minus size={22} color={colors.text} strokeWidth={2.5} />
+          </TouchableOpacity>
+
+          <View style={styles.counterDisplay}>
+            {mode === 'ml' ? (
+              <View style={styles.valWithUnit}>
+                <Text style={[styles.mainNum, { color: colors.text }]}>{quantity}</Text>
+                <Text style={[styles.unitLabel, { color: colors.textMuted }]}>ml</Text>
               </View>
-
-              <Text style={[styles.title, { color: colors.text }]}>Registro de Agua</Text>
-
-              {/* Mode Switcher (Liquid Glass Capsule) */}
-              <View
-                style={[
-                  styles.modeSwitcher,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                  },
-                ]}
-              >
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 9999 }]}
-                />
-                <TouchableOpacity
-                  onPress={() => {
-                    try {
-                      Haptics.selectionAsync();
-                    } catch {}
-                    setMode('ml');
-                  }}
-                  style={[
-                    styles.modeBtn,
-                    mode === 'ml' && {
-                      backgroundColor: colors.tint,
-                      shadowColor: colors.tint,
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.35,
-                      shadowRadius: 5,
-                      elevation: 3,
-                    },
-                  ]}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.modeBtnText,
-                      { color: mode === 'ml' ? getContrastTextColor(colors.tint) : colors.textSecondary },
-                    ]}
-                  >
-                    Mililitros
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => {
-                    try {
-                      Haptics.selectionAsync();
-                    } catch {}
-                    setMode('glasses');
-                  }}
-                  style={[
-                    styles.modeBtn,
-                    mode === 'glasses' && {
-                      backgroundColor: colors.tint,
-                      shadowColor: colors.tint,
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.35,
-                      shadowRadius: 5,
-                      elevation: 3,
-                    },
-                  ]}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.modeBtnText,
-                      { color: mode === 'glasses' ? getContrastTextColor(colors.tint) : colors.textSecondary },
-                    ]}
-                  >
-                    Vasos
-                  </Text>
-                </TouchableOpacity>
+            ) : (
+              <View style={styles.valWithUnit}>
+                <Text style={[styles.mainNum, { color: colors.text }]}>{glasses}</Text>
+                <Text style={[styles.unitLabel, { color: colors.textMuted }]}>
+                  {glasses === 1 ? 'vaso' : 'vasos'}
+                </Text>
               </View>
+            )}
+          </View>
 
-              {/* Main Adjuster Row (Liquid Glass Buttons) */}
-              <View style={styles.counterRow}>
+          <TouchableOpacity
+            onPress={() => (mode === 'ml' ? handleAdjustMl(250) : handleAdjustGlasses(1))}
+            style={[
+              styles.adjustCircle,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                borderWidth: isIOS ? 0 : 1,
+              },
+              getAppleSheetCardStyle(isDark, 25),
+            ]}
+            activeOpacity={0.7}
+          >
+            <Plus size={22} color={colors.text} strokeWidth={2.5} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick Add Presets */}
+        <View style={styles.presetsGrid}>
+          {mode === 'ml'
+            ? [250, 500, 750].map(amount => (
                 <TouchableOpacity
-                  onPress={() => (mode === 'ml' ? handleAdjustMl(-250) : handleAdjustGlasses(-1))}
+                  key={amount}
+                  onPress={() => handleAdjustMl(amount)}
                   style={[
-                    styles.adjustCircle,
+                    styles.presetBtn,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                      backgroundColor: isDark
+                        ? 'rgba(255, 255, 255, 0.06)'
+                        : 'rgba(255, 255, 255, 0.6)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
+                      borderWidth: isIOS ? 0 : 1,
                     },
+                    getAppleSheetCardStyle(isDark, 14),
                   ]}
                   activeOpacity={0.7}
                 >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={[StyleSheet.absoluteFill, { borderRadius: 25 }]}
-                  />
-                  <Minus size={22} color={colors.text} strokeWidth={2.5} />
+                  <Text style={[styles.presetText, { color: colors.text }]}>+{amount}</Text>
                 </TouchableOpacity>
-
-                <View style={styles.counterDisplay}>
-                  {mode === 'ml' ? (
-                    <View style={styles.valWithUnit}>
-                      <Text style={[styles.mainNum, { color: colors.text }]}>{quantity}</Text>
-                      <Text style={[styles.unitLabel, { color: colors.textMuted }]}>ml</Text>
-                    </View>
-                  ) : (
-                    <View style={styles.valWithUnit}>
-                      <Text style={[styles.mainNum, { color: colors.text }]}>{glasses}</Text>
-                      <Text style={[styles.unitLabel, { color: colors.textMuted }]}>
-                        {glasses === 1 ? 'vaso' : 'vasos'}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
+              ))
+            : [1, 2, 3].map(amount => (
                 <TouchableOpacity
-                  onPress={() => (mode === 'ml' ? handleAdjustMl(250) : handleAdjustGlasses(1))}
+                  key={amount}
+                  onPress={() => handleAdjustGlasses(amount)}
                   style={[
-                    styles.adjustCircle,
+                    styles.presetBtn,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                      backgroundColor: isDark
+                        ? 'rgba(255, 255, 255, 0.06)'
+                        : 'rgba(255, 255, 255, 0.6)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
+                      borderWidth: isIOS ? 0 : 1,
                     },
+                    getAppleSheetCardStyle(isDark, 14),
                   ]}
                   activeOpacity={0.7}
                 >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={[StyleSheet.absoluteFill, { borderRadius: 25 }]}
-                  />
-                  <Plus size={22} color={colors.text} strokeWidth={2.5} />
+                  <View style={styles.presetWithIcon}>
+                    <Text style={[styles.presetText, { color: colors.text }]}>+{amount}</Text>
+                    <GlassWater size={13} color={colors.textSecondary} />
+                  </View>
                 </TouchableOpacity>
-              </View>
+              ))}
+        </View>
 
-              {/* Quick Add Presets (Liquid Glass Chips) */}
-              <View style={styles.presetsGrid}>
-                {mode === 'ml'
-                  ? [250, 500, 750].map(amount => (
-                      <TouchableOpacity
-                        key={amount}
-                        onPress={() => handleAdjustMl(amount)}
-                        style={[
-                          styles.presetBtn,
-                          {
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.6)',
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
-                          },
-                        ]}
-                        activeOpacity={0.7}
-                      >
-                        <GlassView
-                          glassEffectStyle="regular"
-                          colorScheme={isDark ? 'dark' : 'light'}
-                          style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
-                        />
-                        <Text style={[styles.presetText, { color: colors.text }]}>
-                          +{amount}
-                        </Text>
-                      </TouchableOpacity>
-                    ))
-                  : [1, 2, 3].map(amount => (
-                      <TouchableOpacity
-                        key={amount}
-                        onPress={() => handleAdjustGlasses(amount)}
-                        style={[
-                          styles.presetBtn,
-                          {
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.6)',
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
-                          },
-                        ]}
-                        activeOpacity={0.7}
-                      >
-                        <GlassView
-                          glassEffectStyle="regular"
-                          colorScheme={isDark ? 'dark' : 'light'}
-                          style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
-                        />
-                        <View style={styles.presetWithIcon}>
-                          <Text style={[styles.presetText, { color: colors.text }]}>
-                            +{amount}
-                          </Text>
-                          <GlassWater size={13} color={colors.textSecondary} />
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-              </View>
-
-              {/* Save Button (Liquid Glass Action) */}
-              <TouchableOpacity
-                onPress={handleSave}
-                disabled={isLoading}
-                activeOpacity={0.75}
-                style={[
-                  styles.saveBtn,
-                  {
-                    borderWidth: 1,
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
-                    opacity: isLoading ? 0.6 : 1,
-                  },
-                ]}
-              >
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                />
-                <View
-                  style={[
-                    StyleSheet.absoluteFill,
-                    {
-                      backgroundColor: colors.tint + (isDark ? '25' : '18'),
-                      borderRadius: 20,
-                    },
-                  ]}
-                />
-                {isLoading ? (
-                  <ActivityIndicator size="small" color={colors.tint} />
-                ) : (
-                  <Text style={[styles.saveBtnText, { color: colors.tint }]}>
-                    Guardar Registro
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </GlassView>
-    </Modal>
+        {/* Save Button */}
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={isLoading}
+          activeOpacity={0.8}
+          style={[
+            styles.saveBtn,
+            {
+              backgroundColor: colors.tint,
+              opacity: isLoading ? 0.6 : 1,
+            },
+          ]}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color={getContrastTextColor(colors.tint)} />
+          ) : (
+            <Text style={[styles.saveBtnText, { color: getContrastTextColor(colors.tint) }]}>
+              Guardar Registro
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    </SwipeableBottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  cardWrapper: {
-    width: '100%',
-    maxWidth: 360,
-    borderRadius: 32,
-    overflow: 'hidden',
-  },
   card: {
-    padding: 24,
-    borderRadius: 32,
+    paddingHorizontal: 22,
+    paddingTop: 6,
+    paddingBottom: 12,
     alignItems: 'center',
   },
   closeButton: {
     position: 'absolute',
-    top: 18,
-    right: 18,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    top: 6,
+    right: 20,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    overflow: 'hidden',
   },
   iconBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 22,
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    marginBottom: 14,
-    marginTop: 6,
-    overflow: 'hidden',
-    position: 'relative',
+    marginBottom: 12,
+    marginTop: 4,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 21,
+    fontWeight: Platform.OS === 'ios' ? '700' : '800',
     letterSpacing: -0.4,
     marginBottom: 16,
   },
   modeSwitcher: {
     flexDirection: 'row',
-    borderRadius: 9999,
+    borderRadius: 12,
+    borderCurve: 'continuous',
     padding: 3,
-    borderWidth: 1,
     marginBottom: 24,
     width: 220,
-    overflow: 'hidden',
-    position: 'relative',
   },
   modeBtn: {
     flex: 1,
     paddingVertical: 8,
-    borderRadius: 9999,
+    borderRadius: 10,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -441,11 +378,8 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-    position: 'relative',
   },
   counterDisplay: {
     minWidth: 120,
@@ -459,7 +393,7 @@ const styles = StyleSheet.create({
   },
   mainNum: {
     fontSize: 44,
-    fontWeight: '900',
+    fontWeight: '800',
     letterSpacing: -1,
   },
   unitLabel: {
@@ -471,17 +405,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     width: '100%',
-    marginBottom: 24,
+    marginBottom: 22,
   },
   presetBtn: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 14,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-    position: 'relative',
   },
   presetWithIcon: {
     flexDirection: 'row',
@@ -489,22 +421,19 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   presetText: {
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0.3,
+    fontSize: 14,
+    fontWeight: '700',
   },
   saveBtn: {
     width: '100%',
-    height: 52,
-    borderRadius: 20,
+    height: 50,
+    borderRadius: 16,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-    position: 'relative',
   },
   saveBtnText: {
     fontSize: 16,
     fontWeight: '700',
-    letterSpacing: -0.2,
   },
 });

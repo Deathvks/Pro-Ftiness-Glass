@@ -32,6 +32,7 @@ import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import apiClient from '@/services/apiClient';
 import { getExerciseList } from '@/services/exerciseService';
 
@@ -102,26 +103,15 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
   if (!visible || !exerciseName) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.modalBackdrop} onPress={onClose}>
-        <Pressable
-          style={[
-            styles.modalSheet,
-            {
-              backgroundColor: isIOS
-                ? (isDark ? '#1C1C1E' : '#F2F2F7')
-                : (isDark ? 'rgba(18, 18, 24, 0.96)' : 'rgba(255, 255, 255, 0.96)'),
-              borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
-              borderWidth: isIOS ? 0 : 1,
-              paddingBottom: Math.max(insets.bottom + 16, 24),
-            },
-          ]}
-          onPress={(e) => e.stopPropagation()}
-        >
-          <View style={styles.sheetHandle} />
-
-          {/* Header */}
-          <View style={styles.sheetHeader}>
+    <SwipeableBottomSheet
+      visible={visible}
+      onClose={onClose}
+      isDark={isDark}
+      backgroundColor={isDark ? '#141418' : '#FAFAFC'}
+      contentContainerStyle={{ paddingHorizontal: 20 }}
+    >
+      {/* Header */}
+      <View style={styles.sheetHeader}>
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={[styles.sheetTitle, { color: colors.text }, isIOS && { fontWeight: '700' }]} numberOfLines={1}>
                 {exerciseName}
@@ -251,9 +241,7 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
               </View>
             </ScrollView>
           )}
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </SwipeableBottomSheet>
   );
 };
 
@@ -369,27 +357,16 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
   if (!visible || !sourceName) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.modalBackdrop} onPress={onClose}>
-        <Pressable
-          style={[
-            styles.modalSheet,
-            {
-              backgroundColor: isIOS
-                ? (isDark ? '#1C1C1E' : '#F2F2F7')
-                : (isDark ? 'rgba(18, 18, 24, 0.98)' : 'rgba(255, 255, 255, 0.98)'),
-              borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
-              borderWidth: isIOS ? 0 : 1,
-              paddingBottom: Math.max(insets.bottom + 16, 24),
-              maxHeight: '90%',
-            },
-          ]}
-          onPress={(e) => e.stopPropagation()}
-        >
-          <View style={styles.sheetHandle} />
-
-          {/* Header */}
-          <View style={styles.sheetHeader}>
+    <SwipeableBottomSheet
+      visible={visible}
+      onClose={onClose}
+      isDark={isDark}
+      backgroundColor={isDark ? '#141418' : '#FAFAFC'}
+      avoidKeyboard
+      contentContainerStyle={{ paddingHorizontal: 20 }}
+    >
+      {/* Header */}
+      <View style={styles.sheetHeader}>
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={[styles.sheetTitle, { color: colors.text }, isIOS && { fontWeight: '700' }]}>Transferir Datos</Text>
               <Text style={[styles.sheetSubtitle, { color: colors.textSecondary }]}>
@@ -636,9 +613,7 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
               </TouchableOpacity>
             </View>
           </ScrollView>
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </SwipeableBottomSheet>
   );
 };
 

@@ -27,8 +27,19 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
         }
     }, []);
 
-    const baseOpacity = nativeGlassAvailable ? (color ? 0.22 : 0) : (isLight ? 0.5 : 0.15);
-    const pressedOpacity = nativeGlassAvailable ? 0.18 : (isLight ? 0.7 : 0.3);
+    // Detect if color already contains an alpha channel (e.g. #RRGGBBAA or rgba(...))
+    const colorHasAlpha = useMemo(() => {
+        if (!color) return false;
+        const c = color.trim();
+        return (c.startsWith('#') && c.length === 9) || c.startsWith('rgba(');
+    }, [color]);
+
+    const baseOpacity = nativeGlassAvailable
+        ? (color ? (colorHasAlpha ? 1 : 0.26) : 0)
+        : (colorHasAlpha ? 1 : (isLight ? 0.5 : 0.15));
+    const pressedOpacity = nativeGlassAvailable
+        ? (color ? (colorHasAlpha ? 0.85 : 0.36) : 0.18)
+        : (colorHasAlpha ? 0.85 : (isLight ? 0.7 : 0.3));
     
     const bgOpacityAnim = useRef(new Animated.Value(baseOpacity)).current;
 
@@ -42,10 +53,10 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
 
     const handlePressIn = () => {
         Animated.spring(scaleAnim, {
-            toValue: 0.94,
+            toValue: 0.96,
             useNativeDriver: true,
-            friction: 5,
-            tension: 100
+            friction: 6,
+            tension: 120
         }).start();
         Animated.timing(bgOpacityAnim, {
             toValue: pressedOpacity,
@@ -58,8 +69,8 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
         Animated.spring(scaleAnim, {
             toValue: 1,
             useNativeDriver: true,
-            friction: 5,
-            tension: 100
+            friction: 6,
+            tension: 120
         }).start();
         Animated.timing(bgOpacityAnim, {
             toValue: baseOpacity,
@@ -70,23 +81,35 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
 
     const flattenedUserStyle: ViewStyle = (style ? StyleSheet.flatten(style) : {}) || {};
     
-    const hasPadding = flattenedUserStyle.padding !== undefined || flattenedUserStyle.paddingHorizontal !== undefined;
+    const hasPadding =
+        flattenedUserStyle.padding !== undefined ||
+        flattenedUserStyle.paddingHorizontal !== undefined ||
+        flattenedUserStyle.paddingVertical !== undefined ||
+        flattenedUserStyle.paddingTop !== undefined ||
+        flattenedUserStyle.paddingBottom !== undefined;
     
+    // Normalize 'auto' height/width so React Native Yoga never sets height: '100%' inside an 'auto' parent
+    const rawWidth = flattenedUserStyle.width === 'auto' ? undefined : flattenedUserStyle.width;
+    const rawHeight = flattenedUserStyle.height === 'auto' ? undefined : flattenedUserStyle.height;
+
     let defaultWidth: number | undefined = undefined;
     let defaultHeight: number | undefined = undefined;
-    if (flattenedUserStyle.width === undefined && flattenedUserStyle.flex === undefined && !hasPadding) {
+    if (rawWidth === undefined && flattenedUserStyle.flex === undefined && !hasPadding) {
         defaultWidth = 36;
     }
-    if (flattenedUserStyle.height === undefined && !hasPadding) {
+    if (rawHeight === undefined && !hasPadding) {
         defaultHeight = 36;
     }
+
+    const resolvedWidth = rawWidth !== undefined ? rawWidth : defaultWidth;
+    const resolvedHeight = rawHeight !== undefined ? rawHeight : defaultHeight;
 
     const finalStyle: ViewStyle = { 
         alignItems: 'center', 
         justifyContent: 'center',
-        ...(defaultWidth !== undefined ? { width: defaultWidth } : {}),
-        ...(defaultHeight !== undefined ? { height: defaultHeight } : {}),
-        ...flattenedUserStyle 
+        ...flattenedUserStyle,
+        width: resolvedWidth,
+        height: resolvedHeight,
     };
     const finalBorderRadius = (finalStyle.borderRadius as number) ?? 18;
 
@@ -101,8 +124,8 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={[{
                 flex: finalStyle.flex,
-                width: finalStyle.width,
-                height: finalStyle.height,
+                width: resolvedWidth,
+                height: resolvedHeight,
                 minHeight: finalStyle.minHeight,
                 alignSelf: finalStyle.alignSelf,
                 margin: finalStyle.margin,
@@ -112,13 +135,14 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
                 marginRight: finalStyle.marginRight,
                 marginVertical: finalStyle.marginVertical,
                 marginHorizontal: finalStyle.marginHorizontal,
+                opacity: disabled ? 0.5 : 1,
             }]}
         >
             <Animated.View style={[finalStyle, {
                 position: 'relative', 
                 flex: undefined,
-                width: finalStyle.width !== undefined ? '100%' : undefined,
-                height: finalStyle.height !== undefined ? '100%' : undefined,
+                width: (resolvedWidth !== undefined || finalStyle.flex !== undefined) ? '100%' : undefined,
+                height: typeof resolvedHeight === 'number' ? resolvedHeight : undefined,
                 margin: undefined,
                 marginTop: undefined,
                 marginBottom: undefined,

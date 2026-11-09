@@ -251,7 +251,7 @@ export default function Hub() {
       </View>
 
       <Animated.ScrollView 
-        contentContainerStyle={{ padding: 16, paddingTop: insets.top + 54, paddingBottom: 150 }} 
+        contentContainerStyle={{ padding: 16, paddingTop: insets.top + 72, paddingBottom: 150 }} 
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}

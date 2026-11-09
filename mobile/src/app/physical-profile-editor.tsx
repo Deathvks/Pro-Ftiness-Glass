@@ -199,7 +199,7 @@ export default function PhysicalProfileEditorScreen() {
       <Animated.ScrollView
         contentContainerStyle={{
           paddingHorizontal: isMobile ? 16 : Math.max(16, (windowWidth - 620) / 2),
-          paddingTop: insets.top + 54,
+          paddingTop: insets.top + 72,
           paddingBottom: insets.bottom + 40,
         }}
         showsVerticalScrollIndicator={false}

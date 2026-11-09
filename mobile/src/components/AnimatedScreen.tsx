@@ -37,7 +37,7 @@ export default function AnimatedScreen({
                     scrollEventThrottle={16}
                     contentContainerStyle={{ 
                         paddingHorizontal, 
-                        paddingTop: insets.top + 52, 
+                        paddingTop: insets.top + 72, 
                         paddingBottom 
                     }}
                 >

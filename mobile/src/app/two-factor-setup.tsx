@@ -235,7 +235,7 @@ export default function TwoFactorSetupScreen() {
       <Animated.ScrollView
         contentContainerStyle={{
           paddingHorizontal: isMobile ? 16 : Math.max(16, (windowWidth - 600) / 2),
-          paddingTop: insets.top + 54,
+          paddingTop: insets.top + 72,
           paddingBottom: insets.bottom + 40,
         }}
         showsVerticalScrollIndicator={false}
