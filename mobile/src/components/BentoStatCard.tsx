@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native
 import { Info } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, isAtmosphericTheme, shouldUseContentGlass } from '@/constants/theme';
 
 export default function BentoStatCard({ 
     title, 
@@ -19,7 +19,8 @@ export default function BentoStatCard({
 }: any) {
     const theme = useAppStore(state => state.theme) || 'oled';
     const isIOS = Platform.OS === 'ios';
-    const useGlass = shouldUseContentGlass(theme);
+    const useGlass = shouldUseContentGlass();
+    const surface = (isIOS || isAtmosphericTheme(theme)) && getAppleCardSurfaceStyle(theme, 28);
     const color = iconColor || themeColors?.tint || '#22c55e';
     const CardWrapper = onPress ? TouchableOpacity : View;
 
@@ -40,7 +41,7 @@ export default function BentoStatCard({
                     borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
                     overflow: 'hidden',
                 },
-                isIOS && getAppleCardSurfaceStyle(theme, 20),
+                surface,
             ]}
         >
             {useGlass && (

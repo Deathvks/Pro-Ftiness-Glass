@@ -2,11 +2,17 @@ import React from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useIsFocused } from 'expo-router';
 import useAppStore from '@/store/useAppStore';
+import GalaxyStarBackground from '@/components/ui/GalaxyStarBackground';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('screen');
 
-export default function ThemeBackground() {
+function FocusedGalaxyStars() {
+  return useIsFocused() ? <GalaxyStarBackground /> : null;
+}
+
+export default function ThemeBackground({ root = false }: { root?: boolean }) {
   const theme = useAppStore(state => state.theme);
 
   if (theme === 'galaxy') {
@@ -37,6 +43,7 @@ export default function ThemeBackground() {
           end={{ x: 0.85, y: 0.75 }}
           style={StyleSheet.absoluteFill}
         />
+        {root ? <GalaxyStarBackground /> : <FocusedGalaxyStars />}
       </View>
     );
   }

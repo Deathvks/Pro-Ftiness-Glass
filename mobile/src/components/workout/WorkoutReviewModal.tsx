@@ -5,11 +5,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Modal,
   ScrollView,
   TextInput,
   ActivityIndicator,
-  Pressable,
 } from 'react-native';
 import {
   CheckCircle,
@@ -20,6 +18,7 @@ import {
   Flame,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
+import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -78,208 +77,199 @@ export const WorkoutReviewModal: React.FC<WorkoutReviewModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={[styles.overlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.4)' }]}>
-        <View
+    <SwipeableSheetModal
+      visible={visible}
+      onClose={onClose}
+      backdropColor={isDark ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.4)'}
+      dismissOnBackdrop={false}
+      dragAreaHeight={84}
+      sheetStyle={[styles.sheet, { backgroundColor: colors.card, borderColor: colors.border }]}
+    >
+      <GlassView
+        glassEffectStyle="regular"
+        colorScheme={isDark ? 'dark' : 'light'}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Header */}
+      <View style={[styles.header, { borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]}>
+        <View>
+          <Text style={[styles.title, { color: colors.text }]}>Revisar Entrenamiento</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Verifica tus pesos y repeticiones antes de guardar
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          onPress={onClose}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={[
-            styles.sheet,
+            styles.closeBtn,
             {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
+          <X size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
 
-          {/* Header */}
-          <View style={[styles.header, { borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]}>
-            <View>
-              <Text style={[styles.title, { color: colors.text }]}>Revisar Entrenamiento</Text>
-              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                Verifica tus pesos y repeticiones antes de guardar
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              onPress={onClose}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      {/* List of completed exercises */}
+      <ScrollView contentContainerStyle={styles.scrollList}>
+        {exercisesWithData.length === 0 ? (
+          <View style={styles.emptyBox}>
+            <Dumbbell size={36} color={colors.textSecondary} style={{ marginBottom: 10 }} />
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              No hay series registradas para revisar.
+            </Text>
+          </View>
+        ) : (
+          exercisesWithData.map((exercise: any) => (
+            <View
+              key={exercise.id || exercise.name}
               style={[
-                styles.closeBtn,
+                styles.exerciseCard,
                 {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
                 },
               ]}
             >
-              <X size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+              <Text style={[styles.cardExerciseName, { color: colors.tint }]}>
+                {exercise.name}
+              </Text>
 
-          {/* List of completed exercises */}
-          <ScrollView contentContainerStyle={styles.scrollList}>
-            {exercisesWithData.length === 0 ? (
-              <View style={styles.emptyBox}>
-                <Dumbbell size={36} color={colors.textSecondary} style={{ marginBottom: 10 }} />
-                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                  No hay series registradas para revisar.
-                </Text>
+              {/* Header de columnas */}
+              <View style={styles.colsHeaderRow}>
+                <Text style={[styles.colHeader, { flex: 0.8, color: colors.textSecondary }]}>#</Text>
+                <Text style={[styles.colHeader, { flex: 2, color: colors.textSecondary }]}>KG</Text>
+                <Text style={[styles.colHeader, { flex: 2, color: colors.textSecondary }]}>REPS</Text>
+                <Text style={[styles.colHeader, { flex: 1.5, color: colors.textSecondary }]}>RIR</Text>
               </View>
-            ) : (
-              exercisesWithData.map((exercise: any) => (
-                <View
-                  key={exercise.id || exercise.name}
-                  style={[
-                    styles.exerciseCard,
-                    {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                    },
-                  ]}
-                >
-                  <Text style={[styles.cardExerciseName, { color: colors.tint }]}>
-                    {exercise.name}
-                  </Text>
 
-                  {/* Header de columnas */}
-                  <View style={styles.colsHeaderRow}>
-                    <Text style={[styles.colHeader, { flex: 0.8, color: colors.textSecondary }]}>#</Text>
-                    <Text style={[styles.colHeader, { flex: 2, color: colors.textSecondary }]}>KG</Text>
-                    <Text style={[styles.colHeader, { flex: 2, color: colors.textSecondary }]}>REPS</Text>
-                    <Text style={[styles.colHeader, { flex: 1.5, color: colors.textSecondary }]}>RIR</Text>
+              {/* Sets */}
+              {exercise.validSets.map((set: any, idx: number) => (
+                <View key={idx} style={styles.reviewSetRow}>
+                  <View style={{ flex: 0.8, alignItems: 'center' }}>
+                    <View style={[styles.badgeNum, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+                      <Text style={[styles.badgeNumText, { color: colors.text }]}>
+                        {set.set_number}
+                      </Text>
+                    </View>
                   </View>
 
-                  {/* Sets */}
-                  {exercise.validSets.map((set: any, idx: number) => (
-                    <View key={idx} style={styles.reviewSetRow}>
-                      <View style={{ flex: 0.8, alignItems: 'center' }}>
-                        <View style={[styles.badgeNum, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-                          <Text style={[styles.badgeNumText, { color: colors.text }]}>
-                            {set.set_number}
-                          </Text>
-                        </View>
-                      </View>
+                  <View style={{ flex: 2 }}>
+                    <TextInput
+                      keyboardType="decimal-pad"
+                      value={set.weight_kg !== undefined && set.weight_kg !== null ? String(set.weight_kg) : ''}
+                      onChangeText={(v) =>
+                        handleUpdate(
+                          exercise.originalIndex,
+                          set.originalSetIndex,
+                          'weight_kg',
+                          normalizeDecimalInput(v)
+                        )
+                      }
+                      style={[
+                        styles.reviewInput,
+                        {
+                          backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                          borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                          color: colors.text,
+                        },
+                      ]}
+                    />
+                  </View>
 
-                      <View style={{ flex: 2 }}>
-                        <TextInput
-                          keyboardType="decimal-pad"
-                          value={set.weight_kg !== undefined && set.weight_kg !== null ? String(set.weight_kg) : ''}
-                          onChangeText={(v) =>
-                            handleUpdate(
-                              exercise.originalIndex,
-                              set.originalSetIndex,
-                              'weight_kg',
-                              normalizeDecimalInput(v)
-                            )
-                          }
-                          style={[
-                            styles.reviewInput,
-                            {
-                              backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                              borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
-                              color: colors.text,
-                            },
-                          ]}
-                        />
-                      </View>
+                  <View style={{ flex: 2 }}>
+                    <TextInput
+                      keyboardType="number-pad"
+                      value={set.reps !== undefined && set.reps !== null ? String(set.reps) : ''}
+                      onChangeText={(v) =>
+                        handleUpdate(
+                          exercise.originalIndex,
+                          set.originalSetIndex,
+                          'reps',
+                          normalizeIntegerInput(v)
+                        )
+                      }
+                      style={[
+                        styles.reviewInput,
+                        {
+                          backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                          borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                          color: colors.text,
+                        },
+                      ]}
+                    />
+                  </View>
 
-                      <View style={{ flex: 2 }}>
-                        <TextInput
-                          keyboardType="number-pad"
-                          value={set.reps !== undefined && set.reps !== null ? String(set.reps) : ''}
-                          onChangeText={(v) =>
-                            handleUpdate(
-                              exercise.originalIndex,
-                              set.originalSetIndex,
-                              'reps',
-                              normalizeIntegerInput(v)
-                            )
-                          }
-                          style={[
-                            styles.reviewInput,
-                            {
-                              backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                              borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
-                              color: colors.text,
-                            },
-                          ]}
-                        />
-                      </View>
-
-                      <View style={{ flex: 1.5 }}>
-                        <TextInput
-                          keyboardType="decimal-pad"
-                          placeholder="-"
-                          placeholderTextColor={colors.textSecondary}
-                          value={set.rir !== undefined && set.rir !== null ? String(set.rir) : ''}
-                          onChangeText={(v) =>
-                            handleUpdate(
-                              exercise.originalIndex,
-                              set.originalSetIndex,
-                              'rir',
-                              normalizeDecimalInput(v)
-                            )
-                          }
-                          style={[
-                            styles.reviewInput,
-                            {
-                              backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                              borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
-                              color: colors.text,
-                            },
-                          ]}
-                        />
-                      </View>
-                    </View>
-                  ))}
+                  <View style={{ flex: 1.5 }}>
+                    <TextInput
+                      keyboardType="decimal-pad"
+                      placeholder="-"
+                      placeholderTextColor={colors.textSecondary}
+                      value={set.rir !== undefined && set.rir !== null ? String(set.rir) : ''}
+                      onChangeText={(v) =>
+                        handleUpdate(
+                          exercise.originalIndex,
+                          set.originalSetIndex,
+                          'rir',
+                          normalizeDecimalInput(v)
+                        )
+                      }
+                      style={[
+                        styles.reviewInput,
+                        {
+                          backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                          borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                          color: colors.text,
+                        },
+                      ]}
+                    />
+                  </View>
                 </View>
-              ))
-            )}
-          </ScrollView>
+              ))}
+            </View>
+          ))
+        )}
+      </ScrollView>
 
-          {/* Footer Action */}
-          <View style={[styles.footer, { borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]}>
-            <TouchableOpacity
-              onPress={handleSave}
-              disabled={isSaving}
-              style={[
-                styles.saveBtn,
-                {
-                  backgroundColor: colors.tint,
-                  shadowColor: colors.tint,
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.4,
-                  shadowRadius: 10,
-                  elevation: 6,
-                },
-                isSaving && { opacity: 0.7 },
-              ]}
-              activeOpacity={0.82}
-            >
-              {isSaving ? (
-                <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
-              ) : (
-                <Save size={18} color="#fff" style={{ marginRight: 8 }} />
-              )}
-              <Text style={styles.saveBtnText}>
-                {isSaving ? 'Guardando Entrenamiento...' : 'Confirmar y Guardar'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+      {/* Footer Action */}
+      <View style={[styles.footer, { borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]}>
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={isSaving}
+          style={[
+            styles.saveBtn,
+            {
+              backgroundColor: colors.tint,
+              shadowColor: colors.tint,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.4,
+              shadowRadius: 10,
+              elevation: 6,
+            },
+            isSaving && { opacity: 0.7 },
+          ]}
+          activeOpacity={0.82}
+        >
+          {isSaving ? (
+            <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
+          ) : (
+            <Save size={18} color="#fff" style={{ marginRight: 8 }} />
+          )}
+          <Text style={styles.saveBtnText}>
+            {isSaving ? 'Guardando Entrenamiento...' : 'Confirmar y Guardar'}
+          </Text>
+        </TouchableOpacity>
       </View>
-    </Modal>
+    </SwipeableSheetModal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
   sheet: {
     width: '100%',
     maxHeight: '85%',

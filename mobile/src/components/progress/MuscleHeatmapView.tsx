@@ -7,7 +7,7 @@ import {
   Dimensions,
 } from 'react-native';
 import Svg, { Polygon } from 'react-native-svg';
-import { GlassView } from 'expo-glass-effect';
+import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import { Lightbulb, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -268,8 +268,7 @@ export function MuscleHeatmapView() {
                   },
                 ]}
               >
-                <GlassView
-                  glassEffectStyle="regular"
+                <ContentCardBackdrop
                   colorScheme={isDark ? 'dark' : 'light'}
                   style={StyleSheet.absoluteFill}
                 />
@@ -335,8 +334,7 @@ export function MuscleHeatmapView() {
           },
         ]}
       >
-        <GlassView
-          glassEffectStyle="regular"
+        <ContentCardBackdrop
           colorScheme={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />

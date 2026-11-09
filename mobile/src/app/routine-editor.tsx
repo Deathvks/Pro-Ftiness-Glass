@@ -60,7 +60,8 @@ export default function RoutineEditorScreen() {
   const insets = useSafeAreaInsets();
   const isDark = !['light', 'ocean', 'desert'].includes(theme || '');
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass(theme);
+  const useGlass = shouldUseContentGlass();
+  const baseBackground = colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background;
   const iosCardSurface = getAppleCardSurfaceStyle(theme, 20);
   const iosInnerSurface = isIOS
     ? {
@@ -285,8 +286,7 @@ export default function RoutineEditorScreen() {
     <View
       style={{
         flex: 1,
-        backgroundColor:
-          colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background,
+        backgroundColor: baseBackground,
       }}
     >
       <ThemeBackground />
@@ -732,7 +732,7 @@ export default function RoutineEditorScreen() {
                             styles.manualNameInput,
                             {
                               color: colors.text,
-                              backgroundColor: colors.background,
+                              backgroundColor: baseBackground,
                               borderColor: colors.border,
                             },
                             iosInnerSurface,
@@ -747,7 +747,7 @@ export default function RoutineEditorScreen() {
                           style={[
                             styles.manualMusclePill,
                             {
-                              backgroundColor: colors.background,
+                              backgroundColor: baseBackground,
                               borderColor: colors.border,
                             },
                             iosInnerSurface,
@@ -824,7 +824,7 @@ export default function RoutineEditorScreen() {
                       style={[
                         styles.metricPill,
                         {
-                          backgroundColor: colors.background,
+                          backgroundColor: baseBackground,
                           borderColor: colors.border,
                         },
                         iosInnerSurface,
@@ -853,7 +853,7 @@ export default function RoutineEditorScreen() {
                       style={[
                         styles.metricPill,
                         {
-                          backgroundColor: colors.background,
+                          backgroundColor: baseBackground,
                           borderColor: colors.border,
                         },
                         iosInnerSurface,
@@ -887,7 +887,7 @@ export default function RoutineEditorScreen() {
                       style={[
                         styles.metricPill,
                         {
-                          backgroundColor: colors.background,
+                          backgroundColor: baseBackground,
                           borderColor: colors.border,
                         },
                         iosInnerSurface,

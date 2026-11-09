@@ -6,8 +6,8 @@ export const getWorkouts = (params) => {
     return apiClient(`/workouts${query}`);
 };
 
-export const logWorkout = (workoutData) => {
-    return apiClient('/workouts', { body: workoutData, method: 'POST' });
+export const logWorkout = (workoutData, options) => {
+    return apiClient('/workouts', { ...options, body: workoutData, method: 'POST' });
 };
 
 export const deleteWorkout = (workoutId) => {

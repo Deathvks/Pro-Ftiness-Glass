@@ -195,7 +195,7 @@ export function Leaderboard({ onNavigateProfile }: LeaderboardProps) {
           },
         ]}
       >
-        {shouldUseContentGlass(theme) && (
+        {shouldUseContentGlass() && (
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}

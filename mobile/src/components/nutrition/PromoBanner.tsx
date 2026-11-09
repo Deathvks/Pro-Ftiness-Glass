@@ -67,7 +67,7 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({
         ]}
       >
         {/* iOS Liquid Glass layer only on photo themes */}
-        {shouldUseContentGlass(theme) && (
+        {shouldUseContentGlass() && (
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}

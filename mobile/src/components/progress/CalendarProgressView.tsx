@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import { GlassView } from 'expo-glass-effect';
+import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import {
   ChevronLeft,
   ChevronRight,
@@ -239,8 +239,7 @@ export function CalendarProgressView() {
           },
         ]}
       >
-        <GlassView
-          glassEffectStyle="regular"
+        <ContentCardBackdrop
           colorScheme={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />
@@ -418,8 +417,7 @@ export function CalendarProgressView() {
           },
         ]}
       >
-        <GlassView
-          glassEffectStyle="regular"
+        <ContentCardBackdrop
           colorScheme={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />

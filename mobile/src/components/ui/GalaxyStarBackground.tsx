@@ -234,7 +234,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     overflow: 'hidden',
-    zIndex: 9999,
   },
   starLayer: {
     width: '135%',

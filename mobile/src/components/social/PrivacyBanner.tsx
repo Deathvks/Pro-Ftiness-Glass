@@ -29,7 +29,7 @@ export function PrivacyBanner({ privacy, onNavigate }: PrivacyBannerProps) {
         },
       ]}
     >
-      {shouldUseContentGlass(theme) && (
+      {shouldUseContentGlass() && (
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}

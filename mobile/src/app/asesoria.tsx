@@ -43,6 +43,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import ThemeBackground from '@/components/ThemeBackground';
 import TrainerProfileModal from '@/components/TrainerProfileModal';
+import { GlassButton } from '@/components/ui/GlassButton';
 import ChatVideoMessage from '@/components/chat/ChatVideoMessage';
 import FullscreenVideoModal from '@/components/chat/FullscreenVideoModal';
 
@@ -535,13 +536,14 @@ export default function AsesoriaScreen() {
           },
         ]}
       >
-        <TouchableOpacity
+        <GlassButton
           style={styles.backButton}
           onPress={() => router.back()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          theme={theme}
+          noShadow
         >
-          <ChevronLeft size={26} color={colors.text} />
-        </TouchableOpacity>
+          <ChevronLeft size={23} color={colors.text} strokeWidth={2.3} accessibilityLabel="Volver" />
+        </GlassButton>
 
         {loading && !trainer ? (
           <View style={styles.headerLoading}>
@@ -920,11 +922,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   headerLoading: {
     flexDirection: 'row',

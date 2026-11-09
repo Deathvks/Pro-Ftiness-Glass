@@ -3,10 +3,13 @@ import * as Crypto from 'expo-crypto';
 
 const STORAGE_KEY = 'offline_sync_queue';
 
+/** @typedef {{ id: string, endpoint: string, options: Record<string, unknown>, cardioUserId?: number | string }} QueuedRequest */
+/** @returns {QueuedRequest[]} */
 const getInitialQueue = () => {
     try {
         const stored = (typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null);
-        return stored ? JSON.parse(stored) : [];
+        const queue = stored ? JSON.parse(stored) : [];
+        return Array.isArray(queue) ? queue : [];
     } catch (e) {
         console.error('Failed to parse offline sync queue from localStorage', e);
         return [];
@@ -23,16 +26,18 @@ const saveQueue = (queue) => {
 
 export const createSyncSlice = (set, get) => ({
     syncQueue: getInitialQueue(),
+    hydrateSyncQueue: () => set({ syncQueue: getInitialQueue() }),
     isSyncing: false,
 
     // Añadir una petición a la cola
     addToSyncQueue: (request) => {
-        const { endpoint, options } = request;
+        const { endpoint, options, cardioUserId } = request;
         const currentQueue = get().syncQueue;
 
         // Evitamos duplicados exactos muy seguidos (opcional, pero recomendado)
         const isDuplicate = currentQueue.some(item =>
             item.endpoint === endpoint &&
+            item.cardioUserId === cardioUserId &&
             JSON.stringify(item.options) === JSON.stringify(options)
         );
 
@@ -42,6 +47,7 @@ export const createSyncSlice = (set, get) => ({
             id: Crypto.randomUUID(),
             endpoint,
             options,
+            cardioUserId,
             timestamp: Date.now(),
             retryCount: 0
         }];

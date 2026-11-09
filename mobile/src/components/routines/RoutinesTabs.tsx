@@ -1,6 +1,6 @@
 /* mobile/src/components/routines/RoutinesTabs.tsx */
-import React from 'react';
-import { ScrollView, Text, StyleSheet, Platform } from 'react-native';
+import React, { useRef } from 'react';
+import { ScrollView, Text, StyleSheet, Platform, type ScrollViewInstance } from 'react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { BookCopy, Compass, Dumbbell, Flame } from 'lucide-react-native';
@@ -22,6 +22,7 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
   const userProfile = useAppStore(state => state.userProfile || (state as any).user);
   const isAdmin = userProfile?.role === 'admin';
   const isIOS = Platform.OS === 'ios';
+  const scrollRef = useRef<ScrollViewInstance>(null);
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
@@ -33,7 +34,9 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
 
   return (
     <ScrollView
+      ref={scrollRef}
       horizontal
+      onContentSizeChange={activeTab === 'quickCardio' ? () => scrollRef.current?.scrollToEnd({ animated: false }) : undefined}
       showsHorizontalScrollIndicator={false}
       style={styles.scrollView}
       contentContainerStyle={styles.container}

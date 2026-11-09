@@ -40,7 +40,7 @@ export function SelectModal({
       visible={visible}
       onClose={onClose}
       isDark={isDark}
-      backgroundColor={colors.background}
+      backgroundColor={colors.background === 'transparent' ? colors.card : colors.background}
       maxHeight={screenHeight * 0.72}
     >
       {/* Header */}

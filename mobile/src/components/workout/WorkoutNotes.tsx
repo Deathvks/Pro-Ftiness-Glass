@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { FileText } from 'lucide-react-native';
-import { GlassView } from 'expo-glass-effect';
+import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -42,8 +42,7 @@ export const WorkoutNotes: React.FC<WorkoutNotesProps> = ({
         },
       ]}
     >
-      <GlassView
-        glassEffectStyle="regular"
+      <ContentCardBackdrop
         colorScheme={isDark ? 'dark' : 'light'}
         style={StyleSheet.absoluteFill}
       />

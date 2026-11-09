@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { StickyNote, X, Copy, Check } from 'lucide-react-native';
-import { GlassView } from 'expo-glass-effect';
+import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -56,8 +56,7 @@ export const PreviousWorkoutNoteBanner: React.FC<PreviousWorkoutNoteBannerProps>
         },
       ]}
     >
-      <GlassView
-        glassEffectStyle="regular"
+      <ContentCardBackdrop
         colorScheme={isDark ? 'dark' : 'light'}
         style={StyleSheet.absoluteFill}
       />

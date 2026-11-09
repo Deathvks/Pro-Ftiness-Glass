@@ -1,14 +1,16 @@
 import { StatusBar } from 'expo-status-bar';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme, Appearance } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useColorScheme, Appearance, AppState } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
 import { Stack, useRouter, useSegments, usePathname } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { initLocalStorage } from '@/utils/localStoragePolyfill';
 import { installHapticsInterceptor } from '@/utils/haptics';
+import { loadCardioSession, syncPendingCardio } from '@/utils/cardio';
 import useAppStore, { resolveTheme, applyNativeColorScheme } from '@/store/useAppStore';
+import type { QueuedRequest } from '@/store/syncSlice';
 import ThemeBackground from '@/components/ThemeBackground';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getThemeBaseBackground } from '@/constants/theme';
@@ -16,7 +18,6 @@ import { ToastContainer } from '@/components/ui/ToastContainer';
 import { DynamicIslandTimer } from '@/components/workout/DynamicIslandTimer';
 import { RestTimerModal } from '@/components/workout/RestTimerModal';
 import { OfflineDownloadFloatingBar } from '@/components/OfflineDownloadFloatingBar';
-import GalaxyStarBackground from '@/components/ui/GalaxyStarBackground';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -24,9 +25,12 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [isReady, setIsReady] = useState(false);
   const [hasRestoredPath, setHasRestoredPath] = useState(false);
+  const hasCheckedCardio = useRef(false);
   
   const isAuthenticated = useAppStore(state => state.isAuthenticated);
   const userProfile = useAppStore(state => state.userProfile);
+  const cardioUserId = userProfile?.id;
+  const hasPendingCardio = useAppStore(state => state.syncQueue.some((item: QueuedRequest) => item.cardioUserId === cardioUserId));
   const router = useRouter();
   const segments = useSegments();
   const pathname = usePathname();
@@ -36,6 +40,7 @@ export default function RootLayout() {
       await initLocalStorage();
       installHapticsInterceptor();
       useAppStore.getState().hydrateFromStorage();
+      useAppStore.getState().hydrateSyncQueue();
       
       const token = localStorage.getItem('pro_fitness_token');
       const savedTheme = localStorage.getItem('theme');
@@ -110,11 +115,43 @@ export default function RootLayout() {
       if (atRoot && !needsOnboarding) {
         const lastPath = typeof localStorage !== 'undefined' ? localStorage.getItem('last_path') : null;
         if (lastPath && lastPath !== '/' && lastPath !== '/index' && !lastPath.includes('login') && !lastPath.includes('register') && !lastPath.includes('onboarding')) {
-          setTimeout(() => router.replace(lastPath as any), 100);
+          setTimeout(() => {
+            const user = useAppStore.getState().userProfile;
+            if (!loadCardioSession(user?.id)) router.replace(lastPath as any);
+          }, 100);
         }
       }
     }
   }, [isAuthenticated, isReady, segments, hasRestoredPath, userProfile]);
+
+  useEffect(() => {
+    if (!isAuthenticated) hasCheckedCardio.current = false;
+    if (!isReady || !isAuthenticated || userProfile?.id == null || hasCheckedCardio.current) return;
+    if (!userProfile.goal && userProfile.role !== 'trainee') return;
+    if (segments[0] === 'login' || segments[0] === 'register' || segments[0] === 'forgot-password') return;
+
+    hasCheckedCardio.current = true;
+    const saved = loadCardioSession(userProfile.id);
+    if (saved && (segments[0] === '(tabs)' || pathname === '/')) {
+      router.push({ pathname: '/active-cardio', params: { activityId: saved.activityId, recovered: '1' } });
+    }
+  }, [isReady, isAuthenticated, userProfile, segments, pathname, router]);
+
+  useEffect(() => {
+    if (!isReady || !isAuthenticated || cardioUserId == null || !hasPendingCardio) return;
+    const sync = () => {
+      if (AppState.currentState === 'active' || AppState.currentState == null) {
+        void syncPendingCardio(cardioUserId).catch(() => {});
+      }
+    };
+    sync();
+    const foreground = AppState.addEventListener('change', sync);
+    const interval = setInterval(sync, 15_000);
+    return () => {
+      foreground.remove();
+      clearInterval(interval);
+    };
+  }, [cardioUserId, hasPendingCardio, isAuthenticated, isReady]);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -143,7 +180,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background }}>
       <ThemeProvider value={NavigationTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        <ThemeBackground />
+        <ThemeBackground root />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="routine-editor" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
@@ -167,12 +204,13 @@ export default function RootLayout() {
           <Stack.Screen name="physical-profile-editor" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="two-factor-setup" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="workout" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="quick-cardio" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="active-cardio" options={{ headerShown: false, animation: 'slide_from_right' }} />
         </Stack>
         <DynamicIslandTimer />
         <RestTimerModal />
         <OfflineDownloadFloatingBar />
         <ToastContainer />
-        <GalaxyStarBackground />
       </ThemeProvider>
     </GestureHandlerRootView>
   );

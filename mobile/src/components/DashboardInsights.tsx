@@ -3,13 +3,14 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Flame, Scale, Dumbbell, TrendingUp } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, isAtmosphericTheme, shouldUseContentGlass } from '@/constants/theme';
 
 export default function DashboardInsights({ workoutLog, bodyWeightLog, colors }: any) {
   const theme = useAppStore(state => state.theme);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass(theme);
+  const useGlass = shouldUseContentGlass();
+  const surface = (isIOS || isAtmosphericTheme(theme)) && getAppleCardSurfaceStyle(theme, 24);
 
   const insights = useMemo(() => {
     const alerts = [];
@@ -87,7 +88,7 @@ export default function DashboardInsights({ workoutLog, bodyWeightLog, colors }:
                 overflow: 'hidden',
                 backgroundColor: 'transparent',
               },
-              isIOS && getAppleCardSurfaceStyle(theme, 20),
+              surface,
             ]}
           >
             {useGlass && (

@@ -4,13 +4,14 @@ import { NativeTabs } from 'expo-router/native-tabs';
 import { Tabs } from 'expo-router';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
-import { getThemeBaseBackground } from '@/constants/theme';
+import { getThemeSurfaceMode } from '@/constants/theme';
 import { FloatingLiquidGlassTabBar } from '@/components/FloatingLiquidGlassTabBar';
 
 export default function AppTabs() {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme);
-  const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const surfaceMode = getThemeSurfaceMode(theme);
+  const isDark = surfaceMode !== 'light';
 
   // En Android: usamos el navbar flotante Liquid Glass idéntico al frontend
   if (Platform.OS === 'android') {
@@ -44,7 +45,7 @@ export default function AppTabs() {
   }
 
   // Blur effect y color de interfaz adaptados a cada tema en iOS
-  const blurEffect = theme === 'oled'
+  const blurEffect = surfaceMode === 'oled'
     ? 'none'
     : (isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight');
 

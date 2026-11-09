@@ -1,68 +1,98 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Modal,
   View,
   Pressable,
   Animated,
-  PanResponder,
   StyleSheet,
   Platform,
   KeyboardAvoidingView,
+  Dimensions,
   StyleProp,
   ViewStyle,
-  Dimensions,
+  useAnimatedValue,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+  type GestureStateChangeEvent,
+  type GestureUpdateEvent,
+  type PanGestureHandlerEventPayload,
+} from 'react-native-gesture-handler';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
-const SCREEN_HEIGHT = Dimensions.get('window').height;
+const HEADER_DRAG_HEIGHT = 120;
 
-export function useSwipeToDismiss(
-  onClose: () => void,
-  visible?: boolean,
-  options?: {
-    scrollable?: boolean;
-    headerDragHeight?: number;
-  }
-) {
-  const scrollable = options?.scrollable ?? false;
-  const headerDragHeight = options?.headerDragHeight ?? 260;
+interface SwipeableSheetModalProps {
+  visible: boolean;
+  onClose: () => void;
+  backdropColor: string;
+  dismissOnBackdrop?: boolean;
+  avoidKeyboard?: boolean;
+  statusBarTranslucent?: boolean;
+  navigationBarTranslucent?: boolean;
+  dragAreaHeight?: number;
+  sheetStyle: StyleProp<ViewStyle>;
+  children: React.ReactNode;
+}
 
-  const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
-  const sheetHeightRef = useRef<number>(0);
-  const touchStartYRef = useRef<number>(0);
+export function SwipeableSheetModal({
+  visible,
+  onClose,
+  backdropColor,
+  dismissOnBackdrop = true,
+  avoidKeyboard = false,
+  statusBarTranslucent = false,
+  navigationBarTranslucent = false,
+  dragAreaHeight,
+  sheetStyle,
+  children,
+}: SwipeableSheetModalProps) {
+  const screenHeight = Dimensions.get('screen').height;
+  const translateY = useAnimatedValue(screenHeight);
+  const backdropOpacity = useAnimatedValue(0);
+  const touchStartY = useRef(0);
+  const closingRef = useRef(false);
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
 
   useEffect(() => {
-    if (visible) {
-      translateY.setValue(SCREEN_HEIGHT * 0.65);
-      backdropOpacity.setValue(0);
-      Animated.parallel([
-        Animated.timing(backdropOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.spring(translateY, {
-          toValue: 0,
-          useNativeDriver: true,
-          damping: 26,
-          stiffness: 260,
-          mass: 0.85,
-        }),
-      ]).start();
-    } else if (visible === false) {
-      translateY.setValue(0);
-      backdropOpacity.setValue(1);
-    }
-  }, [visible, translateY, backdropOpacity]);
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
-  const dismissAnimated = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
+  useEffect(() => {
+    if (!visible) return;
+
+    closingRef.current = false;
+    translateY.setValue(screenHeight * 0.65);
+    backdropOpacity.setValue(0);
+    Animated.parallel([
+      Animated.timing(backdropOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.spring(translateY, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 26,
+        stiffness: 260,
+        mass: 0.85,
+      }),
+    ]).start();
+
+    return () => {
+      translateY.stopAnimation();
+      backdropOpacity.stopAnimation();
+    };
+  }, [visible, translateY, backdropOpacity, screenHeight]);
+
+  const dismissAnimated = useCallback(() => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+
     Animated.parallel([
       Animated.timing(backdropOpacity, {
         toValue: 0,
@@ -70,122 +100,107 @@ export function useSwipeToDismiss(
         useNativeDriver: true,
       }),
       Animated.timing(translateY, {
-        toValue: SCREEN_HEIGHT * 0.85,
+        toValue: screenHeight,
         duration: 190,
         useNativeDriver: true,
       }),
-    ]).start(() => {
-      onCloseRef.current?.();
-      setTimeout(() => {
-        translateY.setValue(0);
-        backdropOpacity.setValue(1);
-      }, 60);
+    ]).start(({ finished }) => {
+      if (finished) onCloseRef.current();
     });
-  };
+  }, [translateY, backdropOpacity, screenHeight]);
 
-  const handleRelease = (dy: number, vy: number) => {
-    // Easy natural dismiss threshold: dragged down > 48px OR a light flick downward
-    if (dy > 48 || (dy > 16 && vy > 0.3)) {
+  const onDragBegin = useCallback(({ absoluteY }: GestureStateChangeEvent<PanGestureHandlerEventPayload>) => {
+    // Native translation can reset when the pan activates. Keep the original touch position.
+    touchStartY.current = absoluteY;
+  }, []);
+
+  const onDragUpdate = useCallback(({ absoluteY }: GestureUpdateEvent<PanGestureHandlerEventPayload>) => {
+    if (closingRef.current) return;
+    const distance = Math.max(0, absoluteY - touchStartY.current);
+    translateY.setValue(distance);
+    backdropOpacity.setValue(Math.max(0.2, 1 - distance / (screenHeight * 0.55)));
+  }, [translateY, backdropOpacity, screenHeight]);
+
+  const onDragEnd = useCallback((
+    { absoluteY, velocityY }: GestureStateChangeEvent<PanGestureHandlerEventPayload>,
+    success: boolean,
+  ) => {
+    if (closingRef.current) return;
+    const distance = absoluteY - touchStartY.current;
+    if (success && (distance > 48 || (distance > 16 && velocityY > 300))) {
       dismissAnimated();
-    } else {
-      Animated.parallel([
-        Animated.timing(backdropOpacity, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.spring(translateY, {
-          toValue: 0,
-          useNativeDriver: true,
-          damping: 24,
-          stiffness: 260,
-          mass: 0.8,
-        }),
-      ]).start();
+      return;
     }
-  };
+    Animated.parallel([
+      Animated.timing(backdropOpacity, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.spring(translateY, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 24,
+        stiffness: 260,
+        mass: 0.8,
+      }),
+    ]).start();
+  }, [translateY, backdropOpacity, dismissAnimated]);
 
-  const updateDrag = (dy: number) => {
-    if (dy > 0) {
-      translateY.setValue(dy);
-      const nextOpacity = Math.max(0.2, 1 - dy / (SCREEN_HEIGHT * 0.55));
-      backdropOpacity.setValue(nextOpacity);
-    } else {
-      translateY.setValue(dy * 0.12);
-    }
-  };
+  const dragGesture = useMemo(() => {
+    const pan = Gesture.Pan()
+      .runOnJS(true)
+      .maxPointers(1)
+      .activeOffsetY(7)
+      .failOffsetY(-7)
+      .failOffsetX([-10, 10])
+      .shouldCancelWhenOutside(false);
 
-  // PanResponder for the sheet container (captures downward swipes smoothly)
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onStartShouldSetPanResponderCapture: evt => {
-        touchStartYRef.current = evt.nativeEvent.pageY;
-        return false;
-      },
-      onMoveShouldSetPanResponderCapture: (evt, g) => {
-        // Must be a predominantly downward movement
-        const isVerticalDown = g.dy > 5 && Math.abs(g.dy) > Math.abs(g.dx) * 1.05;
-        if (!isVerticalDown) return false;
+    // eslint-disable-next-line react-hooks/refs -- Gesture Handler invokes these callbacks after touch events.
+    pan.onBegin(onDragBegin).onUpdate(onDragUpdate).onEnd(onDragEnd);
 
-        // If the modal has no inner scroll view (like options, cards, confirmation dialogs),
-        // ANY downward swipe anywhere on the modal immediately captures and starts sliding down!
-        if (!scrollable) {
-          return true;
-        }
+    // Restrict where the drag can start so scrollable content can handle its own gestures.
+    if (dragAreaHeight !== undefined) pan.hitSlop({ top: 0, height: dragAreaHeight });
+    return pan;
+  }, [dragAreaHeight, onDragBegin, onDragUpdate, onDragEnd]);
 
-        // For scrollable modals, capture downward drags starting in the upper zone
-        // (grabber + header + top of content): at least headerDragHeight or 40% of the sheet
-        const sheetH = sheetHeightRef.current || SCREEN_HEIGHT * 0.85;
-        const sheetTop = Math.max(0, SCREEN_HEIGHT - sheetH);
-        const touchRelY = (touchStartYRef.current || evt.nativeEvent.pageY) - sheetTop;
-        const dragZone = Math.max(headerDragHeight, sheetH * 0.4);
+  const overlay = (
+    <View style={styles.overlay}>
+      <Animated.View
+        style={[StyleSheet.absoluteFill, { opacity: backdropOpacity, backgroundColor: backdropColor }]}
+      >
+        {dismissOnBackdrop && <Pressable style={StyleSheet.absoluteFill} onPress={dismissAnimated} />}
+      </Animated.View>
+      <GestureDetector gesture={dragGesture} touchAction="pan-x">
+        <Animated.View style={[sheetStyle, { transform: [{ translateY }] }]}>
+          {children}
+        </Animated.View>
+      </GestureDetector>
+    </View>
+  );
+  const content = avoidKeyboard ? (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.keyboardContainer}
+    >
+      {overlay}
+    </KeyboardAvoidingView>
+  ) : overlay;
 
-        if (touchRelY <= dragZone) {
-          return true;
-        }
-
-        return false;
-      },
-      onMoveShouldSetPanResponder: (_, g) =>
-        g.dy > 5 && Math.abs(g.dy) > Math.abs(g.dx) * 1.05,
-      onPanResponderMove: (_, g) => updateDrag(g.dy),
-      onPanResponderRelease: (_, g) => handleRelease(g.dy, g.vy),
-      onPanResponderTerminate: (_, g) => handleRelease(g.dy, g.vy),
-      onPanResponderTerminationRequest: () => false,
-    })
-  ).current;
-
-  // Dedicated PanResponder for the top grabber pill area (instant capture on any touch)
-  const grabberPanResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onStartShouldSetPanResponderCapture: () => true,
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 2,
-      onMoveShouldSetPanResponderCapture: (_, g) =>
-        g.dy > 2 && Math.abs(g.dy) > Math.abs(g.dx),
-      onPanResponderMove: (_, g) => updateDrag(g.dy),
-      onPanResponderRelease: (_, g) => handleRelease(g.dy, g.vy),
-      onPanResponderTerminate: (_, g) => handleRelease(g.dy, g.vy),
-      onPanResponderTerminationRequest: () => false,
-    })
-  ).current;
-
-  const onSheetLayout = (e: any) => {
-    const h = e?.nativeEvent?.layout?.height;
-    if (typeof h === 'number' && h > 0) {
-      sheetHeightRef.current = h;
-    }
-  };
-
-  return {
-    translateY,
-    backdropOpacity,
-    panHandlers: panResponder.panHandlers,
-    grabberPanHandlers: grabberPanResponder.panHandlers,
-    onSheetLayout,
-    dismissAnimated,
-  };
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent={statusBarTranslucent}
+      navigationBarTranslucent={navigationBarTranslucent}
+      onRequestClose={dismissAnimated}
+    >
+      <GestureHandlerRootView>
+        {navigationBarTranslucent ? <SafeAreaProvider>{content}</SafeAreaProvider> : content}
+      </GestureHandlerRootView>
+    </Modal>
+  );
 }
 
 export function getAppleSheetSurfaceStyle(isDark: boolean, radius = 28): ViewStyle {
@@ -224,7 +239,7 @@ interface SwipeableBottomSheetProps {
   showGrabber?: boolean;
   avoidKeyboard?: boolean;
   scrollable?: boolean;
-  headerDragHeight?: number;
+  edgeToEdge?: boolean;
   sheetStyle?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   children: React.ReactNode;
@@ -240,115 +255,71 @@ export function SwipeableBottomSheet({
   showGrabber = true,
   avoidKeyboard = false,
   scrollable = false,
-  headerDragHeight = 260,
+  edgeToEdge = false,
   sheetStyle,
   contentContainerStyle,
   children,
 }: SwipeableBottomSheetProps) {
   const insets = useSafeAreaInsets();
   const isIOS = Platform.OS === 'ios';
-  const {
-    translateY,
-    backdropOpacity,
-    panHandlers,
-    grabberPanHandlers,
-    onSheetLayout,
-    dismissAnimated,
-  } = useSwipeToDismiss(onClose, visible, { scrollable, headerDragHeight });
-
   const resolvedBg = isIOS
     ? isDark
       ? '#1C1C1E'
       : '#F2F2F7'
     : backgroundColor || (isDark ? '#141418' : '#FFFFFF');
 
-  const innerContent = (
-    <View style={styles.overlay}>
-      <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
-        <Pressable style={styles.backdropPressable} onPress={dismissAnimated} />
-      </Animated.View>
-      <Animated.View
-        onLayout={onSheetLayout}
-        {...panHandlers}
-        style={[
-          styles.sheet,
-          {
-            backgroundColor: resolvedBg,
-            maxHeight,
-            ...(height ? { height } : {}),
-            paddingBottom: Math.max(insets.bottom, 16),
-            borderWidth: isIOS ? 0 : 1,
-            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-            transform: [{ translateY }],
-          },
-          isIOS && getAppleSheetSurfaceStyle(isDark, 28),
-          sheetStyle,
-        ]}
-      >
-        {showGrabber && (
-          <View
-            {...grabberPanHandlers}
-            style={styles.grabberTouchArea}
-            hitSlop={{ top: 15, bottom: 15, left: 40, right: 40 }}
-          >
-            <View
-              style={[
-                styles.grabberPill,
-                {
-                  backgroundColor: isDark
-                    ? 'rgba(235, 235, 245, 0.38)'
-                    : 'rgba(60, 60, 67, 0.32)',
-                },
-              ]}
-            />
-          </View>
-        )}
-        <View style={[{ flexShrink: 1 }, height ? { flex: 1 } : undefined, contentContainerStyle]}>
-          {children}
-        </View>
-      </Animated.View>
-    </View>
-  );
-
   return (
-    <Modal
+    <SwipeableSheetModal
       visible={visible}
-      transparent
-      animationType="fade"
+      onClose={onClose}
+      backdropColor="rgba(0, 0, 0, 0.68)"
       statusBarTranslucent
-      onRequestClose={dismissAnimated}
+      navigationBarTranslucent={edgeToEdge}
+      avoidKeyboard={avoidKeyboard}
+      dragAreaHeight={scrollable ? HEADER_DRAG_HEIGHT : undefined}
+      sheetStyle={[
+        styles.sheet,
+        {
+          backgroundColor: resolvedBg,
+          maxHeight,
+          height,
+          paddingBottom: edgeToEdge ? 0 : Math.max(insets.bottom, 16),
+          borderWidth: isIOS ? 0 : 1,
+          borderBottomWidth: edgeToEdge ? 0 : undefined,
+          borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+        },
+        isIOS && getAppleSheetSurfaceStyle(isDark, 28),
+        sheetStyle,
+      ]}
     >
-      {avoidKeyboard ? (
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          {innerContent}
-        </KeyboardAvoidingView>
-      ) : (
-        innerContent
+      {showGrabber && (
+        <View pointerEvents="none" style={styles.grabberArea}>
+          <View
+            style={[
+              styles.grabberPill,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(235, 235, 245, 0.38)'
+                  : 'rgba(60, 60, 67, 0.32)',
+              },
+            ]}
+          />
+        </View>
       )}
-    </Modal>
+      <View style={[{ flexShrink: 1 }, height ? { flex: 1 } : undefined, contentContainerStyle]}>
+        {children}
+      </View>
+    </SwipeableSheetModal>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboardContainer: {
+    flex: 1,
+  },
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.68)',
-  },
-  backdropPressable: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
   },
   sheet: {
     width: '100%',
@@ -357,7 +328,7 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
     overflow: 'hidden',
   },
-  grabberTouchArea: {
+  grabberArea: {
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',

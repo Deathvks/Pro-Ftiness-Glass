@@ -27,7 +27,7 @@ export function ProgressSectionList({ onSelectSection }: ProgressSectionListProp
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass(theme);
+  const useGlass = shouldUseContentGlass();
 
   const handlePress = (id: ProgressSectionId) => {
     try {
@@ -49,11 +49,10 @@ export function ProgressSectionList({ onSelectSection }: ProgressSectionListProp
       <View
         style={[
           styles.listCard,
-          isIOS
-            ? getAppleCardSurfaceStyle(theme, 20)
-            : {
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-              },
+          getAppleCardSurfaceStyle(theme, 24),
+          !isIOS && {
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+          },
         ]}
       >
         {useGlass && (

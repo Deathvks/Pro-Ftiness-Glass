@@ -13,7 +13,7 @@ import {
   Activity,
   Target,
 } from 'lucide-react-native';
-import { GlassView } from 'expo-glass-effect';
+import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -169,8 +169,7 @@ export function BodyWeightProgressView() {
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
+          <ContentCardBackdrop
             colorScheme={isDark ? 'dark' : 'light'}
             style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
           />
@@ -251,8 +250,7 @@ export function BodyWeightProgressView() {
                 },
               ]}
             >
-              <GlassView
-                glassEffectStyle="regular"
+              <ContentCardBackdrop
                 colorScheme={isDark ? 'dark' : 'light'}
                 style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
               />
@@ -308,8 +306,7 @@ export function BodyWeightProgressView() {
               },
             ]}
           >
-            <GlassView
-              glassEffectStyle="regular"
+            <ContentCardBackdrop
               colorScheme={isDark ? 'dark' : 'light'}
               style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
             />

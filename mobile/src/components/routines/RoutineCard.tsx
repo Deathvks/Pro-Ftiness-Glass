@@ -114,7 +114,7 @@ export function RoutineCard({
       },
     ]}>
       {/* iOS Liquid Glass Effect Background on photo themes */}
-      {shouldUseContentGlass(theme) && (
+      {shouldUseContentGlass() && (
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}

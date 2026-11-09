@@ -22,6 +22,7 @@ import {
   ListChecks,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { GlassButton } from '@/components/ui/GlassButton';
@@ -362,11 +363,11 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
       visible={visible}
       onClose={onClose}
       isDark={isDark}
-      backgroundColor={colors.background}
+      backgroundColor={colors.background === 'transparent' ? colors.card : colors.background}
       height="92%"
       maxHeight="92%"
       scrollable
-      headerDragHeight={280}
+      edgeToEdge
       avoidKeyboard
     >
       <View style={styles.container}>
@@ -556,6 +557,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                 keyExtractor={item => String(item.id)}
                 renderItem={renderExerciseItem}
                 contentContainerStyle={styles.listContent}
+                ListFooterComponent={<SafeAreaView edges={['bottom']} />}
                 initialNumToRender={8}
                 maxToRenderPerBatch={8}
                 windowSize={7}
@@ -570,7 +572,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
           <View style={{ flex: 1 }}>
             <ScrollView
               style={{ flex: 1 }}
-              contentContainerStyle={{ padding: 16, paddingBottom: 110 }}
+              contentContainerStyle={styles.detailContent}
               showsVerticalScrollIndicator={false}
             >
               <View
@@ -707,10 +709,12 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                   </Text>
                 </View>
               )}
+              {isReadOnly && <SafeAreaView edges={['bottom']} />}
             </ScrollView>
 
             {!isReadOnly && (
-              <View
+              <SafeAreaView
+                edges={['bottom']}
                 style={[
                   styles.footer,
                   {
@@ -740,7 +744,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                       : 'Añadir a la selección'}
                   </Text>
                 </GlassButton>
-              </View>
+              </SafeAreaView>
             )}
           </View>
         )}
@@ -963,7 +967,8 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
               />
             )}
 
-            <View
+            <SafeAreaView
+              edges={['bottom']}
               style={[
                 styles.footer,
                 {
@@ -988,7 +993,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                   Confirmar {stagedExercises.length} Ejercicios
                 </Text>
               </GlassButton>
-            </View>
+            </SafeAreaView>
           </View>
         )}
       </View>
@@ -1080,8 +1085,11 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 16,
     paddingTop: 6,
-    paddingBottom: 36,
+    paddingBottom: 12,
     gap: 16,
+  },
+  detailContent: {
+    padding: 16,
   },
   centerContainer: {
     flex: 1,

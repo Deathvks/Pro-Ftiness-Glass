@@ -68,7 +68,7 @@ if (__DEV__) {
 
 const apiClient = async (endpoint, options = {}) => {
     const token = useAppStore.getState().token;
-    const { body, ...customConfig } = options;
+    const { body, cardioUserId, queueWhenOffline: allowQueue, ...customConfig } = options;
 
     // Headers por defecto.
     const headers = { ...customConfig.headers };
@@ -223,7 +223,7 @@ const apiClient = async (endpoint, options = {}) => {
 
         // Interceptamos fallos de red (Offline o Timeout por red lentísima) para peticiones de escritura (POST, PUT, DELETE, etc.)
         const isAuthEndpoint = typeof endpoint === 'string' && endpoint.includes('/auth');
-        const queueWhenOffline = options.queueWhenOffline !== false && !isAuthEndpoint;
+        const queueWhenOffline = allowQueue !== false && !isAuthEndpoint;
 
         if (isNetworkFailure && config.method !== 'GET' && queueWhenOffline) {
             // No guardamos FormData en la cola por complejidad de serialización (imágenes, etc.)
@@ -231,9 +231,11 @@ const apiClient = async (endpoint, options = {}) => {
 
             if (!isFormData) {
                 console.log('Detectado modo offline o red muy lenta. Añadiendo petición a la cola de sincronización.');
-                useAppStore.getState().addToSyncQueue({ endpoint, options });
+                useAppStore.getState().addToSyncQueue({ endpoint, options, cardioUserId });
                 // Lanzamos un error específico para que la UI sepa que se guardó en local
-                throw new Error('Conexión inestable. Cambio guardado localmente para sincronizar después.');
+                const queued = new Error('Conexión inestable. Cambio guardado localmente para sincronizar después.');
+                queued.isQueued = true;
+                throw queued;
             }
         }
 

@@ -10,6 +10,7 @@ import {
   Pressable,
 } from 'react-native';
 import { GlassView } from 'expo-glass-effect';
+import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import {
   Trophy,
   Calendar as CalendarIcon,
@@ -186,8 +187,7 @@ export function RecordsProgressView() {
                   },
                 ]}
               >
-                <GlassView
-                  glassEffectStyle="regular"
+                <ContentCardBackdrop
                   colorScheme={isDark ? 'dark' : 'light'}
                   style={StyleSheet.absoluteFill}
                 />
@@ -303,8 +303,7 @@ export function RecordsProgressView() {
                 },
               ]}
             >
-              <GlassView
-                glassEffectStyle="regular"
+              <ContentCardBackdrop
                 colorScheme={isDark ? 'dark' : 'light'}
                 style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
               />

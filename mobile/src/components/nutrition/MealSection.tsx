@@ -63,7 +63,7 @@ export const MealSection: React.FC<MealSectionProps> = ({
   return (
     <View style={styles.container}>
       <View style={[styles.glassWrapper, { borderColor: colors.border, backgroundColor: colors.card }, Platform.OS === 'ios' && getAppleCardSurfaceStyle(theme, 20)]}>
-        {shouldUseContentGlass(theme) && (
+        {shouldUseContentGlass() && (
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}
@@ -191,7 +191,7 @@ export const MealSection: React.FC<MealSectionProps> = ({
                     style={[
                       styles.foodCard,
                       {
-                        backgroundColor: Platform.OS === 'ios' && !shouldUseContentGlass(theme)
+                        backgroundColor: Platform.OS === 'ios' && !shouldUseContentGlass()
                           ? (isDark ? '#2C2C2E' : '#F2F2F7')
                           : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'),
                         borderColor: Platform.OS === 'ios' ? 'transparent' : colors.border,

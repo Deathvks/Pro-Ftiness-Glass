@@ -121,7 +121,7 @@ export function SearchTab({
             { marginTop: 16 },
           ]}
         >
-          {shouldUseContentGlass(theme) && (
+          {shouldUseContentGlass() && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}

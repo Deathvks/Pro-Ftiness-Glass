@@ -18,11 +18,14 @@ import {
   TrendingUp,
   Dumbbell,
   BarChartHorizontal,
+  MapPin,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
+import { CardioMap } from '@/components/CardioMap';
+import { readCardioNotes, type CardioPoint } from '@/utils/cardio';
 
 interface DailyDetailModalProps {
   visible: boolean;
@@ -43,6 +46,7 @@ export function DailyDetailModal({
   const deleteWorkoutLog = useAppStore(state => state.deleteWorkoutLog);
 
   const [deletedIds, setDeletedIds] = useState<number[]>([]);
+  const [expandedPath, setExpandedPath] = useState<CardioPoint[] | null>(null);
 
   const visibleLogs = logs.filter(l => !deletedIds.includes(l.id));
 
@@ -131,6 +135,8 @@ export function DailyDetailModal({
                 );
                 const volume = calculateVolume(log);
                 const details = log.WorkoutLogDetails || [];
+                const cardio = readCardioNotes(log.notes);
+                const hasCardioNote = cardio.text.startsWith('Sesión GPS:') || cardio.text.startsWith('Cardio Rápido:');
 
                 return (
                   <View
@@ -192,6 +198,24 @@ export function DailyDetailModal({
                         <Trash2 size={16} color="#f43f5e" />
                       </TouchableOpacity>
                     </View>
+
+                    {cardio.path.length > 0 && (
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel="Ampliar ruta GPS"
+                        onPress={() => setExpandedPath(cardio.path)}
+                        style={[styles.routePreview, { backgroundColor: colors.card, borderColor: colors.border }]}
+                      >
+                        <View pointerEvents="none" style={styles.routeMap}>
+                          <CardioMap path={cardio.path} dark={isDark} color={colors.tint} />
+                        </View>
+                        <View style={styles.routeLabel}>
+                          <MapPin size={14} color={colors.tint} />
+                          <Text style={[styles.statPillText, { color: colors.text }]}>Ruta GPS</Text>
+                        </View>
+                      </TouchableOpacity>
+                    )}
+                    {hasCardioNote && <Text style={[styles.cardioNote, { color: colors.textSecondary }]}>{cardio.text}</Text>}
 
                     {/* Exercises List */}
                     <View style={{ gap: 12, marginTop: 12 }}>
@@ -316,11 +340,34 @@ export function DailyDetailModal({
               })}
             </ScrollView>
       </View>
+      {visible && expandedPath && (
+        <SwipeableBottomSheet
+          visible
+          scrollable
+          isDark={isDark}
+          onClose={() => setExpandedPath(null)}
+          height="76%"
+          backgroundColor={colors.card}
+        >
+          <View style={[styles.expandedHeader, { borderColor: colors.border }]}>
+            <Text style={[styles.title, { color: colors.text }]}>Ruta GPS</Text>
+            <TouchableOpacity accessibilityLabel="Cerrar mapa" onPress={() => setExpandedPath(null)} style={styles.closeBtn}>
+              <X size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          <CardioMap path={expandedPath} dark={isDark} color={colors.tint} />
+        </SwipeableBottomSheet>
+      )}
     </SwipeableBottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
+  routePreview: { marginTop: 12, borderWidth: StyleSheet.hairlineWidth, borderRadius: 16, overflow: 'hidden' },
+  routeMap: { height: 150 },
+  routeLabel: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 10 },
+  cardioNote: { marginTop: 10, fontSize: 13, lineHeight: 18 },
+  expandedHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   overlay: {
     flex: 1,
     justifyContent: 'center',

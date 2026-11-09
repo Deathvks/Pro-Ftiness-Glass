@@ -681,16 +681,17 @@ export const createWorkoutSlice = (set, get) => ({
     await state.logWorkout(workoutData);
   },
 
-  logWorkout: async (workoutData) => {
+  logWorkout: async (workoutData, { standalone = false } = {}) => {
     try {
       const state = get();
-      const workoutDate = state.activeWorkout?.startTime || new Date().toISOString();
+      const activeWorkout = standalone ? null : state.activeWorkout;
+      const workoutDate = (standalone ? workoutData.workout_date : activeWorkout?.startTime) || new Date().toISOString();
 
       // INTERCEPTOR: Borramos/Consumimos las metas que no hayan sido actualizadas hoy
       let processedDetails = workoutData.details;
       if (processedDetails && Array.isArray(processedDetails)) {
           processedDetails = processedDetails.map(detail => {
-              const stateEx = state.activeWorkout?.exercises?.find(e => e.id === detail.id);
+              const stateEx = activeWorkout?.exercises?.find(e => e.id === detail.id);
               if (stateEx && !stateEx.reminderUpdated) {
                   return { ...detail, reminder: null };
               }
@@ -702,11 +703,13 @@ export const createWorkoutSlice = (set, get) => ({
         ...workoutData,
         details: processedDetails || workoutData.details,
         date: workoutDate, 
-        visibility: state.activeWorkout?.is_from_trainer ? 'private' : ((typeof localStorage !== 'undefined' ? localStorage.getItem('globalWorkoutVisibility') : null) || 'friends'), 
+        visibility: activeWorkout?.is_from_trainer ? 'private' : ((typeof localStorage !== 'undefined' ? localStorage.getItem('globalWorkoutVisibility') : null) || 'friends'),
         notifyFriends: (typeof localStorage !== 'undefined' ? localStorage.getItem('globalNotifyFriends') : null) !== 'false'
       };
 
-      const responseData = await workoutService.logWorkout(finalWorkoutData);
+      const cardioUserId = standalone ? state.userProfile?.id : undefined;
+      const offlineOptions = standalone ? { cardioUserId, queueWhenOffline: cardioUserId != null } : undefined;
+      const responseData = await workoutService.logWorkout(finalWorkoutData, offlineOptions);
 
       if (workoutData.routineId) {
         const current = get().completedRoutineIdsToday;
@@ -740,12 +743,17 @@ export const createWorkoutSlice = (set, get) => ({
         }
       }
 
-      clearWorkoutInStorage();
-      clearRestTimerInStorage();
-      stopNativeTimer();
+      if (!standalone) {
+        clearWorkoutInStorage();
+        clearRestTimerInStorage();
+        stopNativeTimer();
+      }
 
       return { success: true, message: 'Entrenamiento guardado exitosamente.' };
     } catch (error) {
+      if (standalone && error.isQueued) {
+        return { success: true, offline: true, message: 'Sesión guardada en este dispositivo. Se sincronizará al recuperar la conexión.' };
+      }
       return {
         success: false,
         message: `Error al guardar: ${error.message}`,

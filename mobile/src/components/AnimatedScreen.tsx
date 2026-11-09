@@ -11,13 +11,15 @@ interface AnimatedScreenProps {
     children: React.ReactNode;
     paddingBottom?: number;
     paddingHorizontal?: number;
+    keyboardShouldPersistTaps?: 'always' | 'never' | 'handled';
 }
 
 export default function AnimatedScreen({ 
     header, 
     children, 
     paddingBottom = 120, 
-    paddingHorizontal = 16 
+    paddingHorizontal = 16,
+    keyboardShouldPersistTaps,
 }: AnimatedScreenProps) {
     const scrollY = useRef(new Animated.Value(0)).current;
     const insets = useSafeAreaInsets();
@@ -30,6 +32,7 @@ export default function AnimatedScreen({
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
                 <Animated.ScrollView
                     showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps={keyboardShouldPersistTaps}
                     onScroll={Animated.event(
                         [{ nativeEvent: { contentOffset: { y: scrollY } } }],
                         { useNativeDriver: Platform.OS !== 'web' }

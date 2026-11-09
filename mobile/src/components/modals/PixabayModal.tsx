@@ -103,7 +103,7 @@ export const PixabayModal: React.FC<PixabayModalProps> = ({
       visible={visible}
       onClose={onClose}
       isDark={isDark}
-      backgroundColor={colors.background}
+      backgroundColor={colors.background === 'transparent' ? colors.card : colors.background}
       height="88%"
       maxHeight="88%"
       avoidKeyboard

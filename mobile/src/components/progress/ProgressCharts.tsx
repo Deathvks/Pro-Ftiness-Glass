@@ -18,7 +18,7 @@ import Svg, {
   Rect,
   Text as SvgText,
 } from 'react-native-svg';
-import { GlassView } from 'expo-glass-effect';
+import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import {
   Activity,
   TrendingUp,
@@ -88,8 +88,7 @@ export function ChartBase({
         },
       ]}
     >
-      <GlassView
-        glassEffectStyle="regular"
+      <ContentCardBackdrop
         colorScheme={isDark ? 'dark' : 'light'}
         style={StyleSheet.absoluteFill}
       />

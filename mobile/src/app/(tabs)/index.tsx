@@ -54,7 +54,7 @@ import { useRouter } from 'expo-router';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, isAtmosphericTheme, shouldUseContentGlass } from '@/constants/theme';
 import { getContrastColor, getContrastTextColor } from '@/utils/colorUtils';
 import { isSameDay } from '@/utils/helpers';
 import { getTrainingWeek, trainingDateFormatter } from '@/utils/weeklyTraining';
@@ -159,8 +159,9 @@ export default function Dashboard() {
   const tintContrastText = getContrastTextColor(colors.tint);
   const iconBadgeBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass(theme);
-  const iosCardSurface = isIOS ? getAppleCardSurfaceStyle(theme, 20) : null;
+  const hasThemedSurface = isAtmosphericTheme(theme);
+  const useGlass = shouldUseContentGlass();
+  const cardSurface = (isIOS || hasThemedSurface) && getAppleCardSurfaceStyle(theme, 32);
 
   // Store
   const userProfile = useAppStore(state => state.userProfile || (state as any).user);
@@ -597,7 +598,7 @@ export default function Dashboard() {
         onPress={() => setShowXPModal(true)}
         activeOpacity={0.8}
         style={[
-          styles.glassCardBase, iosCardSurface,
+          styles.glassCardBase, cardSurface,
           {
             borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             padding: 20,
@@ -679,12 +680,12 @@ export default function Dashboard() {
         <View style={{ marginBottom: 16 }}>
           <View
             style={[
-              styles.glassCardBase, iosCardSurface,
+              styles.glassCardBase, cardSurface,
               {
                 borderColor: colors.tint + '60',
                 borderWidth: 1.5,
                 padding: 18,
-                backgroundColor: colors.tint + '08',
+                backgroundColor: hasThemedSurface ? colors.card : colors.tint + '08',
               },
             ]}
           >
@@ -743,7 +744,7 @@ export default function Dashboard() {
             if (canOpenWeeklyRecap) setShowWeeklyRecap(true);
           }}
           style={[
-            styles.glassCardBase, iosCardSurface,
+            styles.glassCardBase, cardSurface,
             styles.recapCard,
             {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
@@ -792,7 +793,7 @@ export default function Dashboard() {
           activeOpacity={latestPRs.length > 0 ? 0.7 : 1}
           onPress={handlePRCardClick}
           style={[
-            styles.glassCardBase, iosCardSurface,
+            styles.glassCardBase, cardSurface,
             styles.recapCard,
             {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
@@ -842,7 +843,7 @@ export default function Dashboard() {
             onPress={showStreakTimeRemaining}
             activeOpacity={0.8}
             style={[
-              styles.glassCardBase, iosCardSurface,
+              styles.glassCardBase, cardSurface,
               styles.statCardBase,
               { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
             ]}
@@ -982,7 +983,7 @@ export default function Dashboard() {
       {/* 7. NUTRICIÓN (5 ANILLOS CIRCULARES CON ALERTAS Y MODALES) */}
       <View
         style={[
-          styles.glassCardBase, iosCardSurface,
+          styles.glassCardBase, cardSurface,
           {
             borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             padding: 22,
@@ -1109,7 +1110,7 @@ export default function Dashboard() {
           <TouchableOpacity
             onPress={() => handleStartCardio('Cinta')}
             style={[
-              styles.glassCardBase, iosCardSurface,
+              styles.glassCardBase, cardSurface,
               styles.cardioCard,
               { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
             ]}
@@ -1132,7 +1133,7 @@ export default function Dashboard() {
           <TouchableOpacity
             onPress={() => handleStartCardio('Bici')}
             style={[
-              styles.glassCardBase, iosCardSurface,
+              styles.glassCardBase, cardSurface,
               styles.cardioCard,
               { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
             ]}
@@ -1153,9 +1154,9 @@ export default function Dashboard() {
 
           {/* Explorar */}
           <TouchableOpacity
-            onPress={() => router.push('/workout')}
+            onPress={() => router.push('/quick-cardio')}
             style={[
-              styles.glassCardBase, iosCardSurface,
+              styles.glassCardBase, cardSurface,
               styles.cardioCard,
               { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
             ]}
@@ -1239,7 +1240,7 @@ export default function Dashboard() {
                   }
                 }}
                 style={[
-                  styles.glassCardBase, iosCardSurface,
+                  styles.glassCardBase, cardSurface,
                   {
                     borderColor: isActive
                       ? colors.tint
@@ -1309,7 +1310,7 @@ export default function Dashboard() {
         ) : (
           <View
             style={[
-              styles.glassCardBase, iosCardSurface,
+              styles.glassCardBase, cardSurface,
               {
                 borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
                 padding: 28,
@@ -1339,7 +1340,7 @@ export default function Dashboard() {
         <TouchableOpacity
           onPress={() => setShowExerciseLibrary(true)}
           style={[
-            styles.glassCardBase, iosCardSurface,
+            styles.glassCardBase, cardSurface,
             {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
               padding: 16,
@@ -1376,7 +1377,7 @@ export default function Dashboard() {
       {/* 10. PESO CORPORAL */}
       <View
         style={[
-          styles.glassCardBase, iosCardSurface,
+          styles.glassCardBase, cardSurface,
           {
             borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             padding: 22,

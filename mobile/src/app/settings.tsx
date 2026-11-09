@@ -108,16 +108,16 @@ function GlassSurface({
 }) {
   const theme = useAppStore(state => state.theme) || 'oled';
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass(theme);
+  const useGlass = shouldUseContentGlass();
   const effectiveRadius = isIOS ? 20 : radius;
   const innerRadius = Math.max(0, effectiveRadius - 1);
 
   return (
     <View
       style={[
-        isIOS
-          ? [getAppleCardSurfaceStyle(theme, 20), { overflow: 'hidden' }]
-          : { borderRadius: radius, borderWidth: 1, borderColor, overflow: 'hidden' },
+        getAppleCardSurfaceStyle(theme, radius),
+        { overflow: 'hidden' },
+        !isIOS && { borderWidth: 1, borderColor },
         style,
       ]}
     >
@@ -175,7 +175,7 @@ export default function SettingsScreen() {
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const glassBorder = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
-  const subtleItemBg = Platform.OS === 'ios' && !shouldUseContentGlass(theme) ? (isDark ? '#2C2C2E' : '#F2F2F7') : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)');
+  const subtleItemBg = Platform.OS === 'ios' && !shouldUseContentGlass() ? (isDark ? '#2C2C2E' : '#F2F2F7') : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)');
   const activeTintContrast = getContrastTextColor(colors.tint);
 
   const params = useLocalSearchParams<{ section?: string }>();

@@ -192,7 +192,7 @@ function GlassSurface({
 }) {
   const theme = useAppStore(state => state.theme) || 'oled';
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass(theme);
+  const useGlass = shouldUseContentGlass();
   const isLargeCard = radius >= 24;
   const effectiveRadius = isIOS && isLargeCard ? 20 : radius;
   const innerRadius = Math.max(0, effectiveRadius - 1);
@@ -248,7 +248,7 @@ function GlassSurface({
   }
 
   return (
-    <View style={[{ borderRadius: effectiveRadius, borderCurve: 'continuous', borderWidth: 1, borderColor }, style]}>
+    <View style={[getAppleCardSurfaceStyle(theme, effectiveRadius), { borderCurve: 'continuous', borderWidth: 1, borderColor }, style]}>
       <GlassView
         glassEffectStyle="regular"
         colorScheme={isDark ? 'dark' : 'light'}

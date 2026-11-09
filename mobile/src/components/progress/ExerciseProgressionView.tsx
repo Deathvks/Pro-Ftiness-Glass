@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
+import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import { BookOpen, ChevronDown, Search, X, Dumbbell, TrendingUp, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -105,8 +106,7 @@ export function ExerciseProgressionView() {
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
+          <ContentCardBackdrop
             colorScheme={isDark ? 'dark' : 'light'}
             style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
           />
@@ -217,8 +217,7 @@ export function ExerciseProgressionView() {
                 },
               ]}
             >
-              <GlassView
-                glassEffectStyle="regular"
+              <ContentCardBackdrop
                 colorScheme={isDark ? 'dark' : 'light'}
                 style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
               />

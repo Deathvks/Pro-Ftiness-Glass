@@ -15,6 +15,7 @@ import { Home, Users, Flame, Zap, LayoutGrid } from 'lucide-react-native';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getThemeSurfaceMode } from '@/constants/theme';
 
 export interface FloatingTabBarProps {
   state: any;
@@ -94,52 +95,7 @@ interface TabBarThemeConfig {
 }
 
 const getTabBarThemeConfig = (theme: string): TabBarThemeConfig => {
-  switch (theme) {
-    case 'galaxy':
-      return {
-        capsuleBg: 'rgba(12, 10, 28, 0.92)',
-        capsuleBorder: 'rgba(168, 85, 247, 0.32)',
-        dropBg: 'rgba(168, 85, 247, 0.22)',
-        dropBorder: 'rgba(168, 85, 247, 0.45)',
-        shadowColor: 'rgba(0, 0, 0, 0.14)',
-        shadowOpacity: 0.08,
-      };
-    case 'ocean-dark':
-      return {
-        capsuleBg: 'rgba(8, 47, 73, 0.92)',
-        capsuleBorder: 'rgba(56, 189, 248, 0.32)',
-        dropBg: 'rgba(14, 165, 233, 0.24)',
-        dropBorder: 'rgba(56, 189, 248, 0.45)',
-        shadowColor: 'rgba(0, 0, 0, 0.14)',
-        shadowOpacity: 0.08,
-      };
-    case 'desert-dark':
-      return {
-        capsuleBg: 'rgba(44, 30, 22, 0.92)',
-        capsuleBorder: 'rgba(210, 180, 140, 0.32)',
-        dropBg: 'rgba(210, 180, 140, 0.20)',
-        dropBorder: 'rgba(210, 180, 140, 0.45)',
-        shadowColor: 'rgba(0, 0, 0, 0.14)',
-        shadowOpacity: 0.08,
-      };
-    case 'ocean':
-      return {
-        capsuleBg: 'rgba(224, 242, 254, 0.92)',
-        capsuleBorder: 'rgba(14, 165, 233, 0.28)',
-        dropBg: 'rgba(14, 165, 233, 0.15)',
-        dropBorder: 'rgba(14, 165, 233, 0.35)',
-        shadowColor: 'rgba(12, 74, 110, 0.08)',
-        shadowOpacity: 0.06,
-      };
-    case 'desert':
-      return {
-        capsuleBg: 'rgba(250, 240, 230, 0.92)',
-        capsuleBorder: 'rgba(210, 180, 140, 0.35)',
-        dropBg: 'rgba(210, 180, 140, 0.22)',
-        dropBorder: 'rgba(210, 180, 140, 0.45)',
-        shadowColor: 'rgba(92, 64, 51, 0.08)',
-        shadowOpacity: 0.06,
-      };
+  switch (getThemeSurfaceMode(theme)) {
     case 'oled':
       return {
         capsuleBg: 'rgba(18, 18, 20, 0.94)',

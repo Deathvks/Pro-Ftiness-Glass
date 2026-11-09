@@ -21,7 +21,7 @@ import {
   ChevronRight,
   X,
 } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 
@@ -31,7 +31,7 @@ import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/the
 import GlobalHeader from '@/components/GlobalHeader';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import { GlassButton } from '@/components/ui/GlassButton';
-import { RoutinesTabs, TabKey } from '@/components/routines/RoutinesTabs';
+import { RoutinesTabs } from '@/components/routines/RoutinesTabs';
 import { FolderList } from '@/components/routines/FolderList';
 import { RoutineCard } from '@/components/routines/RoutineCard';
 import { PromoBanner } from '@/components/nutrition/PromoBanner';
@@ -52,6 +52,7 @@ import { getContrastTextColor } from '@/utils/routineHelpers';
 
 export default function RoutinesScreen() {
   const router = useRouter();
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
   const theme = useAppStore((state) => state.theme);
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
@@ -78,7 +79,7 @@ export default function RoutinesScreen() {
   const { exclusions } = useWeeklyVolumeExclusions();
 
   // Local State
-  const [activeTab, setActiveTab] = useState<TabKey>('myRoutines');
+  const activeTab = tab === 'manualExercises' || (tab === 'explore' && userProfile?.role === 'admin') ? tab : 'myRoutines';
   const [selectedFolder, setSelectedFolder] = useState<string>('all');
   const [query, setQuery] = useState('');
 
@@ -444,8 +445,8 @@ export default function RoutinesScreen() {
       <View style={styles.tabsRow}>
         <RoutinesTabs
           activeTab={activeTab}
-          onChangeTab={setActiveTab}
-          onQuickCardio={() => router.push('/workout')}
+          onChangeTab={nextTab => router.setParams({ tab: nextTab })}
+          onQuickCardio={() => router.push('/quick-cardio')}
         />
       </View>
 
@@ -538,7 +539,7 @@ export default function RoutinesScreen() {
               !isIOS && { borderColor: colors.tint + '35' },
             ]}
           >
-            {shouldUseContentGlass(theme || 'oled') && (
+            {shouldUseContentGlass() && (
               <GlassView
                 style={StyleSheet.absoluteFill}
                 glassEffectStyle="regular"
@@ -671,7 +672,7 @@ export default function RoutinesScreen() {
                   },
                 ]}
               >
-                {shouldUseContentGlass(theme || 'oled') && (
+                {shouldUseContentGlass() && (
                   <GlassView
                     style={StyleSheet.absoluteFill}
                     glassEffectStyle="regular"

@@ -5,8 +5,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Modal,
-  Pressable,
   TextInput,
   Dimensions,
 } from 'react-native';
@@ -22,6 +20,7 @@ import {
   Square,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
+import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -179,18 +178,6 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
     addRestTime(seconds);
   };
 
-  const handleDismiss = () => {
-    try {
-      Haptics.selectionAsync();
-    } catch {}
-    if (restTimerEndTime || isRestTimerPaused) {
-      setRestTimerMode('minimized');
-    } else {
-      stopRestTimer();
-    }
-    if (onClose) onClose();
-  };
-
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -213,343 +200,324 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
   const strokeDashoffset = circumference - (circumference * progress) / 100;
 
   return (
-    <Modal visible={isVisible} transparent animationType="fade">
-      <Pressable
+    <SwipeableSheetModal
+      visible={isVisible}
+      onClose={handleClose}
+      backdropColor={isDark ? 'rgba(0, 0, 0, 0.65)' : 'rgba(0, 0, 0, 0.4)'}
+      dragAreaHeight={120}
+      sheetStyle={[
+        styles.modalContent,
+        {
+          backgroundColor: isDark ? 'rgba(20, 20, 28, 0.94)' : 'rgba(255, 255, 255, 0.94)',
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.1)',
+        },
+      ]}
+    >
+      <GlassView
+        glassEffectStyle="regular"
+        colorScheme={isDark ? 'dark' : 'light'}
+        style={StyleSheet.absoluteFill}
+      />
+
+      <View
+        pointerEvents="none"
         style={[
-          styles.overlay,
+          styles.dragHandle,
           {
             backgroundColor: isDark
-              ? 'rgba(0, 0, 0, 0.65)'
-              : 'rgba(0, 0, 0, 0.4)',
+              ? 'rgba(255, 255, 255, 0.25)'
+              : 'rgba(0, 0, 0, 0.2)',
           },
         ]}
-        onPress={handleDismiss}
+      />
+
+      {/* Botón Cerrar (Esquina superior derecha) */}
+      <TouchableOpacity
+        onPress={handleClose}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        style={styles.closeBtn}
       >
-        <Pressable
-          style={[
-            styles.modalContent,
-            {
-              backgroundColor: isDark
-                ? 'rgba(20, 20, 28, 0.94)'
-                : 'rgba(255, 255, 255, 0.94)',
-              borderColor: isDark
-                ? 'rgba(255, 255, 255, 0.12)'
-                : 'rgba(0, 0, 0, 0.1)',
-            },
-          ]}
-          onPress={e => e.stopPropagation()}
-        >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
+        <X size={20} color={colors.textSecondary} />
+      </TouchableOpacity>
 
-          {/* Manija superior táctil */}
-          <View
-            style={[
-              styles.dragHandle,
-              {
-                backgroundColor: isDark
-                  ? 'rgba(255, 255, 255, 0.25)'
-                  : 'rgba(0, 0, 0, 0.2)',
-              },
-            ]}
-          />
+      {/* ===================== VISTA 1: SELECCIONAR ===================== */}
+      {view === 'select' && (
+        <View style={styles.viewBody}>
+          <Text style={[styles.modalTitle, { color: colors.text }]}>
+            Seleccionar Descanso
+          </Text>
 
-          {/* Botón Cerrar (Esquina superior derecha) */}
+          {/* Anillo de tiempo previo */}
+          <View style={styles.circleContainer}>
+            <Svg width={200} height={200} viewBox="0 0 200 200">
+              <Circle
+                cx="100"
+                cy="100"
+                r={radius}
+                stroke={isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}
+                strokeWidth="8"
+                fill="transparent"
+              />
+              <Circle
+                cx="100"
+                cy="100"
+                r={radius}
+                stroke={colors.tint}
+                strokeWidth="8"
+                strokeDasharray={circumference}
+                strokeDashoffset={circumference}
+                strokeLinecap="round"
+                fill="transparent"
+                origin="100, 100"
+                rotation="-90"
+              />
+            </Svg>
+            <View style={styles.circleTextOverlay}>
+              <Text style={[styles.timerCountdownText, { color: colors.textSecondary }]}>
+                {restTimerEndTime ? formatTime(timeLeft) : '0:00'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Botón Iniciar Planeado */}
           <TouchableOpacity
-            onPress={handleClose}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            style={styles.closeBtn}
+            activeOpacity={0.85}
+            onPress={() => handleStartPreset(plannedRestTime)}
+            style={[styles.primaryActionBtn, { backgroundColor: colors.tint }]}
           >
-            <X size={20} color={colors.textSecondary} />
+            <Text style={styles.primaryActionBtnText}>
+              Iniciar Planeado ({formatTime(plannedRestTime)})
+            </Text>
           </TouchableOpacity>
 
-          {/* ===================== VISTA 1: SELECCIONAR ===================== */}
-          {view === 'select' && (
-            <View style={styles.viewBody}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                Seleccionar Descanso
-              </Text>
-
-              {/* Anillo de tiempo previo */}
-              <View style={styles.circleContainer}>
-                <Svg width={200} height={200} viewBox="0 0 200 200">
-                  <Circle
-                    cx="100"
-                    cy="100"
-                    r={radius}
-                    stroke={isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}
-                    strokeWidth="8"
-                    fill="transparent"
-                  />
-                  <Circle
-                    cx="100"
-                    cy="100"
-                    r={radius}
-                    stroke={colors.tint}
-                    strokeWidth="8"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={circumference}
-                    strokeLinecap="round"
-                    fill="transparent"
-                    origin="100, 100"
-                    rotation="-90"
-                  />
-                </Svg>
-                <View style={styles.circleTextOverlay}>
-                  <Text style={[styles.timerCountdownText, { color: colors.textSecondary }]}>
-                    {restTimerEndTime ? formatTime(timeLeft) : '0:00'}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Botón Iniciar Planeado */}
+          {/* Grid de presets (1m, 2m, 3m) */}
+          <View style={styles.presetsGrid}>
+            {[60, 120, 180].map(time => (
               <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => handleStartPreset(plannedRestTime)}
-                style={[styles.primaryActionBtn, { backgroundColor: colors.tint }]}
+                key={time}
+                activeOpacity={0.75}
+                onPress={() => handleStartPreset(time)}
+                style={[
+                  styles.presetItemBtn,
+                  {
+                    backgroundColor: isDark
+                      ? 'rgba(255, 255, 255, 0.07)'
+                      : 'rgba(0, 0, 0, 0.04)',
+                    borderColor: isDark
+                      ? 'rgba(255, 255, 255, 0.12)'
+                      : 'rgba(0, 0, 0, 0.08)',
+                  },
+                ]}
               >
-                <Text style={styles.primaryActionBtnText}>
-                  Iniciar Planeado ({formatTime(plannedRestTime)})
+                <Text style={[styles.presetNumber, { color: colors.text }]}>
+                  {time / 60}
+                </Text>
+                <Text style={[styles.presetUnit, { color: colors.textSecondary }]}>
+                  min
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Input personalizado M:SS */}
+          <View style={styles.customRow}>
+            <TextInput
+              placeholder="M:SS (ej. 1:45)"
+              placeholderTextColor={colors.textSecondary}
+              value={customDuration}
+              onChangeText={setCustomDuration}
+              keyboardType="numbers-and-punctuation"
+              style={[
+                styles.customInput,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255, 255, 255, 0.07)'
+                    : 'rgba(0, 0, 0, 0.04)',
+                  borderColor: isDark
+                    ? 'rgba(255, 255, 255, 0.14)'
+                    : 'rgba(0, 0, 0, 0.1)',
+                  color: colors.text,
+                },
+              ]}
+            />
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={handleStartCustom}
+              style={[styles.customStartBtn, { backgroundColor: colors.tint }]}
+            >
+              <Text style={styles.customStartBtnText}>Iniciar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* ===================== VISTA 2: TIMER ACTIVO ===================== */}
+      {view === 'timer' && (
+        <View style={styles.viewBody}>
+          {/* Botón Atrás a la selección */}
+          <TouchableOpacity
+            onPress={goBackToSelect}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            style={styles.backBtn}
+          >
+            <ArrowLeft size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          {/* Botón Minimizar a Isla Dinámica */}
+          <TouchableOpacity
+            onPress={handleMinimize}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            style={styles.minimizeBtn}
+          >
+            <Minimize2 size={20} color={colors.tint} />
+          </TouchableOpacity>
+
+          <Text style={[styles.modalTitle, { color: colors.text }]}>
+            Tiempo de Descanso
+          </Text>
+
+          {/* Anillo de cuenta regresiva SVG circular animado */}
+          <View style={styles.circleContainer}>
+            <Svg width={200} height={200} viewBox="0 0 200 200">
+              <Circle
+                cx="100"
+                cy="100"
+                r={radius}
+                stroke={isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}
+                strokeWidth="8"
+                fill="transparent"
+              />
+              <Circle
+                cx="100"
+                cy="100"
+                r={radius}
+                stroke={timeLeft === 0 ? '#ef4444' : colors.tint}
+                strokeWidth="8"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                fill="transparent"
+                origin="100, 100"
+                rotation="-90"
+              />
+            </Svg>
+            <View style={styles.circleTextOverlay}>
+              <Text
+                style={[
+                  styles.timerCountdownText,
+                  {
+                    color:
+                      timeLeft === 0
+                        ? '#ef4444'
+                        : isRestTimerPaused
+                        ? '#f59e0b'
+                        : colors.text,
+                  },
+                ]}
+              >
+                {formatTime(timeLeft)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Controles de temporizador: Pausar/Reanudar y ±10s */}
+          <View style={styles.timerControlsCol}>
+            <View style={styles.pauseResumeRow}>
+              <TouchableOpacity
+                onPress={handlePauseToggle}
+                activeOpacity={0.85}
+                style={[
+                  styles.pauseBigCircleBtn,
+                  {
+                    backgroundColor: isRestTimerPaused
+                      ? colors.tint
+                      : isDark
+                      ? 'rgba(255, 255, 255, 0.12)'
+                      : 'rgba(0, 0, 0, 0.07)',
+                    borderColor: isRestTimerPaused
+                      ? colors.tint
+                      : isDark
+                      ? 'rgba(255, 255, 255, 0.2)'
+                      : 'rgba(0, 0, 0, 0.12)',
+                  },
+                ]}
+              >
+                {isRestTimerPaused ? (
+                  <Play size={28} color="#ffffff" fill="#ffffff" style={{ marginLeft: 3 }} />
+                ) : (
+                  <Pause size={28} color={isDark ? '#ffffff' : colors.text} fill={isDark ? '#ffffff' : colors.text} />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Botones -10s y +10s */}
+            <View style={styles.adjustTimeRow}>
+              <TouchableOpacity
+                onPress={() => handleAddTime(-10)}
+                disabled={timeLeft === 0}
+                style={[
+                  styles.adjustTimeBtn,
+                  {
+                    backgroundColor: isDark
+                      ? 'rgba(255, 255, 255, 0.08)'
+                      : 'rgba(0, 0, 0, 0.04)',
+                    borderColor: isDark
+                      ? 'rgba(255, 255, 255, 0.12)'
+                      : 'rgba(0, 0, 0, 0.08)',
+                    opacity: timeLeft === 0 ? 0.4 : 1,
+                  },
+                ]}
+              >
+                <Minus size={18} color={colors.text} />
+                <Text style={[styles.adjustTimeBtnText, { color: colors.text }]}>
+                  -10 seg
                 </Text>
               </TouchableOpacity>
 
-              {/* Grid de presets (1m, 2m, 3m) */}
-              <View style={styles.presetsGrid}>
-                {[60, 120, 180].map(time => (
-                  <TouchableOpacity
-                    key={time}
-                    activeOpacity={0.75}
-                    onPress={() => handleStartPreset(time)}
-                    style={[
-                      styles.presetItemBtn,
-                      {
-                        backgroundColor: isDark
-                          ? 'rgba(255, 255, 255, 0.07)'
-                          : 'rgba(0, 0, 0, 0.04)',
-                        borderColor: isDark
-                          ? 'rgba(255, 255, 255, 0.12)'
-                          : 'rgba(0, 0, 0, 0.08)',
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.presetNumber, { color: colors.text }]}>
-                      {time / 60}
-                    </Text>
-                    <Text style={[styles.presetUnit, { color: colors.textSecondary }]}>
-                      min
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Input personalizado M:SS */}
-              <View style={styles.customRow}>
-                <TextInput
-                  placeholder="M:SS (ej. 1:45)"
-                  placeholderTextColor={colors.textSecondary}
-                  value={customDuration}
-                  onChangeText={setCustomDuration}
-                  keyboardType="numbers-and-punctuation"
-                  style={[
-                    styles.customInput,
-                    {
-                      backgroundColor: isDark
-                        ? 'rgba(255, 255, 255, 0.07)'
-                        : 'rgba(0, 0, 0, 0.04)',
-                      borderColor: isDark
-                        ? 'rgba(255, 255, 255, 0.14)'
-                        : 'rgba(0, 0, 0, 0.1)',
-                      color: colors.text,
-                    },
-                  ]}
-                />
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={handleStartCustom}
-                  style={[styles.customStartBtn, { backgroundColor: colors.tint }]}
-                >
-                  <Text style={styles.customStartBtnText}>Iniciar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {/* ===================== VISTA 2: TIMER ACTIVO ===================== */}
-          {view === 'timer' && (
-            <View style={styles.viewBody}>
-              {/* Botón Atrás a la selección */}
               <TouchableOpacity
-                onPress={goBackToSelect}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                style={styles.backBtn}
+                onPress={() => handleAddTime(10)}
+                style={[
+                  styles.adjustTimeBtn,
+                  {
+                    backgroundColor: isDark
+                      ? 'rgba(255, 255, 255, 0.08)'
+                      : 'rgba(0, 0, 0, 0.04)',
+                    borderColor: isDark
+                      ? 'rgba(255, 255, 255, 0.12)'
+                      : 'rgba(0, 0, 0, 0.08)',
+                  },
+                ]}
               >
-                <ArrowLeft size={20} color={colors.textSecondary} />
+                <Plus size={18} color={colors.text} />
+                <Text style={[styles.adjustTimeBtnText, { color: colors.text }]}>
+                  +10 seg
+                </Text>
               </TouchableOpacity>
-
-              {/* Botón Minimizar a Isla Dinámica */}
-              <TouchableOpacity
-                onPress={handleMinimize}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                style={styles.minimizeBtn}
-              >
-                <Minimize2 size={20} color={colors.tint} />
-              </TouchableOpacity>
-
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                Tiempo de Descanso
-              </Text>
-
-              {/* Anillo de cuenta regresiva SVG circular animado */}
-              <View style={styles.circleContainer}>
-                <Svg width={200} height={200} viewBox="0 0 200 200">
-                  <Circle
-                    cx="100"
-                    cy="100"
-                    r={radius}
-                    stroke={isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}
-                    strokeWidth="8"
-                    fill="transparent"
-                  />
-                  <Circle
-                    cx="100"
-                    cy="100"
-                    r={radius}
-                    stroke={timeLeft === 0 ? '#ef4444' : colors.tint}
-                    strokeWidth="8"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                    strokeLinecap="round"
-                    fill="transparent"
-                    origin="100, 100"
-                    rotation="-90"
-                  />
-                </Svg>
-                <View style={styles.circleTextOverlay}>
-                  <Text
-                    style={[
-                      styles.timerCountdownText,
-                      {
-                        color:
-                          timeLeft === 0
-                            ? '#ef4444'
-                            : isRestTimerPaused
-                            ? '#f59e0b'
-                            : colors.text,
-                      },
-                    ]}
-                  >
-                    {formatTime(timeLeft)}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Controles de temporizador: Pausar/Reanudar y ±10s */}
-              <View style={styles.timerControlsCol}>
-                <View style={styles.pauseResumeRow}>
-                  <TouchableOpacity
-                    onPress={handlePauseToggle}
-                    activeOpacity={0.85}
-                    style={[
-                      styles.pauseBigCircleBtn,
-                      {
-                        backgroundColor: isRestTimerPaused
-                          ? colors.tint
-                          : isDark
-                          ? 'rgba(255, 255, 255, 0.12)'
-                          : 'rgba(0, 0, 0, 0.07)',
-                        borderColor: isRestTimerPaused
-                          ? colors.tint
-                          : isDark
-                          ? 'rgba(255, 255, 255, 0.2)'
-                          : 'rgba(0, 0, 0, 0.12)',
-                      },
-                    ]}
-                  >
-                    {isRestTimerPaused ? (
-                      <Play size={28} color="#ffffff" fill="#ffffff" style={{ marginLeft: 3 }} />
-                    ) : (
-                      <Pause size={28} color={isDark ? '#ffffff' : colors.text} fill={isDark ? '#ffffff' : colors.text} />
-                    )}
-                  </TouchableOpacity>
-                </View>
-
-                {/* Botones -10s y +10s */}
-                <View style={styles.adjustTimeRow}>
-                  <TouchableOpacity
-                    onPress={() => handleAddTime(-10)}
-                    disabled={timeLeft === 0}
-                    style={[
-                      styles.adjustTimeBtn,
-                      {
-                        backgroundColor: isDark
-                          ? 'rgba(255, 255, 255, 0.08)'
-                          : 'rgba(0, 0, 0, 0.04)',
-                        borderColor: isDark
-                          ? 'rgba(255, 255, 255, 0.12)'
-                          : 'rgba(0, 0, 0, 0.08)',
-                        opacity: timeLeft === 0 ? 0.4 : 1,
-                      },
-                    ]}
-                  >
-                    <Minus size={18} color={colors.text} />
-                    <Text style={[styles.adjustTimeBtnText, { color: colors.text }]}>
-                      -10 seg
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => handleAddTime(10)}
-                    style={[
-                      styles.adjustTimeBtn,
-                      {
-                        backgroundColor: isDark
-                          ? 'rgba(255, 255, 255, 0.08)'
-                          : 'rgba(0, 0, 0, 0.04)',
-                        borderColor: isDark
-                          ? 'rgba(255, 255, 255, 0.12)'
-                          : 'rgba(0, 0, 0, 0.08)',
-                      },
-                    ]}
-                  >
-                    <Plus size={18} color={colors.text} />
-                    <Text style={[styles.adjustTimeBtnText, { color: colors.text }]}>
-                      +10 seg
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Botón Finalizar / Omitir descanso */}
-                <TouchableOpacity
-                  onPress={handleStopAndClose}
-                  activeOpacity={0.8}
-                  style={[
-                    styles.stopRestBtn,
-                    {
-                      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.08)',
-                      borderColor: 'rgba(239, 68, 68, 0.3)',
-                    },
-                  ]}
-                >
-                  <Square size={13} color="#ef4444" fill="#ef4444" style={{ marginRight: 6 }} />
-                  <Text style={styles.stopRestBtnText}>Terminar Descanso</Text>
-                </TouchableOpacity>
-              </View>
             </View>
-          )}
-        </Pressable>
-      </Pressable>
-    </Modal>
+
+            {/* Botón Finalizar / Omitir descanso */}
+            <TouchableOpacity
+              onPress={handleStopAndClose}
+              activeOpacity={0.8}
+              style={[
+                styles.stopRestBtn,
+                {
+                  backgroundColor: isDark ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.08)',
+                  borderColor: 'rgba(239, 68, 68, 0.3)',
+                },
+              ]}
+            >
+              <Square size={13} color="#ef4444" fill="#ef4444" style={{ marginRight: 6 }} />
+              <Text style={styles.stopRestBtnText}>Terminar Descanso</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    </SwipeableSheetModal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
   modalContent: {
     width: '100%',
     borderTopLeftRadius: 36,

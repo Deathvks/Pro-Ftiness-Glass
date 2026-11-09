@@ -49,7 +49,7 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
           { marginBottom: 20 },
         ]}
       >
-        {shouldUseContentGlass(theme) && (
+        {shouldUseContentGlass() && (
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}
@@ -146,7 +146,7 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
             !isIOS && { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
           ]}
         >
-          {shouldUseContentGlass(theme) && (
+          {shouldUseContentGlass() && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}

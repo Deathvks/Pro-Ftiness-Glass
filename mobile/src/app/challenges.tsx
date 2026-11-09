@@ -15,7 +15,7 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GlassView } from 'expo-glass-effect';
+import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import {
   Trophy,
   Users,
@@ -74,8 +74,7 @@ function GlassSurface({
   const innerRadius = Math.max(0, radius - 1);
   return (
     <View style={[{ borderRadius: radius, borderWidth: 1, borderColor }, style]}>
-      <GlassView
-        glassEffectStyle="regular"
+      <ContentCardBackdrop
         colorScheme={isDark ? 'dark' : 'light'}
         style={[StyleSheet.absoluteFill, { borderRadius: innerRadius }]}
       />

@@ -78,7 +78,7 @@ export const PRListModal: React.FC<PRListModalProps> = ({
                 style={[
                   styles.recordRow,
                   {
-                    backgroundColor: colors.background,
+                    backgroundColor: colors.background === 'transparent' ? colors.card : colors.background,
                     borderColor: colors.border,
                     borderWidth: isIOS ? 0 : 1,
                   },

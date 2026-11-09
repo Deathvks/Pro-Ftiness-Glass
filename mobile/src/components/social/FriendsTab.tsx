@@ -88,7 +88,7 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
           !isIOS && { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
         ]}
       >
-        {shouldUseContentGlass(theme) && (
+        {shouldUseContentGlass() && (
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}

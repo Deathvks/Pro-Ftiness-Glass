@@ -646,7 +646,7 @@ export function WeeklyMuscleVolumeCard({
         },
       ]}
     >
-      {shouldUseContentGlass(theme) && (
+      {shouldUseContentGlass() && (
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}

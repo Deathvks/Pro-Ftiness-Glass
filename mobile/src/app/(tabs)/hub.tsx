@@ -241,7 +241,7 @@ export default function Hub() {
 
   const scrollY = React.useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
-  const useGlass = shouldUseContentGlass(theme);
+  const useGlass = shouldUseContentGlass();
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background }}>

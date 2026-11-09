@@ -19,6 +19,7 @@ import {
   Minimize2,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
+import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -98,8 +99,7 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
         },
       ]}
     >
-      <GlassView
-        glassEffectStyle="regular"
+      <ContentCardBackdrop
         colorScheme={isDark ? 'dark' : 'light'}
         style={StyleSheet.absoluteFill}
       />

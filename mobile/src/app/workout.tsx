@@ -158,9 +158,7 @@ export default function WorkoutScreen() {
       <View style={[styles.screen, { paddingTop: insets.top }]}>
         <NoActiveWorkout
           onGoToRoutines={() => router.replace('/(tabs)/routines')}
-          onStartQuickCardio={() => {
-            Alert.alert('Cardio Rápido', 'Próximamente disponible en la app.');
-          }}
+          onStartQuickCardio={() => router.push('/quick-cardio')}
         />
       </View>
     );

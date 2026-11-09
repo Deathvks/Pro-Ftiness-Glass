@@ -793,7 +793,7 @@ export const ManualExercisesView: React.FC = () => {
             },
           ]}
         >
-          {shouldUseContentGlass(theme) && (
+          {shouldUseContentGlass() && (
             <GlassView
               style={StyleSheet.absoluteFill}
               glassEffectStyle="regular"
@@ -826,7 +826,7 @@ export const ManualExercisesView: React.FC = () => {
                 },
               ]}
             >
-              {shouldUseContentGlass(theme) && (
+              {shouldUseContentGlass() && (
                 <GlassView
                   style={StyleSheet.absoluteFill}
                   glassEffectStyle="regular"

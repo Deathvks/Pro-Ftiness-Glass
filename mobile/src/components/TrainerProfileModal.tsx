@@ -1,20 +1,17 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   ScrollView,
   TouchableOpacity,
-  Pressable,
   Dimensions,
-  Platform,
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { GlassView } from 'expo-glass-effect';
+import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   GraduationCap,
@@ -29,6 +26,7 @@ import {
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import { getThemeBaseBackground } from '@/constants/theme';
 
 interface TrainerProfileModalProps {
   visible: boolean;
@@ -55,28 +53,27 @@ const SPECIALTIES = [
   'Entrenamiento personalizado a tu día y vida diaria',
 ];
 
+const HEADER_HEIGHT = 72;
+
 export default function TrainerProfileModal({
   visible,
   onClose,
-  trainer,
 }: TrainerProfileModalProps) {
   const insets = useSafeAreaInsets();
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const surfaceColor = colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background;
   const contrastText = getContrastTextColor(colors.tint);
 
   const [headerOpacity, setHeaderOpacity] = useState(0);
-  const scrollRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (visible) {
-      setHeaderOpacity(0);
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
-    }
-  }, [visible]);
 
   if (!visible) return null;
+
+  const handleClose = () => {
+    setHeaderOpacity(0);
+    onClose();
+  };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = event.nativeEvent.contentOffset.y;
@@ -85,217 +82,186 @@ export default function TrainerProfileModal({
   };
 
   return (
-    <Modal
+    <SwipeableSheetModal
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
+      onClose={handleClose}
+      backdropColor={isDark ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.6)'}
+      dragAreaHeight={HEADER_HEIGHT}
+      sheetStyle={[
+        styles.modalContainer,
+        {
+          backgroundColor: surfaceColor,
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+          paddingBottom: Math.max(insets.bottom, 16),
+        },
+      ]}
     >
-      <View style={styles.modalBackdrop}>
-        {/* Backdrop tap to close */}
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
-          <View style={[styles.dimmer, { backgroundColor: isDark ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.6)' }]} />
-        </Pressable>
-
-        {/* Modal Container */}
+      {/* Keep the full-width drag area outside the ScrollView so it can receive downward swipes. */}
+      <View style={styles.header}>
         <View
+          pointerEvents="none"
           style={[
-            styles.modalContainer,
-            {
-              backgroundColor: colors.background,
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-              paddingBottom: Math.max(insets.bottom, 16),
-            },
+            styles.dragPill,
+            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.25)' },
           ]}
-        >
-          {/* Sticky top mini-header when scrolled */}
-          {headerOpacity > 0.05 && (
-            <View
-              style={[
-                styles.stickyHeader,
-                {
-                  opacity: headerOpacity,
-                  backgroundColor: colors.background,
-                  borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                },
-              ]}
-            >
-              <View style={styles.stickyHeaderContent}>
-                <View style={[styles.miniAvatarWrap, { borderColor: colors.tint }]}>
-                  <Image
-                    source={require('@/assets/images/trainer-profile.jpg')}
-                    style={styles.miniAvatar}
-                    contentFit="cover"
-                  />
-                </View>
-                <Text style={[styles.stickyTitle, { color: colors.text }]}>ENTRENADOR</Text>
-              </View>
-            </View>
-          )}
-
-          {/* Close button (always accessible) */}
-          <TouchableOpacity
-            style={[
-              styles.closeBtn,
-              {
-                top: Math.max(insets.top > 0 ? 12 : 16, 12),
-                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.7)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)',
-              },
-            ]}
-            onPress={onClose}
-            activeOpacity={0.8}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <X size={20} color={colors.text} strokeWidth={2.5} />
-          </TouchableOpacity>
-
-          {/* Drag Pill */}
-          <View style={styles.dragPillWrap}>
-            <View
-              style={[
-                styles.dragPill,
-                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.25)' },
-              ]}
-            />
-          </View>
-
-          {/* Scrollable Content */}
-          <ScrollView
-            ref={scrollRef}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-          >
-            {/* Hero Image Container */}
-            <View style={styles.heroWrap}>
+        />
+        {headerOpacity > 0.05 && (
+          <View pointerEvents="none" style={[styles.stickyHeaderContent, { opacity: headerOpacity }]}>
+            <View style={[styles.miniAvatarWrap, { borderColor: colors.tint }]}>
               <Image
                 source={require('@/assets/images/trainer-profile.jpg')}
-                style={styles.heroImage}
+                style={styles.miniAvatar}
                 contentFit="cover"
               />
-              <LinearGradient
-                colors={['rgba(0,0,0,0.45)', 'transparent']}
-                style={styles.heroTopGrad}
-              />
-              <LinearGradient
-                colors={['transparent', colors.background]}
-                style={styles.heroBottomGrad}
-              />
             </View>
-
-            {/* Profile Header Info */}
-            <View style={styles.profileMetaWrap}>
-              {/* Scroll Hint */}
-              <View style={styles.scrollHint}>
-                <Text style={[styles.scrollHintText, { color: colors.textSecondary }]}>
-                  DESCUBRE MÁS
-                </Text>
-                <ChevronDown size={18} color={colors.textSecondary} />
-              </View>
-
-              {/* Title with verified badge */}
-              <View style={styles.titleRow}>
-                <Text style={[styles.mainTitle, { color: colors.text }]}>ENTRENADOR</Text>
-                <View style={styles.verifiedIconWrap}>
-                  <ShieldCheck size={28} color={colors.tint} fill={colors.tint + '30'} />
-                </View>
-              </View>
-
-              {/* Official preparer badge */}
-              <View style={[styles.officialBadge, { backgroundColor: colors.tint }]}>
-                <Flame size={18} color={contrastText} />
-                <Text style={[styles.officialBadgeText, { color: contrastText }]}>
-                  PREPARADOR OFICIAL
-                </Text>
-              </View>
-            </View>
-
-            {/* Mis Estudios Section */}
-            <View style={styles.sectionWrap}>
-              <View style={styles.sectionHeaderRow}>
-                <View style={[styles.sectionIconCircle, { backgroundColor: colors.tint + '20' }]}>
-                  <GraduationCap size={24} color={colors.tint} />
-                </View>
-                <Text style={[styles.sectionHeading, { color: colors.text }]}>Mis Estudios</Text>
-              </View>
-
-              <View style={styles.cardsList}>
-                {STUDIES.map((study, idx) => (
-                  <View
-                    key={idx}
-                    style={[
-                      styles.cardItem,
-                      {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                      },
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.itemIconCircle,
-                        {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                        },
-                      ]}
-                    >
-                      <Trophy size={18} color={colors.textSecondary} />
-                    </View>
-                    <Text style={[styles.studyText, { color: colors.text }]}>{study}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            {/* Especialidades Section */}
-            <View style={[styles.sectionWrap, { marginTop: 28 }]}>
-              <View style={styles.sectionHeaderRow}>
-                <View style={[styles.sectionIconCircle, { backgroundColor: colors.tint + '20' }]}>
-                  <BadgeCheck size={24} color={colors.tint} />
-                </View>
-                <Text style={[styles.sectionHeading, { color: colors.text }]}>Especialidades</Text>
-              </View>
-
-              <View style={styles.cardsList}>
-                {SPECIALTIES.map((item, idx) => (
-                  <View
-                    key={idx}
-                    style={[
-                      styles.specialtyCard,
-                      {
-                        backgroundColor: colors.tint + '0e',
-                        borderColor: colors.tint + '30',
-                      },
-                    ]}
-                  >
-                    <View style={[styles.specialtyAccentBar, { backgroundColor: colors.tint }]} />
-                    <Zap size={22} color={colors.tint} style={{ marginLeft: 12, marginRight: 8 }} />
-                    <Text style={[styles.specialtyText, { color: colors.text }]}>{item}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            <View style={{ height: 40 }} />
-          </ScrollView>
-        </View>
+            <Text style={[styles.stickyTitle, { color: colors.text }]}>ENTRENADOR</Text>
+          </View>
+        )}
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Cerrar perfil del entrenador"
+          style={[
+            styles.closeBtn,
+            {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)',
+            },
+          ]}
+          onPress={handleClose}
+          activeOpacity={0.8}
+          hitSlop={8}
+        >
+          <X size={20} color={colors.text} strokeWidth={2.5} />
+        </TouchableOpacity>
       </View>
-    </Modal>
+
+      {/* Scrollable Content */}
+      <ScrollView
+        style={styles.scrollArea}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Hero Image Container */}
+        <View style={styles.heroWrap}>
+          <Image
+            source={require('@/assets/images/trainer-profile.jpg')}
+            style={styles.heroImage}
+            contentFit="cover"
+          />
+          <LinearGradient
+            colors={['rgba(0,0,0,0.45)', 'transparent']}
+            style={styles.heroTopGrad}
+          />
+          <LinearGradient
+            colors={['transparent', surfaceColor]}
+            style={styles.heroBottomGrad}
+          />
+        </View>
+
+        {/* Profile Header Info */}
+        <View style={styles.profileMetaWrap}>
+          {/* Scroll Hint */}
+          <View style={styles.scrollHint}>
+            <Text style={[styles.scrollHintText, { color: colors.textSecondary }]}>
+              DESCUBRE MÁS
+            </Text>
+            <ChevronDown size={18} color={colors.textSecondary} />
+          </View>
+
+          {/* Title with verified badge */}
+          <View style={styles.titleRow}>
+            <Text style={[styles.mainTitle, { color: colors.text }]}>ENTRENADOR</Text>
+            <View style={styles.verifiedIconWrap}>
+              <ShieldCheck size={28} color={colors.tint} fill={colors.tint + '30'} />
+            </View>
+          </View>
+
+          {/* Official preparer badge */}
+          <View style={[styles.officialBadge, { backgroundColor: colors.tint }]}>
+            <Flame size={18} color={contrastText} />
+            <Text style={[styles.officialBadgeText, { color: contrastText }]}>
+              PREPARADOR OFICIAL
+            </Text>
+          </View>
+        </View>
+
+        {/* Mis Estudios Section */}
+        <View style={styles.sectionWrap}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionIconCircle, { backgroundColor: colors.tint + '20' }]}>
+              <GraduationCap size={24} color={colors.tint} />
+            </View>
+            <Text style={[styles.sectionHeading, { color: colors.text }]}>Mis Estudios</Text>
+          </View>
+
+          <View style={styles.cardsList}>
+            {STUDIES.map((study, idx) => (
+              <View
+                key={idx}
+                style={[
+                  styles.cardItem,
+                  {
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.itemIconCircle,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                    },
+                  ]}
+                >
+                  <Trophy size={18} color={colors.textSecondary} />
+                </View>
+                <Text style={[styles.studyText, { color: colors.text }]}>{study}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Especialidades Section */}
+        <View style={[styles.sectionWrap, { marginTop: 28 }]}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionIconCircle, { backgroundColor: colors.tint + '20' }]}>
+              <BadgeCheck size={24} color={colors.tint} />
+            </View>
+            <Text style={[styles.sectionHeading, { color: colors.text }]}>Especialidades</Text>
+          </View>
+
+          <View style={styles.cardsList}>
+            {SPECIALTIES.map((item, idx) => (
+              <View
+                key={idx}
+                style={[
+                  styles.specialtyCard,
+                  {
+                    backgroundColor: colors.tint + '0e',
+                    borderColor: colors.tint + '30',
+                  },
+                ]}
+              >
+                <View style={[styles.specialtyAccentBar, { backgroundColor: colors.tint }]} />
+                <Zap size={22} color={colors.tint} style={{ marginLeft: 12, marginRight: 8 }} />
+                <Text style={[styles.specialtyText, { color: colors.text }]}>{item}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </SwipeableSheetModal>
   );
 }
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  dimmer: {
-    ...StyleSheet.absoluteFill,
-  },
   modalContainer: {
     height: SCREEN_HEIGHT * 0.9,
     width: '100%',
@@ -312,32 +278,21 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 24,
   },
-  dragPillWrap: {
-    position: 'absolute',
-    top: 10,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 70,
+  header: {
+    height: HEADER_HEIGHT,
+    flexShrink: 0,
+    paddingHorizontal: 16,
   },
   dragPill: {
+    alignSelf: 'center',
+    marginTop: 10,
     width: 44,
     height: 5,
     borderRadius: 3,
   },
-  stickyHeader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 64,
-    zIndex: 60,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
   stickyHeaderContent: {
+    height: 38,
+    marginTop: 9,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -360,14 +315,17 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     position: 'absolute',
+    top: 24,
     right: 16,
-    zIndex: 80,
     width: 38,
     height: 38,
     borderRadius: 19,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  scrollArea: {
+    flex: 1,
   },
   scrollContent: {
     paddingBottom: 24,

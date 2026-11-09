@@ -317,7 +317,7 @@ export function TemplateRoutinesView() {
                 },
               ]}
             >
-              {shouldUseContentGlass(theme) && (
+              {shouldUseContentGlass() && (
                 <GlassView
                   glassEffectStyle="regular"
                   colorScheme={isDark ? 'dark' : 'light'}

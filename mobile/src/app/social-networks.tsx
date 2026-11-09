@@ -87,15 +87,14 @@ function GlassSurface({
 }) {
   const theme = useAppStore(state => state.theme) || 'oled';
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass(theme);
+  const useGlass = shouldUseContentGlass();
   const innerRadius = Math.max(0, (isIOS ? 20 : radius) - 1);
 
   return (
     <View
       style={[
-        isIOS
-          ? getAppleCardSurfaceStyle(theme, radius)
-          : { borderRadius: radius, borderWidth: 1, borderColor },
+        getAppleCardSurfaceStyle(theme, radius),
+        !isIOS && { borderWidth: 1, borderColor },
         style,
       ]}
     >

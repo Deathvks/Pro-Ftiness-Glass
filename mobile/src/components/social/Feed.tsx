@@ -446,7 +446,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             },
           ]}
         >
-          {shouldUseContentGlass(theme) && (
+          {shouldUseContentGlass() && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -659,7 +659,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             },
           ]}
         >
-          {shouldUseContentGlass(theme) && (
+          {shouldUseContentGlass() && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -727,7 +727,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             },
           ]}
         >
-          {shouldUseContentGlass(theme) && (
+          {shouldUseContentGlass() && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -782,7 +782,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             },
           ]}
         >
-          {shouldUseContentGlass(theme) && (
+          {shouldUseContentGlass() && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -847,7 +847,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
           },
         ]}
       >
-        {shouldUseContentGlass(theme) && (
+        {shouldUseContentGlass() && (
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}
@@ -1108,7 +1108,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                       },
                     ]}
                   >
-                    {shouldUseContentGlass(theme) && (
+                    {shouldUseContentGlass() && (
                       <GlassView
                         glassEffectStyle="regular"
                         colorScheme={isDark ? 'dark' : 'light'}
@@ -1272,7 +1272,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             },
           ]}
         >
-          {shouldUseContentGlass(theme) && (
+          {shouldUseContentGlass() && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -1654,7 +1654,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             },
           ]}
         >
-          {shouldUseContentGlass(theme) && (
+          {shouldUseContentGlass() && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}

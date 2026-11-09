@@ -7,10 +7,7 @@ import {
   TextInput,
   StyleSheet,
   Alert,
-  Modal,
-  Pressable,
   Platform,
-  KeyboardAvoidingView,
   ActivityIndicator,
   Dimensions,
   StyleProp,
@@ -21,6 +18,9 @@ import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
+import { isAtmosphericTheme } from '@/constants/theme';
+import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
+import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
@@ -100,13 +100,12 @@ function GlassSurface({
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
 }) {
+  const theme = useAppStore(state => state.theme);
   const innerRadius = Math.max(0, radius - 1);
   return (
     <View style={[{ borderRadius: radius, borderWidth: 1, borderColor }, style]}>
-      {Platform.OS === 'ios' ? (
-        <GlassView
-          pointerEvents="none"
-          glassEffectStyle="regular"
+      {Platform.OS === 'ios' || isAtmosphericTheme(theme) ? (
+        <ContentCardBackdrop
           colorScheme={isDark ? 'dark' : 'light'}
           style={[StyleSheet.absoluteFill, { borderRadius: innerRadius }]}
         />
@@ -735,160 +734,160 @@ function ChangePasswordModal({ visible, onClose, hasPassword }: ChangePasswordMo
   const btnTextColor = getContrastTextColor(colors.tint);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalBackdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View
-          style={[
-            styles.modalCard,
-            {
-              backgroundColor: isDark ? '#141418' : '#ffffff',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
-              paddingBottom: Math.max(insets.bottom + 16, 24),
-            },
-          ]}
-        >
-          <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 31, borderTopRightRadius: 31 }]} />
+    <SwipeableSheetModal
+      visible={visible}
+      onClose={onClose}
+      backdropColor="rgba(0, 0, 0, 0.65)"
+      avoidKeyboard
+      dragAreaHeight={156}
+      sheetStyle={[
+        styles.modalCard,
+        {
+          backgroundColor: isDark ? '#141418' : '#ffffff',
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+          paddingBottom: Math.max(insets.bottom + 16, 24),
+        },
+      ]}
+    >
+      <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 31, borderTopRightRadius: 31 }]} />
 
-          {/* Manija superior iOS */}
-          <View style={[styles.sheetHandle, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
+      {/* Manija superior iOS */}
+      <View pointerEvents="none" style={[styles.sheetHandle, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
 
-          {/* Header */}
-          <View style={styles.modalHeader}>
-            <View style={[styles.modalIconWrap, { backgroundColor: colors.tint + '18' }]}>
-              <Key size={26} color={colors.tint} strokeWidth={2} />
-            </View>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>
-              {hasPassword ? 'Cambiar Contraseña' : 'Crear Contraseña'}
-            </Text>
-            <Text style={[styles.modalSub, { color: colors.textSecondary }]}>
-              Protege el acceso a tu cuenta con una clave segura.
-            </Text>
-          </View>
+      {/* Header */}
+      <View style={styles.modalHeader}>
+        <View style={[styles.modalIconWrap, { backgroundColor: colors.tint + '18' }]}>
+          <Key size={26} color={colors.tint} strokeWidth={2} />
+        </View>
+        <Text style={[styles.modalTitle, { color: colors.text }]}>
+          {hasPassword ? 'Cambiar Contraseña' : 'Crear Contraseña'}
+        </Text>
+        <Text style={[styles.modalSub, { color: colors.textSecondary }]}>
+          Protege el acceso a tu cuenta con una clave segura.
+        </Text>
+      </View>
 
-          {errorMessage ? (
-            <View style={styles.modalErrorBox}>
-              <Text style={styles.modalErrorText}>{errorMessage}</Text>
-            </View>
-          ) : null}
+      {errorMessage ? (
+        <View style={styles.modalErrorBox}>
+          <Text style={styles.modalErrorText}>{errorMessage}</Text>
+        </View>
+      ) : null}
 
-          {/* Campo: Contraseña Actual */}
-          {hasPassword ? (
-            <View style={styles.inputBlock}>
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>1. Contraseña actual</Text>
-              <View style={[styles.modalInputWrap, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
-                <TextInput
-                  style={[styles.modalInput, { color: colors.text }]}
-                  placeholder="Tu contraseña actual"
-                  placeholderTextColor={colors.textSecondary}
-                  secureTextEntry={!showCurrent}
-                  value={currentPassword}
-                  onChangeText={setCurrentPassword}
-                  autoCapitalize="none"
-                />
-                <TouchableOpacity onPress={() => setShowCurrent(!showCurrent)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  {showCurrent ? <EyeOff size={18} color={colors.textSecondary} /> : <Eye size={18} color={colors.textSecondary} />}
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : null}
-
-          {/* Campo: Nueva Contraseña */}
-          <View style={styles.inputBlock}>
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>2. Elige una nueva contraseña</Text>
-            <View style={[styles.modalInputWrap, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
-              <TextInput
-                style={[styles.modalInput, { color: colors.text }]}
-                placeholder="Nueva contraseña"
-                placeholderTextColor={colors.textSecondary}
-                secureTextEntry={!showNew}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity onPress={() => setShowNew(!showNew)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                {showNew ? <EyeOff size={18} color={colors.textSecondary} /> : <Eye size={18} color={colors.textSecondary} />}
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Requisitos estilo Frontend */}
-          <View style={styles.reqsGrid}>
-            {reqs.map(r => (
-              <View key={r.id} style={styles.reqItem}>
-                {r.valid ? (
-                  <CheckCircle2 size={13} color="#22c55e" strokeWidth={2.5} />
-                ) : (
-                  <View style={[styles.reqCircleEmpty, { borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }]} />
-                )}
-                <Text style={[styles.reqText, { color: r.valid ? colors.text : colors.textSecondary }]}>
-                  {r.label}
-                </Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Campo: Repetir Contraseña */}
-          <View style={styles.inputBlock}>
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>3. Repite la nueva contraseña</Text>
-            <View style={[styles.modalInputWrap, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
-              <TextInput
-                style={[styles.modalInput, { color: colors.text }]}
-                placeholder="Repite la nueva contraseña"
-                placeholderTextColor={colors.textSecondary}
-                secureTextEntry={!showConfirm}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                {showConfirm ? <EyeOff size={18} color={colors.textSecondary} /> : <Eye size={18} color={colors.textSecondary} />}
-              </TouchableOpacity>
-            </View>
-            {confirmPassword.length > 0 && (
-              <View style={[styles.reqItem, { marginTop: 6 }]}>
-                {passwordsMatch ? (
-                  <CheckCircle2 size={13} color="#22c55e" strokeWidth={2.5} />
-                ) : (
-                  <View style={[styles.reqCircleEmpty, { borderColor: '#ef4444' }]} />
-                )}
-                <Text style={[styles.reqText, { color: passwordsMatch ? '#22c55e' : '#ef4444' }]}>
-                  {passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {/* Botones de acción */}
-          <View style={styles.modalActions}>
-            <TouchableOpacity
-              onPress={handleSubmit}
-              disabled={!canSubmit || isLoading}
-              activeOpacity={0.85}
-              style={[
-                styles.modalSubmitBtn,
-                {
-                  backgroundColor: canSubmit ? colors.tint : isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-                  opacity: canSubmit ? 1 : 0.6,
-                },
-              ]}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={btnTextColor} />
-              ) : (
-                <Text style={[styles.modalSubmitText, { color: canSubmit ? btnTextColor : colors.textSecondary }]}>
-                  Guardar Contraseña
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={onClose} activeOpacity={0.7} style={[styles.modalCancelBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-              <Text style={[styles.modalCancelText, { color: colors.text }]}>Cancelar</Text>
+      {/* Campo: Contraseña Actual */}
+      {hasPassword ? (
+        <View style={styles.inputBlock}>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>1. Contraseña actual</Text>
+          <View style={[styles.modalInputWrap, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+            <TextInput
+              style={[styles.modalInput, { color: colors.text }]}
+              placeholder="Tu contraseña actual"
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry={!showCurrent}
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity onPress={() => setShowCurrent(!showCurrent)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              {showCurrent ? <EyeOff size={18} color={colors.textSecondary} /> : <Eye size={18} color={colors.textSecondary} />}
             </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+      ) : null}
+
+      {/* Campo: Nueva Contraseña */}
+      <View style={styles.inputBlock}>
+        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>2. Elige una nueva contraseña</Text>
+        <View style={[styles.modalInputWrap, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+          <TextInput
+            style={[styles.modalInput, { color: colors.text }]}
+            placeholder="Nueva contraseña"
+            placeholderTextColor={colors.textSecondary}
+            secureTextEntry={!showNew}
+            value={newPassword}
+            onChangeText={setNewPassword}
+            autoCapitalize="none"
+          />
+          <TouchableOpacity onPress={() => setShowNew(!showNew)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            {showNew ? <EyeOff size={18} color={colors.textSecondary} /> : <Eye size={18} color={colors.textSecondary} />}
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Requisitos estilo Frontend */}
+      <View style={styles.reqsGrid}>
+        {reqs.map(r => (
+          <View key={r.id} style={styles.reqItem}>
+            {r.valid ? (
+              <CheckCircle2 size={13} color="#22c55e" strokeWidth={2.5} />
+            ) : (
+              <View style={[styles.reqCircleEmpty, { borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }]} />
+            )}
+            <Text style={[styles.reqText, { color: r.valid ? colors.text : colors.textSecondary }]}>
+              {r.label}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Campo: Repetir Contraseña */}
+      <View style={styles.inputBlock}>
+        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>3. Repite la nueva contraseña</Text>
+        <View style={[styles.modalInputWrap, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+          <TextInput
+            style={[styles.modalInput, { color: colors.text }]}
+            placeholder="Repite la nueva contraseña"
+            placeholderTextColor={colors.textSecondary}
+            secureTextEntry={!showConfirm}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            autoCapitalize="none"
+          />
+          <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            {showConfirm ? <EyeOff size={18} color={colors.textSecondary} /> : <Eye size={18} color={colors.textSecondary} />}
+          </TouchableOpacity>
+        </View>
+        {confirmPassword.length > 0 && (
+          <View style={[styles.reqItem, { marginTop: 6 }]}>
+            {passwordsMatch ? (
+              <CheckCircle2 size={13} color="#22c55e" strokeWidth={2.5} />
+            ) : (
+              <View style={[styles.reqCircleEmpty, { borderColor: '#ef4444' }]} />
+            )}
+            <Text style={[styles.reqText, { color: passwordsMatch ? '#22c55e' : '#ef4444' }]}>
+              {passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Botones de acción */}
+      <View style={styles.modalActions}>
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={!canSubmit || isLoading}
+          activeOpacity={0.85}
+          style={[
+            styles.modalSubmitBtn,
+            {
+              backgroundColor: canSubmit ? colors.tint : isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+              opacity: canSubmit ? 1 : 0.6,
+            },
+          ]}
+        >
+          {isLoading ? (
+            <ActivityIndicator color={btnTextColor} />
+          ) : (
+            <Text style={[styles.modalSubmitText, { color: canSubmit ? btnTextColor : colors.textSecondary }]}>
+              Guardar Contraseña
+            </Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={onClose} activeOpacity={0.7} style={[styles.modalCancelBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+          <Text style={[styles.modalCancelText, { color: colors.text }]}>Cancelar</Text>
+        </TouchableOpacity>
+      </View>
+    </SwipeableSheetModal>
   );
 }
 
@@ -1112,11 +1111,6 @@ const styles = StyleSheet.create({
   },
 
   // --- MODAL CONTRASEÑA ---
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-  },
   modalCard: {
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,

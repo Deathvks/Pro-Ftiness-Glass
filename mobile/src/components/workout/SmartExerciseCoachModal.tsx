@@ -5,9 +5,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Modal,
   ScrollView,
-  Pressable,
 } from 'react-native';
 import {
   Target,
@@ -23,6 +21,7 @@ import {
   Check,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
+import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -90,152 +89,143 @@ export const SmartExerciseCoachModal: React.FC<SmartExerciseCoachModalProps> = (
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={[styles.overlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.4)' }]}>
-        <View
+    <SwipeableSheetModal
+      visible={visible}
+      onClose={onClose}
+      backdropColor={isDark ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.4)'}
+      dismissOnBackdrop={false}
+      dragAreaHeight={84}
+      sheetStyle={[styles.sheet, { backgroundColor: colors.card, borderColor: colors.border }]}
+    >
+      <GlassView
+        glassEffectStyle="regular"
+        colorScheme={isDark ? 'dark' : 'light'}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Header */}
+      <View style={[styles.header, { borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]}>
+        <View style={{ flex: 1 }}>
+          <View style={styles.titleRow}>
+            <Target size={18} color={colors.tint} style={{ marginRight: 6 }} />
+            <Text style={[styles.title, { color: colors.text }]}>Entrenador Inteligente</Text>
+          </View>
+          <Text style={[styles.exerciseSub, { color: colors.tint }]} numberOfLines={1}>
+            {exercise.name}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          onPress={onClose}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={[
-            styles.sheet,
+            styles.closeBtn,
             {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
+          <X size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
 
-          {/* Header */}
-          <View style={[styles.header, { borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]}>
-            <View style={{ flex: 1 }}>
-              <View style={styles.titleRow}>
-                <Target size={18} color={colors.tint} style={{ marginRight: 6 }} />
-                <Text style={[styles.title, { color: colors.text }]}>Entrenador Inteligente</Text>
-              </View>
-              <Text style={[styles.exerciseSub, { color: colors.tint }]} numberOfLines={1}>
-                {exercise.name}
-              </Text>
-            </View>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Goal badge */}
+        <View
+          style={[
+            styles.goalBadge,
+            {
+              backgroundColor: colors.tint + '15',
+              borderColor: colors.tint + '35',
+            },
+          ]}
+        >
+          <Dumbbell size={14} color={colors.tint} style={{ marginRight: 6 }} />
+          <Text style={[styles.goalBadgeText, { color: colors.tint }]}>
+            {userGoal?.label || 'Objetivo Personal'}
+          </Text>
+        </View>
 
-            <TouchableOpacity
-              onPress={onClose}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={[
-                styles.closeBtn,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-            >
-              <X size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
+        {/* Diagnostic advice card */}
+        <View
+          style={[
+            styles.adviceCard,
+            {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+            },
+          ]}
+        >
+          <View style={styles.adviceHeaderRow}>
+            <Lightbulb size={18} color="#eab308" style={{ marginRight: 8 }} />
+            <Text style={[styles.adviceHeaderTitle, { color: colors.text }]}>
+              Diagnóstico y Estrategia
+            </Text>
           </View>
 
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            {/* Goal badge */}
-            <View
-              style={[
-                styles.goalBadge,
-                {
-                  backgroundColor: colors.tint + '15',
-                  borderColor: colors.tint + '35',
-                },
-              ]}
-            >
-              <Dumbbell size={14} color={colors.tint} style={{ marginRight: 6 }} />
-              <Text style={[styles.goalBadgeText, { color: colors.tint }]}>
-                {userGoal?.label || 'Objetivo Personal'}
-              </Text>
-            </View>
+          <Text style={[styles.adviceText, { color: colors.text }]}>
+            {coachingAdvice || motivationalMessage}
+          </Text>
+        </View>
 
-            {/* Diagnostic advice card */}
-            <View
-              style={[
-                styles.adviceCard,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                },
-              ]}
-            >
-              <View style={styles.adviceHeaderRow}>
-                <Lightbulb size={18} color="#eab308" style={{ marginRight: 8 }} />
-                <Text style={[styles.adviceHeaderTitle, { color: colors.text }]}>
-                  Diagnóstico y Estrategia
-                </Text>
-              </View>
+        {/* Action Steps */}
+        {actionSteps.length > 0 ? (
+          <View style={styles.stepsSection}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+              PAUTAS RECOMENDADAS PARA HOY:
+            </Text>
 
-              <Text style={[styles.adviceText, { color: colors.text }]}>
-                {coachingAdvice || motivationalMessage}
-              </Text>
-            </View>
-
-            {/* Action Steps */}
-            {actionSteps.length > 0 ? (
-              <View style={styles.stepsSection}>
-                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                  PAUTAS RECOMENDADAS PARA HOY:
-                </Text>
-
-                {actionSteps.map((step: any, idx: number) => (
-                  <View
-                    key={idx}
-                    style={[
-                      styles.stepCard,
-                      {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.05)',
-                      },
-                    ]}
-                  >
-                    <CheckCircle2 size={16} color={colors.tint} style={{ marginRight: 10, marginTop: 1 }} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.stepTitle, { color: colors.text }]}>{step.title}</Text>
-                      <Text style={[styles.stepDesc, { color: colors.textSecondary }]}>{step.detail}</Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            ) : null}
-
-            {/* Suggested Weight Button */}
-            {suggestedWeight ? (
-              <TouchableOpacity
-                onPress={handleApply}
+            {actionSteps.map((step: any, idx: number) => (
+              <View
+                key={idx}
                 style={[
-                  styles.applyWeightBtn,
+                  styles.stepCard,
                   {
-                    backgroundColor: colors.tint,
-                    shadowColor: colors.tint,
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.4,
-                    shadowRadius: 10,
-                    elevation: 6,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.05)',
                   },
                 ]}
-                activeOpacity={0.82}
               >
-                <Check size={18} color="#fff" style={{ marginRight: 8 }} />
-                <Text style={styles.applyWeightBtnText}>
-                  Aplicar carga recomendada ({suggestedWeight} kg)
-                </Text>
-              </TouchableOpacity>
-            ) : null}
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
+                <CheckCircle2 size={16} color={colors.tint} style={{ marginRight: 10, marginTop: 1 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.stepTitle, { color: colors.text }]}>{step.title}</Text>
+                  <Text style={[styles.stepDesc, { color: colors.textSecondary }]}>{step.detail}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {/* Suggested Weight Button */}
+        {suggestedWeight ? (
+          <TouchableOpacity
+            onPress={handleApply}
+            style={[
+              styles.applyWeightBtn,
+              {
+                backgroundColor: colors.tint,
+                shadowColor: colors.tint,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.4,
+                shadowRadius: 10,
+                elevation: 6,
+              },
+            ]}
+            activeOpacity={0.82}
+          >
+            <Check size={18} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.applyWeightBtnText}>
+              Aplicar carga recomendada ({suggestedWeight} kg)
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+      </ScrollView>
+    </SwipeableSheetModal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
   sheet: {
     width: '100%',
     maxHeight: '82%',

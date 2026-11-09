@@ -39,6 +39,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
 import { GlassView } from 'expo-glass-effect';
+import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import { getContrastTextColor } from '@/utils/colorUtils';
 
 // --- Helpers de Fecha Robustos ---
@@ -407,7 +408,7 @@ export default function NotificationsScreen() {
           marginTop: 20,
           overflow: 'hidden',
         }}>
-          <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <ContentCardBackdrop colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
           <View style={{ 
             width: 72, 
             height: 72, 
@@ -435,7 +436,7 @@ export default function NotificationsScreen() {
           marginTop: 20,
           overflow: 'hidden',
         }}>
-          <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <ContentCardBackdrop colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
           <View style={{ 
             width: 72, 
             height: 72, 
@@ -493,8 +494,7 @@ export default function NotificationsScreen() {
                           position: 'relative',
                         }}
                       >
-                        <GlassView 
-                          glassEffectStyle="regular" 
+                        <ContentCardBackdrop
                           colorScheme={isDark ? 'dark' : 'light'} 
                           style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} 
                         />
@@ -690,8 +690,7 @@ export default function NotificationsScreen() {
               onPress={(e) => e.stopPropagation()}
             >
               {/* Capa Liquid Glass de la tarjeta */}
-              <GlassView 
-                glassEffectStyle="regular" 
+              <ContentCardBackdrop
                 colorScheme={isDark ? 'dark' : 'light'} 
                 style={[StyleSheet.absoluteFill, { borderRadius: 32 }]} 
               />
