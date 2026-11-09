@@ -1,8 +1,16 @@
 /* mobile/src/components/routines/ExerciseMediaPreview.tsx */
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Image, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import {
+  View,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
+  Linking,
+} from 'react-native';
 import { WebView } from 'react-native-webview';
-import { Play, Dumbbell } from 'lucide-react-native';
+import { Play, Dumbbell, ExternalLink } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BACKEND_BASE_URL, API_BASE_URL } from '@/services/apiClient';
 import useAppStore from '@/store/useAppStore';
@@ -17,6 +25,88 @@ interface ExerciseMediaPreviewProps {
   onPress?: () => void;
 }
 
+// Plantilla HTML para reproductor de YouTube optimizado para móviles y Shorts verticales
+const getYouTubeHtml = (videoId: string) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000000;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .video-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000000;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="video-container">
+    <iframe
+      src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&controls=1&rel=0&modestbranding=1&loop=1&playlist=${videoId}&enablejsapi=1"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowfullscreen
+    ></iframe>
+  </div>
+</body>
+</html>
+`;
+
+// Plantilla HTML para vídeos directos (MP4 / WebM)
+const getDirectVideoHtml = (videoUrl: string) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000000;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+  <video src="${videoUrl}" autoplay loop muted playsinline controls></video>
+</body>
+</html>
+`;
+
 export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   item,
   details,
@@ -29,6 +119,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(playYouTube);
   const [imageError, setImageError] = useState(false);
+  const [webViewLoading, setWebViewLoading] = useState(true);
 
   const allExercises = useAppStore(state => state.allExercises) || [];
 
@@ -39,7 +130,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   const rawTarget = details || item || {};
   const rawSubDetails = rawTarget.exercise_details || rawTarget.exercise || {};
 
-  // Si el ejercicio viene sin fotos/vídeo (típico de rutinas guardadas), buscar en el catálogo completo
+  // Si el ejercicio viene sin fotos/vídeo, buscar en el catálogo completo
   const matchedFromStore = useMemo(() => {
     const hasMedia =
       rawTarget.images ||
@@ -47,16 +138,31 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       rawTarget.image_url ||
       rawTarget.video_url ||
       rawTarget.youtube_id ||
+      rawTarget.video ||
+      rawTarget.youtube_url ||
       rawSubDetails.images ||
       rawSubDetails.image_url_start ||
       rawSubDetails.image_url ||
       rawSubDetails.video_url ||
-      rawSubDetails.youtube_id;
+      rawSubDetails.youtube_id ||
+      rawSubDetails.video ||
+      rawSubDetails.youtube_url;
 
     if (hasMedia) return null;
 
-    const targetId = rawTarget.exercise_list_id || rawTarget.exercise_id || rawTarget.id;
-    const targetName = (rawTarget.name || '').trim().toLowerCase();
+    const targetId =
+      rawTarget.exercise_list_id ||
+      rawTarget.exercise_id ||
+      rawTarget.id ||
+      rawTarget.exercise?.id;
+    const targetName = (
+      rawTarget.name ||
+      rawTarget.exercise_name ||
+      rawTarget.exercise?.name ||
+      ''
+    )
+      .trim()
+      .toLowerCase();
 
     return allExercises.find((ex: any) => {
       if (targetId && (ex.id === targetId || ex.exercise_list_id === targetId)) return true;
@@ -72,18 +178,24 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   const rawVideo =
     target.video_url ||
     target.youtube_id ||
+    target.video ||
+    target.youtube_url ||
+    target.videoUrl ||
     subDetails.video_url ||
     subDetails.youtube_id ||
+    subDetails.video ||
+    subDetails.youtube_url ||
+    subDetails.videoUrl ||
     '';
 
   const getYoutubeId = (url?: string | null) => {
     if (!url || typeof url !== 'string') return null;
-    const trimmed = url.trim();
+    const trimmed = url.replace(/["']/g, '').trim();
     if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
       return trimmed;
     }
     const match = trimmed.match(
-      /(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|shorts\/|&v=)([a-zA-Z0-9_-]{11})/
+      /(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?.*v=|shorts\/|live\/|&v=)([a-zA-Z0-9_-]{11})/
     );
     return match ? match[1] : null;
   };
@@ -91,14 +203,13 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   const yid = useMemo(() => getYoutubeId(rawVideo), [rawVideo]);
   const youtubeThumbnail = yid ? `https://img.youtube.com/vi/${yid}/mqdefault.jpg` : null;
 
-  // 2. Normalizador robusto de URLs de imágenes (Wger, backend uploads y externas)
+  // 2. Normalizador de URLs de imágenes
   const getNormalizedUrl = (url: any): string | null => {
     if (!url || typeof url !== 'string' || url.trim() === '' || url === 'null' || url === 'undefined') {
       return null;
     }
     const clean = url.trim();
 
-    // Descartar placeholders genéricos que fallan en la carga y dejan la pantalla negra
     if (clean.includes('placeholder') || clean.includes('via.placeholder')) {
       return null;
     }
@@ -110,7 +221,6 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
     const path = clean.startsWith('/') ? clean.substring(1) : clean;
     const filename = path.split('/').pop() || '';
 
-    // Patrón UUID de Wger o directorio exercise-images
     const isWgerUuid = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(filename);
     if (isWgerUuid || path.includes('exercise-images')) {
       return `https://wger.de/media/exercise-images/${filename}`;
@@ -124,7 +234,6 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   const images = useMemo(() => {
     const list: string[] = [];
 
-    // Parseo de arrays o cadenas JSON / separadas por comas
     const rawImages = target.images || subDetails.images;
     if (Array.isArray(rawImages)) {
       rawImages.forEach((imgItem: any) => {
@@ -150,7 +259,6 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       }
     }
 
-    // Inicio y fin de movimiento (convención start/end para ciclo GIF)
     const startImg = target.image_url_start || subDetails.image_url_start;
     const endImg = target.image_url_end || subDetails.image_url_end;
     if (startImg && !list.includes(startImg)) {
@@ -160,7 +268,6 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       list.push(endImg);
     }
 
-    // Imagen única
     const singleImg =
       target.image_url ||
       target.image ||
@@ -171,12 +278,10 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       list.push(singleImg);
     }
 
-    // Normalizar y descartar vacíos o placeholders
     const normalized = Array.from(
       new Set(list.map(getNormalizedUrl).filter((u): u is string => Boolean(u)))
     );
 
-    // Si no hay imágenes válidas pero sí vídeo de YouTube, usar miniatura de YouTube
     if (normalized.length === 0 && youtubeThumbnail) {
       return [youtubeThumbnail];
     }
@@ -184,12 +289,11 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
     return normalized;
   }, [target, subDetails, getImageUrl, youtubeThumbnail]);
 
-  // Reset de error si cambian las imágenes
   useEffect(() => {
     setImageError(false);
   }, [images]);
 
-  // 4. Efecto de animación GIF cíclico (alterna imágenes cada 1300ms si hay más de una)
+  // 4. Efecto de animación GIF cíclico si hay más de una foto
   useEffect(() => {
     if (images.length > 1 && !isPlaying) {
       const interval = setInterval(() => {
@@ -199,15 +303,17 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
     }
   }, [images.length, isPlaying]);
 
-  // 5. Reproductor de Vídeo interactivo (YouTube o MP4 directo)
+  // 5. Reproductor de Vídeo interactivo (YouTube o directo)
   if ((rawVideo || yid) && isPlaying && !staticOnly) {
     if (yid) {
-      const embedUrl = `https://www.youtube-nocookie.com/embed/${yid}?autoplay=1&playsinline=1&controls=1&rel=0&modestbranding=1&enablejsapi=1`;
       return (
         <View style={styles.fullContainer}>
           <WebView
             key={`yt-${yid}`}
-            source={{ uri: embedUrl }}
+            source={{
+              html: getYouTubeHtml(yid),
+              baseUrl: 'https://www.youtube.com',
+            }}
             style={styles.webView}
             javaScriptEnabled={true}
             domStorageEnabled={true}
@@ -217,8 +323,27 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
             scrollEnabled={false}
             originWhitelist={['*']}
             mixedContentMode="always"
-            userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"
+            onLoadStart={() => setWebViewLoading(true)}
+            onLoadEnd={() => setWebViewLoading(false)}
           />
+
+          {webViewLoading && (
+            <View style={[StyleSheet.absoluteFill, styles.loadingOverlay]} pointerEvents="none">
+              <ActivityIndicator size="small" color="#ffffff" />
+            </View>
+          )}
+
+          {/* Botón flotante para abrir en YouTube nativo */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => {
+              Linking.openURL(`https://www.youtube.com/watch?v=${yid}`).catch(() => {});
+            }}
+            style={styles.openYtPill}
+          >
+            <ExternalLink size={11} color="#ffffff" />
+            <Text style={styles.openYtText}>YouTube</Text>
+          </TouchableOpacity>
         </View>
       );
     }
@@ -227,7 +352,10 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       <View style={styles.fullContainer}>
         <WebView
           key={`vid-${rawVideo}`}
-          source={{ uri: rawVideo }}
+          source={{
+            html: getDirectVideoHtml(rawVideo),
+            baseUrl: 'https://localhost',
+          }}
           style={styles.webView}
           javaScriptEnabled={true}
           domStorageEnabled={true}
@@ -236,12 +364,13 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
           allowsFullscreenVideo={true}
           scrollEnabled={false}
           originWhitelist={['*']}
+          mixedContentMode="always"
         />
       </View>
     );
   }
 
-  // 6. Selección de la imagen activa
+  // 6. Imagen activa
   const activeImageUri =
     !imageError && images.length > 0
       ? images[currentIndex % images.length]
@@ -281,7 +410,6 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
         onError={() => setImageError(true)}
       />
 
-      {/* Indicador de más imágenes (efecto GIF) */}
       {images.length > 1 && !isPlaying && (
         <View style={styles.gifBadge}>
           <Text style={styles.gifBadgeText}>
@@ -290,7 +418,6 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
         </View>
       )}
 
-      {/* Botón flotante para reproducir vídeo si existe */}
       {!staticOnly && (rawVideo || yid) && !isPlaying && (
         <View style={styles.playOverlay}>
           <View style={styles.playPill}>
@@ -309,7 +436,7 @@ const styles = StyleSheet.create({
     height: '100%',
     position: 'relative',
     overflow: 'hidden',
-    backgroundColor: 'transparent',
+    backgroundColor: '#000000',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -347,10 +474,10 @@ const styles = StyleSheet.create({
     inset: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    backgroundColor: 'rgba(0, 0, 0, 0.20)',
   },
   playPill: {
-    backgroundColor: 'rgba(0, 0, 0, 0.72)',
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 30,
@@ -369,5 +496,29 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
+  },
+  loadingOverlay: {
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  openYtPill: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  openYtText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });

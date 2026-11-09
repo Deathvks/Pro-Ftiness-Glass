@@ -359,19 +359,21 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
             onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
             scrollEventThrottle={16}
           >
-            <View style={{ width: '100%', height: 300, backgroundColor: colors.card, overflow: 'hidden' }}>
-              <ExerciseMediaPreview
-                item={selectedExercise}
-                details={selectedExercise}
-                getImageUrl={getImageUrl}
-                fitMode="contain"
-                playYouTube={playingVideo}
-                onPress={() => {
-                  if (selectedExercise.video_url || selectedExercise.youtube_id) {
-                    setPlayingVideo(true);
-                  }
-                }}
-              />
+            <View style={{ alignItems: 'center', width: '100%', paddingVertical: 14 }}>
+              <View style={{ width: 220, maxWidth: '90%', aspectRatio: 9 / 16, maxHeight: 390, borderRadius: 26, backgroundColor: '#000000', overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>
+                <ExerciseMediaPreview
+                  item={selectedExercise}
+                  details={selectedExercise}
+                  getImageUrl={getImageUrl}
+                  fitMode="contain"
+                  playYouTube={playingVideo}
+                  onPress={() => {
+                    if (selectedExercise.video_url || selectedExercise.youtube_id || selectedExercise.video) {
+                      setPlayingVideo(true);
+                    }
+                  }}
+                />
+              </View>
             </View>
             
             <View style={{ padding: 24, flex: 1, paddingBottom: isReadOnly ? 40 : 100 }}>

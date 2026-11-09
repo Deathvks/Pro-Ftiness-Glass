@@ -234,8 +234,11 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
   const hasVideo = Boolean(
     mergedDetails.video_url ||
     mergedDetails.youtube_id ||
+    mergedDetails.video ||
+    mergedDetails.youtube_url ||
     mergedDetails.exercise_details?.video_url ||
-    mergedDetails.exercise_details?.youtube_id
+    mergedDetails.exercise_details?.youtube_id ||
+    mergedDetails.exercise_details?.video
   );
 
   const hasImages = Boolean(
@@ -797,10 +800,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   mediaHeroCardVideo: {
-    width: '100%',
-    maxWidth: 340,
-    aspectRatio: 16 / 9,
-    borderRadius: 22,
+    width: 220,
+    maxWidth: '100%',
+    aspectRatio: 9 / 16,
+    maxHeight: 390,
+    borderRadius: 26,
     borderWidth: 1,
     overflow: 'hidden',
     justifyContent: 'center',
