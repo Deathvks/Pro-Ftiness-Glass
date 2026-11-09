@@ -35,9 +35,9 @@ export const DynamicIslandTimer: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Animación suave de apertura y cierre (física estilo iOS spring)
-  const animWidth = useRef(new Animated.Value(215)).current;
-  const animHeight = useRef(new Animated.Value(38)).current;
-  const animRadius = useRef(new Animated.Value(20)).current;
+  const animWidth = useRef(new Animated.Value(224)).current;
+  const animHeight = useRef(new Animated.Value(44)).current;
+  const animRadius = useRef(new Animated.Value(22)).current;
 
   useEffect(() => {
     if (!restTimerEndTime && !isRestTimerPaused) return;
@@ -83,19 +83,19 @@ export const DynamicIslandTimer: React.FC = () => {
   useEffect(() => {
     Animated.parallel([
       Animated.spring(animWidth, {
-        toValue: isExpanded ? 340 : 215,
+        toValue: isExpanded ? 340 : 224,
         useNativeDriver: false,
         friction: 8,
         tension: 60,
       }),
       Animated.spring(animHeight, {
-        toValue: isExpanded ? 230 : 38,
+        toValue: isExpanded ? 230 : 44,
         useNativeDriver: false,
         friction: 8,
         tension: 60,
       }),
       Animated.spring(animRadius, {
-        toValue: isExpanded ? 44 : 20,
+        toValue: isExpanded ? 44 : 22,
         useNativeDriver: false,
         friction: 8,
         tension: 60,
@@ -152,15 +152,8 @@ export const DynamicIslandTimer: React.FC = () => {
     setIsExpanded(false);
   };
 
-  // Posicionamiento de la cápsula en la Isla Dinámica de hardware de Apple o zona segura superior
-  const topPosition =
-    insets.top > 50
-      ? insets.top - 44
-      : insets.top > 30
-      ? insets.top - 18
-      : insets.top > 0
-      ? insets.top + 4
-      : 12;
+  // Posicionamiento de la cápsula claramente DEBAJO del notch / isla dinámica física
+  const topPosition = insets.top > 0 ? insets.top + 10 : 16;
 
   return (
     <>
@@ -212,16 +205,17 @@ export const DynamicIslandTimer: React.FC = () => {
             />
           )}
 
-          {/* --- 1. ESTADO CONTRAÍDO (Cápsula Dynamic Island Apple) --- */}
+          {/* --- 1. ESTADO CONTRAÍDO (Cápsula Flotante Liquid Glass) --- */}
           {!isExpanded ? (
-            <TouchableOpacity
-              activeOpacity={0.88}
-              onPress={handleTapPill}
-              onLongPress={handleLongPress}
-              delayLongPress={280}
-              style={styles.compactRow}
-            >
-              <View style={styles.compactLeftTouchable}>
+            <View style={styles.compactRow}>
+              {/* Botón táctil principal: Tocar o apretar abre el modal de inmediato */}
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={handleTapPill}
+                onLongPress={handleLongPress}
+                delayLongPress={300}
+                style={styles.compactLeftTouchable}
+              >
                 <View
                   style={[
                     styles.compactIconCircle,
@@ -233,7 +227,7 @@ export const DynamicIslandTimer: React.FC = () => {
                   ]}
                 >
                   <Timer
-                    size={14}
+                    size={15}
                     color={isFinished ? '#ef4444' : colors.tint}
                     strokeWidth={2.5}
                   />
@@ -252,7 +246,7 @@ export const DynamicIslandTimer: React.FC = () => {
                 >
                   {formatTime(timeLeft)}
                 </Text>
-              </View>
+              </TouchableOpacity>
 
               <View style={styles.compactDivider} />
 
@@ -260,32 +254,32 @@ export const DynamicIslandTimer: React.FC = () => {
               <View style={styles.compactActions}>
                 <TouchableOpacity
                   onPress={handleTogglePause}
-                  hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+                  hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
                   style={[
                     styles.compactPlayBtn,
                     {
                       backgroundColor: isRestTimerPaused
                         ? colors.tint
-                        : 'rgba(255, 255, 255, 0.14)',
+                        : 'rgba(255, 255, 255, 0.16)',
                     },
                   ]}
                 >
                   {isRestTimerPaused ? (
-                    <Play size={12} color="#ffffff" fill="#ffffff" />
+                    <Play size={13} color="#ffffff" fill="#ffffff" />
                   ) : (
-                    <Pause size={12} color="#ffffff" fill="#ffffff" />
+                    <Pause size={13} color="#ffffff" fill="#ffffff" />
                   )}
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={handleStop}
-                  hitSlop={{ top: 10, bottom: 10, left: 8, right: 10 }}
+                  hitSlop={{ top: 12, bottom: 12, left: 8, right: 10 }}
                   style={styles.compactCloseBtn}
                 >
-                  <X size={13} color="rgba(255, 255, 255, 0.7)" strokeWidth={2.5} />
+                  <X size={14} color="rgba(255, 255, 255, 0.75)" strokeWidth={2.5} />
                 </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+            </View>
           ) : (
             /* --- 2. ESTADO EXPANDIDO (Live Activity Widget) --- */
             <View style={styles.expandedContent}>
@@ -434,7 +428,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
+    paddingLeft: 10,
+    paddingRight: 8,
   },
   compactLeftTouchable: {
     flex: 1,
@@ -444,22 +439,22 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   compactIconCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
   },
   compactTimerText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '900',
     fontVariant: ['tabular-nums'],
     letterSpacing: 0.8,
   },
   compactDivider: {
     width: 1,
-    height: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    height: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     marginHorizontal: 6,
   },
   compactActions: {
@@ -468,18 +463,19 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   compactPlayBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  compactCloseBtn: {
     width: 26,
     height: 26,
     borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  compactCloseBtn: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   expandedContent: {
     flex: 1,
