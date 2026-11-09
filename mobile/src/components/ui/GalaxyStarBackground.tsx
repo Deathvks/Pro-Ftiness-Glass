@@ -85,13 +85,10 @@ export default function GalaxyStarBackground() {
   const starDrift = useRef(new Animated.Value(0)).current;
   const meteorProgress = useRef(new Animated.Value(0)).current;
 
-  // Solo renderizar si el tema activo es galaxia
-  if (theme !== 'galaxy') {
-    return null;
-  }
+  const isGalaxy = theme === 'galaxy';
 
   useEffect(() => {
-    if (!galaxyEffectsEnabled) {
+    if (!isGalaxy || !galaxyEffectsEnabled) {
       starDrift.stopAnimation();
       meteorProgress.stopAnimation();
       return;
@@ -131,7 +128,12 @@ export default function GalaxyStarBackground() {
       driftLoop.stop();
       meteorLoop.stop();
     };
-  }, [galaxyEffectsEnabled]);
+  }, [isGalaxy, galaxyEffectsEnabled]);
+
+  // Solo renderizar si el tema activo es galaxia (llamado DESPUÉS de todos los hooks)
+  if (!isGalaxy) {
+    return null;
+  }
 
   const starTranslateX = starDrift.interpolate({
     inputRange: [0, 1],

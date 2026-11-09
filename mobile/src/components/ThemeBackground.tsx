@@ -1,14 +1,28 @@
 import React from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import { View, StyleSheet, Dimensions } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import useAppStore from '@/store/useAppStore';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('screen');
 
 export default function ThemeBackground() {
   const theme = useAppStore(state => state.theme);
 
   if (theme === 'galaxy') {
     return (
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: '#080814' }]} pointerEvents="none">
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: '#080814',
+            width: '100%',
+            height: '100%',
+            minHeight: SCREEN_HEIGHT,
+          },
+        ]}
+        pointerEvents="none"
+      >
         {/* Nebulosa cósmica púrpura superior-izquierda (idéntica al radial-gradient de la web) */}
         <LinearGradient
           colors={['rgba(168, 85, 247, 0.22)', 'rgba(168, 85, 247, 0.05)', 'transparent']}
@@ -30,11 +44,34 @@ export default function ThemeBackground() {
   if (theme.startsWith('ocean')) {
     const isDark = theme === 'ocean-dark';
     return (
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? '#082f49' : '#f0f9ff' }]} pointerEvents="none">
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: isDark ? '#082f49' : '#f0f9ff',
+            width: '100%',
+            height: '100%',
+            minHeight: SCREEN_HEIGHT,
+          },
+        ]}
+        pointerEvents="none"
+      >
         <Image 
           source={require('../../assets/images/ocean.jpg')} 
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+            minHeight: SCREEN_HEIGHT,
+          }}
+          contentFit="cover"
+          contentPosition="center"
+          priority="high"
+          cachePolicy="memory-disk"
         />
         {isDark ? (
           <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(8, 47, 73, 0.50)' }]} />
@@ -48,11 +85,34 @@ export default function ThemeBackground() {
   if (theme.startsWith('desert')) {
     const isDark = theme === 'desert-dark';
     return (
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? '#2c1e16' : '#fdf8f5' }]} pointerEvents="none">
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: isDark ? '#2c1e16' : '#fdf8f5',
+            width: '100%',
+            height: '100%',
+            minHeight: SCREEN_HEIGHT,
+          },
+        ]}
+        pointerEvents="none"
+      >
         <Image 
           source={require('../../assets/images/desert.jpg')} 
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+            minHeight: SCREEN_HEIGHT,
+          }}
+          contentFit="cover"
+          contentPosition="center"
+          priority="high"
+          cachePolicy="memory-disk"
         />
         {isDark ? (
           <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(44, 30, 22, 0.50)' }]} />
