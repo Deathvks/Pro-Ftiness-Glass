@@ -3,6 +3,7 @@ import useAppStore from '../store/useAppStore';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
+import { File as ExpoFile } from 'expo-file-system';
 
 const getMetroIp = () => {
   const hostUri = Constants.expoConfig?.hostUri;
@@ -91,8 +92,42 @@ const apiClient = async (endpoint, options = {}) => {
     // y body de tipo JSON (para todo lo demás).
     if (body) {
         if (body instanceof FormData) {
+            // En Expo SDK 58+, expo/fetch requiere objetos con .bytes() (como ExpoFile de expo-file-system)
+            // o Blob, y lanza "Unsupported FormDataPart implementation" si se pasa un objeto plano { uri, name, type }.
+            // Normalizamos automáticamente cualquier entrada { uri, name, type } a un objeto compatible con expo/fetch.
+            if (Platform.OS !== 'web' && Array.isArray(body._parts)) {
+                body._parts = body._parts.map((part) => {
+                    if (!Array.isArray(part) || part.length < 2) return part;
+                    const [fieldName, value] = part;
+                    if (
+                        value &&
+                        typeof value === 'object' &&
+                        typeof value.uri === 'string' &&
+                        !('bytes' in value) &&
+                        !(value instanceof Blob)
+                    ) {
+                        const fileUri = value.uri;
+                        const fallbackName = fileUri.split('/').pop() || 'upload.jpg';
+                        const fileName = value.name || value.fileName || fallbackName;
+                        const mimeType = value.type || value.mimeType || 'application/octet-stream';
+                        return [
+                            fieldName,
+                            {
+                                name: fileName,
+                                type: mimeType,
+                                uri: fileUri,
+                                bytes: async () => {
+                                    const expoFile = new ExpoFile(fileUri);
+                                    return await expoFile.bytes();
+                                },
+                            },
+                        ];
+                    }
+                    return part;
+                });
+            }
             // Si es FormData, NO establecemos Content-Type. 
-            // El navegador lo hará automáticamente con el 'boundary' correcto.
+            // El navegador / expo-fetch lo hará automáticamente con el 'boundary' correcto.
             config.body = body;
         } else {
             // Si es un objeto JSON, sí establecemos Content-Type y lo convertimos a string.

@@ -135,27 +135,8 @@ export const uploadFoodImage = (imageFile) => {
   const formData = new FormData();
   formData.append('foodImage', imageFile);
 
-  const token = useAppStore.getState().token;
-  const headers = {};
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  return fetch(`${API_BASE_URL}/nutrition/food/image`, {
+  return apiClient('/nutrition/food/image', {
     method: 'POST',
     body: formData,
-    headers,
-  }).then(async response => {
-    if (!response.ok) {
-      let errorMessage = 'Error al subir la imagen.';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorData.message || errorMessage;
-      } catch (e) {
-        // No hay cuerpo JSON
-      }
-      throw new Error(errorMessage);
-    }
-    return response.json();
   });
 };
