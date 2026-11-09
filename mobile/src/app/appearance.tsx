@@ -445,7 +445,7 @@ export default function AppearanceScreen() {
       <ThemeBackground />
 
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
-        <GlobalHeader title="Apariencia" scrollY={scrollY} showBackButton />
+        <GlobalHeader title="Apariencia" scrollY={scrollY} showBackButton hideBottomBorder />
       </View>
 
       <Animated.ScrollView
@@ -786,7 +786,7 @@ export default function AppearanceScreen() {
           <View>
             <SubHeading>Experiencia UX</SubHeading>
             <Pressable
-              onPress={handleToggleHaptics}
+              onPress={() => handleToggleHaptics()}
               style={({ pressed }) => [
                 styles.switchRow,
                 { backgroundColor: subtleBg, transform: [{ scale: pressed ? 0.98 : 1 }] },

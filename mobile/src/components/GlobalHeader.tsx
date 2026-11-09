@@ -41,12 +41,14 @@ export default function GlobalHeader({
     showBackButton, 
     hideRightButtons,
     onBackPress,
+    hideBottomBorder,
 }: { 
     title?: string, 
     scrollY?: Animated.Value, 
     showBackButton?: boolean, 
     hideRightButtons?: boolean,
     onBackPress?: () => void,
+    hideBottomBorder?: boolean,
 }) {
     const [showAiModal, setShowAiModal] = React.useState(false);
     const insets = useSafeAreaInsets();
@@ -126,8 +128,8 @@ export default function GlobalHeader({
                     style={[
                         StyleSheet.absoluteFill,
                         {
-                            borderBottomWidth: isScrolled ? StyleSheet.hairlineWidth : 0,
-                            borderBottomColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                            borderBottomWidth: (!hideBottomBorder && !isDark && isScrolled) ? StyleSheet.hairlineWidth : 0,
+                            borderBottomColor: 'rgba(0, 0, 0, 0.08)',
                         }
                     ]}
                 />
@@ -140,8 +142,8 @@ export default function GlobalHeader({
                         { 
                             overflow: 'hidden', 
                             opacity: fallbackOpacity,
-                            borderBottomWidth: StyleSheet.hairlineWidth,
-                            borderBottomColor: colors.border || (colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                            borderBottomWidth: (!hideBottomBorder && !isDark && isScrolled) ? StyleSheet.hairlineWidth : 0,
+                            borderBottomColor: 'rgba(0, 0, 0, 0.08)',
                         }
                     ]}
                 >
