@@ -117,7 +117,7 @@ const LegalNoticePage = ({ onBack }) => {
               <div className="mt-3 p-4 rounded-xl bg-bg-primary/60 backdrop-blur-sm border border-black/5 dark:border-white/10 text-xs sm:text-sm space-y-1">
                 <span className="font-bold text-text-primary block">Infraestructura y Alojamiento (Hosting):</span>
                 <p className="text-text-secondary font-medium leading-relaxed">
-                  Servidores en la nube de alta disponibilidad proporcionados por Zeabur y red de distribución de contenidos (CDN) y seguridad perimetral de Cloudflare, operando en centros de datos con estándares de seguridad ISO/IEC 27001 y riguroso apego al RGPD (UE 2016/679).
+                  La plataforma se aloja en un servidor VPS propio, administrado por el titular y contratado a Clouding.io. Cloudflare proporciona la red de distribución de contenidos (CDN) y la seguridad perimetral. El tratamiento de datos personales se realiza conforme al Reglamento General de Protección de Datos (UE 2016/679).
                 </p>
               </div>
             </section>

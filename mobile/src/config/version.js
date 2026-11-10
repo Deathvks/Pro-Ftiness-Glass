@@ -7,7 +7,7 @@ export const APP_VERSION =
   Constants.manifest2?.extra?.expoClient?.version ||
   Constants.manifest?.version ||
   appConfig?.expo?.version ||
-  '7.16.28';
+  '7.16.29';
 
 export const isRemoteNewer = (current, remote) => {
   if (!current || !remote) return false;
