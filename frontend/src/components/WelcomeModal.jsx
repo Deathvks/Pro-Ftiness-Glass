@@ -131,6 +131,14 @@ const WelcomeModal = ({ onClose }) => {
           animation: wm-fade-backdrop 0.35s ease-out both;
         }
         .wm-card {
+          max-height: calc(100vh - max(8px, var(--safe-top, env(safe-area-inset-top, 0px))) - max(8px, var(--safe-bottom, env(safe-area-inset-bottom, 0px))) - 8px);
+        }
+        @supports (height: 100dvh) {
+          .wm-card {
+            max-height: calc(100dvh - max(8px, var(--safe-top, env(safe-area-inset-top, 0px))) - max(8px, var(--safe-bottom, env(safe-area-inset-bottom, 0px))) - 8px);
+          }
+        }
+        .wm-card {
           animation: wm-slide-card 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
         }
         .wm-spin-ring {
@@ -254,6 +262,21 @@ const WelcomeModal = ({ onClose }) => {
           background: linear-gradient(to right, transparent, var(--glass-border), transparent);
           margin: 4px 0;
         }
+        @media (orientation: landscape) and (max-height: 620px) {
+          .wm-card { max-width: 560px !important; border-radius: 20px !important; }
+          .wm-scroll-body { padding: 12px 18px !important; }
+          .wm-header { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; column-gap: 16px; margin-bottom: 12px !important; }
+          .wm-header > div:first-child { margin: 0 !important; }
+          .wm-header-copy { min-width: 0; }
+          .wm-header-copy h1 { font-size: 20px !important; margin-bottom: 4px !important; }
+          .wm-header-copy p { max-width: none !important; font-size: 12px !important; line-height: 1.4 !important; }
+          .wm-divider { margin-bottom: 10px !important; }
+          .wm-feature-list { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px !important; margin-bottom: 12px !important; }
+          .wm-feature-card { gap: 10px !important; padding: 10px 12px !important; border-radius: 14px !important; }
+          .wm-icon-wrap { width: 30px !important; height: 30px !important; border-radius: 9px !important; }
+          .wm-btn { padding: 10px 16px !important; border-radius: 13px !important; }
+          .wm-btn-in > p { margin-top: 6px !important; }
+        }
       `}</style>
 
       {/* Backdrop */}
@@ -263,9 +286,7 @@ const WelcomeModal = ({ onClose }) => {
           style={{
             zIndex: 150,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '16px',
-            paddingTop: 'calc(16px + var(--safe-top, env(safe-area-inset-top, 0px)))',
-            paddingBottom: 'calc(16px + var(--safe-bottom, env(safe-area-inset-bottom, 0px)))',
+            padding: 'max(8px, var(--safe-top, env(safe-area-inset-top, 0px))) 16px max(8px, var(--safe-bottom, env(safe-area-inset-bottom, 0px)))',
             background: 'rgba(0,0,0,0.75)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)'
@@ -279,14 +300,15 @@ const WelcomeModal = ({ onClose }) => {
               position: 'relative',
               width: '100%',
               maxWidth: '380px',
-              maxHeight: '100%',
               background: 'var(--bg-primary)',
               borderRadius: '32px',
               boxShadow: '0 24px 64px -12px rgba(0,0,0,0.4)',
               border: '1px solid var(--glass-border)',
               display: 'flex',
               flexDirection: 'column',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              boxSizing: 'border-box',
+              minHeight: 0
             }}
             onClick={e => e.stopPropagation()}
           >
@@ -307,14 +329,17 @@ const WelcomeModal = ({ onClose }) => {
                 padding: '32px 24px 24px',
                 overflowY: 'auto',
                 flex: 1,
+                minHeight: 0,
+                overscrollBehavior: 'contain',
+                WebkitOverflowScrolling: 'touch',
                 position: 'relative',
                 zIndex: 1
               }}
-              className="hide-scrollbar"
+              className="hide-scrollbar wm-scroll-body"
             >
 
               {/*  Header Section  */}
-              <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+              <div className="wm-header" style={{ textAlign: 'center', marginBottom: '28px' }}>
                 
                 {/* Icon / Avatar with spinning ring */}
                 <div style={{ position: 'relative', width: '72px', height: '72px', margin: '0 auto 20px' }}>
@@ -364,17 +389,18 @@ const WelcomeModal = ({ onClose }) => {
                     }}>NOVEDADES V{releaseVersion}</div>
                 </div>
 
-                {/* Title */}
-                <h1 className="wm-shimmer" style={{
+                <div className="wm-header-copy">
+                  {/* Title */}
+                  <h1 className="wm-shimmer" style={{
                     fontSize: '26px', fontWeight: 900,
                     margin: '0 0 10px',
                     letterSpacing: '-0.5px',
                     lineHeight: 1.15
                   }}>
                   {welcomeTitle}
-                </h1>
+                  </h1>
 
-                <p style={{
+                  <p style={{
                     fontSize: '13.5px',
                     color: 'var(--text-secondary)',
                     lineHeight: 1.65,
@@ -383,14 +409,15 @@ const WelcomeModal = ({ onClose }) => {
                     marginInline: 'auto'
                   }}>
                   {welcomeSubtitle}
-                </p>
+                  </p>
+                </div>
               </div>
 
               {/*  Divider  */}
               <div className="wm-divider" style={{ marginBottom: '20px' }} />
 
               {/*  Feature Cards  */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
+              <div className="wm-feature-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
                 {(features || []).filter(Boolean).map((feat, idx) => {
                   const styleConfig = FEATURE_STYLES[idx % FEATURE_STYLES.length];
                   const IconComponent = styleConfig.icon;

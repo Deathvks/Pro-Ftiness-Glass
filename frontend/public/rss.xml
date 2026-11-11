@@ -5,7 +5,7 @@
     <link>https://profitnessglass.es/noticias</link>
     <description>Artículos científicos, nutrición deportiva, sobrecarga progresiva y guías de entrenamiento en Pro Fitness Glass.</description>
     <language>es-ES</language>
-    <lastBuildDate>Sun, 08 Nov 2026 10:34:22 GMT</lastBuildDate>
+    <lastBuildDate>Mon, 09 Nov 2026 17:59:06 GMT</lastBuildDate>
     <atom:link href="https://profitnessglass.es/rss.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Series Cluster: Levanta Más Peso sin Fatigar tu Sistema Nervioso</title>
@@ -302,6 +302,14 @@
       <pubDate>Sun, 08 Nov 2026 08:00:13 GMT</pubDate>
       <description>Aprende a utilizar la Variabilidad de la Frecuencia Cardíaca (HRV) para autorregular tus entrenamientos y maximizar la hipertrofia sin caer en el sobreentrenamiento. Descubre cómo esta métrica de biohacking optimiza tu recuperación muscular de forma científica.</description>
       <category>Biohacking</category>
+    </item>
+    <item>
+      <title>Entrenamiento Basado en Velocidad (VBT): La Clave para Autorregular tu Fatiga</title>
+      <link>https://profitnessglass.es/noticias/entrenamiento-basado-en-velocidad-vbt-autorregulacion</link>
+      <guid isPermaLink="true">https://profitnessglass.es/noticias/entrenamiento-basado-en-velocidad-vbt-autorregulacion</guid>
+      <pubDate>Mon, 09 Nov 2026 08:00:17 GMT</pubDate>
+      <description>Descubre cómo medir la velocidad concéntrica de tus levantamientos para optimizar la carga diaria sin sobreentrenar. Aprende a aplicar el VBT en tu rutina para maximizar fuerza e hipertrofia de forma precisa.</description>
+      <category>Entrenamiento</category>
     </item>
   </channel>
 </rss>

@@ -1,9 +1,9 @@
 import { ChevronRight } from 'lucide-react';
 
-export default function MobileSectionList({ id, label, sections, onSelect, tutorialPrefix = 'settings-tab' }) {
+export default function MobileSectionList({ id, label, sections, onSelect, tutorialPrefix = 'settings-tab', disableShadow = false }) {
   return (
     <nav id={id} aria-label={label} className="md:hidden w-full">
-      <ul className="glass overflow-hidden rounded-2xl divide-y divide-glass-border">
+      <ul className="glass overflow-hidden rounded-2xl divide-y divide-glass-border" style={disableShadow ? { boxShadow: 'none' } : undefined}>
         {sections.map(({ id: section, label: title, icon: Icon, danger, count }) => (
           <li key={section}>
             <button

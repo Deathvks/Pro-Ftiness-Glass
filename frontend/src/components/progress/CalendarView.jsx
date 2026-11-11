@@ -190,7 +190,7 @@ const CalendarView = ({ setDetailedLog, workouts, className = '' }) => {
                 key={day}
                 type="button"
                 onClick={() => handleDayClick(dayStr)}
-                className={`relative flex flex-col items-center justify-center aspect-square rounded-[18px] sm:rounded-2xl text-sm sm:text-base transition-all duration-200 outline-none select-none
+                className={`relative flex items-center justify-center aspect-square rounded-[18px] sm:rounded-2xl text-sm sm:text-base transition-all duration-200 outline-none select-none
                     ${isSelected 
                         ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg-primary font-black z-10 scale-105 shadow-md' 
                         : ''}
@@ -201,14 +201,14 @@ const CalendarView = ({ setDetailedLog, workouts, className = '' }) => {
                             : 'text-text-secondary font-medium opacity-60 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer'
                     }`}
             >
-                <span>{day}</span>
+                <span className="leading-none">{day}</span>
                 {hasWorkout && dayLogs.length > 1 && (
                     <span className="absolute bottom-1 right-1 sm:bottom-1.5 sm:right-1.5 w-3.5 h-3.5 text-[9px] font-black bg-bg-primary text-text-primary rounded-full flex items-center justify-center shadow-xs">
                         {dayLogs.length}
                     </span>
                 )}
                 {hasWorkout && dayLogs.length === 1 && (
-                    <span className="w-1 h-1 rounded-full bg-accent-contrast/70 mt-0.5"></span>
+                    <span className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent-contrast/70"></span>
                 )}
             </button>
         );

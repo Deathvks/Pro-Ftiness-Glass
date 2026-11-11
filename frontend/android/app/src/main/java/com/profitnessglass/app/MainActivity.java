@@ -23,7 +23,9 @@ public class MainActivity extends BridgeActivity {
         
         super.onCreate(savedInstanceState);
 
-        // Si se actualizó la app desde Play Store (cambio de versionCode), limpiar la caché y almacenamiento de WebView
+        // Si se actualizó la app desde Play Store, invalidar la caché HTTP de WebView.
+        // El estado de usuario se migra de forma selectiva en main.jsx antes de crear el store;
+        // borrar aquí todo WebStorage cerraba sesiones y ocurría después de iniciar la WebView.
         try {
             PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
             long currentVersionCode = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) 
@@ -32,19 +34,7 @@ public class MainActivity extends BridgeActivity {
 
             SharedPreferences prefs = getSharedPreferences("pfg_app_prefs", MODE_PRIVATE);
             long lastVersionCode = prefs.getLong("last_version_code", -1);
-            if (lastVersionCode == -1) {
-                // Nueva instalación o reinstalación: garantizar un inicio limpio evitando que copias corruptas de Google Drive bloqueen la app
-                try {
-                    android.webkit.WebStorage.getInstance().deleteAllData();
-                } catch (Exception ignored) {}
-            }
             if (lastVersionCode != currentVersionCode) {
-                // Actualización de versión: purgar WebView WebStorage (localStorage, sessionStorage, IndexedDB)
-                // y la caché de archivos para evitar bucles de renderizado con estados corruptos de versiones previas.
-                try {
-                    android.webkit.WebStorage.getInstance().deleteAllData();
-                } catch (Exception ignored) {}
-
                 WebView webView = getBridge() != null ? getBridge().getWebView() : null;
                 if (webView != null) {
                     webView.clearCache(true);

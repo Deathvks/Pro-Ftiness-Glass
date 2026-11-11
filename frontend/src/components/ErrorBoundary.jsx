@@ -31,6 +31,13 @@ class ErrorBoundary extends React.Component {
       localStorage.removeItem('pfg_cached_initial_state_v1');
       localStorage.removeItem('pfg_cache_version');
       localStorage.removeItem('pfg_social_feed_cache');
+      localStorage.removeItem('pfg_social_feed_scope');
+      localStorage.removeItem('viewed_stories_cache');
+      localStorage.removeItem('user_gym');
+      for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+        const key = localStorage.key(index);
+        if (key?.startsWith('user_gym_')) localStorage.removeItem(key);
+      }
       localStorage.setItem('lastView', 'dashboard');
       sessionStorage.clear();
 
@@ -53,6 +60,13 @@ class ErrorBoundary extends React.Component {
       localStorage.removeItem('isResting');
       localStorage.removeItem('restTimerEndTime');
       localStorage.removeItem('pfg_social_feed_cache');
+      localStorage.removeItem('pfg_social_feed_scope');
+      localStorage.removeItem('viewed_stories_cache');
+      localStorage.removeItem('user_gym');
+      for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+        const key = localStorage.key(index);
+        if (key?.startsWith('user_gym_')) localStorage.removeItem(key);
+      }
       localStorage.removeItem('pfg_crash_loop_count');
       sessionStorage.clear();
 
