@@ -19,6 +19,7 @@ const newsInteractionLimiter = rateLimit({
 
 // --- RUTAS PÚBLICAS (Accesibles para Googlebot, SEO y visitantes sin login) ---
 router.get('/', newsController.getPublicNews);
+router.get('/cover/:slug', newsController.getEditorialCover);
 router.get('/article/:slug', newsController.getNewsBySlug);
 router.post('/article/:slug/view', newsInteractionLimiter, newsController.trackNewsView);
 router.post('/track', newsInteractionLimiter, newsController.trackVisitor);

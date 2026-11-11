@@ -3,21 +3,12 @@ import { sanitizeNewsContent } from '../utils/newsSanitizer.js';
 import { Op } from 'sequelize';
 import models from '../models/index.js';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
-import newsAutomationService from '../services/newsAutomationService.js';
+import { coverForPublication, editorialCoverPath, getUsedNewsCoverIdentities, isEditorialCover, renderEditorialCover, selectNewsCover, serializeCoverWrite } from '../services/newsCoverService.js';
 
 import { UAParser } from 'ua-parser-js';
 import jwt from 'jsonwebtoken';
 
 const { News, NewsVisitLog, User } = models;
-
-// Imágenes de portada curadas en alta resolución para fitness y nutrición
-const CATEGORY_DEFAULT_IMAGES = {
-  'Entrenamiento': 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=80',
-  'Nutrición': 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1200&q=80',
-  'Suplementación': 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80',
-  'Salud': 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80',
-  'Novedades': 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80'
-};
 
 const slugify = (text) => {
   return text
@@ -45,6 +36,22 @@ export const invalidateNewsCache = () => {
   articleSlugCache.clear();
   publicListCache.clear();
 };
+
+export async function getEditorialCover(req, res, next) {
+  try {
+    const article = await News.findOne({
+      where: { slug: req.params.slug, is_published: true },
+      attributes: ['slug', 'title', 'category'],
+      raw: true,
+    });
+    if (!article) return res.sendStatus(404);
+    const image = await renderEditorialCover(article);
+    res.set('Cache-Control', 'public, max-age=300');
+    return res.type('jpeg').send(image);
+  } catch (error) {
+    return next(error);
+  }
+}
 
 export const getPublicNews = async (req, res) => {
   try {
@@ -602,16 +609,8 @@ REGLAS DE RETENCIÓN, EXTENSIÓN Y ESTILO EDITORIAL (OBLIGATORIAS):
       return res.status(500).json({ error: 'La IA no devolvió un JSON válido. Inténtalo de nuevo.' });
     }
 
-    // Asignar miniatura temática única que no esté repetida en la BD
-    if (!parsed.image_url) {
-      try {
-        const allNews = await News.findAll({ attributes: ['image_url'] });
-        const usedImages = new Set(allNews.map(n => n.image_url).filter(Boolean));
-        parsed.image_url = newsAutomationService.pickThematicImage(parsed.category, parsed.theme_keyword || '', usedImages);
-      } catch {
-        parsed.image_url = CATEGORY_DEFAULT_IMAGES[parsed.category] || CATEGORY_DEFAULT_IMAGES['Entrenamiento'];
-      }
-    }
+    const used = await getUsedNewsCoverIdentities(News);
+    parsed.image_url = await selectNewsCover({ category: parsed.category, used });
 
     // Asegurar slug válido
     parsed.slug = slugify(parsed.slug || parsed.title);
@@ -790,34 +789,36 @@ export const createNews = async (req, res) => {
       return res.status(400).json({ error: 'Título, resumen y contenido son obligatorios.' });
     }
 
-    let finalSlug = slugify(userSlug || title);
-    
-    // Verificar colisión de slug
-    const existing = await News.findOne({ where: { slug: finalSlug } });
-    if (existing) {
-      finalSlug = `${finalSlug}-${Date.now().toString().slice(-4)}`;
-    }
-
     const sanitizedContent = sanitizeNewsContent(content);
     const calculatedReadingTime = reading_time || Math.max(2, Math.ceil(sanitizedContent.split(/\s+/).length / 200));
 
-    invalidateNewsCache();
-    const newArticle = await News.create({
-      title,
-      slug: finalSlug,
-      summary,
-      content: sanitizedContent,
-      image_url: image_url || CATEGORY_DEFAULT_IMAGES[category] || CATEGORY_DEFAULT_IMAGES['Entrenamiento'],
-      category: category || 'Entrenamiento',
-      tags: tags || '',
-      reading_time: calculatedReadingTime,
-      is_published: is_published !== false,
-      published_at: new Date(),
-      author_name: author_name || req.user?.username || 'Equipo Pro Fitness Glass',
-      author_avatar: req.user?.profile_image_url || null,
-      seo_title: seo_title || title,
-      seo_description: seo_description || summary
+    const newArticle = await serializeCoverWrite(async () => {
+      const baseSlug = slugify(userSlug || title) || `articulo-${Date.now()}`;
+      let finalSlug = baseSlug;
+      let counter = 1;
+      while (await News.findOne({ where: { slug: finalSlug } })) {
+        finalSlug = `${baseSlug}-${counter++}`;
+      }
+      const used = await getUsedNewsCoverIdentities(News);
+      const cover = await coverForPublication({ requested: image_url, category, slug: finalSlug, used });
+      return News.create({
+        title,
+        slug: finalSlug,
+        summary,
+        content: sanitizedContent,
+        image_url: cover,
+        category: category || 'Entrenamiento',
+        tags: tags || '',
+        reading_time: calculatedReadingTime,
+        is_published: is_published !== false,
+        published_at: new Date(),
+        author_name: author_name || req.user?.username || 'Equipo Pro Fitness Glass',
+        author_avatar: req.user?.profile_image_url || null,
+        seo_title: seo_title || title,
+        seo_description: seo_description || summary
+      });
     });
+    invalidateNewsCache();
 
     // Notificar a motores de búsqueda (IndexNow / Bing / Yandex)
     if (newArticle.is_published) {
@@ -862,31 +863,38 @@ export const updateNews = async (req, res) => {
       seo_description
     } = req.body;
 
-    let finalSlug = article.slug;
-    if (newSlug && newSlug !== article.slug) {
-      finalSlug = slugify(newSlug);
-      const existing = await News.findOne({ where: { slug: finalSlug, id: { [Op.ne]: id } } });
-      if (existing) {
-        finalSlug = `${finalSlug}-${Date.now().toString().slice(-4)}`;
-      }
-    }
-
-    invalidateNewsCache();
     const sanitizedContent = content !== undefined ? sanitizeNewsContent(content) : undefined;
-    await article.update({
-      title: title ?? article.title,
-      slug: finalSlug,
-      summary: summary ?? article.summary,
-      content: sanitizedContent !== undefined ? sanitizedContent : article.content,
-      image_url: image_url ?? article.image_url,
-      category: category ?? article.category,
-      tags: tags ?? article.tags,
-      reading_time: reading_time ?? article.reading_time,
-      is_published: is_published !== undefined ? is_published : article.is_published,
-      author_name: author_name ?? article.author_name,
-      seo_title: seo_title ?? article.seo_title,
-      seo_description: seo_description ?? article.seo_description
+    await serializeCoverWrite(async () => {
+      await article.reload();
+      const baseSlug = (newSlug && slugify(newSlug)) || article.slug;
+      let finalSlug = baseSlug;
+      let counter = 1;
+      while (finalSlug !== article.slug && await News.findOne({ where: { slug: finalSlug } })) {
+        finalSlug = `${baseSlug}-${counter++}`;
+      }
+      let cover = article.image_url;
+      if (isEditorialCover(image_url ?? cover, article.slug)) {
+        cover = editorialCoverPath(finalSlug);
+      } else if (image_url != null && image_url !== cover) {
+        const used = await getUsedNewsCoverIdentities(News, { id: { [Op.ne]: id } });
+        cover = await coverForPublication({ requested: image_url, category: category ?? article.category, slug: finalSlug, used });
+      }
+      await article.update({
+        title: title ?? article.title,
+        slug: finalSlug,
+        summary: summary ?? article.summary,
+        content: sanitizedContent !== undefined ? sanitizedContent : article.content,
+        image_url: cover,
+        category: category ?? article.category,
+        tags: tags ?? article.tags,
+        reading_time: reading_time ?? article.reading_time,
+        is_published: is_published !== undefined ? is_published : article.is_published,
+        author_name: author_name ?? article.author_name,
+        seo_title: seo_title ?? article.seo_title,
+        seo_description: seo_description ?? article.seo_description
+      });
     });
+    invalidateNewsCache();
 
     return res.json({ message: 'Noticia actualizada con éxito.', article });
   } catch (error) {

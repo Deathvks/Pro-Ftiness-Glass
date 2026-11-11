@@ -1,6 +1,6 @@
 {
-  "version": "7.16.30",
-  "releaseNotes": "Actualización v7.16.30: recuperación de Comunidad en Android y reparación del estado local heredado al actualizar.",
+  "version": "7.16.31",
+  "releaseNotes": "Actualización v7.16.31: portadas de noticias verificadas, sin repeticiones y con una portada propia cuando falta una foto válida.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",

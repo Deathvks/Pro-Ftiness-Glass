@@ -31,6 +31,7 @@ import CustomSelect from '../CustomSelect';
 import ModalPortal from '../ModalPortal';
 import useModalLock from '../../hooks/useModalLock';
 import * as newsService from '../../services/newsService';
+import NewsCoverImage from '../News/NewsCoverImage';
 import { useToast } from '../../hooks/useToast';
 import { initSocket } from '../../services/socket';
 
@@ -493,13 +494,10 @@ export default function AdminNewsAutomation({ onNavigateToArticle, onAutomationC
                 <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                   {lastResult.image_url && (
                     <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl overflow-hidden bg-black/10 shrink-0 border border-emerald-500/20">
-                      <img
-                        src={lastResult.image_url}
+                      <NewsCoverImage
+                        article={{ ...lastResult, slug: lastResult.articleSlug }}
                         alt="Portada"
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = '/entrenamiento.png';
-                        }}
                       />
                     </div>
                   )}
@@ -607,13 +605,10 @@ export default function AdminNewsAutomation({ onNavigateToArticle, onAutomationC
               >
                 <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
                   <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl overflow-hidden bg-black/10 shrink-0">
-                    <img
-                      src={item.image_url || '/entrenamiento.png'}
+                    <NewsCoverImage
+                      article={item}
                       alt={item.title}
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = '/entrenamiento.png';
-                      }}
                     />
                   </div>
                   <div className="min-w-0 flex-1">

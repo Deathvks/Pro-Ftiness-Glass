@@ -25,6 +25,7 @@ import Spinner from '../Spinner';
 import CustomSelect from '../CustomSelect';
 import ConfirmationModal from '../ConfirmationModal';
 import * as newsService from '../../services/newsService';
+import NewsCoverImage from '../News/NewsCoverImage';
 import { useToast } from '../../hooks/useToast';
 import AdminNewsAutomation from './AdminNewsAutomation';
 import NewsContentEditor from './NewsContentEditor';
@@ -428,11 +429,10 @@ export default function AdminNewsManager() {
                 >
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                     {art.image_url ? (
-                      <img
-                        src={art.image_url}
+                      <NewsCoverImage
+                        article={art}
                         alt=""
                         className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl object-cover shrink-0 bg-black/10"
-                        onError={(e) => { e.currentTarget.src = '/entrenamiento.png'; }}
                       />
                     ) : (
                       <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-accent/15 flex items-center justify-center text-accent shrink-0">
