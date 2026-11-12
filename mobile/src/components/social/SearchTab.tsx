@@ -14,7 +14,7 @@ import { GlassView } from 'expo-glass-effect';
 import { GlassButton } from '@/components/ui/GlassButton';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass, getUnselectedControlColors } from '@/constants/theme';
 import { SocialUserAvatar } from './SocialUserAvatar';
 import { getContrastTextColor } from '@/utils/routineHelpers';
 
@@ -29,9 +29,7 @@ export function SearchTab({
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const tertiarySurface = isDark
-    ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.04)')
-    : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.03)');
+  const tertiarySurface = getUnselectedControlColors(theme).backgroundColor;
   const accentTextColor = getContrastTextColor(colors.tint);
 
   const userProfile = useAppStore(state => state.userProfile);
@@ -121,7 +119,7 @@ export function SearchTab({
             { marginTop: 16 },
           ]}
         >
-          {shouldUseContentGlass() && (
+          {shouldUseContentGlass(theme) && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -135,9 +133,7 @@ export function SearchTab({
               style={[
                 styles.countPill,
                 {
-                  backgroundColor: isDark
-                    ? 'rgba(255, 255, 255, 0.08)'
-                    : 'rgba(0, 0, 0, 0.06)',
+                  backgroundColor: getUnselectedControlColors(theme).backgroundColor,
                 },
               ]}
             >
@@ -188,7 +184,7 @@ export function SearchTab({
 
                   {/* Actions */}
                   {isMe ? (
-                    <View style={[styles.badgePill, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+                    <View style={[styles.badgePill, { backgroundColor: getUnselectedControlColors(theme).backgroundColor }]}>
                       <Text style={[styles.badgeText, { color: colors.textSecondary }]}>Tú</Text>
                     </View>
                   ) : isFriend ? (
@@ -197,7 +193,7 @@ export function SearchTab({
                       <Text style={[styles.badgeText, { color: '#22c55e' }]}>Amigo</Text>
                     </View>
                   ) : hasSentRequest ? (
-                    <View style={[styles.badgePill, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+                    <View style={[styles.badgePill, { backgroundColor: getUnselectedControlColors(theme).backgroundColor }]}>
                       <Clock size={12} color={colors.textSecondary} style={{ marginRight: 4 }} />
                       <Text style={[styles.badgeText, { color: colors.textSecondary }]}>Enviada</Text>
                     </View>
@@ -225,7 +221,7 @@ export function SearchTab({
             getAppleCardSurfaceStyle(theme, 20),
             !isIOS && {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+              backgroundColor: getUnselectedControlColors(theme).backgroundColor,
             },
           ]}
         >

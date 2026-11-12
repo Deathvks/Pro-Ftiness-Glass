@@ -9,7 +9,7 @@ export default function DashboardInsights({ workoutLog, bodyWeightLog, colors }:
   const theme = useAppStore(state => state.theme);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass();
+  const useGlass = shouldUseContentGlass(theme);
   const surface = (isIOS || isAtmosphericTheme(theme)) && getAppleCardSurfaceStyle(theme, 24);
 
   const insights = useMemo(() => {

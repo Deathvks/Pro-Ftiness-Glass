@@ -53,6 +53,8 @@ router.get(
   newsController.getAdminNewsList
 );
 
+router.get('/admin/article/:slug', authenticateToken, authorizeAdmin, newsController.getNewsBySlug);
+
 router.get(
   '/admin/automation/status',
   authenticateToken,

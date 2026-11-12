@@ -4,7 +4,7 @@ import { UserPlus, Check, X, Clock } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass, getUnselectedControlColors } from '@/constants/theme';
 import { SocialUserAvatar } from './SocialUserAvatar';
 import { getContrastTextColor } from '@/utils/routineHelpers';
 
@@ -13,9 +13,7 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const tertiarySurface = isDark
-    ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.04)')
-    : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.03)');
+  const tertiarySurface = getUnselectedControlColors(theme).backgroundColor;
   const accentTextColor = getContrastTextColor(colors.tint);
 
   const socialRequests = useAppStore(state => state.socialRequests) || { received: [], sent: [] };
@@ -49,7 +47,7 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
           { marginBottom: 20 },
         ]}
       >
-        {shouldUseContentGlass() && (
+        {shouldUseContentGlass(theme) && (
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}
@@ -146,7 +144,7 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
             !isIOS && { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
           ]}
         >
-          {shouldUseContentGlass() && (
+          {shouldUseContentGlass(theme) && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -196,9 +194,7 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
                     style={[
                       styles.statusPill,
                       {
-                        backgroundColor: isDark
-                          ? 'rgba(255, 255, 255, 0.08)'
-                          : 'rgba(0, 0, 0, 0.06)',
+                        backgroundColor: getUnselectedControlColors(theme).backgroundColor,
                       },
                     ]}
                   >

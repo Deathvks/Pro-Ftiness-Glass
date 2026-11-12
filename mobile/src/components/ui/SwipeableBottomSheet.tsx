@@ -22,6 +22,8 @@ import {
 } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { Colors, getThemeBaseBackground, usesFrontendCardSurface } from '@/constants/theme';
+import useAppStore from '@/store/useAppStore';
 
 const HEADER_DRAG_HEIGHT = 120;
 
@@ -30,6 +32,7 @@ interface SwipeableSheetModalProps {
   onClose: () => void;
   backdropColor: string;
   dismissOnBackdrop?: boolean;
+  dismissible?: boolean;
   avoidKeyboard?: boolean;
   statusBarTranslucent?: boolean;
   navigationBarTranslucent?: boolean;
@@ -43,6 +46,7 @@ export function SwipeableSheetModal({
   onClose,
   backdropColor,
   dismissOnBackdrop = true,
+  dismissible = true,
   avoidKeyboard = false,
   statusBarTranslucent = false,
   navigationBarTranslucent = false,
@@ -89,7 +93,7 @@ export function SwipeableSheetModal({
   }, [visible, translateY, backdropOpacity, screenHeight]);
 
   const dismissAnimated = useCallback(() => {
-    if (closingRef.current) return;
+    if (!dismissible || closingRef.current) return;
     closingRef.current = true;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
@@ -107,7 +111,7 @@ export function SwipeableSheetModal({
     ]).start(({ finished }) => {
       if (finished) onCloseRef.current();
     });
-  }, [translateY, backdropOpacity, screenHeight]);
+  }, [dismissible, translateY, backdropOpacity, screenHeight]);
 
   const onDragBegin = useCallback(({ absoluteY }: GestureStateChangeEvent<PanGestureHandlerEventPayload>) => {
     // Native translation can reset when the pan activates. Keep the original touch position.
@@ -149,6 +153,7 @@ export function SwipeableSheetModal({
 
   const dragGesture = useMemo(() => {
     const pan = Gesture.Pan()
+      .enabled(dismissible)
       .runOnJS(true)
       .maxPointers(1)
       .activeOffsetY(7)
@@ -162,14 +167,14 @@ export function SwipeableSheetModal({
     // Restrict where the drag can start so scrollable content can handle its own gestures.
     if (dragAreaHeight !== undefined) pan.hitSlop({ top: 0, height: dragAreaHeight });
     return pan;
-  }, [dragAreaHeight, onDragBegin, onDragUpdate, onDragEnd]);
+  }, [dismissible, dragAreaHeight, onDragBegin, onDragUpdate, onDragEnd]);
 
   const overlay = (
     <View style={styles.overlay}>
       <Animated.View
         style={[StyleSheet.absoluteFill, { opacity: backdropOpacity, backgroundColor: backdropColor }]}
       >
-        {dismissOnBackdrop && <Pressable style={StyleSheet.absoluteFill} onPress={dismissAnimated} />}
+        {dismissible && dismissOnBackdrop && <Pressable style={StyleSheet.absoluteFill} onPress={dismissAnimated} />}
       </Animated.View>
       <GestureDetector gesture={dragGesture} touchAction="pan-x">
         <Animated.View style={[sheetStyle, { transform: [{ translateY }] }]}>
@@ -219,10 +224,11 @@ export function getAppleSheetSurfaceStyle(isDark: boolean, radius = 28): ViewSty
   };
 }
 
-export function getAppleSheetCardStyle(isDark: boolean, radius = 16): ViewStyle {
-  if (Platform.OS !== 'ios') return {};
+export function getAppleSheetCardStyle(isDark: boolean, radius = 16, theme?: string): ViewStyle {
+  const themedCard = usesFrontendCardSurface(theme) ? Colors[theme].card : undefined;
+  if (Platform.OS !== 'ios') return themedCard ? { backgroundColor: themedCard } : {};
   return {
-    backgroundColor: isDark ? '#2C2C2E' : '#FFFFFF',
+    backgroundColor: themedCard ?? (isDark ? '#2C2C2E' : '#FFFFFF'),
     borderRadius: radius,
     borderCurve: 'continuous',
     borderWidth: 0,
@@ -238,6 +244,7 @@ interface SwipeableBottomSheetProps {
   height?: number | `${number}%`;
   showGrabber?: boolean;
   avoidKeyboard?: boolean;
+  dismissible?: boolean;
   scrollable?: boolean;
   edgeToEdge?: boolean;
   sheetStyle?: StyleProp<ViewStyle>;
@@ -254,6 +261,7 @@ export function SwipeableBottomSheet({
   height,
   showGrabber = true,
   avoidKeyboard = false,
+  dismissible = true,
   scrollable = false,
   edgeToEdge = false,
   sheetStyle,
@@ -262,6 +270,7 @@ export function SwipeableBottomSheet({
 }: SwipeableBottomSheetProps) {
   const insets = useSafeAreaInsets();
   const isIOS = Platform.OS === 'ios';
+  const theme = useAppStore(state => state.theme);
   const resolvedBg = isIOS
     ? isDark
       ? '#1C1C1E'
@@ -276,6 +285,7 @@ export function SwipeableBottomSheet({
       statusBarTranslucent
       navigationBarTranslucent={edgeToEdge}
       avoidKeyboard={avoidKeyboard}
+      dismissible={dismissible}
       dragAreaHeight={scrollable ? HEADER_DRAG_HEIGHT : undefined}
       sheetStyle={[
         styles.sheet,
@@ -289,6 +299,10 @@ export function SwipeableBottomSheet({
           borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
         },
         isIOS && getAppleSheetSurfaceStyle(isDark, 28),
+        usesFrontendCardSurface(theme) && {
+          backgroundColor: getThemeBaseBackground(theme),
+          borderColor: Colors[theme].border,
+        },
         sheetStyle,
       ]}
     >

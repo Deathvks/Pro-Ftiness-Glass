@@ -262,7 +262,7 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
   return (
     <View style={styles.container}>
       <View style={[styles.glassWrapper, { borderColor: colors.border, backgroundColor: colors.card }, Platform.OS === 'ios' && getAppleCardSurfaceStyle(theme, 20)]}>
-        {shouldUseContentGlass() && (
+        {shouldUseContentGlass(theme) && (
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}

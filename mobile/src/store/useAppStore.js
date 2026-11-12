@@ -29,47 +29,55 @@ const clearThemeTestInterval = () => {
     }
 };
 
+const isDarkTheme = theme => !['light', 'ocean', 'desert'].includes(theme);
+let nativeScheme;
+let nativeBackground;
+let nativeNavigationStyle;
 
-export const applyNativeColorScheme = (pref, resolved) => {
-    try {
-        const active = resolved || resolveTheme(pref);
-        const isDark = !['light', 'ocean', 'desert'].includes(active);
-        if (pref === 'system') {
-            Appearance.setColorScheme('unspecified');
-        } else {
-            Appearance.setColorScheme(isDark ? 'dark' : 'light');
-        }
+export const applyNativeColorScheme = (pref, theme) => {
+    if (Platform.OS === 'web') return;
 
-        if (Platform.OS === 'android') {
-            try {
-                const baseBg = getThemeBaseBackground(active);
-                SystemUI.setBackgroundColorAsync(baseBg).catch(() => {});
-            } catch {}
-            try {
-                const NavigationBar = require('expo-navigation-bar');
-                NavigationBar.setStyle(isDark ? 'light' : 'dark');
-            } catch {}
-            try {
-                const { StatusBar: RNStatusBar } = require('react-native');
-                RNStatusBar.setTranslucent(true);
-                RNStatusBar.setBackgroundColor('transparent');
-                RNStatusBar.setBarStyle(isDark ? 'light-content' : 'dark-content');
-            } catch {}
+    const scheme = pref === 'system' ? 'unspecified' : isDarkTheme(theme) ? 'dark' : 'light';
+    if (scheme !== nativeScheme) {
+        try {
+            Appearance.setColorScheme(scheme);
+            nativeScheme = scheme;
+        } catch {}
+    }
+
+    if (Platform.OS !== 'android') return;
+
+    const active = pref === 'system' ? resolveTheme(pref) : theme;
+    const background = getThemeBaseBackground(active);
+    if (background !== nativeBackground) {
+        try {
+            nativeBackground = background;
+            void SystemUI.setBackgroundColorAsync(background).catch(() => {
+                if (nativeBackground === background) nativeBackground = undefined;
+            });
+        } catch {
+            nativeBackground = undefined;
         }
-    } catch (e) {
-        // no-op
+    }
+
+    const style = isDarkTheme(active) ? 'light' : 'dark';
+    if (style !== nativeNavigationStyle) {
+        try {
+            const NavigationBar = require('expo-navigation-bar');
+            NavigationBar.setStyle(style);
+            nativeNavigationStyle = style;
+        } catch {}
     }
 };
 
 const initialThemePref = (typeof localStorage !== 'undefined' ? localStorage.getItem('theme') : null) || 'oled';
-applyNativeColorScheme(initialThemePref, resolveTheme(initialThemePref));
 
 const useAppStore = create((set, get) => ({
     hydrateFromStorage: () => {
         if (typeof localStorage === 'undefined') return;
         
         const theme = localStorage.getItem('theme');
-        if (theme) { const resolved = resolveTheme(theme); applyNativeColorScheme(theme, resolved); set({ themePreference: theme, theme: resolved }); }
+        if (theme) set({ themePreference: theme, theme: resolveTheme(theme) });
         
         const accent = localStorage.getItem('accent');
         if (accent) set({ accent });
@@ -119,28 +127,31 @@ const useAppStore = create((set, get) => ({
     themePreference: initialThemePref,
     theme: resolveTheme(initialThemePref),
     setTheme: (pref) => {
+        const current = get();
+        if (pref === current.themePreference && !current.themeTest) return;
         clearThemeTestInterval();
-        const resolved = resolveTheme(pref);
-        applyNativeColorScheme(pref, resolved);
+        const resolved = pref === 'system' && current.themeTest?.previousTheme && pref === current.themePreference
+            ? current.themeTest.previousTheme
+            : resolveTheme(pref);
         set({ themePreference: pref, theme: resolved, themeTest: null });
         if (typeof localStorage !== 'undefined') localStorage.setItem('theme', pref);
     },
     // Re-sincroniza el tema cuando el usuario usa "Sistema" y cambia el modo del dispositivo
     syncSystemTheme: () => {
-        const { themePreference, themeTest } = get();
+        const { themePreference, themeTest, theme } = get();
         if (themePreference === 'system' && !themeTest) {
             const resolved = resolveTheme('system');
-            applyNativeColorScheme('system', resolved);
-            set({ theme: resolved });
+            if (resolved !== theme) set({ theme: resolved });
         }
     },
 
     // --- Prueba temporal de temas bloqueados (igual que la web) ---
-    themeTest: null, // { name, timeLeft }
+    themeTest: null, // { name, timeLeft, previousTheme }
     startThemeTest: (name = 'galaxy', durationSecs = 10) => {
         clearThemeTestInterval();
-        applyNativeColorScheme(name, name);
-        set({ theme: name, themeTest: { name, timeLeft: durationSecs } });
+        const { theme, themeTest } = get();
+        const previousTheme = themeTest?.previousTheme ?? theme;
+        set({ theme: name, themeTest: { name, timeLeft: durationSecs, previousTheme } });
         themeTestInterval = setInterval(() => {
             const current = get().themeTest;
             if (!current) {
@@ -151,8 +162,7 @@ const useAppStore = create((set, get) => ({
             if (left <= 0) {
                 clearThemeTestInterval();
                 const pref = get().themePreference || 'oled';
-                const resolved = resolveTheme(pref);
-                applyNativeColorScheme(pref, resolved);
+                const resolved = pref === 'system' ? current.previousTheme : resolveTheme(pref);
                 set({ themeTest: null, theme: resolved });
             } else {
                 set({ themeTest: { ...current, timeLeft: left } });
@@ -160,10 +170,10 @@ const useAppStore = create((set, get) => ({
         }, 1000);
     },
     cancelThemeTest: () => {
+        const { themePreference, themeTest } = get();
+        if (!themeTest) return;
         clearThemeTestInterval();
-        const pref = get().themePreference || 'oled';
-        const resolved = resolveTheme(pref);
-        applyNativeColorScheme(pref, resolved);
+        const resolved = themePreference === 'system' ? themeTest.previousTheme : resolveTheme(themePreference);
         set({ themeTest: null, theme: resolved });
     },
     accent: (typeof localStorage !== 'undefined' && (typeof localStorage !== 'undefined' ? localStorage.getItem('accent') : null)) || '#3b82f6',

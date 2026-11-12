@@ -54,6 +54,7 @@ export const importYouTubePlaylist = async (playlistId) => {
   cachedExerciseList = null;
   return apiClient('/exercise-list/exercises/import-youtube', {
     method: 'POST',
+    queueWhenOffline: false,
     body: { playlistId }
   });
 };
@@ -62,6 +63,7 @@ export const updateExercise = async (id, exerciseData) => {
   cachedExerciseList = null;
   return apiClient(`/exercise-list/exercises/${id}`, {
     method: 'PUT',
+    queueWhenOffline: false,
     body: exerciseData
   });
 };
@@ -69,6 +71,7 @@ export const updateExercise = async (id, exerciseData) => {
 export const deleteExercise = async (id) => {
   cachedExerciseList = null;
   return apiClient(`/exercise-list/exercises/${id}`, {
-    method: 'DELETE'
+    method: 'DELETE',
+    queueWhenOffline: false,
   });
 };

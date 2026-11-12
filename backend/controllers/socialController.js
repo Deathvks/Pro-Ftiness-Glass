@@ -463,7 +463,7 @@ export const removeFriend = async (req, res) => {
 
         const io = req.app.get('io');
         if (io) {
-            io.to(friendId.toString()).emit('friend_removed');
+            io.to(friendId.toString()).emit('friend_removed', { userId });
         }
 
         res.json({ success: true, message: 'Amigo eliminado' });

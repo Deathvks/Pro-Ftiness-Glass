@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ImageBackground, Alert, Animated, Platform, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ImageBackground, Animated, Platform, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,8 +8,9 @@ import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getThemeBaseBackground, getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getThemeBaseBackground, getAppleCardSurfaceStyle, shouldUseContentGlass, usesFrontendCardSurface } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
+import { AndroidHeaderBlurTarget } from '@/components/AndroidHeaderBlur';
 import ThemeBackground from '@/components/ThemeBackground';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { 
@@ -18,6 +19,7 @@ import {
   Trophy, 
   Paintbrush, 
   Share2, 
+  Newspaper,
   Info, 
   Settings, 
   Users, 
@@ -145,6 +147,7 @@ const HubButton = ({
   return (
     <GlassButton
       theme={theme}
+      color={usesFrontendCardSurface(theme) ? colors.card + 'ff' : undefined}
       noShadow={true}
       onPress={isComingSoon ? undefined : onPress}
       style={{
@@ -240,207 +243,218 @@ export default function Hub() {
   }, [userProfile?.id, fetchUnreadChats]);
 
   const scrollY = React.useRef(new Animated.Value(0)).current;
+  const androidBlurTarget = React.useRef<React.ComponentRef<typeof View>>(null);
   const insets = useSafeAreaInsets();
-  const useGlass = shouldUseContentGlass();
+  const useGlass = shouldUseContentGlass(theme);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background }}>
-      <ThemeBackground />
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
-        <GlobalHeader title="Menú" scrollY={scrollY} />
-      </View>
-
-      <Animated.ScrollView 
-        contentContainerStyle={{ padding: 16, paddingTop: insets.top + 72, paddingBottom: 150 }} 
-        showsVerticalScrollIndicator={false}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
-        scrollEventThrottle={16}
-      >
-        
-        {/* Banner Hero */}
-        <View
-          style={{
-            width: '100%',
-            height: isIOS ? 184 : 192,
-            borderRadius: isIOS ? 20 : 24,
-            borderCurve: 'continuous',
-            overflow: 'hidden',
-            marginBottom: isIOS ? 20 : 24,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: isIOS ? 4 : 8 },
-            shadowOpacity: isIOS ? 0.14 : 0.2,
-            shadowRadius: isIOS ? 12 : 16,
-            elevation: 5,
-          }}
+      <AndroidHeaderBlurTarget target={androidBlurTarget}>
+        <ThemeBackground />
+        <Animated.ScrollView
+          contentContainerStyle={{ padding: 16, paddingTop: insets.top + 72, paddingBottom: 150 }}
+          showsVerticalScrollIndicator={false}
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+          scrollEventThrottle={16}
         >
-          <ImageBackground
-            source={{ uri: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=800&q=80' }}
-            style={{ flex: 1, justifyContent: 'flex-end' }}
+
+          {/* Banner Hero */}
+          <View
+            style={{
+              width: '100%',
+              height: isIOS ? 184 : 192,
+              borderRadius: isIOS ? 20 : 24,
+              borderCurve: 'continuous',
+              overflow: 'hidden',
+              marginBottom: isIOS ? 20 : 24,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: isIOS ? 4 : 8 },
+              shadowOpacity: isIOS ? 0.14 : 0.2,
+              shadowRadius: isIOS ? 12 : 16,
+              elevation: 5,
+            }}
           >
-            <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.45)', 'rgba(0,0,0,0.85)']}
-              style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '100%' }}
-            />
-            <View style={{ padding: 20 }}>
-              <Text
-                style={{
-                  fontSize: isIOS ? 26 : 28,
-                  fontWeight: isIOS ? '700' : '900',
-                  letterSpacing: isIOS ? -0.5 : 0,
-                  color: '#fff',
-                  marginBottom: 4,
-                }}
-              >
-                Explorar
-              </Text>
-              <Text style={{ fontSize: 14, fontWeight: '500', color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
-                Tu centro de control. Descubre retos, ajusta tu perfil y analiza todo tu progreso en un solo lugar.
-              </Text>
-            </View>
-          </ImageBackground>
-        </View>
-
-        {/* Lista de Accesos Directos (Inset Grouped en iOS 26-27, Tarjetas en Android/Web) */}
-        <View
-          style={
-            isIOS
-              ? [
-                  getAppleCardSurfaceStyle(theme, 20),
-                  { overflow: 'hidden' },
-                ]
-              : undefined
-          }
-        >
-          {isIOS && useGlass && (
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-            />
-          )}
-
-          <HubButton
-            icon={BarChart2}
-            title="Tu Progreso"
-            description="Estadísticas, RM y volumen"
-            colors={colors}
-            iosBadgeColor={colors.tint}
-            onPress={() => router.push('/progress' as any)}
-          />
-          
-          {isClient && (
-            <HubButton
-              icon={MessageCircle}
-              title="Asesoría"
-              description="Habla con tu entrenador"
-              colors={colors}
-              iosBadgeColor="#0A84FF"
-              badge={Boolean(!visitedAsesoria || (Number(unreadChats) > 0))}
-              onPress={() => {
-                if (userProfile?.id) {
-                  AsyncStorage.setItem(`visited_asesoria_${userProfile.id}`, 'true');
-                  setVisitedAsesoria(true);
-                }
-                router.push('/asesoria' as any);
-              }}
-            />
-          )}
-
-          <HubButton
-            icon={Trophy}
-            title="Retos y Misiones"
-            description="Gana XP y sube de nivel"
-            colors={colors}
-            iosBadgeColor="#FF9F0A"
-            onPress={() => router.push('/challenges' as any)}
-          />
-
-          <HubButton
-            icon={Paintbrush}
-            title="Apariencia"
-            description="Temas, acentos y colores"
-            colors={colors}
-            iosBadgeColor="#BF5AF2"
-            onPress={() => router.push('/appearance')}
-            rightContent={
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginRight: 2 }}>
+            <ImageBackground
+              source={{ uri: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=800&q=80' }}
+              style={{ flex: 1, justifyContent: 'flex-end' }}
+            >
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.45)', 'rgba(0,0,0,0.85)']}
+                style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '100%' }}
+              />
+              <View style={{ padding: 20 }}>
                 <Text
                   style={{
-                    fontSize: isIOS ? 15 : 11,
-                    fontWeight: isIOS ? '400' : '700',
-                    color: isIOS ? colors.textSecondary : colors.tint,
-                    letterSpacing: -0.2,
+                    fontSize: isIOS ? 26 : 28,
+                    fontWeight: isIOS ? '700' : '900',
+                    letterSpacing: isIOS ? -0.5 : 0,
+                    color: '#fff',
+                    marginBottom: 4,
                   }}
                 >
-                  {getThemeLabel(themePreference || theme)}
+                  Explorar
                 </Text>
-                <View style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: 6,
-                  backgroundColor: colors.tint,
-                  borderWidth: 1.5,
-                  borderColor: 'rgba(255, 255, 255, 0.4)',
-                }} />
+                <Text style={{ fontSize: 14, fontWeight: '500', color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
+                  Tu centro de control. Descubre retos, ajusta tu perfil y analiza todo tu progreso en un solo lugar.
+                </Text>
               </View>
+            </ImageBackground>
+          </View>
+
+          {/* Lista de Accesos Directos (Inset Grouped en iOS 26-27, Tarjetas en Android/Web) */}
+          <View
+            style={
+              isIOS
+                ? [
+                    getAppleCardSurfaceStyle(theme, 20),
+                    { overflow: 'hidden' },
+                  ]
+                : undefined
             }
-          />
+          >
+            {isIOS && useGlass && (
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+              />
+            )}
 
-          <HubButton
-            icon={Share2}
-            title="Nuestras Redes"
-            description="Instagram, TikTok y YouTube"
-            colors={colors}
-            iosBadgeColor="#FF2D55"
-            onPress={() => router.push('/social-networks' as any)}
-          />
-
-          <HubButton
-            icon={Info}
-            title="Soporte"
-            description="Ayuda, descargas y app info"
-            colors={colors}
-            iosBadgeColor="#30D158"
-            onPress={() => router.push('/support' as any)}
-          />
-
-          <HubButton
-            icon={Settings}
-            title="Ajustes"
-            description="Cuenta, privacidad y notificaciones"
-            colors={colors}
-            iosBadgeColor="#8E8E93"
-            isLast={!isTrainer && !isAdmin}
-            onPress={() => router.push('/settings' as any)}
-          />
-
-          {isTrainer && (
             <HubButton
-              icon={Users}
-              title="Panel de Entrenador"
-              description="Gestión de clientes y cuestionarios"
+              icon={BarChart2}
+              title="Tu Progreso"
+              description="Estadísticas, RM y volumen"
               colors={colors}
-              iosBadgeColor="#5E5CE6"
-              isLast={!isAdmin}
-              onPress={() => Alert.alert('Panel de Entrenador', 'Próximamente en la app móvil')}
+              iosBadgeColor={colors.tint}
+              onPress={() => router.push('/progress' as any)}
             />
-          )}
 
-          {isAdmin && (
+            {isClient && (
+              <HubButton
+                icon={MessageCircle}
+                title="Asesoría"
+                description="Habla con tu entrenador"
+                colors={colors}
+                iosBadgeColor="#0A84FF"
+                badge={Boolean(!visitedAsesoria || (Number(unreadChats) > 0))}
+                onPress={() => {
+                  if (userProfile?.id) {
+                    AsyncStorage.setItem(`visited_asesoria_${userProfile.id}`, 'true');
+                    setVisitedAsesoria(true);
+                  }
+                  router.push('/asesoria' as any);
+                }}
+              />
+            )}
+
             <HubButton
-              icon={ShieldCheck}
-              title="Panel Admin"
-              description="Gestión de usuarios y sistema"
+              icon={Trophy}
+              title="Retos y Misiones"
+              description="Gana XP y sube de nivel"
               colors={colors}
-              iosBadgeColor="#FF453A"
-              isLast={true}
-              onPress={() => Alert.alert('Panel Admin', 'Próximamente en la app móvil')}
+              iosBadgeColor="#FF9F0A"
+              onPress={() => router.push('/challenges' as any)}
             />
-          )}
 
-        </View>
+            <HubButton
+              icon={Paintbrush}
+              title="Apariencia"
+              description="Temas, acentos y colores"
+              colors={colors}
+              iosBadgeColor="#BF5AF2"
+              onPress={() => router.push('/appearance')}
+              rightContent={
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginRight: 2 }}>
+                  <Text
+                    style={{
+                      fontSize: isIOS ? 15 : 11,
+                      fontWeight: isIOS ? '400' : '700',
+                      color: isIOS ? colors.textSecondary : colors.tint,
+                      letterSpacing: -0.2,
+                    }}
+                  >
+                    {getThemeLabel(themePreference || theme)}
+                  </Text>
+                  <View style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: 6,
+                    backgroundColor: colors.tint,
+                    borderWidth: 1.5,
+                    borderColor: 'rgba(255, 255, 255, 0.4)',
+                  }} />
+                </View>
+              }
+            />
 
-      </Animated.ScrollView>
+            <HubButton
+              icon={Share2}
+              title="Nuestras Redes"
+              description="Instagram, TikTok y YouTube"
+              colors={colors}
+              iosBadgeColor="#FF2D55"
+              onPress={() => router.push('/social-networks' as any)}
+            />
+
+            <HubButton
+              icon={Newspaper}
+              title="Noticias y Artículos"
+              description="Ciencia, nutrición y novedades"
+              colors={colors}
+              iosBadgeColor="#0A84FF"
+              onPress={() => router.push('/noticias')}
+            />
+
+            <HubButton
+              icon={Info}
+              title="Soporte"
+              description="Ayuda, descargas y app info"
+              colors={colors}
+              iosBadgeColor="#30D158"
+              onPress={() => router.push('/support' as any)}
+            />
+
+            <HubButton
+              icon={Settings}
+              title="Ajustes"
+              description="Cuenta, privacidad y notificaciones"
+              colors={colors}
+              iosBadgeColor="#8E8E93"
+              isLast={!isTrainer && !isAdmin}
+              onPress={() => router.push('/settings' as any)}
+            />
+
+            {isTrainer && (
+              <HubButton
+                icon={Users}
+                title="Panel de Entrenador"
+                description="Gestión de clientes y cuestionarios"
+                colors={colors}
+                iosBadgeColor="#5E5CE6"
+                isLast={!isAdmin}
+                onPress={() => router.push('/trainerPanel')}
+              />
+            )}
+
+            {isAdmin && (
+              <HubButton
+                icon={ShieldCheck}
+                title="Panel Admin"
+                description="Gestión de usuarios y sistema"
+                colors={colors}
+                iosBadgeColor="#FF453A"
+                isLast={true}
+                onPress={() => router.push('/admin')}
+              />
+            )}
+
+          </View>
+
+        </Animated.ScrollView>
+      </AndroidHeaderBlurTarget>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
+        <GlobalHeader title="Menú" scrollY={scrollY} androidBlurTarget={androidBlurTarget} />
+      </View>
     </View>
   );
 }

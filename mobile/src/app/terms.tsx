@@ -10,7 +10,6 @@ import {
 import { useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
 import {
-  Scale,
   UserCheck,
   HeartPulse,
   Lock,
@@ -24,7 +23,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
+import LegalDocumentIcon from '@/components/legal/LegalDocumentIcon';
 import LegalHeader from '@/components/legal/LegalHeader';
 import { supportEmail } from '@/config/mailContacts';
 
@@ -35,7 +35,7 @@ export default function TermsScreen() {
   const theme = colors;
   const currentStoreTheme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(currentStoreTheme);
-  const contrastColor = getContrastColor(theme.tint, currentStoreTheme);
+  const contrastColor = getContrastTextColor(theme.tint);
 
   const openLink = (url: string) => {
     Linking.openURL(url).catch(() => {});
@@ -67,17 +67,7 @@ export default function TermsScreen() {
       >
         {/* Hero Section */}
         <View style={styles.heroSection}>
-          <View
-            style={[
-              styles.heroIconBox,
-              {
-                backgroundColor: theme.tint,
-                borderColor: 'rgba(255, 255, 255, 0.25)',
-              },
-            ]}
-          >
-            <Scale size={36} color={contrastColor} strokeWidth={2.4} />
-          </View>
+          <LegalDocumentIcon />
           <Text style={[styles.heroTitle, { color: theme.text }]}>Términos del Servicio</Text>
           <Text style={[styles.heroSubtitle, { color: theme.textSecondary }]}>
             Condiciones contractuales, marco regulatorio español y europeo (RGPD, LOPDGDD y LSSI-CE)
@@ -342,20 +332,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
     paddingHorizontal: 8,
-  },
-  heroIconBox: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 4,
   },
   heroTitle: {
     fontSize: 28,

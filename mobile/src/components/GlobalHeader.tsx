@@ -1,18 +1,22 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo } from 'react';
 import { View, Image, Text, StyleSheet, Animated, Platform, TouchableOpacity } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
-import { User, Sparkles, Bell, ChevronLeft } from 'lucide-react-native';
+import { Sparkles, Bell, ChevronLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useAppStore from '@/store/useAppStore';
+import { selectHasUnseenStory } from '@/store/storySlice';
 import { useAppColors } from '@/hooks/useAppColors';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { AiInfoModal } from '@/components/modals/AiInfoModal';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { BACKEND_BASE_URL } from '@/services/apiClient';
+import { SocialUserAvatar } from '@/components/social/SocialUserAvatar';
+import { getThemeBaseBackground } from '@/constants/theme';
+import { androidHeaderBlurAvailable, type HeaderBlurRef } from '@/components/AndroidHeaderBlur';
 
-// Tinte de fondo adaptado exactamente a cada tema para el efecto cristal en Web y Android
+// Tinte de fondo para el efecto cristal en web
 const getHeaderThemeBg = (theme: string) => {
     switch (theme) {
         case 'oled':
@@ -42,6 +46,8 @@ export default function GlobalHeader({
     hideRightButtons,
     onBackPress,
     hideBottomBorder,
+    showBackground = true,
+    androidBlurTarget,
 }: { 
     title?: string, 
     scrollY?: Animated.Value, 
@@ -49,6 +55,8 @@ export default function GlobalHeader({
     hideRightButtons?: boolean,
     onBackPress?: () => void,
     hideBottomBorder?: boolean,
+    showBackground?: boolean,
+    androidBlurTarget?: HeaderBlurRef,
 }) {
     const [showAiModal, setShowAiModal] = React.useState(false);
     const insets = useSafeAreaInsets();
@@ -68,48 +76,39 @@ export default function GlobalHeader({
     const unreadCount = notifications.filter((n: any) => !n.is_read).length;
 
     const userProfile = useAppStore(state => state.userProfile);
-    const imageUrl = userProfile?.profile_image_url ? 
-        (userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`) 
-        : null;
+    const hasUnseenStory = useAppStore(state => selectHasUnseenStory(state, state.userProfile?.id));
 
     const isDark = !['light', 'ocean', 'desert'].includes(theme);
     const colorScheme = isDark ? 'dark' : 'light';
     const headerThemeBg = getHeaderThemeBg(theme);
     const isIOS = Platform.OS === 'ios';
+    const isAndroid = Platform.OS === 'android';
+    const androidTint = getThemeBaseBackground(theme);
 
     // ¿El dispositivo soporta UIGlassEffect (iOS 26+)? En web siempre es false.
     const glassAvailable = useMemo(() => {
-        if (Platform.OS === 'web') return false;
+        if (!isIOS) return false;
         try {
             return isLiquidGlassAvailable();
         } catch {
             return false;
         }
-    }, []);
-
-    // Para iOS nativo: en iOS 26-27 los controles flotan sobre el contenido con un borde suave progresivo al hacer scroll
-    const [isScrolled, setIsScrolled] = useState(!scrollY);
-    const isScrolledRef = useRef(!scrollY);
-
-    useEffect(() => {
-        if (!scrollY || !isIOS) return;
-        const id = scrollY.addListener(({ value }) => {
-            const next = isScrolledRef.current ? value > 4 : value > 12;
-            if (next !== isScrolledRef.current) {
-                isScrolledRef.current = next;
-                setIsScrolled(next);
-            }
-        });
-        return () => scrollY.removeListener(id);
-    }, [scrollY, isIOS]);
+    }, [isIOS]);
 
     // Opacidad fluida directa del scroll para Web y dispositivos sin UIGlassEffect
     const fallbackOpacity = useMemo(() => {
-        if (!scrollY) return new Animated.Value(isIOS ? 0 : 1);
+        if (!scrollY) return new Animated.Value(isIOS ? 0 : isAndroid ? 0.85 : 1);
         if (isIOS) {
             return scrollY.interpolate({
                 inputRange: [0, 28],
                 outputRange: [0, 0.92],
+                extrapolate: 'clamp',
+            });
+        }
+        if (isAndroid) {
+            return scrollY.interpolate({
+                inputRange: [0, 20, 56],
+                outputRange: [0, 0.65, 1],
                 extrapolate: 'clamp',
             });
         }
@@ -118,13 +117,13 @@ export default function GlobalHeader({
             outputRange: [isDark ? 0.88 : 0.65, 1],
             extrapolate: 'clamp',
         });
-    }, [scrollY, isDark, isIOS]);
+    }, [scrollY, isDark, isIOS, isAndroid]);
 
     return (
         <View style={{ position: 'relative', zIndex: 100 }} pointerEvents="box-none">
             {/* En iOS 26-27 el header no lleva barra de vidrio completa para no apilar Liquid Glass sobre Liquid Glass;
                 solo muestra un velo difuminado suave cuando el contenido pasa por debajo */}
-            {isIOS ? (
+            {showBackground && (isIOS ? (
                 <Animated.View
                     pointerEvents="none"
                     style={[
@@ -141,25 +140,28 @@ export default function GlobalHeader({
                         style={StyleSheet.absoluteFill}
                     />
                 </Animated.View>
-            ) : glassAvailable ? (
-                <GlassView
+            ) : isAndroid ? (
+                <Animated.View
                     pointerEvents="none"
-                    glassEffectStyle={{
-                        style: isScrolled ? 'regular' : 'none',
-                        animate: true,
-                        animationDuration: 0.15,
-                    }}
-                    colorScheme={colorScheme as any}
-                    style={[
-                        StyleSheet.absoluteFill,
-                        {
-                            borderBottomWidth: (!hideBottomBorder && !isDark && isScrolled) ? StyleSheet.hairlineWidth : 0,
-                            borderBottomColor: 'rgba(0, 0, 0, 0.08)',
-                        }
-                    ]}
-                />
+                    style={[StyleSheet.absoluteFill, { bottom: -10, opacity: fallbackOpacity }]}
+                >
+                    {androidHeaderBlurAvailable && androidBlurTarget && (
+                        <BlurView
+                            blurTarget={androidBlurTarget}
+                            blurMethod="dimezisBlurViewSdk31Plus"
+                            intensity={28}
+                            tint={colorScheme}
+                            style={[StyleSheet.absoluteFill, { bottom: 10, opacity: 0.42 }]}
+                        />
+                    )}
+                    <LinearGradient
+                        colors={[`${androidTint}E0`, `${androidTint}B8`, `${androidTint}00`]}
+                        locations={[0, 0.82, 1]}
+                        style={StyleSheet.absoluteFill}
+                    />
+                </Animated.View>
             ) : (
-                /* Fondo Liquid Glass adaptativo para Web y Android con desenfoque + tinte del tema */
+                /* Fondo adaptativo para web con desenfoque y tinte del tema */
                 <Animated.View
                     pointerEvents="none"
                     style={[
@@ -167,13 +169,13 @@ export default function GlobalHeader({
                         { 
                             overflow: 'hidden', 
                             opacity: fallbackOpacity,
-                            borderBottomWidth: (!hideBottomBorder && !isDark && isScrolled) ? StyleSheet.hairlineWidth : 0,
+                            borderBottomWidth: (!hideBottomBorder && !isDark && !scrollY) ? StyleSheet.hairlineWidth : 0,
                             borderBottomColor: 'rgba(0, 0, 0, 0.08)',
                         }
                     ]}
                 >
                     <BlurView
-                        intensity={Platform.OS === 'android' ? 95 : 80}
+                        intensity={80}
                         tint={colorScheme === 'dark' ? 'dark' : 'light'}
                         style={StyleSheet.absoluteFill}
                     />
@@ -184,7 +186,7 @@ export default function GlobalHeader({
                         ]} 
                     />
                 </Animated.View>
-            )}
+            ))}
 
             <View 
                 pointerEvents="box-none"
@@ -221,18 +223,16 @@ export default function GlobalHeader({
                         <ChevronLeft size={23} color={colors.text} strokeWidth={2.3} />
                     </GlassButton>
                 ) : (
-                    <GlassButton 
-                        onPress={() => router.push('/profile')} 
-                        theme={theme}
-                        noShadow
-                        style={{ width: 40, height: 40, borderRadius: 20, overflow: 'hidden', padding: 0 }}
+                    <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel={hasUnseenStory ? 'Ver mi historia' : 'Mi perfil'}
+                        onPress={() => {
+                            if (!hasUnseenStory || !useAppStore.getState().openStory(userProfile?.id)) router.push('/profile');
+                        }}
+                        activeOpacity={0.72}
                     >
-                        {imageUrl ? (
-                            <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} />
-                        ) : (
-                            <User size={20} color={colors.text} />
-                        )}
-                    </GlassButton>
+                        <SocialUserAvatar user={userProfile} size={40} openStoryOnPress={false} />
+                    </TouchableOpacity>
                 )}
                 {title && (
                     <Text

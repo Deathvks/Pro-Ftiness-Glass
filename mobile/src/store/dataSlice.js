@@ -12,6 +12,7 @@ import * as exerciseService from '../services/exerciseService';
 import * as personalRecordService from '../services/personalRecordService';
 
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
+let exerciseCatalogRequest;
 
 const initialState = {
   routines: [],
@@ -209,20 +210,28 @@ export const createDataSlice = (set, get) => ({
     }
   },
 
-  getOrFetchAllExercises: async () => {
+  getOrFetchAllExercises: () => {
     const currentExercises = get().allExercises;
     if (currentExercises && currentExercises.length > 0) {
       return Promise.resolve(currentExercises);
     }
 
-    try {
-      const exercises = await exerciseService.getExerciseList();
-      set({ allExercises: exercises || [] });
-      return exercises || [];
-    } catch (error) {
-      console.error("Error crítico en getOrFetchAllExercises:", error);
-      return [];
+    if (!exerciseCatalogRequest) {
+      exerciseCatalogRequest = exerciseService.getExerciseList()
+        .then((exercises) => {
+          const catalog = exercises || [];
+          set({ allExercises: catalog });
+          return catalog;
+        })
+        .catch((error) => {
+          console.error("Error crítico en getOrFetchAllExercises:", error);
+          return [];
+        })
+        .finally(() => {
+          exerciseCatalogRequest = undefined;
+        });
     }
+    return exerciseCatalogRequest;
   },
 
   getOrFetchTemplateRoutines: async () => {

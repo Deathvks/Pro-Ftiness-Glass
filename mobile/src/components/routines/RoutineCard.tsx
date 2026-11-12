@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native
 import { Image } from 'expo-image';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass, getUnselectedControlColors } from '@/constants/theme';
 import {
   Play, Globe, Users, Lock, Clock, Dumbbell, CalendarClock,
   CheckCircle, Edit, Copy, Trash2, Share2, Folder, Link2, Activity
@@ -54,12 +54,7 @@ export function RoutineCard({
   const userProfile = useAppStore(state => state.userProfile || (state as any).user);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const iconBadgeBg = isDark
-    ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.06)')
-    : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.05)');
-  const innerPillBg = isDark
-    ? (isIOS ? '#3A3A3C' : 'rgba(255, 255, 255, 0.06)')
-    : (isIOS ? '#E5E5EA' : 'rgba(0, 0, 0, 0.05)');
+  const iconBadgeBg = getUnselectedControlColors(theme).backgroundColor;
   const startTextColor = getContrastTextColor(colors.tint);
 
   const exercises = routine.exercises || routine.RoutineExercises || [];
@@ -110,11 +105,11 @@ export function RoutineCard({
         borderWidth: isActive ? 2 : (isIOS ? 0 : 1),
       },
       !isIOS && {
-        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.65)',
+        backgroundColor: colors.card,
       },
     ]}>
       {/* iOS Liquid Glass Effect Background on photo themes */}
-      {shouldUseContentGlass() && (
+      {shouldUseContentGlass(theme) && (
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
@@ -373,7 +368,7 @@ export function RoutineCard({
                         <Text style={[styles.exerciseName, { color: colors.text }]} numberOfLines={1}>
                           {ex.name || ex.exercise?.name || 'Ejercicio'}
                         </Text>
-                        <View style={[styles.repsPill, { backgroundColor: innerPillBg }]}>
+                        <View style={[styles.repsPill, { backgroundColor: iconBadgeBg }]}>
                           <Text style={[styles.repsPillText, { color: colors.textSecondary }]}>
                             {ex.sets}×{ex.reps}
                           </Text>
@@ -413,7 +408,7 @@ export function RoutineCard({
               shadowRadius: 10,
               elevation: 5,
             } : isBlockedByOtherWorkout ? {
-              backgroundColor: isIOS ? iconBadgeBg : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)'),
+              backgroundColor: iconBadgeBg,
               borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
               borderWidth: isIOS ? 0 : 1,
             } : {

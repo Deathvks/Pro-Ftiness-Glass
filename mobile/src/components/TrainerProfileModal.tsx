@@ -27,16 +27,12 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { getThemeBaseBackground } from '@/constants/theme';
+import { SocialUserAvatar, type AvatarUser } from '@/components/social/SocialUserAvatar';
 
 interface TrainerProfileModalProps {
   visible: boolean;
   onClose: () => void;
-  trainer?: {
-    id?: string | number;
-    name?: string;
-    username?: string;
-    profile_image_url?: string;
-  } | null;
+  trainer?: AvatarUser | null;
 }
 
 const STUDIES = [
@@ -58,6 +54,7 @@ const HEADER_HEIGHT = 72;
 export default function TrainerProfileModal({
   visible,
   onClose,
+  trainer,
 }: TrainerProfileModalProps) {
   const insets = useSafeAreaInsets();
   const theme = useAppStore(state => state.theme) || 'oled';
@@ -107,13 +104,7 @@ export default function TrainerProfileModal({
         />
         {headerOpacity > 0.05 && (
           <View pointerEvents="none" style={[styles.stickyHeaderContent, { opacity: headerOpacity }]}>
-            <View style={[styles.miniAvatarWrap, { borderColor: colors.tint }]}>
-              <Image
-                source={require('@/assets/images/trainer-profile.jpg')}
-                style={styles.miniAvatar}
-                contentFit="cover"
-              />
-            </View>
+            <SocialUserAvatar user={trainer} size={38} fallbackSource={require('@/assets/images/trainer-profile.jpg')} />
             <Text style={[styles.stickyTitle, { color: colors.text }]}>ENTRENADOR</Text>
           </View>
         )}
@@ -296,17 +287,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-  },
-  miniAvatarWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 2,
-    overflow: 'hidden',
-  },
-  miniAvatar: {
-    width: '100%',
-    height: '100%',
   },
   stickyTitle: {
     fontSize: 16,

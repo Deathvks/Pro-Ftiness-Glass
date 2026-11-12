@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions, Platform } from 'react-native';
 import { X, Check } from 'lucide-react-native';
-import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
+import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
+import { getThemeBaseBackground, getUnselectedControlColors } from '@/constants/theme';
 
 export interface SelectOption {
   label: string;
@@ -33,6 +34,8 @@ export function SelectModal({
   const screenHeight = Dimensions.get('window').height;
   const isDark = !['light', 'ocean', 'desert'].includes(theme || '');
   const isIOS = Platform.OS === 'ios';
+  const unselected = getUnselectedControlColors(theme);
+  const sheetBackground = getThemeBaseBackground(theme);
 
   return (
     <SwipeableBottomSheet
@@ -40,7 +43,8 @@ export function SelectModal({
       visible={visible}
       onClose={onClose}
       isDark={isDark}
-      backgroundColor={colors.background === 'transparent' ? colors.card : colors.background}
+      backgroundColor={sheetBackground}
+      sheetStyle={{ backgroundColor: sheetBackground }}
       maxHeight={screenHeight * 0.72}
     >
       {/* Header */}
@@ -112,6 +116,8 @@ export function SelectModal({
           return (
             <TouchableOpacity
               key={`opt-${opt.value}`}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: isSelected }}
               activeOpacity={0.75}
               onPress={() => {
                 onSelect(opt.value);
@@ -124,26 +130,25 @@ export function SelectModal({
                   justifyContent: 'space-between',
                   paddingVertical: 14,
                   paddingHorizontal: 16,
-                  backgroundColor: isSelected ? colors.tint + '18' : colors.card,
+                  backgroundColor: isSelected ? colors.tint + '18' : unselected.backgroundColor,
                   borderRadius: 14,
                   borderCurve: 'continuous',
                   marginBottom: 8,
                   borderWidth: isIOS && !isSelected ? 0 : 1,
-                  borderColor: isSelected ? colors.tint : colors.border,
+                  borderColor: isSelected ? colors.tint : unselected.borderColor,
                 },
-                !isSelected && getAppleSheetCardStyle(isDark, 14),
               ]}
             >
               <Text
                 style={{
                   fontSize: 16,
                   fontWeight: isSelected ? '700' : '500',
-                  color: isSelected ? colors.tint : colors.text,
+                  color: isSelected ? colors.text : colors.textSecondary,
                 }}
               >
                 {opt.label}
               </Text>
-              {isSelected && <Check size={18} color={colors.tint} />}
+              {isSelected && <Check size={18} color={colors.text} />}
             </TouchableOpacity>
           );
         })}

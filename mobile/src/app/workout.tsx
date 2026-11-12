@@ -2,19 +2,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
-  Text,
+  FlatList,
   StyleSheet,
-  ScrollView,
   Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { usePreventRemove, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
-import { useAppColors } from '@/hooks/useAppColors';
 import { calculateCalories, groupWorkoutExercises } from '@/utils/workoutHelpers';
 
 // Subcomponentes modularizados con paridad 1:1 frente al Frontend
@@ -24,7 +22,6 @@ import { WorkoutSupersetCard } from '@/components/workout/WorkoutSupersetCard';
 import { WorkoutNotes } from '@/components/workout/WorkoutNotes';
 import { PreviousWorkoutNoteBanner } from '@/components/workout/PreviousWorkoutNoteBanner';
 import { NoActiveWorkout } from '@/components/workout/NoActiveWorkout';
-import { RestTimerModal } from '@/components/workout/RestTimerModal';
 import { CalorieInputModal } from '@/components/workout/CalorieInputModal';
 import { WorkoutReviewModal } from '@/components/workout/WorkoutReviewModal';
 import { WorkoutSummaryModal } from '@/components/workout/WorkoutSummaryModal';
@@ -35,11 +32,15 @@ import { SmartExerciseCoachModal } from '@/components/workout/SmartExerciseCoach
 import { WorkoutExerciseDetailModal } from '@/components/workout/WorkoutExerciseDetailModal';
 import { ExerciseSearchModal } from '@/components/modals/ExerciseSearchModal';
 
+function getWorkoutElapsedSeconds() {
+  const { workoutStartTime, isWorkoutPaused, workoutAccumulatedTime } = useAppStore.getState();
+  const runningTime = workoutStartTime && !isWorkoutPaused ? Date.now() - workoutStartTime : 0;
+  return Math.floor(((workoutAccumulatedTime || 0) + runningTime) / 1000);
+}
+
 export default function WorkoutScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colors = useAppColors();
-  const theme = useAppStore(state => state.theme) || 'oled';
 
   // Zustand Store State
   const activeWorkout = useAppStore(state => state.activeWorkout);
@@ -47,7 +48,7 @@ export default function WorkoutScreen() {
   const isWorkoutPaused = useAppStore(state => state.isWorkoutPaused);
   const workoutAccumulatedTime = useAppStore(state => state.workoutAccumulatedTime) || 0;
   const userProfile = useAppStore(state => state.userProfile || (state as any).user);
-  const workoutLog = useAppStore(state => state.workoutLog) || [];
+  const workoutLog = useAppStore(state => state.workoutLog);
   const openRestModal = useAppStore(state => state.openRestModal);
 
   // Zustand Store Actions
@@ -61,32 +62,21 @@ export default function WorkoutScreen() {
   const logWorkout = useAppStore(state => state.logWorkout);
   const fetchInitialData = useAppStore(state => state.fetchInitialData);
 
-  // Cronómetro local sincronizado en tiempo real
-  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [clock, setClock] = useState(Date.now);
+  const isTimerRunning = Boolean(workoutStartTime && !isWorkoutPaused);
+  const runningTime = isTimerRunning ? Math.max(0, clock - workoutStartTime) : 0;
+  const timerSeconds = Math.floor((workoutAccumulatedTime + runningTime) / 1000);
 
   useEffect(() => {
-    const computeElapsed = () => {
-      const state = useAppStore.getState();
-      const { workoutStartTime: sTime, isWorkoutPaused: isPaused, workoutAccumulatedTime: accTime } = state;
-
-      if (!sTime) {
-        return Math.floor((accTime || 0) / 1000);
-      }
-      if (isPaused) {
-        return Math.floor((accTime || 0) / 1000);
-      }
-      const runningMs = Date.now() - sTime;
-      return Math.floor(((accTime || 0) + runningMs) / 1000);
-    };
-
-    setTimerSeconds(computeElapsed());
-
-    const interval = setInterval(() => {
-      setTimerSeconds(computeElapsed());
-    }, 1000);
-
+    if (!isTimerRunning) return;
+    const interval = setInterval(() => setClock(Date.now()), 1000);
     return () => clearInterval(interval);
-  }, [workoutStartTime, isWorkoutPaused, workoutAccumulatedTime]);
+  }, [isTimerRunning, workoutStartTime]);
+
+  const disableExitPrevention = usePreventRemove(Platform.OS !== 'web' && Boolean(activeWorkout) && timerSeconds === 0, ({ repeat }) => {
+    if (getWorkoutElapsedSeconds() === 0) stopWorkout();
+    repeat();
+  });
 
   // Estados locales para notas y modales
   const [notes, setNotes] = useState('');
@@ -103,49 +93,40 @@ export default function WorkoutScreen() {
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [completedWorkoutData, setCompletedWorkoutData] = useState<any>(null);
 
-  const [restModalConfig, setRestModalConfig] = useState<{ visible: boolean; restSeconds: number }>({
-    visible: false,
-    restSeconds: 90,
-  });
-
   const [showCalculator, setShowCalculator] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [historyExercise, setHistoryExercise] = useState<any>(null);
   const [coachExercise, setCoachExercise] = useState<any>(null);
   const [selectedDetailExercise, setSelectedDetailExercise] = useState<any>(null);
-  const [substituteIndex, setSubstituteIndex] = useState<number | null>(null);
+  const [substituteIndex, setSubstituteIndex] = useState<number | null>();
 
   const hasWorkoutStarted = workoutStartTime !== null;
 
-  // Recordatorio inteligente de la sesión previa
+  const routineId = activeWorkout?.routineId;
+  const routineName = activeWorkout?.routineName;
   const previousWorkoutNote = useMemo(() => {
-    if (!activeWorkout || !Array.isArray(workoutLog) || workoutLog.length === 0) return null;
+    if ((!routineId && !routineName) || !Array.isArray(workoutLog)) return null;
 
-    const sorted = [...workoutLog].sort(
-      (a: any, b: any) => new Date(b.workout_date).getTime() - new Date(a.workout_date).getTime()
-    );
+    const normalizedRoutineName = routineName?.toLowerCase().trim();
+    let latest: { note: string; date: string; routineName: string } | null = null;
+    let latestTime = -Infinity;
 
-    const match = sorted.find((log: any) => {
-      const matchesRoutine =
-        (activeWorkout.routineId &&
-          (log.routine_id === activeWorkout.routineId || log.routineId === activeWorkout.routineId)) ||
-        (activeWorkout.routineName &&
-          log.routine_name &&
-          log.routine_name.toLowerCase().trim() === activeWorkout.routineName.toLowerCase().trim());
-      if (!matchesRoutine) return false;
+    for (const log of workoutLog) {
+      const matchesId = routineId && (log.routine_id === routineId || log.routineId === routineId);
+      const matchesName = normalizedRoutineName && log.routine_name?.toLowerCase().trim() === normalizedRoutineName;
+      if (!matchesId && !matchesName) continue;
+      const note = log.notes?.split('GPS_DATA::')[0].trim();
+      if (!note) continue;
 
-      const cleanNote = log.notes ? log.notes.split('GPS_DATA::')[0].trim() : '';
-      return cleanNote.length > 0;
-    });
+      const time = Date.parse(log.workout_date);
+      const dateOrder = Number.isNaN(time) ? -Infinity : time;
+      if (latest && dateOrder <= latestTime) continue;
+      latestTime = dateOrder;
+      latest = { note, date: log.workout_date, routineName: log.routine_name || routineName };
+    }
 
-    if (!match) return null;
-
-    return {
-      note: match.notes.split('GPS_DATA::')[0].trim(),
-      date: match.workout_date,
-      routineName: match.routine_name || activeWorkout.routineName,
-    };
-  }, [activeWorkout, workoutLog]);
+    return latest;
+  }, [routineId, routineName, workoutLog]);
 
   // Agrupación por superseries
   const exerciseGroups = useMemo(() => {
@@ -164,10 +145,7 @@ export default function WorkoutScreen() {
     );
   }
 
-  const handleMinimizeWorkout = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
+  const leaveWorkout = () => {
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -175,16 +153,19 @@ export default function WorkoutScreen() {
     }
   };
 
+  const handleMinimizeWorkout = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    leaveWorkout();
+  };
+
   // Manejador del botón Atrás
   const handleBackClick = () => {
-    // Si el cronómetro no se ha iniciado y está a 0, salir directamente sin pedir confirmación de "Seguir entrenando"
-    if (timerSeconds === 0) {
+    if (getWorkoutElapsedSeconds() === 0) {
       stopWorkout();
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/(tabs)');
-      }
+      disableExitPrevention();
+      leaveWorkout();
       return;
     }
 
@@ -205,11 +186,7 @@ export default function WorkoutScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             } catch {}
             stopWorkout();
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace('/(tabs)');
-            }
+            leaveWorkout();
           },
         },
         { text: 'Seguir entrenando', style: 'cancel' },
@@ -316,7 +293,7 @@ export default function WorkoutScreen() {
 
   // Sustituir ejercicio seleccionado
   const handleSubstituteSelect = (exercisesToAdd: any[]) => {
-    if (substituteIndex !== null && exercisesToAdd.length > 0 && replaceExercise) {
+    if (typeof substituteIndex === 'number' && exercisesToAdd.length > 0 && replaceExercise) {
       const chosen = exercisesToAdd[0];
       replaceExercise(substituteIndex, chosen);
     }
@@ -329,7 +306,11 @@ export default function WorkoutScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-        <ScrollView
+        <FlatList
+          data={exerciseGroups}
+          keyExtractor={({ group }, index) => group.map(exercise => exercise.id).filter(id => id != null).join(':') || String(index)}
+          initialNumToRender={1}
+          maxToRenderPerBatch={2}
           contentContainerStyle={[
             styles.scrollContent,
             {
@@ -339,46 +320,41 @@ export default function WorkoutScreen() {
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-        >
-          {/* 1. Header Hero con Cronómetro y Dynamic Island */}
-          <WorkoutHeader
-            routineName={activeWorkout.routineName}
-            routineImage={activeWorkout.imageUrl || activeWorkout.image_url}
-            timer={timerSeconds}
-            isWorkoutPaused={isWorkoutPaused}
-            hasWorkoutStarted={hasWorkoutStarted}
-            onBackClick={handleBackClick}
-            onMinimize={handleMinimizeWorkout}
-            onTogglePause={togglePauseWorkout}
-            onFinishClick={handleFinishClick}
-            onShowCalculator={() => setShowCalculator(true)}
-            onShowHeatmap={() => setShowHeatmap(true)}
-          />
+          ListHeaderComponent={
+            <>
+              <WorkoutHeader
+                routineName={activeWorkout.routineName}
+                routineImage={activeWorkout.imageUrl || activeWorkout.image_url}
+                timer={timerSeconds}
+                isWorkoutPaused={isWorkoutPaused}
+                hasWorkoutStarted={hasWorkoutStarted}
+                onBackClick={handleBackClick}
+                onMinimize={handleMinimizeWorkout}
+                onTogglePause={togglePauseWorkout}
+                onFinishClick={handleFinishClick}
+                onShowCalculator={() => setShowCalculator(true)}
+                onShowHeatmap={() => setShowHeatmap(true)}
+              />
 
-          {/* 2. Banner de Nota de la Sesión Previa */}
-          {previousWorkoutNote && !dismissedPreviousNote ? (
-            <PreviousWorkoutNoteBanner
-              previousNote={previousWorkoutNote}
-              onDismiss={() => setDismissedPreviousNote(true)}
-              onCopyNote={(text) => {
-                setNotes(prev => (prev ? `${prev}\n${text}` : text));
-                try {
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                } catch {}
-              }}
-            />
-          ) : null}
-
-          {/* 3. Lista de Ejercicios y Superseries con estructura idéntica al Frontend */}
-          {exerciseGroups.map((groupObj, gIdx) => {
-            const { group, isSuperset } = groupObj;
-
+              {/* 2. Banner de Nota de la Sesión Previa */}
+              {previousWorkoutNote && !dismissedPreviousNote ? (
+                <PreviousWorkoutNoteBanner
+                  previousNote={previousWorkoutNote}
+                  onDismiss={() => setDismissedPreviousNote(true)}
+                  onCopyNote={(text) => {
+                    setNotes(prev => (prev ? `${prev}\n${text}` : text));
+                    try {
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    } catch {}
+                  }}
+                />
+              ) : null}
+            </>
+          }
+          renderItem={({ item: { group, isSuperset } }) => {
             if (isSuperset) {
-              const groupKey = group.map((e: any) => e.id).join('-');
-
               return (
                 <WorkoutSupersetCard
-                  key={groupKey}
                   group={group}
                   allExercises={activeWorkout.exercises || []}
                   hasWorkoutStarted={hasWorkoutStarted}
@@ -399,7 +375,6 @@ export default function WorkoutScreen() {
 
             return (
               <WorkoutExerciseCard
-                key={exercise.id}
                 exercise={exercise}
                 actualExIndex={actualExIndex}
                 hasWorkoutStarted={hasWorkoutStarted}
@@ -414,16 +389,16 @@ export default function WorkoutScreen() {
                 onOpenRestModal={(secs) => openRestModal(secs || 90)}
               />
             );
-          })}
-
-          {/* 4. Notas de la Sesión */}
-          <WorkoutNotes
-            notes={notes}
-            setNotes={setNotes}
-            hasWorkoutStarted={hasWorkoutStarted}
-            previousNote={previousWorkoutNote}
-          />
-        </ScrollView>
+          }}
+          ListFooterComponent={
+            <WorkoutNotes
+              notes={notes}
+              setNotes={setNotes}
+              hasWorkoutStarted={hasWorkoutStarted}
+              previousNote={previousWorkoutNote}
+            />
+          }
+        />
       </KeyboardAvoidingView>
 
       {/* --- MODALES --- */}
@@ -481,11 +456,13 @@ export default function WorkoutScreen() {
       />
 
       {/* 8. Modal Mapa Muscular */}
-      <WorkoutHeatmapModal
-        visible={showHeatmap}
-        exercises={activeWorkout.exercises || []}
-        onClose={() => setShowHeatmap(false)}
-      />
+      {showHeatmap && (
+        <WorkoutHeatmapModal
+          visible
+          exercises={activeWorkout.exercises || []}
+          onClose={() => setShowHeatmap(false)}
+        />
+      )}
 
       {/* 9. Modal Smart Progression Coach */}
       <SmartExerciseCoachModal
@@ -505,11 +482,13 @@ export default function WorkoutScreen() {
       />
 
       {/* 10. Modal Sustituir Ejercicio */}
-      <ExerciseSearchModal
-        visible={substituteIndex !== null}
-        onClose={() => setSubstituteIndex(null)}
-        onAddExercises={handleSubstituteSelect}
-      />
+      {substituteIndex !== undefined && (
+        <ExerciseSearchModal
+          visible={substituteIndex !== null}
+          onClose={() => setSubstituteIndex(null)}
+          onAddExercises={handleSubstituteSelect}
+        />
+      )}
     </View>
   );
 }

@@ -8,14 +8,16 @@ import {
   StyleSheet,
   ViewStyle,
   StyleProp,
+  TextStyle,
   Modal,
   Platform,
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { GlassView } from 'expo-glass-effect';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useIsFocused } from 'expo-router';
+import Reanimated, { cancelAnimation, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import {
   Palette,
   Sun,
@@ -39,11 +41,11 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
 import { getContrastTextColor } from '@/utils/routineHelpers';
-import { getThemeBaseBackground, getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { Colors, getThemeBaseBackground, getAppleCardSurfaceStyle, getUnselectedControlColors, isAtmosphericTheme, usesFrontendCardSurface, type ThemeColor } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import LevelBadge from '@/components/LevelBadge';
-import ThemeBackground from '@/components/ThemeBackground';
-import LiquidGlassSwitch from '@/components/ui/LiquidGlassSwitch';
+import ThemeBackground, { preloadThemeBackgrounds } from '@/components/ThemeBackground';
+import { LiquidGlassSwitch } from '@/components/ui/LiquidGlassSwitch';
 
 export interface AccentOption {
   id: string;
@@ -172,100 +174,104 @@ const SPECIAL_THEMES: SpecialTheme[] = [
 ];
 
 const SPECIAL_THEME_IDS = ['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'];
+const APPEARANCE_SECTIONS = ['themes', 'base', 0, 5, 10, 15, 20, 'experience'] as const;
+type AppearanceSection = (typeof APPEARANCE_SECTIONS)[number];
+const ACCENTS_BY_LEVEL = {
+  0: ACCENT_OPTIONS.filter(option => !option.reqLevel),
+  5: ACCENT_OPTIONS.filter(option => option.reqLevel === 5),
+  10: ACCENT_OPTIONS.filter(option => option.reqLevel === 10),
+  15: ACCENT_OPTIONS.filter(option => option.reqLevel === 15),
+  20: ACCENT_OPTIONS.filter(option => option.reqLevel === 20),
+};
 
 function GlassSurface({
   radius,
+  theme,
   isDark,
   borderColor,
   tintColor,
   tintOpacity = 0,
+  part,
   style,
   children,
 }: {
   radius: number;
+  theme: string;
   isDark: boolean;
   borderColor: string;
   tintColor?: string;
   tintOpacity?: number;
+  part?: 'top' | 'middle' | 'bottom';
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
 }) {
-  const theme = useAppStore(state => state.theme) || 'oled';
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass();
   const isLargeCard = radius >= 24;
   const effectiveRadius = isIOS && isLargeCard ? 20 : radius;
-  const innerRadius = Math.max(0, effectiveRadius - 1);
-
-  if (isIOS && !useGlass) {
-    if (isLargeCard) {
-      return (
-        <View style={[getAppleCardSurfaceStyle(theme, 20), style]}>
-          {tintColor ? (
-            <View
-              pointerEvents="none"
-              style={[
-                StyleSheet.absoluteFill,
-                { borderRadius: 20, borderCurve: 'continuous', backgroundColor: tintColor, opacity: tintOpacity },
-              ]}
-            />
-          ) : null}
-          {children}
-        </View>
-      );
-    }
-    const pillBg =
-      tintOpacity > 0.4 && tintColor
-        ? tintColor
-        : isDark
-        ? '#2C2C2E'
-        : '#F2F2F7';
-    return (
-      <View
-        style={[
-          {
-            borderRadius: effectiveRadius,
-            borderCurve: 'continuous',
-            backgroundColor: pillBg,
-            borderWidth: tintOpacity > 0.4 ? 0 : StyleSheet.hairlineWidth,
-            borderColor,
-          },
-          style,
-        ]}
-      >
-        {tintColor && tintOpacity <= 0.4 ? (
-          <View
-            pointerEvents="none"
-            style={[
-              StyleSheet.absoluteFill,
-              { borderRadius: innerRadius, borderCurve: 'continuous', backgroundColor: tintColor, opacity: tintOpacity },
-            ]}
-          />
-        ) : null}
-        {children}
-      </View>
-    );
-  }
+  const solidTint = !isLargeCard && tintOpacity > 0.4 ? tintColor : undefined;
+  const cardStyle = getAppleCardSurfaceStyle(theme, effectiveRadius);
+  const palette = Colors[theme as ThemeColor] ?? Colors.oled;
+  const largeBackground = isAtmosphericTheme(theme) || !isDark
+    ? palette.card
+    : theme === 'oled' ? '#ffffff03' : '#ffffff05';
+  const backgroundColor = solidTint ?? (isLargeCard ? largeBackground : getUnselectedControlColors(theme).backgroundColor);
 
   return (
-    <View style={[getAppleCardSurfaceStyle(theme, effectiveRadius), { borderCurve: 'continuous', borderWidth: 1, borderColor }, style]}>
-      <GlassView
-        glassEffectStyle="regular"
-        colorScheme={isDark ? 'dark' : 'light'}
-        style={[StyleSheet.absoluteFill, { borderRadius: innerRadius }]}
-      />
-      {tintColor ? (
+    <View style={[
+      cardStyle,
+      { backgroundColor, borderRadius: effectiveRadius, borderCurve: 'continuous' },
+      (!isIOS || !isLargeCard) && { borderColor, borderWidth: solidTint ? 0 : StyleSheet.hairlineWidth },
+      part && { shadowOpacity: 0 },
+      part && part !== 'top' && { borderTopWidth: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0 },
+      part && part !== 'bottom' && { borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
+      style,
+    ]}>
+      {tintColor && !solidTint ? (
         <View
-          pointerEvents="none"
+          pointerEvents='none'
           style={[
             StyleSheet.absoluteFill,
-            { borderRadius: innerRadius, backgroundColor: tintColor, opacity: tintOpacity },
+            { borderRadius: effectiveRadius, backgroundColor: tintColor, opacity: tintOpacity },
           ]}
         />
       ) : null}
       {children}
     </View>
   );
+}
+
+function LivingSwatch({ children, color }: { children: React.ReactNode; color: string }) {
+  const focused = useIsFocused();
+  const reduceMotion = useReducedMotion();
+  const scale = useSharedValue(1);
+  useEffect(() => {
+    if (!focused || reduceMotion) return;
+    scale.set(withRepeat(withTiming(1.08, { duration: 1500 }), -1, true));
+    return () => { cancelAnimation(scale); scale.set(1); };
+  }, [focused, reduceMotion, scale]);
+  const motion = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
+  return <Reanimated.View style={[styles.swatchDot, { backgroundColor: color }, motion]}>{children}</Reanimated.View>;
+}
+
+function ThemeTestLabel() {
+  const seconds = useAppStore(state => state.themeTest?.timeLeft);
+  return <>Probando {seconds}s</>;
+}
+
+function SectionTitle({ icon: Icon, title, color, iconColor, iconBackground }: {
+  icon: React.ComponentType<{ size: number; color: string; strokeWidth: number }>;
+  title: string; color: string; iconColor: string; iconBackground: string;
+}) {
+  return <View style={styles.sectionTitleRow}>
+    <View style={[styles.sectionIconBox, { backgroundColor: iconBackground }]}>
+      <Icon size={22} color={iconColor} strokeWidth={2.5} />
+    </View>
+    <Text style={[styles.sectionTitle, { color }]}>{title}</Text>
+  </View>;
+}
+
+function SubHeading({ children, color, style }: { children: React.ReactNode; color: string; style?: StyleProp<TextStyle> }) {
+  return <Text style={[styles.subHeading, { color }, style]}>{children}</Text>;
 }
 
 export default function AppearanceScreen() {
@@ -286,47 +292,39 @@ export default function AppearanceScreen() {
   const galaxyEffectsEnabled = useAppStore(state => (state as any).galaxyEffectsEnabled !== false);
   const setGalaxyEffectsEnabled = useAppStore(state => (state as any).setGalaxyEffectsEnabled);
 
-  const themeTest = useAppStore(state => (state as any).themeTest) as { name: string; timeLeft: number } | null;
+  const testedTheme = useAppStore(state => state.themeTest?.name);
   const startThemeTest = useAppStore(state => (state as any).startThemeTest);
-  const userProfile = useAppStore(state => state.userProfile) as any;
-  const gamification = useAppStore(state => (state as any).gamification);
+  const isAdmin = useAppStore(state => state.userProfile?.role === 'admin');
+  const referralCount = useAppStore(state => state.userProfile?.referralCount || 0);
+  const userLevel = useAppStore(state => state.gamification?.level || state.userProfile?.level || 1);
 
   const colors = useAppColors();
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const [scrollY] = useState(() => new Animated.Value(0));
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const isTestingTheme = !!themeTest;
+  const isTestingTheme = !!testedTheme;
   const activeTheme = theme;
   const isSpecialActive = SPECIAL_THEME_IDS.includes(activeTheme);
   const isGalaxyActive = activeTheme === 'galaxy';
 
-  const isAdmin = userProfile?.role === 'admin';
-  const referralCount = userProfile?.referralCount || 0;
-  const userLevel = gamification?.level || userProfile?.level || 1;
-
   const accentText = getContrastColor(colors.tint, theme);
-  const subtleBg = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+  const subtleBg = usesFrontendCardSurface(activeTheme)
+    ? getUnselectedControlColors(activeTheme).backgroundColor
+    : isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
   const glassBorder = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
 
   const [isMyThemesOpen, setIsMyThemesOpen] = useState(true);
   const [showGalaxyWarning, setShowGalaxyWarning] = useState(false);
 
-  // Animación de pulso continuo para los acentos nivel 20
-  const livingPulseAnim = useRef(new Animated.Value(1)).current;
   useEffect(() => {
-    const pulseLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(livingPulseAnim, { toValue: 1.08, duration: 1500, useNativeDriver: true }),
-        Animated.timing(livingPulseAnim, { toValue: 1.0, duration: 1500, useNativeDriver: true }),
-      ])
-    );
-    pulseLoop.start();
-    return () => pulseLoop.stop();
+    if (Platform.OS === 'web') return;
+    const idle = requestIdleCallback(() => preloadThemeBackgrounds(useAppStore.getState().theme));
+    return () => cancelIdleCallback(idle);
   }, []);
 
   // Toast
   const [toast, setToast] = useState<{ message: string; locked?: boolean } | null>(null);
-  const toastAnim = useRef(new Animated.Value(0)).current;
+  const [toastAnim] = useState(() => new Animated.Value(0));
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (message: string, locked = false) => {
@@ -398,25 +396,17 @@ export default function AppearanceScreen() {
     startThemeTest?.(themeId, 10);
   };
 
-  const SectionTitle = ({ icon: Icon, title }: { icon: React.ComponentType<any>; title: string }) => (
-    <View style={styles.sectionTitleRow}>
-      <View style={[styles.sectionIconBox, { backgroundColor: subtleBg }]}>
-        <Icon size={22} color={accentText} strokeWidth={2.5} />
-      </View>
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
-    </View>
-  );
-
-  const SubHeading = ({ children, style }: { children: React.ReactNode; style?: any }) => (
-    <Text style={[styles.subHeading, { color: colors.textSecondary }, style]}>{children}</Text>
-  );
-
   const swatchCols = isTablet ? 6 : (isNarrow ? 4 : 5);
   const swatchSize = isNarrow ? 44 : 48;
 
   const renderSwatch = (opt: AccentOption) => {
     const isLocked = !!opt.reqLevel && userLevel < opt.reqLevel && !isAdmin;
     const isSelected = accent.toLowerCase() === opt.hex.toLowerCase() && !isSpecialActive && !isLocked;
+    const contents = <>
+      {opt.gradient && <LinearGradient colors={opt.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />}
+      {isSelected && <Check size={16} strokeWidth={3} color={getContrastTextColor(opt.hex)} />}
+      {isLocked && <Lock size={14} strokeWidth={2.5} color="rgba(0, 0, 0, 0.55)" />}
+    </>;
 
     return (
       <View key={opt.id} style={{ width: `${100 / swatchCols}%`, padding: 3, alignItems: 'center' }}>
@@ -441,26 +431,9 @@ export default function AppearanceScreen() {
             },
           ]}
         >
-          <Animated.View
-            style={[
-              styles.swatchDot,
-              { backgroundColor: opt.hex },
-              opt.isAnimated && {
-                transform: [{ scale: isSelected ? livingPulseAnim : 1 }],
-              },
-            ]}
-          >
-            {opt.gradient && (
-              <LinearGradient
-                colors={opt.gradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-              />
-            )}
-            {isSelected && <Check size={16} strokeWidth={3} color={getContrastTextColor(opt.hex)} />}
-            {isLocked && <Lock size={14} strokeWidth={2.5} color="rgba(0, 0, 0, 0.55)" />}
-          </Animated.View>
+          {opt.isAnimated && isSelected
+            ? <LivingSwatch color={opt.hex}>{contents}</LivingSwatch>
+            : <View style={[styles.swatchDot, { backgroundColor: opt.hex }]}>{contents}</View>}
         </Pressable>
         <Text
           numberOfLines={2}
@@ -496,29 +469,11 @@ export default function AppearanceScreen() {
     </View>
   );
 
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background }}>
-      {/* Fondo de tema activo (desierto, océano, galaxia) */}
-      <ThemeBackground />
+  const cardPadding = isMobile ? 16 : 22;
 
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
-        <GlobalHeader title="Apariencia" scrollY={scrollY} showBackButton hideBottomBorder />
-      </View>
-
-      <Animated.ScrollView
-        contentContainerStyle={{
-          paddingHorizontal: isMobile ? 14 : Math.max(16, (windowWidth - 640) / 2),
-          paddingTop: insets.top + 72,
-          paddingBottom: insets.bottom + 40,
-        }}
-        showsVerticalScrollIndicator={false}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-          useNativeDriver: true,
-        })}
-        scrollEventThrottle={16}
-      >
-        {/* ================= 1. MIS TEMAS (ARRIBA Y DESPLEGABLE) ================= */}
-        <GlassSurface radius={28} isDark={isDark} borderColor={glassBorder} style={[styles.card, { padding: isMobile ? 16 : 22 }]}>
+  function renderSection({ item }: { item: AppearanceSection }) {
+    if (item === 'themes') return (
+        <GlassSurface radius={28} theme={theme} isDark={isDark} borderColor={glassBorder} style={[styles.card, { padding: isMobile ? 16 : 22 }]}>
           <Pressable
             onPress={() => setIsMyThemesOpen(!isMyThemesOpen)}
             style={styles.myThemesHeaderRow}
@@ -586,10 +541,10 @@ export default function AppearanceScreen() {
                       >
                         <GlassSurface
                           radius={14}
-                          isDark={isDark}
+                          theme={theme} isDark={isDark}
                           borderColor={isBtnActive ? st.tint : glassBorder}
-                          tintColor={isBtnActive ? st.tint : isDark ? '#ffffff' : '#000000'}
-                          tintOpacity={isBtnActive ? 0.9 : 0.08}
+                          tintColor={isBtnActive ? st.tint : undefined}
+                          tintOpacity={0.9}
                           style={isFullWidth ? styles.pillFullWidth : isSingle ? styles.pillLarge : styles.pillSmall}
                         >
                           <Text
@@ -606,7 +561,7 @@ export default function AppearanceScreen() {
                     );
                   }
 
-                  const isThisTesting = themeTest?.name === v.id;
+                  const isThisTesting = testedTheme === v.id;
                   return (
                     <Pressable
                       key={v.id}
@@ -622,7 +577,7 @@ export default function AppearanceScreen() {
                     >
                       <GlassSurface
                         radius={14}
-                        isDark={isDark}
+                        theme={theme} isDark={isDark}
                         borderColor={st.tint + '4D'}
                         tintColor={st.tint}
                         tintOpacity={0.2}
@@ -638,7 +593,7 @@ export default function AppearanceScreen() {
                           ]}
                           numberOfLines={1}
                         >
-                          {isThisTesting ? `Probando ${themeTest?.timeLeft}s` : v.testLabel}
+                          {isThisTesting ? <ThemeTestLabel /> : v.testLabel}
                         </Text>
                       </GlassSurface>
                     </Pressable>
@@ -762,14 +717,15 @@ export default function AppearanceScreen() {
             </View>
           )}
         </GlassSurface>
+    );
 
-        {/* ================= 2. APARIENCIA DE LA APP ================= */}
-        <GlassSurface radius={28} isDark={isDark} borderColor={glassBorder} style={[styles.card, { padding: isMobile ? 16 : 22 }]}>
-          <SectionTitle icon={Palette} title="Apariencia de la App" />
+    if (item === 'base') return (
+        <GlassSurface radius={28} theme={theme} isDark={isDark} borderColor={glassBorder} part="top" style={[styles.sectionCard, { paddingHorizontal: cardPadding, paddingTop: cardPadding }]}>
+          <SectionTitle icon={Palette} title="Apariencia de la App" color={colors.text} iconColor={accentText} iconBackground={subtleBg} />
 
           {/* Temas Base */}
           <View style={{ marginBottom: 26 }}>
-            <SubHeading>Tema Principal</SubHeading>
+            <SubHeading color={colors.textSecondary}>Tema Principal</SubHeading>
             <View style={[styles.themeGrid, isMobile && { flexWrap: 'wrap' }]}>
               {BASE_THEMES.map(mode => {
                 const isActive = themePreference === mode.id && !isTestingTheme && !isSpecialActive;
@@ -787,10 +743,10 @@ export default function AppearanceScreen() {
                   >
                     <GlassSurface
                       radius={18}
-                      isDark={isDark}
+                      theme={theme} isDark={isDark}
                       borderColor={isActive ? colors.tint : glassBorder}
-                      tintColor={isActive ? colors.tint : isDark ? '#ffffff' : '#000000'}
-                      tintOpacity={isActive ? 0.9 : 0.05}
+                      tintColor={isActive ? colors.tint : undefined}
+                      tintOpacity={0.9}
                       style={styles.themeTile}
                     >
                       <ModeIcon size={20} color={fg} />
@@ -801,47 +757,13 @@ export default function AppearanceScreen() {
               })}
             </View>
           </View>
+        </GlassSurface>
+    );
 
-          {/* Acentos de Color */}
-          <View
-            style={{ marginBottom: 26, opacity: isSpecialActive ? 0.5 : 1 }}
-            pointerEvents={isSpecialActive ? 'none' : 'auto'}
-          >
-            <SubHeading>Acento de Color</SubHeading>
-            <View style={[styles.swatchGrid, { marginBottom: 14 }]}>
-              {ACCENT_OPTIONS.filter(o => !o.reqLevel).map(opt => renderSwatch(opt))}
-            </View>
-
-            <SubHeading style={{ marginTop: 18, marginBottom: 8 }}>Acento de color por niveles</SubHeading>
-
-            {/* Nivel 5 */}
-            {renderLevelHeader(5)}
-            <View style={[styles.swatchGrid, { marginBottom: 14 }]}>
-              {ACCENT_OPTIONS.filter(o => o.reqLevel === 5).map(opt => renderSwatch(opt))}
-            </View>
-
-            {/* Nivel 10 */}
-            {renderLevelHeader(10)}
-            <View style={[styles.swatchGrid, { marginBottom: 14 }]}>
-              {ACCENT_OPTIONS.filter(o => o.reqLevel === 10).map(opt => renderSwatch(opt))}
-            </View>
-
-            {/* Nivel 15 · Degradados */}
-            {renderLevelHeader(15, 'Degradados')}
-            <View style={[styles.swatchGrid, { marginBottom: 14 }]}>
-              {ACCENT_OPTIONS.filter(o => o.reqLevel === 15).map(opt => renderSwatch(opt))}
-            </View>
-
-            {/* Nivel 20 · Dinámicos Animados */}
-            {renderLevelHeader(20, 'Animados')}
-            <View style={styles.swatchGrid}>
-              {ACCENT_OPTIONS.filter(o => o.reqLevel === 20).map(opt => renderSwatch(opt))}
-            </View>
-          </View>
-
-          {/* Experiencia UX */}
+    if (item === 'experience') return (
+        <GlassSurface radius={28} theme={theme} isDark={isDark} borderColor={glassBorder} part="bottom" style={[styles.sectionCard, { paddingHorizontal: cardPadding, paddingBottom: cardPadding }]}>
           <View>
-            <SubHeading>Experiencia UX</SubHeading>
+            <SubHeading color={colors.textSecondary}>Experiencia UX</SubHeading>
             <Pressable
               onPress={() => handleToggleHaptics()}
               style={({ pressed }) => [
@@ -876,7 +798,50 @@ export default function AppearanceScreen() {
             </Pressable>
           </View>
         </GlassSurface>
-      </Animated.ScrollView>
+    );
+
+    return (
+      <GlassSurface radius={28} theme={theme} isDark={isDark} borderColor={glassBorder} part="middle" style={[styles.sectionCard, { paddingHorizontal: cardPadding }]}>
+        <View style={{ opacity: isSpecialActive ? 0.5 : 1 }} pointerEvents={isSpecialActive ? 'none' : 'auto'}>
+          {item === 0 ? <SubHeading color={colors.textSecondary}>Acento de Color</SubHeading> : <>
+            {item === 5 && <SubHeading color={colors.textSecondary} style={{ marginTop: 18, marginBottom: 8 }}>Acento de color por niveles</SubHeading>}
+            {renderLevelHeader(item, item === 15 ? 'Degradados' : item === 20 ? 'Animados' : undefined)}
+          </>}
+          <View style={[styles.swatchGrid, { marginBottom: item === 20 ? 26 : 14 }]}>
+            {ACCENTS_BY_LEVEL[item].map(renderSwatch)}
+          </View>
+        </View>
+      </GlassSurface>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background }}>
+      {/* Fondo de tema activo (desierto, océano, galaxia) */}
+      <ThemeBackground />
+
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
+        <GlobalHeader title="Apariencia" scrollY={scrollY} showBackButton hideBottomBorder />
+      </View>
+
+      <Animated.FlatList
+        data={APPEARANCE_SECTIONS}
+        renderItem={renderSection}
+        keyExtractor={String}
+        initialNumToRender={2}
+        maxToRenderPerBatch={2}
+        windowSize={5}
+        contentContainerStyle={{
+          paddingHorizontal: isMobile ? 14 : Math.max(16, (windowWidth - 640) / 2),
+          paddingTop: insets.top + 72,
+          paddingBottom: insets.bottom + 40,
+        }}
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: Platform.OS !== 'web',
+        })}
+        scrollEventThrottle={16}
+      />
 
       {/* Modal de Advertencia para Efectos de Galaxia */}
       <Modal
@@ -889,7 +854,7 @@ export default function AppearanceScreen() {
           <View style={styles.modalContainer}>
             <GlassSurface
               radius={26}
-              isDark={isDark}
+              theme={theme} isDark={isDark}
               borderColor={glassBorder}
               tintColor={isDark ? '#080814' : '#ffffff'}
               tintOpacity={0.92}
@@ -955,7 +920,7 @@ export default function AppearanceScreen() {
       {/* Toast Ligero */}
       {toast && (
         <Animated.View
-          pointerEvents="none"
+          pointerEvents='none'
           style={[
             styles.toastWrap,
             {
@@ -969,7 +934,7 @@ export default function AppearanceScreen() {
         >
           <GlassSurface
             radius={20}
-            isDark={isDark}
+            theme={theme} isDark={isDark}
             borderColor={glassBorder}
             tintColor={isDark ? '#000000' : '#ffffff'}
             tintOpacity={0.35}
@@ -989,6 +954,7 @@ export default function AppearanceScreen() {
 }
 
 const styles = StyleSheet.create({
+  sectionCard: { width: '100%', maxWidth: 640, alignSelf: 'center' },
   card: {
     marginBottom: 16,
     width: '100%',

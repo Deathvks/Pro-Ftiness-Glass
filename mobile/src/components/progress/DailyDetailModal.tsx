@@ -30,19 +30,22 @@ import { readCardioNotes, type CardioPoint } from '@/utils/cardio';
 interface DailyDetailModalProps {
   visible: boolean;
   logs: any[];
+  clientRoutines?: any[];
   onClose: () => void;
 }
 
 export function DailyDetailModal({
   visible,
   logs,
+  clientRoutines,
   onClose,
 }: DailyDetailModalProps) {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
-  const routines = useAppStore(state => state.routines) || [];
+  const ownRoutines = useAppStore(state => state.routines);
+  const routines = clientRoutines ?? ownRoutines ?? [];
   const deleteWorkoutLog = useAppStore(state => state.deleteWorkoutLog);
 
   const [deletedIds, setDeletedIds] = useState<number[]>([]);
@@ -191,12 +194,12 @@ export function DailyDetailModal({
                         </View>
                       </View>
 
-                      <TouchableOpacity
+                      {!clientRoutines && <TouchableOpacity
                         onPress={() => handleDelete(log.id)}
                         style={styles.deleteBtn}
                       >
                         <Trash2 size={16} color="#f43f5e" />
-                      </TouchableOpacity>
+                      </TouchableOpacity>}
                     </View>
 
                     {cardio.path.length > 0 && (

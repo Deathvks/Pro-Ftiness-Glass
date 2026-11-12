@@ -27,7 +27,7 @@ import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, getUnselectedControlColors, shouldUseContentGlass } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import { GlassButton } from '@/components/ui/GlassButton';
@@ -57,9 +57,7 @@ export default function RoutinesScreen() {
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const iconBadgeBg = isDark
-    ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.06)')
-    : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.05)');
+  const controlColors = getUnselectedControlColors(theme);
 
   // Zustand Store
   const routines = useAppStore((state) => state.routines || []);
@@ -160,7 +158,7 @@ export default function RoutinesScreen() {
   }, [routines, query, lastUsedMap, selectedFolder]);
 
   // Iniciar entrenamiento
-  const handleStartWorkout = async (routine: any) => {
+  const handleStartWorkout = (routine: any) => {
     if (activeWorkout && String(activeWorkout.routineId) === String(routine.id)) {
       router.push('/workout');
       return;
@@ -178,9 +176,9 @@ export default function RoutinesScreen() {
           {
             text: 'Descartar e iniciar nueva',
             style: 'destructive',
-            onPress: async () => {
+            onPress: () => {
               if (stopWorkout) stopWorkout();
-              if (startWorkout) await startWorkout(routine);
+              if (startWorkout) startWorkout(routine);
               router.push('/workout');
             },
           },
@@ -199,15 +197,15 @@ export default function RoutinesScreen() {
           { text: 'Cancelar', style: 'cancel' },
           {
             text: 'Iniciar',
-            onPress: async () => {
-              if (startWorkout) await startWorkout(routine);
+            onPress: () => {
+              if (startWorkout) startWorkout(routine);
               router.push('/workout');
             },
           },
         ]
       );
     } else {
-      if (startWorkout) await startWorkout(routine);
+      if (startWorkout) startWorkout(routine);
       router.push('/workout');
     }
   };
@@ -539,7 +537,7 @@ export default function RoutinesScreen() {
               !isIOS && { borderColor: colors.tint + '35' },
             ]}
           >
-            {shouldUseContentGlass() && (
+            {shouldUseContentGlass(theme) && (
               <GlassView
                 style={StyleSheet.absoluteFill}
                 glassEffectStyle="regular"
@@ -597,11 +595,8 @@ export default function RoutinesScreen() {
             <View
               style={[
                 styles.searchContainer,
-                {
-                  backgroundColor: isDark ? (isIOS ? '#1C1C1E' : 'rgba(255, 255, 255, 0.05)') : (isIOS ? '#FFFFFF' : 'rgba(0, 0, 0, 0.04)'),
-                  borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
-                  borderWidth: isIOS ? 0 : 1,
-                },
+                controlColors,
+                { borderWidth: StyleSheet.hairlineWidth },
               ]}
             >
               <Search size={18} color={colors.textSecondary} style={{ marginRight: 10 }} />
@@ -668,18 +663,18 @@ export default function RoutinesScreen() {
                   getAppleCardSurfaceStyle(theme || 'oled', 20),
                   !isIOS && {
                     borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                    backgroundColor: colors.card,
                   },
                 ]}
               >
-                {shouldUseContentGlass() && (
+                {shouldUseContentGlass(theme) && (
                   <GlassView
                     style={StyleSheet.absoluteFill}
                     glassEffectStyle="regular"
                     colorScheme={isDark ? 'dark' : 'light'}
                   />
                 )}
-                <View style={[styles.emptyIconBox, { backgroundColor: iconBadgeBg }]}>
+                <View style={[styles.emptyIconBox, { backgroundColor: controlColors.backgroundColor }]}>
                   <Folder size={32} color={colors.textSecondary} />
                 </View>
                 <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>

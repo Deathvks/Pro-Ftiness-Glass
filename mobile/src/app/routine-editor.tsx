@@ -31,7 +31,6 @@ import {
   Check,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { GlassView } from 'expo-glass-effect';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
@@ -39,7 +38,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import {
   getThemeBaseBackground,
   getAppleCardSurfaceStyle,
-  shouldUseContentGlass,
+  getUnselectedControlColors,
 } from '@/constants/theme';
 import ThemeBackground from '@/components/ThemeBackground';
 import { API_BASE_URL } from '@/services/apiClient';
@@ -60,16 +59,15 @@ export default function RoutineEditorScreen() {
   const insets = useSafeAreaInsets();
   const isDark = !['light', 'ocean', 'desert'].includes(theme || '');
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass();
   const baseBackground = colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background;
-  const iosCardSurface = getAppleCardSurfaceStyle(theme, 20);
-  const iosInnerSurface = isIOS
-    ? {
-        backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7',
-        borderWidth: 0,
-        borderCurve: 'continuous' as const,
-      }
-    : {};
+  const controlColors = getUnselectedControlColors(theme);
+  const cardSurface = {
+    ...getAppleCardSurfaceStyle(theme, 20),
+    backgroundColor: theme === 'oled' ? baseBackground : colors.card,
+    borderColor: theme === 'oled' ? controlColors.borderColor : colors.border,
+    borderWidth: StyleSheet.hairlineWidth,
+  };
+  const controlSurface = { ...controlColors, borderWidth: StyleSheet.hairlineWidth };
 
   // Global Store State
   const routineEditorState = useAppStore(state => state.routineEditorState);
@@ -336,33 +334,16 @@ export default function RoutineEditorScreen() {
           <View
             style={[
               styles.cardContainer,
-              {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.85)',
-                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-              },
-              iosCardSurface,
+              cardSurface,
             ]}
           >
-            {useGlass && (
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-              />
-            )}
-
             <View style={{ alignItems: 'center' }}>
               <View
                 style={[
                   styles.imagePreviewContainer,
                   {
-                    backgroundColor: isIOS
-                      ? isDark
-                        ? '#2C2C2E'
-                        : '#F2F2F7'
-                      : colors.card,
-                    borderColor: imageUrl ? colors.tint : colors.border,
-                    borderWidth: imageUrl ? 2 : isIOS ? 0 : 1,
+                    ...controlSurface,
+                    ...(imageUrl && { borderColor: colors.tint, borderWidth: 2 }),
                   },
                 ]}
               >
@@ -419,6 +400,7 @@ export default function RoutineEditorScreen() {
                 <GlassButton
                   noShadow
                   theme={theme}
+                  color={controlColors.backgroundColor}
                   colors={colors}
                   onPress={handleImagePick}
                   style={styles.coverActionBtn}
@@ -434,6 +416,7 @@ export default function RoutineEditorScreen() {
                 <GlassButton
                   noShadow
                   theme={theme}
+                  color={controlColors.backgroundColor}
                   colors={colors}
                   onPress={() => setShowPixabay(true)}
                   style={styles.coverActionBtn}
@@ -484,22 +467,10 @@ export default function RoutineEditorScreen() {
           <View
             style={[
               styles.cardContainer,
-              {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.85)',
-                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-                gap: 12,
-              },
-              iosCardSurface,
+              cardSurface,
+              { gap: 12 },
             ]}
           >
-            {useGlass && (
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-              />
-            )}
-
             <View>
               <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Nombre</Text>
               <TextInput
@@ -507,10 +478,8 @@ export default function RoutineEditorScreen() {
                   styles.input,
                   {
                     color: colors.text,
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
                   },
-                  iosInnerSurface,
+                  controlSurface,
                 ]}
                 placeholder="Ej. Empuje Hipertrofia..."
                 selectionColor={colors.tint}
@@ -527,12 +496,10 @@ export default function RoutineEditorScreen() {
                 style={[
                   styles.input,
                   {
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
                     flexDirection: 'row',
                     alignItems: 'center',
                   },
-                  iosInnerSurface,
+                  controlSurface,
                 ]}
                 onPress={() => setShowFolderPicker(true)}
               >
@@ -561,10 +528,8 @@ export default function RoutineEditorScreen() {
                   styles.textArea,
                   {
                     color: colors.text,
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
                   },
-                  iosInnerSurface,
+                  controlSurface,
                 ]}
                 placeholder="Notas o enfoque de la rutina..."
                 selectionColor={colors.tint}
@@ -589,11 +554,7 @@ export default function RoutineEditorScreen() {
             <View
               style={[
                 styles.emptyExercises,
-                {
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.7)',
-                  borderColor: colors.border,
-                },
-                iosCardSurface,
+                cardSurface,
               ]}
             >
               <Library
@@ -629,21 +590,9 @@ export default function RoutineEditorScreen() {
                   key={item.id || String(index)}
                   style={[
                     styles.exerciseCard,
-                    {
-                      backgroundColor: colors.card,
-                      borderColor: colors.border,
-                    },
-                    iosCardSurface,
+                    cardSurface,
                   ]}
                 >
-                  {useGlass && (
-                    <GlassView
-                      glassEffectStyle="regular"
-                      colorScheme={isDark ? 'dark' : 'light'}
-                      style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                    />
-                  )}
-
                   {/* Top Bar: Order Badge + Reorder & Delete Actions */}
                   <View style={styles.exerciseCardTopRow}>
                     <View
@@ -664,9 +613,7 @@ export default function RoutineEditorScreen() {
                         style={[
                           styles.iconCtrlBtn,
                           {
-                            backgroundColor: isDark
-                              ? 'rgba(255,255,255,0.08)'
-                              : 'rgba(0,0,0,0.05)',
+                            backgroundColor: controlColors.backgroundColor,
                             opacity: index === 0 ? 0.3 : 1,
                           },
                         ]}
@@ -680,9 +627,7 @@ export default function RoutineEditorScreen() {
                         style={[
                           styles.iconCtrlBtn,
                           {
-                            backgroundColor: isDark
-                              ? 'rgba(255,255,255,0.08)'
-                              : 'rgba(0,0,0,0.05)',
+                            backgroundColor: controlColors.backgroundColor,
                             opacity: index === exercises.length - 1 ? 0.3 : 1,
                           },
                         ]}
@@ -710,7 +655,7 @@ export default function RoutineEditorScreen() {
                       style={[
                         styles.exerciseMediaBanner,
                         {
-                          backgroundColor: isDark ? '#0B0B0E' : '#18181B',
+                          backgroundColor: controlColors.backgroundColor,
                         },
                       ]}
                     >
@@ -719,6 +664,7 @@ export default function RoutineEditorScreen() {
                         details={item}
                         fitMode="contain"
                         staticOnly={false}
+                        previewColors={{ background: 'transparent', placeholder: colors.textSecondary }}
                       />
                     </View>
                   )}
@@ -732,10 +678,8 @@ export default function RoutineEditorScreen() {
                             styles.manualNameInput,
                             {
                               color: colors.text,
-                              backgroundColor: baseBackground,
-                              borderColor: colors.border,
                             },
-                            iosInnerSurface,
+                            controlSurface,
                           ]}
                           placeholder="Nombre del ejercicio..."
                           selectionColor={colors.tint}
@@ -746,11 +690,7 @@ export default function RoutineEditorScreen() {
                         <TouchableOpacity
                           style={[
                             styles.manualMusclePill,
-                            {
-                              backgroundColor: baseBackground,
-                              borderColor: colors.border,
-                            },
-                            iosInnerSurface,
+                            controlSurface,
                           ]}
                           onPress={() =>
                             setSelectModalConfig({
@@ -823,11 +763,7 @@ export default function RoutineEditorScreen() {
                       activeOpacity={0.75}
                       style={[
                         styles.metricPill,
-                        {
-                          backgroundColor: baseBackground,
-                          borderColor: colors.border,
-                        },
-                        iosInnerSurface,
+                        controlSurface,
                       ]}
                       onPress={() =>
                         setSelectModalConfig({
@@ -852,11 +788,7 @@ export default function RoutineEditorScreen() {
                       activeOpacity={0.75}
                       style={[
                         styles.metricPill,
-                        {
-                          backgroundColor: baseBackground,
-                          borderColor: colors.border,
-                        },
-                        iosInnerSurface,
+                        controlSurface,
                       ]}
                       onPress={() => {
                         const curr = String(item.reps);
@@ -886,11 +818,7 @@ export default function RoutineEditorScreen() {
                       activeOpacity={0.75}
                       style={[
                         styles.metricPill,
-                        {
-                          backgroundColor: baseBackground,
-                          borderColor: colors.border,
-                        },
-                        iosInnerSurface,
+                        controlSurface,
                       ]}
                       onPress={() => {
                         const curr = String(item.rest_seconds || '60');
@@ -926,6 +854,7 @@ export default function RoutineEditorScreen() {
             <GlassButton
               noShadow
               theme={theme}
+              color={controlColors.backgroundColor}
               colors={colors}
               onPress={() => setShowExerciseSearch(true)}
               style={styles.fullWidthBtn}
@@ -942,6 +871,7 @@ export default function RoutineEditorScreen() {
             <GlassButton
               noShadow
               theme={theme}
+              color={controlColors.backgroundColor}
               colors={colors}
               onPress={addManualExercise}
               style={styles.fullWidthBtn}
@@ -1018,10 +948,10 @@ export default function RoutineEditorScreen() {
               {
                 borderRadius: 16,
                 overflow: 'hidden',
-                backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
                 marginBottom: 16,
               },
-              getAppleSheetCardStyle(isDark, 16),
+              getAppleSheetCardStyle(isDark, 16, theme),
+              controlSurface,
             ]}
           >
             <TouchableOpacity
@@ -1109,9 +1039,9 @@ export default function RoutineEditorScreen() {
                   paddingHorizontal: 14,
                   color: colors.text,
                   fontSize: 15,
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
                 },
-                getAppleSheetCardStyle(isDark, 14),
+                getAppleSheetCardStyle(isDark, 14, theme),
+                controlSurface,
               ]}
             />
             <TouchableOpacity

@@ -27,7 +27,7 @@ export function ProgressSectionList({ onSelectSection }: ProgressSectionListProp
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass();
+  const useGlass = shouldUseContentGlass(theme);
 
   const handlePress = (id: ProgressSectionId) => {
     try {

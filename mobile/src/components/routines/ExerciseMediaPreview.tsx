@@ -23,6 +23,8 @@ interface ExerciseMediaPreviewProps {
   staticOnly?: boolean;
   fitMode?: 'cover' | 'contain';
   playYouTube?: boolean;
+  showImageCounter?: boolean;
+  previewColors?: { background: string; placeholder: string };
   onPress?: () => void;
 }
 
@@ -110,6 +112,8 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   staticOnly = false,
   fitMode = 'contain',
   playYouTube = false,
+  showImageCounter = true,
+  previewColors,
   onPress,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -494,8 +498,8 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
 
   if (!activeImageUri) {
     return (
-      <View style={[styles.fullContainer, styles.placeholderContainer]}>
-        <Dumbbell size={36} color="rgba(255,255,255,0.3)" />
+      <View style={[styles.fullContainer, styles.placeholderContainer, previewColors && { backgroundColor: previewColors.background }]}>
+        <Dumbbell size={36} color={previewColors?.placeholder ?? 'rgba(255,255,255,0.3)'} />
       </View>
     );
   }
@@ -505,7 +509,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   return (
     <TouchableOpacity
       activeOpacity={onPress ? 0.8 : staticOnly ? 1 : 0.88}
-      style={styles.fullContainer}
+      style={[styles.fullContainer, previewColors && { backgroundColor: previewColors.background }]}
       onPress={() => {
         if (onPress) {
           try {
@@ -526,7 +530,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
         onError={() => setImageError(true)}
       />
 
-      {images.length > 1 && !isPlaying && (
+      {showImageCounter && images.length > 1 && !isPlaying && (
         <View style={styles.gifBadge}>
           <Text style={styles.gifBadgeText}>
             GIF {currentIndex + 1}/{images.length}

@@ -472,23 +472,50 @@ export const sendEmailUnsubscribeTest = async (req, res, next) => {
   }
 };
 
+export const getPushTestDevices = async (req, res, next) => {
+  try {
+    const user = await getEmailTestAccount(req.user.userId);
+    if (!user) return res.sendStatus(403);
+    const devices = await db.PushSubscription.findAll({
+      where: { user_id: user.id },
+      attributes: ['id', 'endpoint', 'updated_at'],
+      order: [['updated_at', 'DESC']],
+    });
+    return res.set('Cache-Control', 'private, no-store').json(devices
+      .filter(device => isSupportedPushEndpoint(device.endpoint))
+      .map(device => ({
+        id: device.id,
+        type: device.endpoint.startsWith('fcm://') ? 'android' : 'web',
+        updatedAt: device.updated_at,
+      })));
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const sendPushDeviceTest = async (req, res, next) => {
-  const { endpoint, purpose = 'service' } = req.body ?? {};
-  if (!req.is('application/json') || !isSupportedPushEndpoint(endpoint) || !['service', ...PUSH_PURPOSES].includes(purpose)) {
+  const { endpoint, subscriptionId, purpose = 'service' } = req.body ?? {};
+  const validDevice = subscriptionId === undefined
+    ? isSupportedPushEndpoint(endpoint)
+    : Number.isSafeInteger(subscriptionId) && subscriptionId > 0;
+  if (!req.is('application/json') || !validDevice || !['service', ...PUSH_PURPOSES].includes(purpose)) {
     return res.status(400).json({ error: 'Dispositivo o categoría de prueba no válidos.' });
   }
   try {
     const user = await getEmailTestAccount(req.user.userId);
     if (!user) return res.sendStatus(403);
-    const device = await db.PushSubscription.findOne({ where: { user_id: user.id, endpoint }, attributes: ['id'] });
-    if (!device) return res.json({ inAppSaved: false, pushStatus: 'no_subscription' });
+    const device = await db.PushSubscription.findOne({
+      where: { user_id: user.id, ...(subscriptionId === undefined ? { endpoint } : { id: subscriptionId }) },
+      attributes: ['endpoint'],
+    });
+    if (!device || !isSupportedPushEndpoint(device.endpoint)) return res.json({ inAppSaved: false, pushStatus: 'no_subscription' });
 
     const result = await createNotification(user.id, {
       type: 'notification_test',
       title: 'Prueba de notificaciones push',
       message: 'Prueba solicitada desde el panel de administración para este dispositivo.',
       pushPurpose: purpose
-    }, { endpoint });
+    }, { endpoint: device.endpoint });
     return res.json(result);
   } catch (error) {
     next(error);

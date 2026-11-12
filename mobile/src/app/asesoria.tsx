@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
+import { SocialUserAvatar, type AvatarUser } from '@/components/social/SocialUserAvatar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -47,7 +47,7 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import ChatVideoMessage from '@/components/chat/ChatVideoMessage';
 import FullscreenVideoModal from '@/components/chat/FullscreenVideoModal';
 
-interface TrainerInfo {
+interface TrainerInfo extends AvatarUser {
   id: string | number;
   name: string;
   username: string;
@@ -574,21 +574,7 @@ export default function AsesoriaScreen() {
             onPress={() => setShowTrainerProfile(true)}
             activeOpacity={0.7}
           >
-            <View style={[styles.headerAvatarWrap, { borderColor: colors.tint }]}>
-              {trainer.profile_image_url ? (
-                <Image
-                  source={{ uri: getFullMediaUrl(trainer.profile_image_url) || '' }}
-                  style={styles.headerAvatar}
-                  contentFit="cover"
-                />
-              ) : (
-                <Image
-                  source={require('@/assets/images/trainer-profile.jpg')}
-                  style={styles.headerAvatar}
-                  contentFit="cover"
-                />
-              )}
-            </View>
+            <SocialUserAvatar user={trainer} size={38} fallbackSource={require('@/assets/images/trainer-profile.jpg')} />
             <View>
               <Text style={[styles.headerName, { color: colors.text }]} numberOfLines={1}>
                 {trainer.name}
@@ -952,17 +938,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     flex: 1,
-  },
-  headerAvatarWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 1.5,
-    overflow: 'hidden',
-  },
-  headerAvatar: {
-    width: '100%',
-    height: '100%',
   },
   headerName: {
     fontSize: 15,

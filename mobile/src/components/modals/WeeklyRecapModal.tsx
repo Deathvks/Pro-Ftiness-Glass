@@ -12,6 +12,7 @@ import {
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
+import { UserRoleAvatarRing } from '@/components/social/SocialUserAvatar';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import useAppStore from '@/store/useAppStore';
@@ -144,11 +145,13 @@ export const WeeklyRecapModal: React.FC<WeeklyRecapModalProps> = ({
                 <View style={styles.cardHeader}>
                   <View style={styles.athleteInfo}>
                     <View style={styles.avatarWrapper}>
-                      {avatarUrl ? (
-                        <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-                      ) : (
-                        <User size={20} color="#3b82f6" />
-                      )}
+                      <UserRoleAvatarRing user={userProfile} size={42} gapColor="#1f1f23" showStoryIndicator={false}>
+                        {avatarUrl ? (
+                          <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+                        ) : (
+                          <User size={20} color="#3b82f6" />
+                        )}
+                      </UserRoleAvatarRing>
                       <View style={styles.trophyBadge}>
                         <Trophy size={9} color="#000" />
                       </View>
@@ -332,12 +335,6 @@ const styles = StyleSheet.create({
   avatarWrapper: {
     width: 42,
     height: 42,
-    borderRadius: 21,
-    backgroundColor: '#1f1f23',
-    borderWidth: 2,
-    borderColor: '#3b82f6',
-    alignItems: 'center',
-    justifyContent: 'center',
     position: 'relative',
   },
   avatar: {

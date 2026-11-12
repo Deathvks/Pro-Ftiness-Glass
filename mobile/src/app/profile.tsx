@@ -22,7 +22,8 @@ import { isAtmosphericTheme } from '@/constants/theme';
 import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
 import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
+import { UserRoleAvatarRing } from '@/components/social/SocialUserAvatar';
+import { selectHasUnseenStory } from '@/store/storySlice';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import {
@@ -139,6 +140,7 @@ export default function ProfileScreen() {
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
   const userProfile = useAppStore(state => state.userProfile || (state as any).user);
+  const hasUnseenStory = useAppStore(state => selectHasUnseenStory(state, state.userProfile?.id));
   const gamification = useAppStore(state => state.gamification);
   const handleLogout = useAppStore(state => (state as any).handleLogout);
 
@@ -380,32 +382,18 @@ export default function ProfileScreen() {
             style={styles.avatarTouch}
             disabled={isUploadingAvatar}
           >
-            <LinearGradient
-              colors={roleConfig.colors}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.avatarGradientRing}
-            >
-              <View style={[styles.avatarInnerPadding, { backgroundColor: isDark ? '#121214' : '#ffffff' }]}>
-                <View style={[styles.avatarImageWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
-                  {displayImageUri ? (
-                    <Image
-                      source={{ uri: displayImageUri }}
-                      style={styles.avatarImage}
-                      contentFit="cover"
-                      transition={200}
-                    />
-                  ) : (
-                    <User size={46} color={colors.textSecondary} strokeWidth={1.8} style={{ opacity: 0.6 }} />
-                  )}
-                  {isUploadingAvatar && (
-                    <View style={styles.avatarLoadingOverlay}>
-                      <ActivityIndicator size="small" color="#ffffff" />
-                    </View>
-                  )}
+            <UserRoleAvatarRing user={userProfile} size={120}>
+              {displayImageUri ? (
+                <Image source={{ uri: displayImageUri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+              ) : (
+                <User size={46} color={colors.textSecondary} strokeWidth={1.8} style={{ opacity: 0.6 }} />
+              )}
+              {isUploadingAvatar && (
+                <View style={styles.avatarLoadingOverlay}>
+                  <ActivityIndicator size="small" color="#ffffff" />
                 </View>
-              </View>
-            </LinearGradient>
+              )}
+            </UserRoleAvatarRing>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -418,6 +406,13 @@ export default function ProfileScreen() {
               {isUploadingAvatar ? 'Guardando foto...' : 'Editar foto'}
             </Text>
           </TouchableOpacity>
+
+          {hasUnseenStory && (
+            <TouchableOpacity accessibilityRole="button" activeOpacity={0.7}
+              onPress={() => useAppStore.getState().openStory(userProfile?.id)}>
+              <Text style={{ color: colors.tint, fontWeight: '700' }}>Ver mi historia</Text>
+            </TouchableOpacity>
+          )}
 
           <View style={styles.nameRow}>
             <Text style={[styles.displayName, { color: colors.text }]} numberOfLines={1}>
@@ -904,37 +899,6 @@ const styles = StyleSheet.create({
   avatarTouch: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  avatarGradientRing: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    padding: 3.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  avatarInnerPadding: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 56.5,
-    padding: 2.5,
-    overflow: 'hidden',
-  },
-  avatarImageWrapper: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 54,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
   },
   avatarLoadingOverlay: {
     ...StyleSheet.absoluteFill,

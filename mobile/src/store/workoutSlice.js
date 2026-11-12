@@ -25,33 +25,61 @@ const getAccentColor = () => {
 
 // stopNativeTimer original eliminado
 
-// --- HELPER CORREGIDO: Buscar último rendimiento (AHORA LEE BIEN EL BACKEND) ---
+const normalizeExerciseName = (name) => name?.toLowerCase().trim();
+let workoutStartRevision = 0;
+
 const findLastPerformance = (workoutLog, exerciseName) => {
-  if (!workoutLog || !Array.isArray(workoutLog) || !exerciseName) return null;
+  if (!Array.isArray(workoutLog) || !exerciseName) return null;
 
-  const searchName = exerciseName.toLowerCase().trim();
+  const searchName = normalizeExerciseName(exerciseName);
+  let latest = null;
+  let latestTime = -Infinity;
+  for (const log of workoutLog) {
+    const detail = log.WorkoutLogDetails?.find(d => normalizeExerciseName(d.exercise_name) === searchName);
+    if (!detail) continue;
+    const time = Date.parse(log.workout_date);
+    const dateOrder = Number.isNaN(time) ? -Infinity : time;
+    if (latest && dateOrder <= latestTime) continue;
+    latestTime = dateOrder;
+    latest = {
+      date: log.workout_date,
+      sets: detail.WorkoutLogSets || [],
+      estimated_1rm: detail.estimated_1rm || 0,
+    };
+  }
+  return latest;
+};
 
-  // Buscar logs que contengan WorkoutLogDetails con el ejercicio
-  const relevantLogs = workoutLog.filter(log =>
-    log.WorkoutLogDetails?.some(d => d.exercise_name?.toLowerCase().trim() === searchName)
-  );
+const getWorkoutExerciseDetails = (ex, fullDetails) => {
+  const embedded = ex.exercise || ex.ExerciseList || {};
+  const name = fullDetails?.name || embedded.name || ex.name;
+  const mediaUrl = ex.image_url || ex.gifUrl || ex.gif_url ||
+    fullDetails?.image_url || fullDetails?.gifUrl || fullDetails?.gif_url ||
+    ex.image_url_start || embedded.image_url_start || fullDetails?.image_url_start || null;
 
-  if (relevantLogs.length === 0) return null;
+  return {
+    name,
+    exercise_details: {
+      ...embedded,
+      ...(fullDetails || {}),
+      name,
+      description: fullDetails?.description_es || fullDetails?.description || embedded.description || null,
+      image_url: mediaUrl,
+      image_url_start: fullDetails?.image_url_start || ex.image_url_start || embedded.image_url_start,
+      image_url_end: fullDetails?.image_url_end || ex.image_url_end || embedded.image_url_end,
+      images: fullDetails?.images || ex.images || embedded.images,
+      video_url: ex.video_url || embedded.video_url || fullDetails?.video_url || null,
+    },
+    exercise_list_id: fullDetails?.id || ex.exercise_list_id || ex.exercise_id || embedded.id || null,
+    muscle_group: ex.muscle_group || fullDetails?.muscle_group || embedded.muscle_group || null,
+  };
+};
 
-  // Ordenar de más reciente a más antiguo
-  relevantLogs.sort((a, b) => new Date(b.workout_date) - new Date(a.workout_date));
-
-  const lastLog = relevantLogs[0];
-  const detail = lastLog.WorkoutLogDetails.find(
-    d => d.exercise_name?.toLowerCase().trim() === searchName
-  );
-
-  // Extraer los sets y el 1RM estimado directamente de la DB
-  return detail ? { 
-    date: lastLog.workout_date, 
-    sets: detail.WorkoutLogSets || [],
-    estimated_1rm: detail.estimated_1rm || 0
-  } : null;
+const findCatalogExercise = (catalog, ex) => {
+  const id = ex.exercise_list_id || ex.exercise_id || ex.exercise?.id || ex.ExerciseList?.id;
+  const name = normalizeExerciseName(ex.name || ex.exercise?.name || ex.ExerciseList?.name);
+  return (id && catalog.find(detail => String(detail.id) === String(id))) ||
+    (name && catalog.find(detail => normalizeExerciseName(detail.name) === name));
 };
 
 // --- FUNCIONES DE ALMACENAMIENTO LOCAL ---
@@ -171,84 +199,46 @@ export const createWorkoutSlice = (set, get) => ({
     }
   },
 
-  startWorkout: async (routine) => {
+  startWorkout: (routine) => {
     const state = get();
-    const allExercises = await state.getOrFetchAllExercises();
-    const workoutLog = state.workoutLog || [];
-
+    const revision = ++workoutStartRevision;
+    const catalog = state.allExercises || [];
     const sortedExercises = [
-      ...(routine.RoutineExercises || routine.TemplateRoutineExercises || []),
+      ...(routine.RoutineExercises || routine.TemplateRoutineExercises || routine.exercises || []),
     ].sort((a, b) => (a.exercise_order ?? 0) - (b.exercise_order ?? 0));
 
-    const exercises = sortedExercises.map((ex) => {
-      const targetId = ex.exercise_list_id || ex.exercise_id;
-      let fullDetails = allExercises.find((detail) => detail.id === targetId);
-
-      if (!fullDetails && ex.name) {
-        const normName = ex.name.toLowerCase().trim();
-        fullDetails = allExercises.find(d => d.name.toLowerCase().trim() === normName);
-      }
-
-      const exerciseKeyName = fullDetails?.name || ex.exercise?.name || ex.name;
-
-      const mediaUrl =
-        ex.image_url ||
-        ex.gifUrl ||
-        ex.gif_url ||
-        fullDetails?.image_url ||
-        fullDetails?.gifUrl ||
-        fullDetails?.gif_url ||
-        ex.image_url_start ||
-        ex.exercise?.image_url_start ||
-        fullDetails?.image_url_start ||
-        null;
-
-      const videoUrl = ex.video_url || ex.exercise?.video_url || fullDetails?.video_url || null;
-
-      const exerciseDetails = {
-        ...(ex.exercise || {}),
-        ...(fullDetails || {}),
-        name: exerciseKeyName,
-        description: fullDetails?.description_es || fullDetails?.description || ex.exercise?.description || null,
-        image_url: mediaUrl,
-        video_url: videoUrl,
-      };
-
-      const lastPerformance = findLastPerformance(workoutLog, exerciseKeyName);
-
+    const exercises = sortedExercises.map((ex, index) => {
+      const details = getWorkoutExerciseDetails(ex, findCatalogExercise(catalog, ex));
       return {
-        id: ex.id,
-        name: exerciseKeyName,
+        ...details,
+        id: ex.id ?? ('routine-exercise-' + index),
         sets: ex.sets,
         reps: ex.reps,
         superset_group_id: ex.superset_group_id || null,
         exercise_order: ex.exercise_order !== undefined ? ex.exercise_order : 0,
         rest_seconds: ex.rest_seconds !== undefined ? ex.rest_seconds : 90,
-        exercise_details: exerciseDetails,
         setsDone: Array.from({ length: ex.sets }, (_, i) => ({
           set_number: i + 1,
           reps: '',
           weight_kg: '',
           is_dropset: false,
           is_warmup: false,
-          rir: null, // NUEVO CAMPO
+          rir: null,
         })),
-        exercise_list_id: fullDetails?.id || null,
-        muscle_group: ex.muscle_group || fullDetails?.muscle_group || null,
-        last_performance: lastPerformance,
-        reminder: ex.reminder || null, // Cargamos el reminder de la rutina si existe
+        last_performance: findLastPerformance(state.workoutLog, details.name),
+        reminder: ex.reminder || null,
       };
     });
 
     const newState = {
       activeWorkout: {
-          routineId: routine.id || null,
-          routineName: routine.name,
-          is_from_trainer: routine.is_from_trainer || false,
-        image_url: routine.imageUrl || routine.image_url || null, 
+        routineId: routine.id || null,
+        routineName: routine.name,
+        is_from_trainer: routine.is_from_trainer || false,
+        image_url: routine.imageUrl || routine.image_url || null,
         imageUrl: routine.imageUrl || routine.image_url || null,
         exercises,
-        startTime: new Date().toISOString(), 
+        startTime: new Date().toISOString(),
       },
       workoutStartTime: null,
       isWorkoutPaused: true,
@@ -256,9 +246,45 @@ export const createWorkoutSlice = (set, get) => ({
     };
     set(newState);
     setWorkoutInStorage(newState);
+
+    if (catalog.length || !exercises.length) return;
+
+    void state.getOrFetchAllExercises().then((loadedCatalog) => {
+      const current = get();
+      const session = current.activeWorkout;
+      if (!loadedCatalog.length || revision !== workoutStartRevision ||
+          session?.startTime !== newState.activeWorkout.startTime ||
+          session.routineId !== newState.activeWorkout.routineId) return;
+
+      let enriched = false;
+      const updatedExercises = session.exercises.map((exercise, index) => {
+        // Replacements get a new row ID. Preserve them and any series edits made during the request.
+        if (exercise.id !== exercises[index]?.id) return exercise;
+        const original = sortedExercises[index];
+        const fullDetails = findCatalogExercise(loadedCatalog, original);
+        if (!fullDetails) return exercise;
+
+        enriched = true;
+        const details = getWorkoutExerciseDetails(original, fullDetails);
+        return {
+          ...exercise,
+          ...details,
+          last_performance: exercise.name === details.name
+            ? exercise.last_performance
+            : findLastPerformance(current.workoutLog, details.name),
+        };
+      });
+
+      if (enriched) {
+        const activeWorkout = { ...session, exercises: updatedExercises };
+        set({ activeWorkout });
+        setWorkoutInStorage({ ...current, activeWorkout });
+      }
+    });
   },
 
   startSimpleWorkout: (workoutName) => {
+    workoutStartRevision++;
     const newState = {
       activeWorkout: {
         routineId: null,

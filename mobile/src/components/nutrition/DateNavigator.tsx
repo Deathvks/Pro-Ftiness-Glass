@@ -5,6 +5,7 @@ import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { usesFrontendCardSurface } from '@/constants/theme';
 
 interface DateNavigatorProps {
   selectedDate: string;
@@ -48,11 +49,9 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({ selectedDate, onDa
   return (
     <View style={styles.container}>
       <View style={[styles.glassWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
-        />
+        {!usesFrontendCardSurface(theme) && (
+          <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        )}
         <View style={styles.inner}>
           <TouchableOpacity
             onPress={() => changeDay(-1)}

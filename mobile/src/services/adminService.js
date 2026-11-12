@@ -1,6 +1,15 @@
 import apiClient from './apiClient';
 
 /**
+ * @param {string} endpoint
+ * @param {'POST' | 'PUT' | 'PATCH' | 'DELETE'} method
+ * @param {object} [body]
+ * @param {{ timeout?: number }} [options]
+ */
+export const adminWrite = (endpoint, method, body, options = {}) =>
+    apiClient(endpoint, { ...options, method, body, queueWhenOffline: false });
+
+/**
  * Obtiene la lista completa de usuarios.
  */
 export const getAllUsers = () => {
@@ -13,10 +22,7 @@ export const getAllUsers = () => {
  * @param {object} userData - Datos a actualizar (name, email, role).
  */
 export const updateUser = (userId, userData) => {
-    return apiClient(`/admin/users/${userId}`, {
-        method: 'PUT',
-        body: userData,
-    });
+    return adminWrite(`/admin/users/${userId}`, 'PUT', userData);
 };
 
 /**
@@ -24,9 +30,7 @@ export const updateUser = (userId, userData) => {
  * @param {number} userId - ID del usuario a eliminar.
  */
 export const deleteUser = (userId) => {
-    return apiClient(`/admin/users/${userId}`, {
-        method: 'DELETE',
-    });
+    return adminWrite(`/admin/users/${userId}`, 'DELETE');
 };
 
 /**
@@ -34,10 +38,7 @@ export const deleteUser = (userId) => {
  * @param {object} userData - Datos del nuevo usuario (name, email, password, role).
  */
 export const createUser = (userData) => {
-    return apiClient('/admin/users', {
-        method: 'POST',
-        body: userData,
-    });
+    return adminWrite('/admin/users', 'POST', userData);
 };
 
 export const getSetting = (key) => {
@@ -45,10 +46,7 @@ export const getSetting = (key) => {
 };
 
 export const updateSetting = (key, value) => {
-    return apiClient(`/admin/settings/${key}`, {
-        method: 'POST',
-        body: { value },
-    });
+    return adminWrite(`/admin/settings/${key}`, 'POST', { value });
 };
 
 export const getPushLogs = (page = 1, status = 'all', title = '', range = 30) => {
@@ -58,10 +56,7 @@ export const getPushLogs = (page = 1, status = 'all', title = '', range = 30) =>
 };
 
 export const sendCustomPush = (pushData) => {
-    return apiClient('/admin/push-send', {
-        method: 'POST',
-        body: pushData,
-    });
+    return adminWrite('/admin/push-send', 'POST', pushData);
 };
 
 export const getCronJobs = () => {
@@ -69,7 +64,5 @@ export const getCronJobs = () => {
 };
 
 export const testCronJob = (jobId) => {
-    return apiClient(`/admin/cron-jobs/test/${jobId}`, {
-        method: 'POST',
-    });
+    return adminWrite(`/admin/cron-jobs/test/${jobId}`, 'POST');
 };

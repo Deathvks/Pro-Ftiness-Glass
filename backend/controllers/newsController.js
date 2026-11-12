@@ -209,6 +209,8 @@ export const getNewsBySlug = async (req, res) => {
     if (!isAdmin) {
       articleSlugCache.set(slug, { payload, timestamp: Date.now() });
       res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+    } else {
+      res.setHeader('Cache-Control', 'private, no-store');
     }
 
     return res.json(payload);
@@ -1154,11 +1156,14 @@ export const triggerAutomationNow = async (req, res) => {
 export const updateAutomationConfig = async (req, res) => {
   try {
     const { newsAutomationService } = await import('../services/newsAutomationService.js');
-    const { hour, minute } = req.body;
-    if (hour === undefined) {
-      return res.status(400).json({ error: 'Debes proporcionar la hora (0-23).' });
+    const { hour, minute = 0 } = req.body ?? {};
+    const hourValue = Number(hour);
+    const minuteValue = Number(minute);
+    if (hour == null || hour === '' || !Number.isInteger(hourValue) || hourValue < 0 || hourValue > 23 ||
+        !Number.isInteger(minuteValue) || minuteValue < 0 || minuteValue > 59) {
+      return res.status(400).json({ error: 'Debes proporcionar una hora entre 0 y 23 y minutos entre 0 y 59.' });
     }
-    const updated = newsAutomationService.updateSchedule(hour, minute || 0);
+    const updated = newsAutomationService.updateSchedule(hourValue, minuteValue);
     return res.json({
       message: 'Horario de automatización actualizado.',
       data: updated

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
+import { getThemeBaseBackground, usesFrontendCardSurface } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -58,6 +59,13 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const useFrontendSurface = usesFrontendCardSurface(theme);
+  const baseBackground = getThemeBaseBackground(theme);
+  const coverGradient: [string, string, string, string] = useFrontendSurface
+    ? [baseBackground + '80', baseBackground + '33', baseBackground + '33', baseBackground + 'e6']
+    : isDark
+      ? ['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.92)']
+      : ['rgba(255,255,255,0.6)', 'rgba(255,255,255,0.25)', 'rgba(255,255,255,0.35)', 'rgba(255,255,255,0.95)'];
 
   const getFullImageUrl = (url?: string | null) => {
     if (!url) return null;
@@ -94,30 +102,25 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
       style={[
         styles.container,
         {
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.75)',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+          backgroundColor: useFrontendSurface ? baseBackground : isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.75)',
+          borderColor: useFrontendSurface ? colors.border : isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
         },
       ]}
     >
-      <ContentCardBackdrop
-        colorScheme={isDark ? 'dark' : 'light'}
-        style={StyleSheet.absoluteFill}
-      />
+      {!useFrontendSurface && (
+        <ContentCardBackdrop colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+      )}
 
       {/* Imagen de fondo si la rutina tiene portada */}
       {imgUri ? (
         <View style={StyleSheet.absoluteFill}>
           <Image
             source={{ uri: imgUri }}
-            style={[styles.bgImage, { opacity: isDark ? 0.6 : 0.45 }]}
+            style={[styles.bgImage, { opacity: useFrontendSurface || isDark ? 0.6 : 0.45 }]}
             resizeMode="cover"
           />
           <LinearGradient
-            colors={
-              isDark
-                ? ['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.92)']
-                : ['rgba(255,255,255,0.6)', 'rgba(255,255,255,0.25)', 'rgba(255,255,255,0.35)', 'rgba(255,255,255,0.95)']
-            }
+            colors={coverGradient}
             locations={[0, 0.3, 0.6, 1]}
             style={StyleSheet.absoluteFill}
           />
@@ -133,7 +136,7 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
             style={[
               styles.iconBtnPill,
               {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                backgroundColor: useFrontendSurface ? colors.card + '99' : isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
                 borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
               },
             ]}
@@ -154,7 +157,7 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
               style={[
                 styles.iconBtnPill,
                 {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                  backgroundColor: useFrontendSurface ? colors.card + '99' : isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
                   borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
                 },
               ]}
@@ -205,16 +208,14 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
           style={[
             styles.floatingIsland,
             {
-              backgroundColor: isDark ? 'rgba(24, 24, 27, 0.85)' : 'rgba(255, 255, 255, 0.85)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.1)',
+              backgroundColor: useFrontendSurface ? colors.card + 'cc' : isDark ? 'rgba(24, 24, 27, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+              borderColor: useFrontendSurface ? colors.border : isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.1)',
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
+          {!useFrontendSurface && (
+            <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          )}
 
           {/* Botón Mapa Muscular */}
           <TouchableOpacity

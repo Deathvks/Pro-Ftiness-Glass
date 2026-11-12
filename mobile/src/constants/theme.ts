@@ -5,6 +5,8 @@ export type ThemeColor = keyof typeof Colors;
 const LIGHT_BORDER = Platform.OS === 'ios' ? 'rgba(60, 60, 67, 0.14)' : '#E5E7EB';
 const DARK_BORDER = 'rgba(255, 255, 255, 0.12)';
 const OLED_BORDER = Platform.OS === 'ios' ? 'rgba(84, 84, 88, 0.45)' : DARK_BORDER;
+const WEB_DARK_CARD_BORDER = '#ffffff14';
+const WEB_LIGHT_CARD_BORDER = '#00000014';
 
 export const Colors = {
   light: {
@@ -48,24 +50,24 @@ export const Colors = {
   },
   galaxy: {
     background: 'transparent',
-    card: '#19192E',
+    card: '#0d0d1f',
     text: '#f8fafc',
     textSecondary: '#94a3b8',
     textMuted: '#64748b',
-    border: OLED_BORDER,
+    border: WEB_DARK_CARD_BORDER,
     tint: '#a855f7',
     tabBar: '#0A0A1A',
-    tabBarInactive: '#94a3b8',
+    tabBarInactive: '#bcb0dc',
     success: '#10B981',
     warning: '#fbbf24',
   },
   ocean: {
     background: 'transparent',
-    card: '#F5FBFF',
+    card: '#e0f2fe',
     text: '#082f49',
     textSecondary: '#0c4a6e',
     textMuted: '#0284c7',
-    border: LIGHT_BORDER,
+    border: WEB_LIGHT_CARD_BORDER,
     tint: '#0ea5e9',
     tabBar: '#F0F9FF',
     tabBarInactive: '#0c4a6e',
@@ -74,11 +76,11 @@ export const Colors = {
   },
   'ocean-dark': {
     background: 'transparent',
-    card: '#103C57',
+    card: '#0c4a6e',
     text: '#f0f9ff',
-    textSecondary: '#bae6fd',
-    textMuted: '#7dd3fc',
-    border: DARK_BORDER,
+    textSecondary: '#e0f2fe',
+    textMuted: '#bae6fd',
+    border: WEB_DARK_CARD_BORDER,
     tint: '#0ea5e9',
     tabBar: '#082F49',
     tabBarInactive: '#7dd3fc',
@@ -128,10 +130,44 @@ export const isAtmosphericTheme = (theme?: string): boolean => atmosphericSurfac
 export const getThemeSurfaceMode = (theme?: string): SurfaceMode =>
   atmosphericSurfaceModes.get(theme ?? '') ?? (theme === 'light' || theme === 'dark' ? theme : 'oled');
 
-// On iOS, native glass is reserved for controls and navigation. Other platforms use the fallback view.
-export const shouldUseContentGlass = (): boolean => Platform.OS !== 'ios';
+const lightUnselectedControl = { backgroundColor: '#0000000d', borderColor: '#0000000d' };
+const darkUnselectedControl = { backgroundColor: '#ffffff0d', borderColor: '#ffffff14' };
+
+const themedUnselectedControls = {
+  ocean: { backgroundColor: '#0c4a6e0a', borderColor: '#0c4a6e12' },
+  'ocean-dark': { backgroundColor: '#bae6fd0a', borderColor: '#bae6fd14' },
+  galaxy: { backgroundColor: '#a855f70d', borderColor: '#a855f71a' },
+  desert: { backgroundColor: '#5c40330d', borderColor: '#5c403314' },
+  'desert-dark': { backgroundColor: '#f5deb30d', borderColor: '#f5deb314' },
+};
+
+export function usesFrontendCardSurface(theme?: string): theme is 'ocean' | 'ocean-dark' | 'galaxy' {
+  return theme === 'ocean' || theme === 'ocean-dark' || theme === 'galaxy';
+}
+
+export function getUnselectedControlColors(theme?: string) {
+  if (usesFrontendCardSurface(theme) || theme === 'desert' || theme === 'desert-dark') return themedUnselectedControls[theme];
+  return getThemeSurfaceMode(theme) === 'light' ? lightUnselectedControl : darkUnselectedControl;
+}
+
+export function getInactiveTabColor(theme: string | undefined, textColor: string): string {
+  return usesFrontendCardSurface(theme) ? Colors[theme].tabBarInactive : textColor + 'bf';
+}
+
+export const shouldUseContentGlass = (theme?: string): boolean =>
+  Platform.OS !== 'ios' && !usesFrontendCardSurface(theme);
 
 export const getAppleCardSurfaceStyle = (theme?: string, defaultRadius = 20): ViewStyle => {
+  if (usesFrontendCardSurface(theme)) {
+    return {
+      backgroundColor: Colors[theme].card,
+      borderColor: Colors[theme].border,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: Platform.OS === 'ios' ? 20 : defaultRadius,
+      borderCurve: 'continuous',
+    };
+  }
+
   const mode = getThemeSurfaceMode(theme);
   const themedColor = isAtmosphericTheme(theme) ? Colors[theme as ThemeColor].card : undefined;
 

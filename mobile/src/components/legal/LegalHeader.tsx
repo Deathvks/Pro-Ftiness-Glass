@@ -6,7 +6,7 @@ import { ChevronLeft, Shield, Scale, Building2, Cookie } from 'lucide-react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 
 export type LegalRoute = 'privacy' | 'terms' | 'legal-notice' | 'cookies';
 
@@ -30,7 +30,7 @@ export default function LegalHeader({ currentRoute, title, badge = 'LEGAL' }: Le
   const theme = colors;
   const currentStoreTheme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(currentStoreTheme);
-  const contrastColor = getContrastColor(theme.tint, currentStoreTheme);
+  const contrastColor = getContrastTextColor(theme.tint);
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -103,6 +103,8 @@ export default function LegalHeader({ currentRoute, title, badge = 'LEGAL' }: Le
                 key={tab.id}
                 onPress={() => handleTabPress(tab.route)}
                 activeOpacity={0.75}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isActive }}
                 style={[
                   styles.tabPill,
                   {

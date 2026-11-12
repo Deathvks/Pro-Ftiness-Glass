@@ -31,7 +31,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass, getUnselectedControlColors } from '@/constants/theme';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 
 
@@ -340,9 +340,7 @@ export function RoutineVolumeFilterModal({
                   style={[
                     styles.routineFilterCard,
                     {
-                      backgroundColor: isIOS
-                        ? (isDark ? '#2C2C2E' : '#FFFFFF')
-                        : (isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)'),
+                      backgroundColor: getUnselectedControlColors(theme).backgroundColor,
                       borderColor: isIOS ? 'transparent' : colors.border,
                       borderWidth: isIOS ? 0 : 1,
                     },
@@ -421,15 +419,7 @@ export function RoutineVolumeFilterModal({
                           style={[
                             styles.exerciseFilterRow,
                             {
-                              backgroundColor: isIOS
-                                ? (isDark ? '#3A3A3C' : '#F2F2F7')
-                                : included
-                                ? isDark
-                                  ? 'rgba(255, 255, 255, 0.04)'
-                                  : 'rgba(255, 255, 255, 0.7)'
-                                : isDark
-                                ? 'rgba(0, 0, 0, 0.2)'
-                                : 'rgba(0, 0, 0, 0.03)',
+                              backgroundColor: getUnselectedControlColors(theme).backgroundColor,
                               opacity: included ? 1 : 0.45,
                               borderColor: isIOS ? 'transparent' : colors.border,
                               borderWidth: isIOS ? 0 : 1,
@@ -469,7 +459,7 @@ export function RoutineVolumeFilterModal({
                           <View
                             style={[
                               styles.setsPill,
-                              { backgroundColor: included ? colors.tint + '15' : 'rgba(0,0,0,0.05)' },
+                              { backgroundColor: included ? colors.tint + '15' : getUnselectedControlColors(theme).backgroundColor },
                             ]}
                           >
                             <Text
@@ -507,7 +497,7 @@ export function WeeklyMuscleVolumeCard({
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const iosTertiaryBg = isDark ? '#2C2C2E' : '#F2F2F7';
+  const controlBackground = getUnselectedControlColors(theme).backgroundColor;
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedMuscle, setSelectedMuscle] = useState<any | null>(null);
@@ -640,13 +630,11 @@ export function WeeklyMuscleVolumeCard({
         getAppleCardSurfaceStyle(theme, 20),
         !isIOS && {
           borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-          backgroundColor: isDark
-            ? 'rgba(255, 255, 255, 0.03)'
-            : 'rgba(255, 255, 255, 0.65)',
+          backgroundColor: colors.card,
         },
       ]}
     >
-      {shouldUseContentGlass() && (
+      {shouldUseContentGlass(theme) && (
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
@@ -691,7 +679,7 @@ export function WeeklyMuscleVolumeCard({
               <View
                 style={[
                   styles.rangePill,
-                  { backgroundColor: isIOS ? iosTertiaryBg : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)') },
+                  { backgroundColor: controlBackground },
                 ]}
               >
                 <Text style={[styles.rangePillText, { color: colors.textSecondary }]}>
@@ -720,7 +708,7 @@ export function WeeklyMuscleVolumeCard({
             <View
               style={[
                 styles.bentoTile,
-                { backgroundColor: isIOS ? iosTertiaryBg : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)') },
+                { backgroundColor: controlBackground },
               ]}
             >
               <Text style={[styles.bentoNumber, { color: colors.text }]}>
@@ -747,11 +735,7 @@ export function WeeklyMuscleVolumeCard({
                   backgroundColor:
                     volumeData.reviewCount > 0
                       ? 'rgba(245, 158, 11, 0.12)'
-                      : isIOS
-                      ? iosTertiaryBg
-                      : isDark
-                      ? 'rgba(255, 255, 255, 0.05)'
-                      : 'rgba(0, 0, 0, 0.04)',
+                      : controlBackground,
                 },
               ]}
             >
@@ -815,11 +799,7 @@ export function WeeklyMuscleVolumeCard({
                   style={[
                     styles.muscleCard,
                     {
-                      backgroundColor: isIOS
-                        ? iosTertiaryBg
-                        : isDark
-                        ? 'rgba(255, 255, 255, 0.04)'
-                        : 'rgba(255, 255, 255, 0.7)',
+                      backgroundColor: controlBackground,
                       borderColor: isIOS ? 'transparent' : statusColor + '30',
                       borderWidth: isIOS ? 0 : 1,
                     },
@@ -856,7 +836,7 @@ export function WeeklyMuscleVolumeCard({
                   <View
                     style={[
                       styles.progressBarBg,
-                      { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
+                      { backgroundColor: getUnselectedControlColors(theme).backgroundColor },
                     ]}
                   >
                     <View
@@ -940,9 +920,7 @@ export function WeeklyMuscleVolumeCard({
                       style={[
                         styles.contributorRow,
                         {
-                          backgroundColor: isIOS
-                            ? (isDark ? '#2C2C2E' : '#FFFFFF')
-                            : (isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)'),
+                          backgroundColor: getUnselectedControlColors(theme).backgroundColor,
                           borderColor: isIOS ? 'transparent' : colors.border,
                           borderWidth: isIOS ? 0 : 1,
                         },

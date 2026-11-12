@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, Dimensions, Easing } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, Animated, Dimensions, Easing, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import useAppStore from '@/store/useAppStore';
 
@@ -82,8 +82,8 @@ export default function GalaxyStarBackground() {
   const theme = useAppStore(state => state.theme);
   const galaxyEffectsEnabled = useAppStore(state => (state as any).galaxyEffectsEnabled !== false);
 
-  const starDrift = useRef(new Animated.Value(0)).current;
-  const meteorProgress = useRef(new Animated.Value(0)).current;
+  const [starDrift] = useState(() => new Animated.Value(0));
+  const [meteorProgress] = useState(() => new Animated.Value(0));
 
   const isGalaxy = theme === 'galaxy';
 
@@ -100,6 +100,7 @@ export default function GalaxyStarBackground() {
         toValue: 1,
         duration: 80000,
         easing: Easing.linear,
+        isInteraction: false,
         useNativeDriver: true,
       })
     );
@@ -112,12 +113,14 @@ export default function GalaxyStarBackground() {
           toValue: 1,
           duration: 1200,
           easing: Easing.out(Easing.quad),
+          isInteraction: false,
           useNativeDriver: true,
         }),
         Animated.delay(4800),
         Animated.timing(meteorProgress, {
           toValue: 0,
           duration: 0,
+          isInteraction: false,
           useNativeDriver: true,
         }),
       ])
@@ -128,7 +131,7 @@ export default function GalaxyStarBackground() {
       driftLoop.stop();
       meteorLoop.stop();
     };
-  }, [isGalaxy, galaxyEffectsEnabled]);
+  }, [isGalaxy, galaxyEffectsEnabled, starDrift, meteorProgress]);
 
   // Solo renderizar si el tema activo es galaxia (llamado DESPUÉS de todos los hooks)
   if (!isGalaxy) {
@@ -187,11 +190,12 @@ export default function GalaxyStarBackground() {
                 borderRadius: star.size / 2,
                 backgroundColor: star.color,
                 opacity: star.opacity,
-                shadowColor: star.color,
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.9,
-                shadowRadius: star.size * 2,
-                elevation: 4,
+                ...(Platform.OS === 'ios' && {
+                  shadowColor: star.color,
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.9,
+                  shadowRadius: star.size * 2,
+                }),
               },
             ]}
           />

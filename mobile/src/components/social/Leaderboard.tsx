@@ -4,7 +4,7 @@ import { Trophy, Medal, Flame } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass, getUnselectedControlColors } from '@/constants/theme';
 import apiClient from '@/services/apiClient';
 import LevelBadge from '@/components/LevelBadge';
 import { SocialUserAvatar } from './SocialUserAvatar';
@@ -139,9 +139,7 @@ export function Leaderboard({ onNavigateProfile }: LeaderboardProps) {
           {
             backgroundColor: isMe
               ? colors.tint + '18'
-              : isDark
-              ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.03)')
-              : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.02)'),
+              : getUnselectedControlColors(theme).backgroundColor,
             borderWidth: isMe ? (isIOS ? 1 : 1.5) : 0,
             borderColor: isMe ? colors.tint + '50' : 'transparent',
             marginVertical: isMe ? 3 : 0,
@@ -195,7 +193,7 @@ export function Leaderboard({ onNavigateProfile }: LeaderboardProps) {
           },
         ]}
       >
-        {shouldUseContentGlass() && (
+        {shouldUseContentGlass(theme) && (
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}

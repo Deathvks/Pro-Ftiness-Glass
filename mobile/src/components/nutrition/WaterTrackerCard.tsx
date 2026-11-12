@@ -22,7 +22,7 @@ export const WaterTrackerCard: React.FC<WaterTrackerCardProps> = ({
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass();
+  const useGlass = shouldUseContentGlass(theme);
 
   const percentage = targetMl > 0 ? Math.min(100, Math.round((currentMl / targetMl) * 100)) : 0;
 

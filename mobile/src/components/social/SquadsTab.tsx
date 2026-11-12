@@ -28,7 +28,7 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import * as Clipboard from 'expo-clipboard';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass, getUnselectedControlColors } from '@/constants/theme';
 import socialService from '@/services/socialService';
 import { SocialUserAvatar } from './SocialUserAvatar';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -40,9 +40,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
   const userProfile = useAppStore(state => state.userProfile);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const tertiarySurface = isDark
-    ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.04)')
-    : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.03)');
+  const tertiarySurface = getUnselectedControlColors(theme).backgroundColor;
   const accentTextColor = getContrastTextColor(colors.tint);
 
   const [squads, setSquads] = useState<any[]>([]);
@@ -198,7 +196,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
             !isIOS && { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
           ]}
         >
-          {shouldUseContentGlass() && (
+          {shouldUseContentGlass(theme) && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -213,7 +211,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
               activeOpacity={0.7}
               style={[
                 styles.backBtn,
-                { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
+                { backgroundColor: getUnselectedControlColors(theme).backgroundColor },
               ]}
             >
               <ArrowLeft size={20} color={colors.text} />
@@ -241,7 +239,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
               activeOpacity={0.75}
               style={[
                 styles.actionPill,
-                { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
+                { backgroundColor: getUnselectedControlColors(theme).backgroundColor },
               ]}
             >
               <Copy size={15} color={colors.text} style={{ marginRight: 6 }} />
@@ -325,9 +323,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
                         style={[
                           styles.roleBadge,
                           {
-                            backgroundColor: isDark
-                              ? 'rgba(255,255,255,0.08)'
-                              : 'rgba(0,0,0,0.06)',
+                            backgroundColor: getUnselectedControlColors(theme).backgroundColor,
                           },
                         ]}
                       >
@@ -404,7 +400,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
           !isIOS && { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
         ]}
       >
-        {shouldUseContentGlass() && (
+        {shouldUseContentGlass(theme) && (
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}
@@ -430,7 +426,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
               },
             ]}
           >
-            {shouldUseContentGlass() && (
+            {shouldUseContentGlass(theme) && (
               <GlassView
                 glassEffectStyle="regular"
                 colorScheme={isDark ? 'dark' : 'light'}
@@ -514,7 +510,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
                   onChangeText={setSquadName}
                   placeholder="Escribe el nombre..."
                   placeholderTextColor={colors.textSecondary + '80'}
-                  style={[styles.input, { color: colors.text, borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
+                  style={[styles.input, { color: colors.text, borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: getUnselectedControlColors(theme).backgroundColor }]}
                 />
 
                 <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 12 }]}>Descripción (Opcional)</Text>
@@ -523,7 +519,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
                   onChangeText={setSquadDesc}
                   placeholder="¿De qué trata este grupo?"
                   placeholderTextColor={colors.textSecondary + '80'}
-                  style={[styles.input, { color: colors.text, borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
+                  style={[styles.input, { color: colors.text, borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: getUnselectedControlColors(theme).backgroundColor }]}
                 />
 
                 <TouchableOpacity
@@ -604,7 +600,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
                     {
                       color: colors.text,
                       borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                      backgroundColor: getUnselectedControlColors(theme).backgroundColor,
                       textAlign: 'center',
                       letterSpacing: 3,
                       fontWeight: '800',

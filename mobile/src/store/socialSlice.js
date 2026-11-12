@@ -2,6 +2,8 @@
 import socialService from '../services/socialService';
 import { getSocket } from '../services/socket';
 
+let socialEventsSocket;
+
 export const createSocialSlice = (set, get) => ({
     // --- Estado Inicial ---
     socialFriends: [],
@@ -75,6 +77,7 @@ export const createSocialSlice = (set, get) => ({
                 // Pequeño retraso para asegurar que la base de datos haya reflejado el cambio
                 await new Promise(resolve => setTimeout(resolve, 300));
                 await get().fetchFriends();
+                void get().fetchStories();
             }
         } catch (error) {
             set({ socialError: error.message });
@@ -88,6 +91,7 @@ export const createSocialSlice = (set, get) => ({
 
         try {
             await socialService.removeFriend(friendId);
+            void get().refreshStoriesAfterFriendRemoval(friendId);
         } catch (error) {
             set({ socialError: error.message });
             get().fetchFriends();
@@ -259,11 +263,8 @@ export const createSocialSlice = (set, get) => ({
 
     subscribeToSocialEvents: () => {
         const socket = getSocket();
-        if (!socket) return;
-
-        socket.off('new_friend_request');
-        socket.off('friend_request_accepted');
-        socket.off('friend_removed');
+        if (!socket || socialEventsSocket === socket) return;
+        socialEventsSocket = socket;
 
         socket.on('new_friend_request', () => {
             get().fetchFriendRequests();

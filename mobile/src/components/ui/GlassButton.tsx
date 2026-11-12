@@ -12,9 +12,10 @@ interface GlassButtonProps {
     colors?: any;
     noShadow?: boolean;
     disabled?: boolean;
+    accessibilityLabel?: string;
 }
 
-export function GlassButton({ onPress, children, theme, style, color, noShadow, disabled }: GlassButtonProps) {
+export function GlassButton({ onPress, children, theme, style, color, noShadow, disabled, accessibilityLabel }: GlassButtonProps) {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     
     const isLight = ['light', 'ocean', 'desert'].includes(theme);
@@ -117,6 +118,8 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
 
     return (
         <Pressable 
+            accessibilityRole="button"
+            accessibilityLabel={accessibilityLabel}
             onPress={onPress}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}

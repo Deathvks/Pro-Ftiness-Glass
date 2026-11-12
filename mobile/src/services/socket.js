@@ -8,14 +8,14 @@ import { BACKEND_BASE_URL } from './apiClient';
 const SOCKET_URL = BACKEND_BASE_URL || 'http://localhost:3001';
 
 let socket;
+let socketToken;
 let isListenerRegistered = false;
 
 export const initSocket = () => {
-    // Evitar crear múltiples conexiones si ya existe una instancia
-    if (socket) return socket;
-
     // Obtener el token actual del store para autenticación
     const token = useAppStore.getState().token;
+    if (socket && socketToken === token) return socket;
+    if (socket) disconnectSocket();
 
     if (!token) {
         console.warn("Intentando conectar socket sin token.");
@@ -33,6 +33,7 @@ export const initSocket = () => {
         reconnectionDelay: 1000,
         autoConnect: true
     });
+    socketToken = token;
 
     socket.on('connect', function() {
         if (__DEV__) console.log('🟢 Conectado al servidor de Sockets:', this.id);
@@ -78,5 +79,6 @@ export const disconnectSocket = () => {
     if (socket) {
         socket.disconnect();
         socket = null;
+        socketToken = null;
     }
 };

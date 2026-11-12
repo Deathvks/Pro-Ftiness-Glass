@@ -1,15 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, usePathname, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme, Appearance, AppState } from 'react-native';
-import { useEffect, useRef, useState } from 'react';
-import { Stack, useRouter, useSegments, usePathname } from 'expo-router';
+import { Appearance, AppState } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { initLocalStorage } from '@/utils/localStoragePolyfill';
 import { installHapticsInterceptor } from '@/utils/haptics';
 import { loadCardioSession, syncPendingCardio } from '@/utils/cardio';
-import useAppStore, { resolveTheme, applyNativeColorScheme } from '@/store/useAppStore';
+import useAppStore, { applyNativeColorScheme } from '@/store/useAppStore';
 import type { QueuedRequest } from '@/store/syncSlice';
 import ThemeBackground from '@/components/ThemeBackground';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -18,11 +17,11 @@ import { ToastContainer } from '@/components/ui/ToastContainer';
 import { DynamicIslandTimer } from '@/components/workout/DynamicIslandTimer';
 import { RestTimerModal } from '@/components/workout/RestTimerModal';
 import { OfflineDownloadFloatingBar } from '@/components/OfflineDownloadFloatingBar';
+import { StoryHost } from '@/components/social/StoryHost';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [isReady, setIsReady] = useState(false);
   const [hasRestoredPath, setHasRestoredPath] = useState(false);
   const hasCheckedCardio = useRef(false);
@@ -43,19 +42,7 @@ export default function RootLayout() {
       useAppStore.getState().hydrateSyncQueue();
       
       const token = localStorage.getItem('pro_fitness_token');
-      const savedTheme = localStorage.getItem('theme');
-      const savedAccent = localStorage.getItem('accent');
-      const savedHaptics = localStorage.getItem('hapticsEnabled');
-      
-      if (token || savedTheme || savedAccent || savedHaptics !== null) {
-        useAppStore.setState({ 
-          isAuthenticated: !!token, 
-          token: token || null,
-          ...(savedTheme ? { themePreference: savedTheme, theme: resolveTheme(savedTheme) } : {}),
-          ...(savedAccent ? { accent: savedAccent } : {}),
-          ...(savedHaptics !== null ? { hapticsEnabled: JSON.parse(savedHaptics) } : {})
-        });
-      }
+      if (token) useAppStore.setState({ isAuthenticated: true, token });
 
       useAppStore.getState().loadRoutineEditorState();
 
@@ -94,12 +81,13 @@ export default function RootLayout() {
     const inForgot = segments[0] === 'forgot-password';
     const inOnboarding = segments[0] === 'onboarding';
     const inLegal = ['privacy', 'terms', 'legal-notice', 'cookies'].includes(segments[0]);
+    const inNews = segments[0] === 'noticias';
 
     const needsOnboarding = isAuthenticated && userProfile && !userProfile.goal && userProfile.role !== 'trainee';
 
-    if (!isAuthenticated && !inLogin && !inRegister && !inForgot && !inLegal) {
+    if (!isAuthenticated && !inLogin && !inRegister && !inForgot && !inLegal && !inNews) {
       router.replace('/login');
-    } else if (needsOnboarding && !inOnboarding) {
+    } else if (needsOnboarding && !inOnboarding && !inNews) {
       // Bloquear acceso hasta que complete el onboarding
       router.replace('/onboarding');
     } else if (isAuthenticated && (inLogin || inRegister || inForgot)) {
@@ -112,7 +100,7 @@ export default function RootLayout() {
       setHasRestoredPath(true);
       // Only restore if we're currently at the root/index - don't redirect if already navigated
       const atRoot = segments.length <= 1 || (segments[0] === '(tabs)' && (!segments[1] || (segments[1] as string) === 'index'));
-      if (atRoot && !needsOnboarding) {
+      if (atRoot && !needsOnboarding && !inNews) {
         const lastPath = typeof localStorage !== 'undefined' ? localStorage.getItem('last_path') : null;
         if (lastPath && lastPath !== '/' && lastPath !== '/index' && !lastPath.includes('login') && !lastPath.includes('register') && !lastPath.includes('onboarding')) {
           setTimeout(() => {
@@ -164,13 +152,22 @@ export default function RootLayout() {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme);
   const themePreference = useAppStore(state => state.themePreference);
+  const previewTheme = useAppStore(state => state.themeTest?.name);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
   useEffect(() => {
-    applyNativeColorScheme(themePreference, theme);
-  }, [themePreference, theme]);
+    if (!isReady) return;
+    const frame = requestAnimationFrame(() => {
+      applyNativeColorScheme(previewTheme ?? themePreference, theme);
+      if (!previewTheme && themePreference === 'system') useAppStore.getState().syncSystemTheme();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isReady, themePreference, previewTheme, theme]);
 
-  const NavigationTheme = isDark ? { ...DarkTheme, colors: { ...DarkTheme.colors, primary: colors.tint, background: 'transparent' } } : { ...DefaultTheme, colors: { ...DefaultTheme.colors, primary: colors.tint, background: 'transparent' } };
+  const navigationTheme = useMemo(() => {
+    const base = isDark ? DarkTheme : DefaultTheme;
+    return { ...base, colors: { ...base.colors, primary: colors.tint, background: 'transparent' } };
+  }, [isDark, colors.tint]);
 
   if (!isReady) {
     return null;
@@ -178,9 +175,9 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background }}>
-      <ThemeProvider value={NavigationTheme}>
+      <ThemeProvider value={navigationTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        <ThemeBackground root />
+        {pathname !== '/appearance' && <ThemeBackground root />}
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="routine-editor" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
@@ -194,6 +191,9 @@ export default function RootLayout() {
           <Stack.Screen name="cookies" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="profile" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="settings" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="admin" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="trainerPanel" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="noticias" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="asesoria" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="appearance" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="challenges" options={{ headerShown: false, animation: 'slide_from_right' }} />
@@ -210,6 +210,7 @@ export default function RootLayout() {
         <DynamicIslandTimer />
         <RestTimerModal />
         <OfflineDownloadFloatingBar />
+        <StoryHost />
         <ToastContainer />
       </ThemeProvider>
     </GestureHandlerRootView>

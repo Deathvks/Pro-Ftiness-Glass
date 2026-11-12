@@ -59,6 +59,7 @@ import { getContrastColor, getContrastTextColor } from '@/utils/colorUtils';
 import { isSameDay } from '@/utils/helpers';
 import { getTrainingWeek, trainingDateFormatter } from '@/utils/weeklyTraining';
 import { enrichGymWithMedia } from '@/utils/gymMedia';
+import { Image as ExpoImage } from 'expo-image';
 import * as nutritionService from '@/services/nutritionService';
 import * as userService from '@/services/userService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -160,7 +161,7 @@ export default function Dashboard() {
   const iconBadgeBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
   const isIOS = Platform.OS === 'ios';
   const hasThemedSurface = isAtmosphericTheme(theme);
-  const useGlass = shouldUseContentGlass();
+  const useGlass = shouldUseContentGlass(theme);
   const cardSurface = (isIOS || hasThemedSurface) && getAppleCardSurfaceStyle(theme, 32);
 
   // Store
@@ -578,7 +579,13 @@ export default function Dashboard() {
               ]}
               activeOpacity={0.75}
             >
-              <MapPin size={12} color={colors.tint} />
+              <DashboardGymMark
+                key={JSON.stringify([currentGym?.logo, currentGym?.image])}
+                logo={currentGym?.logo}
+                photo={currentGym?.image}
+                tint={colors.tint}
+                border={colors.border}
+              />
               <Text
                 style={[
                   styles.gymPillText,
@@ -1202,7 +1209,7 @@ export default function Dashboard() {
             return (
               <TouchableOpacity
                 key={routine.id}
-                onPress={async () => {
+                onPress={() => {
                   if (isActive) {
                     router.push('/workout');
                     return;
@@ -1219,9 +1226,9 @@ export default function Dashboard() {
                         {
                           text: 'Descartar e iniciar nueva',
                           style: 'destructive',
-                          onPress: async () => {
+                          onPress: () => {
                             if (stopWorkout) stopWorkout();
-                            if (startWorkout) await startWorkout(routine);
+                            if (startWorkout) startWorkout(routine);
                             router.push('/workout');
                           },
                         },
@@ -1235,7 +1242,7 @@ export default function Dashboard() {
                     return;
                   }
                   if (startWorkout) {
-                    await startWorkout(routine);
+                    startWorkout(routine);
                     router.push('/workout');
                   }
                 }}
@@ -1563,6 +1570,20 @@ export default function Dashboard() {
   );
 }
 
+function DashboardGymMark({ logo, photo, tint, border }: {
+  logo?: string; photo?: string; tint: string; border: string;
+}) {
+  const [failed, setFailed] = useState<string[]>([]);
+  const source = [logo, photo].find(uri => uri && !failed.includes(uri));
+  if (!source) return <MapPin size={14} color={tint} />;
+  return (
+    <View style={[styles.gymMark, { borderColor: border }]}>
+      <ExpoImage source={{ uri: source }} recyclingKey={source} contentFit="cover"
+        style={StyleSheet.absoluteFill} onError={() => setFailed(previous => [...previous, source])} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   topHeader: {
     marginBottom: 20,
@@ -1594,6 +1615,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     maxWidth: 160,
+  },
+  gymMark: {
+    width: 17, height: 17, borderRadius: 8.5, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden',
   },
   glassCardBase: {
     backgroundColor: 'transparent',

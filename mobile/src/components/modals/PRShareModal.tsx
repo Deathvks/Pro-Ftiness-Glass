@@ -9,6 +9,7 @@ import { Trophy, TrendingUp, Calendar, X, Share2, Sparkles, ChevronRight, User }
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
+import { UserRoleAvatarRing } from '@/components/social/SocialUserAvatar';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import useAppStore from '@/store/useAppStore';
@@ -121,13 +122,13 @@ export const PRShareModal: React.FC<PRShareModalProps> = ({
                 {/* CABECERA: Atleta + Fecha */}
                 <View style={styles.cardHeader}>
                   <View style={styles.athleteInfo}>
-                    <View style={styles.avatarWrapper}>
+                    <UserRoleAvatarRing user={userProfile} size={42} gapColor="#1f1f23" showStoryIndicator={false}>
                       {avatarUrl ? (
                         <Image source={{ uri: avatarUrl }} style={styles.avatar} />
                       ) : (
                         <User size={20} color="#eab308" />
                       )}
-                    </View>
+                    </UserRoleAvatarRing>
                     <View>
                       <Text style={styles.username} numberOfLines={1}>{username}</Text>
                       <View style={styles.badgeRow}>
@@ -293,17 +294,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     flex: 1,
-  },
-  avatarWrapper: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#1f1f23',
-    borderWidth: 2,
-    borderColor: '#eab308',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
   },
   avatar: {
     width: '100%',

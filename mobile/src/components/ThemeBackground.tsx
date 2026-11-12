@@ -1,12 +1,35 @@
 import React from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
-import { Image } from 'expo-image';
+import { Image, type ImageRef } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused } from 'expo-router';
 import useAppStore from '@/store/useAppStore';
 import GalaxyStarBackground from '@/components/ui/GalaxyStarBackground';
+import { getThemeBaseBackground } from '@/constants/theme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('screen');
+const OCEAN: number = require('../../assets/images/ocean.jpg');
+const DESERT: number = require('../../assets/images/desert.jpg');
+const warmImages = new Map<number, ImageRef>();
+const loadingImages = new Set<number>();
+const photoForTheme = (theme: string) => theme.startsWith('ocean') ? OCEAN : theme.startsWith('desert') ? DESERT : undefined;
+
+export function preloadThemeBackgrounds(currentTheme: string) {
+  const current = photoForTheme(currentTheme);
+  for (const source of [OCEAN, DESERT]) {
+    if (source === current || warmImages.has(source) || loadingImages.has(source)) continue;
+    loadingImages.add(source);
+    void Image.loadAsync(source).then(image => warmImages.set(source, image)).catch(() => {})
+      .finally(() => loadingImages.delete(source));
+  }
+}
+
+const PHOTO_TINTS: Record<string, string> = {
+  ocean: 'rgba(240, 249, 255, 0.35)',
+  'ocean-dark': 'rgba(8, 47, 73, 0.50)',
+  desert: 'rgba(253, 248, 245, 0.45)',
+  'desert-dark': 'rgba(44, 30, 22, 0.50)',
+};
 
 function FocusedGalaxyStars() {
   return useIsFocused() ? <GalaxyStarBackground /> : null;
@@ -48,84 +71,22 @@ export default function ThemeBackground({ root = false }: { root?: boolean }) {
     );
   }
 
-  if (theme.startsWith('ocean')) {
-    const isDark = theme === 'ocean-dark';
+  const photo = photoForTheme(theme);
+  if (photo !== undefined) {
     return (
       <View
-        style={[
-          StyleSheet.absoluteFill,
-          {
-            backgroundColor: isDark ? '#082f49' : '#f0f9ff',
-            width: '100%',
-            height: '100%',
-            minHeight: SCREEN_HEIGHT,
-          },
-        ]}
+        style={[StyleSheet.absoluteFill, { minHeight: SCREEN_HEIGHT, backgroundColor: getThemeBaseBackground(theme) }]}
         pointerEvents="none"
       >
-        <Image 
-          source={require('../../assets/images/ocean.jpg')} 
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            width: '100%',
-            height: '100%',
-            minHeight: SCREEN_HEIGHT,
-          }}
+        <Image
+          source={warmImages.get(photo) ?? photo}
+          style={StyleSheet.absoluteFill}
           contentFit="cover"
           contentPosition="center"
           priority="high"
           cachePolicy="memory-disk"
         />
-        {isDark ? (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(8, 47, 73, 0.50)' }]} />
-        ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(240, 249, 255, 0.35)' }]} />
-        )}
-      </View>
-    );
-  }
-
-  if (theme.startsWith('desert')) {
-    const isDark = theme === 'desert-dark';
-    return (
-      <View
-        style={[
-          StyleSheet.absoluteFill,
-          {
-            backgroundColor: isDark ? '#2c1e16' : '#fdf8f5',
-            width: '100%',
-            height: '100%',
-            minHeight: SCREEN_HEIGHT,
-          },
-        ]}
-        pointerEvents="none"
-      >
-        <Image 
-          source={require('../../assets/images/desert.jpg')} 
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            width: '100%',
-            height: '100%',
-            minHeight: SCREEN_HEIGHT,
-          }}
-          contentFit="cover"
-          contentPosition="center"
-          priority="high"
-          cachePolicy="memory-disk"
-        />
-        {isDark ? (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(44, 30, 22, 0.50)' }]} />
-        ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(253, 248, 245, 0.45)' }]} />
-        )}
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: PHOTO_TINTS[theme] }]} />
       </View>
     );
   }

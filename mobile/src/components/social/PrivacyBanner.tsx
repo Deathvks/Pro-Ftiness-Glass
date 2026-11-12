@@ -4,7 +4,7 @@ import { Globe, Lock, Check, X, Settings } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass, getUnselectedControlColors } from '@/constants/theme';
 
 interface PrivacyBannerProps {
   privacy: 'public' | 'private';
@@ -29,7 +29,7 @@ export function PrivacyBanner({ privacy, onNavigate }: PrivacyBannerProps) {
         },
       ]}
     >
-      {shouldUseContentGlass() && (
+      {shouldUseContentGlass(theme) && (
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
@@ -43,7 +43,7 @@ export function PrivacyBanner({ privacy, onNavigate }: PrivacyBannerProps) {
           style={[
             styles.iconBadge,
             {
-              backgroundColor: isPublic ? colors.tint : (isDark ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.1)') : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.08)')),
+              backgroundColor: isPublic ? colors.tint : getUnselectedControlColors(theme).backgroundColor,
             },
           ]}
         >
@@ -96,7 +96,7 @@ export function PrivacyBanner({ privacy, onNavigate }: PrivacyBannerProps) {
             style={[
               styles.button,
               {
-                backgroundColor: isDark ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.08)') : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.06)'),
+                backgroundColor: getUnselectedControlColors(theme).backgroundColor,
                 borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
                 borderWidth: isIOS ? 0 : 1,
               },

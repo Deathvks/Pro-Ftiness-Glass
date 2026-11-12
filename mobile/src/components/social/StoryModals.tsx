@@ -1,603 +1,353 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  Pressable,
-  Image,
-  ActivityIndicator,
-  Dimensions,
-  Animated,
-  Alert,
+  ActivityIndicator, Animated, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions,
 } from 'react-native';
 import {
-  ShieldAlert,
-  Clock,
-  Shield,
-  Lock,
-  X,
-  Camera,
-  Image as ImageIcon,
-  Heart,
-  Trash2,
-  Globe,
-  Users,
-  Sparkles,
-  Zap,
+  Camera, Check, Clock, Globe, Heart, Image as ImageIcon, Shield, ShieldAlert, Sparkles, Trash2, Users, X, Zap,
 } from 'lucide-react-native';
-import { WebView } from 'react-native-webview';
-import { GlassView } from 'expo-glass-effect';
+import type { LucideIcon } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
+import { useEvent } from 'expo';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LiquidGlassSwitch } from '@/components/ui/LiquidGlassSwitch';
+import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
+import { getThemeBaseBackground, getThemeSurfaceMode, getUnselectedControlColors } from '@/constants/theme';
 import useAppStore from '@/store/useAppStore';
+import { selectUserStories } from '@/store/storySlice';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastTextColor } from '@/utils/routineHelpers';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 import { SocialUserAvatar } from './SocialUserAvatar';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+export type StoryComposerStep = 'terms' | 'upload';
+type StoryPrivacy = 'friends' | 'public';
+export type StoryUploadFile = File | { uri: string; name: string; type: string };
+const MAX_VIDEO_SECONDS = 15;
+const MAX_STORY_BYTES = 50 * 1024 * 1024;
+const STORY_ASPECT_RATIO = 9 / 16;
+const PHOTO_PREVIEW_MAX_HEIGHT = 300;
 
-// ==========================================
-// 1. STORY TERMS MODAL
-// ==========================================
-export function StoryTermsModal({
-  visible,
-  onAccept,
-  onReject,
-}: {
+const STORY_RULES = [
+  { icon: Clock, label: 'Duración de 24 horas', text: 'Las historias se eliminan automáticamente al cabo de 24 horas.' },
+  { icon: Shield, label: 'Privacidad', text: 'Tú eliges si tu historia la ven tus amigos o todos los usuarios.' },
+  { icon: Sparkles, label: 'Moderación con IA', text: 'Las fotos se revisan automáticamente para bloquear contenido inapropiado.' },
+];
+
+const AUDIENCES = [
+  { value: 'friends', icon: Users, label: 'Solo amigos' },
+  { value: 'public', icon: Globe, label: 'Todo el mundo' },
+] as const;
+
+export function StoryComposerModal({ visible, step, session, busy, onClose, onAccept, onUpload }: {
   visible: boolean;
+  step: StoryComposerStep;
+  session: number;
+  busy: boolean;
+  onClose: () => void;
   onAccept: () => void;
-  onReject: () => void;
+  onUpload: (file: StoryUploadFile, privacy: StoryPrivacy, hdr: boolean) => Promise<string | undefined>;
 }) {
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
-  const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const accentTextColor = getContrastTextColor(colors.tint);
+  const isDark = getThemeSurfaceMode(theme) !== 'light';
+  const background = getThemeBaseBackground(theme);
+  const unselected = getUnselectedControlColors(theme);
+  const terms = step === 'terms';
+  const Icon = terms ? ShieldAlert : Camera;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onReject}>
-      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-        <Pressable
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: 20,
-              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.2)',
-            },
-          ]}
-          onPress={onReject}
-        >
-          <Pressable onPress={(e) => e.stopPropagation()} style={styles.termsCardWrapper}>
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-            />
-            <View style={[styles.termsCard, { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: 'transparent' }]}>
-              <View style={[styles.shieldIconBox, { backgroundColor: colors.tint + '15', borderColor: colors.tint + '30' }]}>
-                <ShieldAlert size={34} color={colors.tint} />
-              </View>
-
-              <Text style={[styles.termsTitle, { color: colors.text }]}>Historias Efímeras</Text>
-              <Text style={[styles.termsSubtitle, { color: colors.textSecondary }]}>
-                Antes de subir tu primera historia, debes conocer cómo funciona este espacio en nuestra comunidad.
-              </Text>
-
-              <View style={styles.termsList}>
-                <View style={[styles.termsItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
-                  <Clock size={20} color="#3b82f6" style={{ marginTop: 2 }} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.itemTitle, { color: colors.text }]}>Duración Limitada</Text>
-                    <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>
-                      Todo el contenido se elimina automáticamente de los servidores tras <Text style={{ fontWeight: '700', color: colors.text }}>24 horas</Text>.
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={[styles.termsItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
-                  <Shield size={20} color={colors.tint} style={{ marginTop: 2 }} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.itemTitle, { color: colors.text }]}>Privacidad</Text>
-                    <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>
-                      Puedes elegir si compartir tu historia con <Text style={{ fontWeight: '700', color: colors.text }}>todos los usuarios</Text> o solo con <Text style={{ fontWeight: '700', color: colors.text }}>tus amigos</Text>.
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={[styles.termsItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
-                  <Sparkles size={20} color="#a855f7" style={{ marginTop: 2 }} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.itemTitle, { color: colors.text }]}>Revisión y Moderación con IA</Text>
-                    <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>
-                      Cada imagen o vídeo es analizado automáticamente por nuestra <Text style={{ fontWeight: '700', color: colors.text }}>Inteligencia Artificial</Text> para proteger a la comunidad y bloquear contenido inapropiado o explícito (NSFW).
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                onPress={onAccept}
-                activeOpacity={0.8}
-                style={[
-                  styles.primaryButton,
-                  {
-                    borderColor: colors.tint,
-                    borderWidth: 1,
-                    overflow: 'hidden',
-                    backgroundColor: 'transparent',
-                  },
-                ]}
-              >
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                />
-                <View
-                  style={[
-                    StyleSheet.absoluteFill,
-                    {
-                      backgroundColor: colors.tint,
-                      opacity: isDark ? 0.35 : 0.25,
-                      borderRadius: 20,
-                    },
-                  ]}
-                />
-                <Text style={[styles.primaryButtonText, { color: colors.tint, fontWeight: '800' }]}>
-                  Aceptar y Continuar
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={onReject}
-                activeOpacity={0.7}
-                style={[
-                  styles.secondaryButton,
-                  {
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                    borderWidth: 1,
-                    borderRadius: 20,
-                    overflow: 'hidden',
-                    backgroundColor: 'transparent',
-                  },
-                ]}
-              >
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                />
-                <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>
-                  Cancelar
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
+    <SwipeableBottomSheet
+      visible={visible}
+      onClose={onClose}
+      isDark={isDark}
+      backgroundColor={background}
+      sheetStyle={{ backgroundColor: background }}
+      maxHeight="94%"
+      scrollable
+      dismissible={!busy}
+    >
+      <View style={styles.sheetHeader}>
+        <View style={[styles.headerIcon, { backgroundColor: colors.tint + '18' }]}><Icon size={23} color={colors.tint} /></View>
+        <Text accessibilityRole="header" style={[styles.sheetTitle, { color: colors.text }]}>{terms ? 'Historias' : 'Compartir historia'}</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" disabled={busy} onPress={onClose}
+          style={({ pressed }) => [styles.iconButton, { backgroundColor: unselected.backgroundColor, opacity: busy || pressed ? 0.55 : 1 }]}>
+          <X size={19} color={colors.textSecondary} />
         </Pressable>
-      </GlassView>
-    </Modal>
+      </View>
+      <ScrollView key={step + ':' + session} contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {terms ? (
+          <>
+            <Text style={[styles.bodyText, { color: colors.textSecondary }]}>Antes de publicar tu primera historia, revisa cómo funciona.</Text>
+            <View style={styles.group}>
+              {STORY_RULES.map(({ icon, label, text }) => (
+                <StoryRow key={label} icon={icon} label={label} description={text} />
+              ))}
+            </View>
+            <StorySubmit label="Aceptar y continuar" onPress={onAccept} />
+          </>
+        ) : <StoryUploadForm busy={busy} isDark={isDark} onUpload={onUpload} />}
+      </ScrollView>
+    </SwipeableBottomSheet>
   );
 }
 
-// ==========================================
-// 2. UPLOAD STORY MODAL
-// ==========================================
-export function UploadStoryModal({
-  visible,
-  onClose,
-  onUpload,
-  isUploading,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  onUpload: (fileData: any, privacy: string, isHDR: boolean) => Promise<void>;
-  isUploading: boolean;
+function StoryRow({ icon: Icon, label, description, disabled, selected, onPress, children }: {
+  icon: LucideIcon;
+  label: string;
+  description?: string;
+  disabled?: boolean;
+  selected?: boolean;
+  onPress?: () => void;
+  children?: React.ReactNode;
 }) {
-  const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
-  const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const [selectedAsset, setSelectedAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
-  const [privacy, setPrivacy] = useState<'friends' | 'public'>('friends');
-  const [isHDR, setIsHDR] = useState(false);
+  const theme = useAppStore(state => state.theme);
+  const style = [
+    styles.row,
+    getUnselectedControlColors(theme),
+    selected && { borderWidth: 1, borderColor: colors.tint, backgroundColor: colors.tint + '18' },
+  ];
+  const content = <>
+    <View style={[styles.rowIcon, { backgroundColor: colors.tint + '18' }]}><Icon size={19} color={colors.tint} /></View>
+    <View style={styles.rowCopy}>
+      <Text style={[styles.rowTitle, { color: selected === false ? colors.textSecondary : colors.text }]}>{label}</Text>
+      {!!description && <Text style={[styles.bodyText, { color: colors.textSecondary }]}>{description}</Text>}
+    </View>
+    {selected && <Check size={18} color={colors.tint} />}
+    {children}
+  </>;
+  if (!onPress) return <View style={style}>{content}</View>;
+  return (
+    <Pressable accessibilityRole={selected === undefined ? 'button' : 'radio'}
+      accessibilityState={selected === undefined ? { disabled } : { checked: selected, disabled }}
+      disabled={disabled} onPress={onPress} style={({ pressed }) => [style, pressed && { opacity: 0.72 }]}>
+      {content}
+    </Pressable>
+  );
+}
+
+function StorySubmit({ label, disabled, busy, onPress }: {
+  label: string; disabled?: boolean; busy?: boolean; onPress: () => void;
+}) {
+  const { tint } = useAppColors();
+  const ink = getContrastTextColor(tint);
+  return (
+    <Pressable accessibilityRole="button" accessibilityState={{ disabled, busy }} disabled={disabled}
+      onPress={onPress} style={({ pressed }) => [styles.submit, { backgroundColor: tint, opacity: disabled && !busy ? 0.42 : pressed ? 0.76 : 1 }]}>
+      {busy && <ActivityIndicator size="small" color={ink} />}
+      <Text style={[styles.submitText, { color: ink }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function StoryUploadForm({ busy, isDark, onUpload }: {
+  busy: boolean; isDark: boolean;
+  onUpload: (file: StoryUploadFile, privacy: StoryPrivacy, hdr: boolean) => Promise<string | undefined>;
+}) {
+  const colors = useAppColors();
+  const [asset, setAsset] = useState<ImagePicker.ImagePickerAsset>();
+  const [privacy, setPrivacy] = useState<StoryPrivacy>('friends');
+  const [hdr, setHDR] = useState(false);
   const [canUseHDR, setCanUseHDR] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const [photoSize, setPhotoSize] = useState<{ width: number; height: number }>();
+  const [error, setError] = useState<string>();
+  const pending = useRef(false);
+  const isVideo = asset?.type === 'video' || asset?.mimeType?.startsWith('video/');
+  const canPublish = Boolean(asset && (!isVideo || videoReady));
+  const photoAspect = photoSize && photoSize.width > 0 && photoSize.height > 0
+    ? photoSize.width / photoSize.height
+    : 1;
+
+  const handleVideoMetadata = useCallback((metadata: { duration: number; hdr: boolean } | null) => {
+    if (!metadata || !Number.isFinite(metadata.duration) || metadata.duration <= 0 || metadata.duration > MAX_VIDEO_SECONDS) {
+      setVideoReady(false);
+      setCanUseHDR(false);
+      setHDR(false);
+      setError(metadata && metadata.duration > MAX_VIDEO_SECONDS
+        ? 'El vídeo no puede durar más de 15 segundos.'
+        : 'No se pudo leer este vídeo. Prueba con otro archivo.');
+      return;
+    }
+    setCanUseHDR(metadata.hdr);
+    setHDR(metadata.hdr);
+    setVideoReady(true);
+  }, []);
+
+  async function pickMedia(camera: boolean) {
+    if (pending.current || busy) return;
+    pending.current = true;
+    setError(undefined);
+    try {
+      if (camera && Platform.OS !== 'web' && !(await ImagePicker.requestCameraPermissionsAsync()).granted) {
+        setError('Permite el acceso a la cámara en los ajustes del dispositivo.');
+        return;
+      }
+      const options: ImagePicker.ImagePickerOptions = {
+        mediaTypes: ['images', 'videos'], allowsEditing: false, quality: 0.85, videoMaxDuration: MAX_VIDEO_SECONDS,
+      };
+      const result = await (camera ? ImagePicker.launchCameraAsync(options) : ImagePicker.launchImageLibraryAsync(options));
+      if (result.canceled) return;
+      const selected = result.assets[0];
+      if (!selected) return;
+      if ((selected.fileSize ?? selected.file?.size ?? 0) > MAX_STORY_BYTES) {
+        setError('El archivo no puede superar los 50 MB.');
+        return;
+      }
+      if ((selected.duration ?? 0) > MAX_VIDEO_SECONDS * 1000) {
+        setError('El vídeo no puede durar más de 15 segundos.');
+        return;
+      }
+      const video = selected.type === 'video' || selected.mimeType?.startsWith('video/');
+      const potentialHDR = !video && (/^image\/(heic|heif|avif)$/i.test(selected.mimeType ?? '')
+        || /\.(heic|heif|avif)(?:[?#]|$)/i.test(selected.fileName || selected.uri));
+      setVideoReady(false);
+      setCanUseHDR(potentialHDR);
+      setHDR(potentialHDR);
+      setPhotoSize({ width: selected.width, height: selected.height });
+      setAsset(selected);
+    } catch {
+      setError('No se pudo abrir el selector de fotos y vídeos.');
+    } finally {
+      pending.current = false;
+    }
+  }
+
+  async function submit() {
+    if (!asset || !canPublish || busy || pending.current) return;
+    pending.current = true;
+    setError(undefined);
+    try {
+      setError(await onUpload(asset.file ?? {
+        uri: asset.uri,
+        name: asset.fileName || (isVideo ? 'story.mp4' : 'story.jpg'),
+        type: asset.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg'),
+      }, privacy, canUseHDR && hdr));
+    } finally {
+      pending.current = false;
+    }
+  }
+
+  return (
+    <>
+      {asset ? (
+        <View style={[
+          styles.preview,
+          isVideo
+            ? styles.videoPreview
+            : { aspectRatio: photoAspect, width: Math.min(360, PHOTO_PREVIEW_MAX_HEIGHT * photoAspect) },
+        ]}>
+          {isVideo
+            ? <StoryVideoPreview key={asset.uri} uri={asset.uri} onMetadata={handleVideoMetadata} />
+            : <Image key={asset.uri} accessibilityLabel="Vista previa de la historia" source={{ uri: asset.uri }}
+                style={StyleSheet.absoluteFill} resizeMode="contain"
+                onLoad={({ nativeEvent }) => {
+                  const { width, height } = nativeEvent.source;
+                  if (width > 0 && height > 0 && (width !== photoSize?.width || height !== photoSize?.height)) {
+                    setPhotoSize({ width, height });
+                  }
+                }} />}
+          <Pressable accessibilityRole="button" accessibilityLabel="Quitar archivo" disabled={busy} onPress={() => {
+            setAsset(undefined);
+            setHDR(false);
+            setCanUseHDR(false);
+            setVideoReady(false);
+            setError(undefined);
+          }} style={[styles.iconButton, styles.removeMedia, busy && { opacity: 0.5 }]}>
+            <X size={18} color="#fff" />
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.group}>
+          <StoryRow icon={ImageIcon} label="Galería" description="Elige una foto o un vídeo" onPress={() => void pickMedia(false)} />
+          <StoryRow icon={Camera} label="Cámara" description="Haz una foto o graba un vídeo" onPress={() => void pickMedia(true)} />
+        </View>
+      )}
+      <View style={styles.group}>
+        <Text accessibilityRole="header" style={[styles.rowTitle, { color: colors.text }]}>¿Quién puede verla?</Text>
+        {AUDIENCES.map(({ value, icon, label }) => (
+          <StoryRow key={value} icon={icon} label={label} selected={privacy === value}
+            disabled={busy} onPress={() => setPrivacy(value)} />
+        ))}
+      </View>
+      {canUseHDR && <StoryRow icon={Zap} label="HDR">
+        <LiquidGlassSwitch accessibilityLabel="HDR" value={hdr} onValueChange={setHDR} disabled={busy} tintColor={colors.tint} isDark={isDark} />
+      </StoryRow>}
+      <Text style={[styles.bodyText, { color: colors.textSecondary }]}>Las fotos se revisan automáticamente antes de publicarse. Los vídeos pueden durar hasta 15 segundos.</Text>
+      {!!error && <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.bodyText, { color: isDark ? '#fca5a5' : '#b91c1c' }]}>{error}</Text>}
+      {asset && isVideo && !videoReady && !error && (
+        <Text accessibilityLiveRegion="polite" style={[styles.bodyText, { color: colors.textSecondary }]}>Preparando vídeo…</Text>
+      )}
+      <StorySubmit label={busy ? 'Publicando…' : 'Publicar historia'} disabled={!canPublish || busy} busy={busy} onPress={() => void submit()} />
+    </>
+  );
+}
+
+function StoryVideoPreview({ uri, onMetadata }: {
+  uri: string; onMetadata: (metadata: { duration: number; hdr: boolean } | null) => void;
+}) {
+  const player = useVideoPlayer(uri, instance => {
+    instance.muted = true;
+    instance.loop = true;
+    instance.play();
+  });
+  const { status } = useEvent(player, 'statusChange', { status: player.status });
+  const source = useEvent(player, 'sourceLoad');
+  const reported = useRef(false);
 
   useEffect(() => {
-    if (!visible) {
-      setSelectedAsset(null);
-      setPrivacy('friends');
-      setIsHDR(false);
-      setCanUseHDR(false);
+    if (status === 'error') {
+      onMetadata(null);
+    } else if (!reported.current && (source || status === 'readyToPlay')) {
+      reported.current = true;
+      const tracks = source?.availableVideoTracks ?? player.availableVideoTracks ?? [];
+      onMetadata({
+        duration: source?.duration ?? player.duration,
+        hdr: tracks.some(track => track.videoRange === 'hlg' || track.videoRange === 'pq'),
+      });
     }
-  }, [visible]);
+  }, [onMetadata, player, source, status]);
 
-  const handlePickMedia = async (useCamera = false) => {
-    try {
-      const options: ImagePicker.ImagePickerOptions = {
-        mediaTypes: ['images', 'videos'],
-        allowsEditing: true,
-        aspect: [9, 16],
-        quality: 0.85,
-        videoMaxDuration: 15,
-      };
-
-      const result = useCamera
-        ? await ImagePicker.launchCameraAsync(options)
-        : await ImagePicker.launchImageLibraryAsync(options);
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0];
-        if (asset.duration && asset.duration > 15) {
-          Alert.alert('Vídeo muy largo', 'El vídeo no puede durar más de 15 segundos.');
-          return;
-        }
-        setSelectedAsset(asset);
-        setCanUseHDR(true);
-      }
-    } catch (err) {
-      console.error('Error selecting media:', err);
-    }
-  };
-
-  const handleConfirmUpload = async () => {
-    if (!selectedAsset) return;
-    const fileData = {
-      uri: selectedAsset.uri,
-      name: selectedAsset.fileName || (selectedAsset.type === 'video' ? 'story.mp4' : 'story.jpg'),
-      type: selectedAsset.mimeType || (selectedAsset.type === 'video' ? 'video/mp4' : 'image/jpeg'),
-    };
-    await onUpload(fileData, privacy, isHDR);
-  };
-
-  const accentTextColor = getContrastTextColor(colors.tint);
-
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-        <Pressable
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: 20,
-              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.2)',
-            },
-          ]}
-          onPress={onClose}
-        >
-          <Pressable onPress={(e) => e.stopPropagation()} style={styles.uploadCardWrapper}>
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-            />
-            <View style={[styles.uploadCard, { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: 'transparent' }]}>
-              {/* Header */}
-              <View style={styles.uploadHeader}>
-                <Text style={[styles.uploadTitle, { color: colors.text }]}>Compartir Historia</Text>
-                <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                  <X size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
-
-            {/* Media Preview or Picker Buttons */}
-            {selectedAsset ? (
-              <View style={styles.previewContainer}>
-                {selectedAsset.type === 'video' ? (
-                  <View style={[styles.previewImage, { backgroundColor: '#000000', alignItems: 'center', justifyContent: 'center' }]}>
-                    <View style={{ padding: 14, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center' }}>
-                      <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '700' }}>▶ Vídeo Seleccionado</Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, marginTop: 4 }}>Máximo 15 segundos</Text>
-                    </View>
-                  </View>
-                ) : (
-                  <Image
-                    source={{ uri: selectedAsset.uri }}
-                    style={styles.previewImage}
-                    resizeMode="cover"
-                  />
-                )}
-                <TouchableOpacity
-                  onPress={() => setSelectedAsset(null)}
-                  activeOpacity={0.8}
-                  style={styles.changeMediaBtn}
-                >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme="dark"
-                    style={[StyleSheet.absoluteFill, { borderRadius: 14 }]}
-                  />
-                  <X size={15} color="#ffffff" />
-                  <Text style={styles.changeMediaText}>Cambiar</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.pickOptionsContainer}>
-                <TouchableOpacity
-                  onPress={() => handlePickMedia(false)}
-                  activeOpacity={0.8}
-                  style={[
-                    styles.pickButton,
-                    {
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                      overflow: 'hidden',
-                      backgroundColor: 'transparent',
-                    },
-                  ]}
-                >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                  />
-                  <View style={[styles.pickIconBox, { backgroundColor: colors.tint + '18' }]}>
-                    <ImageIcon size={26} color={colors.tint} />
-                  </View>
-                  <Text style={[styles.pickButtonText, { color: colors.text }]}>Galería</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => handlePickMedia(true)}
-                  activeOpacity={0.8}
-                  style={[
-                    styles.pickButton,
-                    {
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                      overflow: 'hidden',
-                      backgroundColor: 'transparent',
-                    },
-                  ]}
-                >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                  />
-                  <View style={[styles.pickIconBox, { backgroundColor: colors.tint + '18' }]}>
-                    <Camera size={26} color={colors.tint} />
-                  </View>
-                  <Text style={[styles.pickButtonText, { color: colors.text }]}>Cámara</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* AI Moderation Information Banner */}
-            <View
-              style={[
-                styles.aiNoticeBox,
-                {
-                  backgroundColor: isDark ? 'rgba(168, 85, 247, 0.12)' : 'rgba(168, 85, 247, 0.08)',
-                  borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
-                },
-              ]}
-            >
-              <Sparkles size={16} color="#a855f7" style={{ marginTop: 2, marginRight: 8 }} />
-              <Text style={[styles.aiNoticeText, { color: colors.textSecondary }]}>
-                <Text style={{ fontWeight: '700', color: colors.text }}>Revisión con IA: </Text>
-                El archivo se analiza automáticamente para verificar que no incluya material inapropiado (NSFW).
-              </Text>
-            </View>
-
-            {/* Privacy Selector & HDR */}
-            <Text style={[styles.privacyLabel, { color: colors.textSecondary }]}>¿Quién puede verla?</Text>
-            <View style={styles.privacyRow}>
-              <TouchableOpacity
-                onPress={() => setPrivacy('friends')}
-                activeOpacity={0.8}
-                style={[
-                  styles.privacyPill,
-                  {
-                    borderColor: privacy === 'friends' ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
-                    overflow: 'hidden',
-                    backgroundColor: 'transparent',
-                  },
-                ]}
-              >
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                />
-                {privacy === 'friends' && (
-                  <View
-                    style={[
-                      StyleSheet.absoluteFill,
-                      {
-                        backgroundColor: colors.tint,
-                        opacity: isDark ? 0.35 : 0.25,
-                        borderRadius: 20,
-                      },
-                    ]}
-                  />
-                )}
-                <Users
-                  size={16}
-                  color={privacy === 'friends' ? colors.tint : colors.textSecondary}
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  style={[
-                    styles.privacyText,
-                    {
-                      color: privacy === 'friends' ? colors.tint : colors.textSecondary,
-                      fontWeight: privacy === 'friends' ? '800' : '500',
-                    },
-                  ]}
-                >
-                  Solo Amigos
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setPrivacy('public')}
-                activeOpacity={0.8}
-                style={[
-                  styles.privacyPill,
-                  {
-                    borderColor: privacy === 'public' ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
-                    overflow: 'hidden',
-                    backgroundColor: 'transparent',
-                  },
-                ]}
-              >
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                />
-                {privacy === 'public' && (
-                  <View
-                    style={[
-                      StyleSheet.absoluteFill,
-                      {
-                        backgroundColor: colors.tint,
-                        opacity: isDark ? 0.35 : 0.25,
-                        borderRadius: 20,
-                      },
-                    ]}
-                  />
-                )}
-                <Globe
-                  size={16}
-                  color={privacy === 'public' ? colors.tint : colors.textSecondary}
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  style={[
-                    styles.privacyText,
-                    {
-                      color: privacy === 'public' ? colors.tint : colors.textSecondary,
-                      fontWeight: privacy === 'public' ? '800' : '500',
-                    },
-                  ]}
-                >
-                  Todo el mundo
-                </Text>
-              </TouchableOpacity>
-
-              {canUseHDR && (
-                <TouchableOpacity
-                  onPress={() => setIsHDR(!isHDR)}
-                  activeOpacity={0.8}
-                  style={[
-                    styles.privacyPill,
-                    {
-                      borderColor: isHDR ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
-                      overflow: 'hidden',
-                      backgroundColor: 'transparent',
-                    },
-                  ]}
-                >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                  />
-                  {isHDR && (
-                    <View
-                      style={[
-                        StyleSheet.absoluteFill,
-                        {
-                          backgroundColor: colors.tint,
-                          opacity: isDark ? 0.35 : 0.25,
-                          borderRadius: 20,
-                        },
-                      ]}
-                    />
-                  )}
-                  <Zap
-                    size={16}
-                    color={isHDR ? colors.tint : colors.textSecondary}
-                    style={{ marginRight: 6 }}
-                  />
-                  <Text
-                    style={[
-                      styles.privacyText,
-                      {
-                        color: isHDR ? colors.tint : colors.textSecondary,
-                        fontWeight: isHDR ? '800' : '500',
-                      },
-                    ]}
-                  >
-                    HDR {isHDR ? 'ON' : 'OFF'}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Submit Button */}
-            <TouchableOpacity
-              onPress={handleConfirmUpload}
-              disabled={!selectedAsset || isUploading}
-              activeOpacity={0.85}
-              style={[
-                styles.primaryButton,
-                {
-                  borderColor: colors.tint,
-                  borderWidth: 1,
-                  overflow: 'hidden',
-                  backgroundColor: 'transparent',
-                  opacity: !selectedAsset || isUploading ? 0.45 : 1,
-                  marginTop: 18,
-                },
-              ]}
-            >
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-              />
-              <View
-                style={[
-                  StyleSheet.absoluteFill,
-                  {
-                    backgroundColor: colors.tint,
-                    opacity: isDark ? 0.35 : 0.25,
-                    borderRadius: 20,
-                  },
-                ]}
-              />
-              {isUploading ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                  <ActivityIndicator size="small" color={colors.tint} />
-                  <Text style={[styles.primaryButtonText, { color: colors.tint, fontWeight: '800' }]}>
-                    Revisando con IA y publicando...
-                  </Text>
-                </View>
-              ) : (
-                <Text style={[styles.primaryButtonText, { color: colors.tint, fontWeight: '800' }]}>
-                  Compartir Historia
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Pressable>
-    </GlassView>
-  </Modal>
-  );
+  return <VideoView player={player} style={StyleSheet.absoluteFill} surfaceType="textureView" contentFit="contain" nativeControls={false} />;
 }
 
-// ==========================================
-// 3. STORY VIEWER MODAL
-// ==========================================
+function StoryPlaybackVideo({ uri, onReady, onError }: { uri: string; onReady: () => void; onError: () => void }) {
+  const player = useVideoPlayer(uri, instance => {
+    instance.muted = true;
+    instance.loop = true;
+    instance.play();
+  });
+  const { status } = useEvent(player, 'statusChange', { status: player.status });
+  const reportedError = useRef(false);
+
+  useEffect(() => {
+    if (status === 'error' && !reportedError.current) {
+      reportedError.current = true;
+      onError();
+    }
+  }, [status, onError]);
+
+  return <VideoView player={player} style={StyleSheet.absoluteFill} surfaceType="textureView"
+    contentFit="contain" nativeControls={false} onFirstFrameRender={onReady} />;
+}
+
 export function StoryViewerModal({
-  visible,
   userId,
   onClose,
 }: {
-  visible: boolean;
-  userId: string | number | null;
+  userId: string | number;
   onClose: () => void;
 }) {
   const insets = useSafeAreaInsets();
+  const window = useWindowDimensions();
+  const [viewerSize, setViewerSize] = useState<{ width: number; height: number }>();
+  const frameWidth = Math.min(viewerSize?.width ?? window.width, (viewerSize?.height ?? window.height) * STORY_ASPECT_RATIO);
   const userProfile = useAppStore(state => state.userProfile);
-  const stories = useAppStore(state => state.stories) || [];
-  const myStories = useAppStore(state => state.myStories) || [];
+  const group = useAppStore(state => state.stories.find((story: { userId: string | number }) => String(story.userId) === String(userId)));
+  const items = useAppStore(state => selectUserStories(state, userId));
   const likeStory = useAppStore(state => state.likeStory);
   const markStoryAsViewed = useAppStore(state => state.markStoryAsViewed);
   const deleteMyStory = useAppStore(state => state.deleteMyStory);
@@ -610,42 +360,42 @@ export function StoryViewerModal({
         userId: userProfile?.id,
         username: userProfile?.username || 'Yo',
         avatar: userProfile?.profile_image_url || userProfile?.avatar,
-        items: myStories,
+        role: userProfile?.role,
+        trainer_id: userProfile?.trainer_id,
+        user: userProfile,
       }
-    : stories.find((s: any) => String(s.userId) === String(userId));
+    : group;
 
-  const items = storyUser?.items || [];
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const progressAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (visible) {
-      setCurrentIndex(0);
-    }
-  }, [visible, userId]);
+  const [index, setCurrentIndex] = useState(() => Math.max(0, items.findIndex((item: { viewed: boolean }) => !item.viewed)));
+  const currentIndex = Math.min(index, items.length - 1);
+  const [progressAnim] = useState(() => new Animated.Value(0));
+  const [mediaState, setMediaState] = useState<{ id: string | number; failed: boolean }>();
 
   const currentStory = items[currentIndex];
+  const storyId = currentStory?.id;
+  const mediaFailed = mediaState?.id === storyId && mediaState?.failed;
+  const mediaReady = mediaState?.id === storyId && mediaState?.failed === false;
 
   useEffect(() => {
-    if (!visible || !currentStory) return;
+    if (!items.length) onClose();
+  }, [items.length, onClose]);
 
-    // Mark as viewed
-    if (userId && currentStory.id) {
-      markStoryAsViewed(userId, currentStory.id);
-    }
-
-    // Reset and start animation
+  useEffect(() => {
     progressAnim.setValue(0);
+    if (storyId == null || !mediaReady) return;
+    void markStoryAsViewed(userId, storyId);
+
     const animation = Animated.timing(progressAnim, {
       toValue: 1,
       duration: 5000,
-      useNativeDriver: false,
+      useNativeDriver: true,
+      isInteraction: false,
     });
 
     animation.start(({ finished }) => {
       if (finished) {
         if (currentIndex < items.length - 1) {
-          setCurrentIndex(prev => prev + 1);
+          setCurrentIndex(currentIndex + 1);
         } else {
           onClose();
         }
@@ -653,17 +403,17 @@ export function StoryViewerModal({
     });
 
     return () => animation.stop();
-  }, [currentIndex, visible, currentStory]);
+  }, [currentIndex, items.length, markStoryAsViewed, mediaReady, onClose, progressAnim, storyId, userId]);
 
   const handlePrev = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
+      setCurrentIndex(currentIndex - 1);
     }
   };
 
   const handleNext = () => {
     if (currentIndex < items.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex(currentIndex + 1);
     } else {
       onClose();
     }
@@ -681,12 +431,12 @@ export function StoryViewerModal({
       if (items.length <= 1) {
         onClose();
       } else {
-        handleNext();
+        setCurrentIndex(Math.min(currentIndex, items.length - 2));
       }
     }
   };
 
-  if (!visible || !storyUser || items.length === 0) return null;
+  if (!storyUser || !currentStory) return null;
 
   let mediaUrl = currentStory?.media_url || currentStory?.url || '';
   if (mediaUrl && !mediaUrl.startsWith('http') && !mediaUrl.startsWith('blob:')) {
@@ -701,80 +451,73 @@ export function StoryViewerModal({
     (Boolean(mediaUrl) && (mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.webm') || mediaUrl.endsWith('.mov')));
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.viewerContainer}>
+    <Modal visible presentationStyle="fullScreen" statusBarTranslucent navigationBarTranslucent animationType="fade" onRequestClose={onClose}>
+      <StatusBar style="light" />
+      <View style={styles.viewerContainer} onLayout={({ nativeEvent: { layout: { width, height } } }) => {
+        if (width > 0 && height > 0) setViewerSize(previous => previous?.width === width && previous.height === height ? previous : { width, height });
+      }}>
         {/* Story Media */}
-        {mediaUrl ? (
-          isVideo ? (
-            <WebView
-              source={{
-                html: `
-                  <!DOCTYPE html>
-                  <html>
-                  <head>
-                    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-                    <style>
-                      * { margin: 0; padding: 0; box-sizing: border-box; }
-                      body { background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; width: 100vw; }
-                      video { width: 100vw; height: 100vh; object-fit: cover; }
-                    </style>
-                  </head>
-                  <body>
-                    <video src="${mediaUrl}" autoplay loop playsinline muted></video>
-                  </body>
-                  </html>
-                `,
-              }}
-              style={StyleSheet.absoluteFill}
-              allowsInlineMediaPlayback={true}
-              mediaPlaybackRequiresUserAction={false}
-              scrollEnabled={false}
-            />
+        <View pointerEvents="none" style={[styles.storyFrame, { width: frameWidth, aspectRatio: STORY_ASPECT_RATIO }]}>
+          {mediaUrl && !mediaFailed ? (
+            isVideo ? (
+              <StoryPlaybackVideo key={storyId} uri={mediaUrl}
+                onReady={() => setMediaState({ id: storyId, failed: false })}
+                onError={() => setMediaState({ id: storyId, failed: true })} />
+            ) : (
+              <Image
+                key={storyId}
+                source={{ uri: mediaUrl }}
+                style={StyleSheet.absoluteFill}
+                resizeMode="contain"
+                onLoad={() => setMediaState({ id: storyId, failed: false })}
+                onError={() => setMediaState({ id: storyId, failed: true })}
+              />
+            )
           ) : (
-            <Image
-              source={{ uri: mediaUrl }}
-              style={StyleSheet.absoluteFill}
-              resizeMode="cover"
-            />
-          )
-        ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center' }]}>
-            <Text style={{ color: '#9ca3af' }}>No se pudo cargar el archivo</Text>
-          </View>
-        )}
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center' }]}>
+              <Text style={{ color: '#9ca3af' }}>No se pudo cargar el archivo</Text>
+            </View>
+          )}
+          {mediaUrl && !mediaReady && !mediaFailed ? (
+            <View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+              <ActivityIndicator accessibilityLabel="Cargando historia" color="#fff" />
+            </View>
+          ) : null}
+        </View>
 
         {/* Tap areas for Prev / Next */}
         <View style={StyleSheet.absoluteFill}>
-          <Pressable style={styles.tapLeft} onPress={handlePrev} />
-          <Pressable style={styles.tapRight} onPress={handleNext} />
+          <Pressable accessibilityRole="button" accessibilityLabel="Historia anterior" disabled={currentIndex === 0} style={styles.tapLeft} onPress={handlePrev} />
+          <Pressable accessibilityRole="button" accessibilityLabel="Siguiente historia" style={styles.tapRight} onPress={handleNext} />
         </View>
 
         {/* Top Header & Progress */}
-        <View style={[styles.viewerTop, { paddingTop: insets.top + 10 }]}>
+        <View pointerEvents="box-none" style={[styles.viewerTop, { paddingTop: insets.top + 10 }]}>
+          <LinearGradient pointerEvents="none" colors={['#000000c9', '#00000083', '#00000000']} style={styles.topShade} />
           {/* Progress Indicators */}
-          <View style={styles.progressRow}>
-            {items.map((_: any, idx: number) => {
-              let width: any = '0%';
-              if (idx < currentIndex) width = '100%';
-              else if (idx === currentIndex) {
-                width = progressAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0%', '100%'],
-                });
-              }
-              return (
-                <View key={idx} style={styles.progressBarBg}>
-                  <Animated.View style={[styles.progressBarFill, { width }]} />
-                </View>
-              );
-            })}
+          <View pointerEvents="none" style={styles.progressRow}>
+            {items.map((item: { id: string | number }, index: number) => (
+              <View key={item.id} style={styles.progressBarBg}>
+                {index < currentIndex && <View style={styles.progressBarFill} />}
+                {index === currentIndex && <Animated.View style={[styles.progressBarFill, { transform: [{ scaleX: progressAnim }] }]} />}
+              </View>
+            ))}
           </View>
 
           {/* User Info Bar */}
-          <View style={styles.viewerUserBar}>
+          <View pointerEvents="box-none" style={styles.viewerUserBar}>
             <SocialUserAvatar
-              user={{ username: storyUser.username, avatar: storyUser.avatar }}
+              user={{
+                ...storyUser.user,
+                id: storyUser.userId,
+                username: storyUser.username,
+                avatar: storyUser.avatar,
+                role: storyUser.role ?? storyUser.user?.role,
+                trainer_id: storyUser.trainer_id ?? storyUser.user?.trainer_id,
+              }}
               size={36}
+              gapColor="#141418"
+              showStoryIndicator={false}
             />
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={styles.viewerUsername} numberOfLines={1}>
@@ -785,77 +528,35 @@ export function StoryViewerModal({
               </Text>
             </View>
 
-            <TouchableOpacity onPress={onClose} style={styles.viewerCloseBtn}>
-              <X size={22} color="#ffffff" />
-            </TouchableOpacity>
+            <Pressable accessibilityRole="button" accessibilityLabel="Cerrar historia" onPress={onClose}
+              style={({ pressed }) => [styles.iconButton, styles.mediaControl, pressed && { opacity: 0.7 }]}>
+              <X size={21} color="#ffffff" />
+            </Pressable>
           </View>
         </View>
 
         {/* Bottom Actions */}
-        <View style={[styles.viewerBottom, { paddingBottom: insets.bottom + 16 }]}>
+        <View pointerEvents="box-none" style={[styles.viewerBottom, { paddingBottom: insets.bottom + 16 }]}>
+          <LinearGradient pointerEvents="none" colors={['#00000000', '#00000083', '#000000c9']} style={styles.bottomShade} />
           {isMe ? (
-            <TouchableOpacity
-              onPress={handleDelete}
-              activeOpacity={0.8}
-              style={styles.deleteStoryBtn}
-            >
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme="dark"
-                style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-              />
-              <View
-                style={[
-                  StyleSheet.absoluteFill,
-                  {
-                    backgroundColor: '#ef4444',
-                    opacity: 0.25,
-                    borderRadius: 24,
-                  },
-                ]}
-              />
-              <Trash2 size={20} color="#ef4444" />
+            <Pressable accessibilityRole="button" onPress={handleDelete}
+              style={({ pressed }) => [styles.mediaPill, styles.mediaControl, pressed && { opacity: 0.7 }]}>
+              <Trash2 size={18} color="#ffafb5" />
               <Text style={styles.deleteStoryText}>Eliminar historia</Text>
-            </TouchableOpacity>
+            </Pressable>
           ) : (
-            <TouchableOpacity
-              onPress={handleLike}
-              activeOpacity={0.8}
-              style={[
-                styles.likeStoryBtn,
-                {
-                  borderColor: isLiked ? '#ef4444' : 'rgba(255, 255, 255, 0.2)',
-                  overflow: 'hidden',
-                  backgroundColor: 'transparent',
-                },
-              ]}
-            >
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme="dark"
-                style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-              />
-              {isLiked && (
-                <View
-                  style={[
-                    StyleSheet.absoluteFill,
-                    {
-                      backgroundColor: '#ef4444',
-                      opacity: 0.25,
-                      borderRadius: 24,
-                    },
-                  ]}
-                />
-              )}
+            <Pressable accessibilityRole="button" accessibilityLabel={isLiked ? 'Quitar Me gusta' : 'Me gusta'}
+              accessibilityState={{ selected: Boolean(isLiked) }} onPress={handleLike}
+              style={({ pressed }) => [styles.mediaPill, styles.mediaControl, isLiked && styles.likedControl, pressed && { opacity: 0.7 }]}>
               <Heart
-                size={22}
-                color={isLiked ? '#ef4444' : '#ffffff'}
-                fill={isLiked ? '#ef4444' : 'transparent'}
+                size={21}
+                color={isLiked ? '#ffafb5' : '#ffffff'}
+                fill={isLiked ? '#ffafb5' : 'transparent'}
               />
               {likesCount > 0 && (
                 <Text style={styles.likeStoryCount}>{likesCount}</Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
       </View>
@@ -864,199 +565,39 @@ export function StoryViewerModal({
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+  sheetHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 20, paddingBottom: 12,
   },
-  termsCardWrapper: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: 28,
-    overflow: 'hidden',
-    backgroundColor: 'transparent',
+  headerIcon: {
+    width: 44, height: 44, borderRadius: 14, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center',
   },
-  termsCard: {
-    padding: 24,
-    borderWidth: 1,
-    borderRadius: 28,
-    alignItems: 'center',
+  sheetTitle: { flex: 1, fontSize: 21, fontWeight: '800', letterSpacing: -0.45 },
+  iconButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  sheetBody: { gap: 14, paddingHorizontal: 20, paddingBottom: 12 },
+  group: { gap: 8 },
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 58, padding: 12,
+    borderRadius: 16, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth,
   },
-  shieldIconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
+  rowIcon: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  rowCopy: { flex: 1, gap: 3 },
+  rowTitle: { fontSize: 15, fontWeight: '700' },
+  bodyText: { fontSize: 13, lineHeight: 18 },
+  submit: {
+    minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 24,
   },
-  termsTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  termsSubtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  termsList: {
-    width: '100%',
-    gap: 10,
-    marginBottom: 24,
-  },
-  termsItem: {
-    flexDirection: 'row',
-    padding: 12,
-    borderRadius: 16,
-    gap: 12,
-  },
-  itemTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  itemDesc: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  primaryButton: {
-    width: '100%',
-    height: 48,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  primaryButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  secondaryButton: {
-    width: '100%',
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  // Upload styles
-  uploadCardWrapper: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 28,
-    overflow: 'hidden',
-    backgroundColor: 'transparent',
-  },
-  uploadCard: {
-    padding: 22,
-    borderWidth: 1,
-    borderRadius: 28,
-  },
-  uploadHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  uploadTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  pickOptionsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 20,
-  },
-  pickButton: {
-    flex: 1,
-    height: 104,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  pickIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pickButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  previewContainer: {
-    height: 220,
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginBottom: 20,
-    position: 'relative',
-  },
-  previewImage: {
-    width: '100%',
-    height: '100%',
-  },
-  changeMediaBtn: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
-  },
-  changeMediaText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  privacyLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 4,
-    marginBottom: 10,
-  },
-  privacyRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  privacyPill: {
-    flex: 1,
-    height: 42,
-    borderRadius: 20,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  privacyText: {
-    fontSize: 13,
-  },
-
-  // Story Viewer styles
+  submitText: { fontSize: 15, fontWeight: '800', textAlign: 'center' },
+  preview: { maxWidth: '100%', alignSelf: 'center', borderRadius: 18, borderCurve: 'continuous', overflow: 'hidden' },
+  videoPreview: { width: 168, aspectRatio: STORY_ASPECT_RATIO, backgroundColor: '#000000' },
+  removeMedia: { position: 'absolute', top: 9, right: 9, backgroundColor: '#000000b5' },
   viewerContainer: {
     flex: 1,
     backgroundColor: '#000000',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  storyFrame: { backgroundColor: '#000000', overflow: 'hidden' },
   tapLeft: {
     position: 'absolute',
     top: 0,
@@ -1079,6 +620,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
     paddingHorizontal: 16,
   },
+  topShade: { position: 'absolute', top: 0, left: 0, right: 0, bottom: -30 },
   progressRow: {
     flexDirection: 'row',
     gap: 4,
@@ -1092,8 +634,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressBarFill: {
+    width: '100%',
     height: '100%',
     backgroundColor: '#ffffff',
+    transformOrigin: 'left center',
   },
   viewerUserBar: {
     flexDirection: 'row',
@@ -1108,9 +652,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 11,
   },
-  viewerCloseBtn: {
-    padding: 6,
-  },
   viewerBottom: {
     position: 'absolute',
     bottom: 0,
@@ -1121,53 +662,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
-  likeStoryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    overflow: 'hidden',
-    backgroundColor: 'transparent',
+  bottomShade: { position: 'absolute', top: -30, left: 0, right: 0, bottom: 0 },
+  mediaControl: { backgroundColor: '#141418cc', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff50' },
+  likedControl: { borderColor: '#ffafb5', backgroundColor: '#551c2cdd' },
+  mediaPill: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, minWidth: 48, minHeight: 48,
+    paddingHorizontal: 14, paddingVertical: 9, borderRadius: 24,
   },
   likeStoryCount: {
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '700',
   },
-  deleteStoryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#ef4444',
-    overflow: 'hidden',
-    backgroundColor: 'transparent',
-  },
   deleteStoryText: {
-    color: '#ef4444',
+    color: '#ffafb5',
     fontSize: 13,
     fontWeight: '700',
-  },
-  aiNoticeBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 18,
-    borderWidth: 1,
-    marginTop: 14,
-    marginBottom: 20,
-  },
-  aiNoticeText: {
-    fontSize: 12,
-    lineHeight: 16,
-    flex: 1,
   },
 });

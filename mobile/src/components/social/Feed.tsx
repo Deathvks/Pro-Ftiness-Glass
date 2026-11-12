@@ -38,7 +38,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass, getUnselectedControlColors, isAtmosphericTheme } from '@/constants/theme';
 import socialService from '@/services/socialService';
 import * as userService from '@/services/userService';
 import { forkRoutine } from '@/services/routineService';
@@ -99,9 +99,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const tertiarySurface = isDark
-    ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.04)')
-    : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.03)');
+  const tertiarySurface = getUnselectedControlColors(theme).backgroundColor;
   const accentTextColor = getContrastTextColor(colors.tint);
 
   const userProfile = useAppStore(state => state.userProfile);
@@ -418,16 +416,18 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
           style={[
             styles.infoToggleBtn,
             {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
+              backgroundColor: tertiarySurface,
               borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-          />
+          {!isAtmosphericTheme(theme) && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+            />
+          )}
           <Info size={14} color={colors.tint} />
           <Text style={[styles.infoToggleText, { color: colors.textSecondary }]}>
             {showFeedInfo ? 'Ocultar información' : '¿Cómo funciona el Muro?'}
@@ -446,7 +446,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             },
           ]}
         >
-          {shouldUseContentGlass() && (
+          {shouldUseContentGlass(theme) && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -503,17 +503,17 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                 : 'rgba(0, 0, 0, 0.08)',
               backgroundColor: scope === 'global'
                 ? colors.tint
-                : isDark
-                ? 'rgba(255, 255, 255, 0.06)'
-                : 'rgba(255, 255, 255, 0.65)',
+                : tertiarySurface,
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle={scope === 'global' ? 'clear' : 'regular'}
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-          />
+          {!isAtmosphericTheme(theme) && (
+            <GlassView
+              glassEffectStyle={scope === 'global' ? 'clear' : 'regular'}
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+            />
+          )}
           <View style={styles.scopePillInner}>
             <Flame
               size={16}
@@ -566,17 +566,17 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                 : 'rgba(0, 0, 0, 0.08)',
               backgroundColor: scope === 'gym'
                 ? colors.tint
-                : isDark
-                ? 'rgba(255, 255, 255, 0.06)'
-                : 'rgba(255, 255, 255, 0.65)',
+                : tertiarySurface,
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle={scope === 'gym' ? 'clear' : 'regular'}
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-          />
+          {!isAtmosphericTheme(theme) && (
+            <GlassView
+              glassEffectStyle={scope === 'gym' ? 'clear' : 'regular'}
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+            />
+          )}
           <View style={styles.scopePillInner}>
             <MapPin size={16} color={scope === 'gym' ? accentTextColor : '#10b981'} />
             <Text
@@ -623,17 +623,17 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                 : 'rgba(0, 0, 0, 0.08)',
               backgroundColor: scope === 'friends'
                 ? colors.tint
-                : isDark
-                ? 'rgba(255, 255, 255, 0.06)'
-                : 'rgba(255, 255, 255, 0.65)',
+                : tertiarySurface,
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle={scope === 'friends' ? 'clear' : 'regular'}
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-          />
+          {!isAtmosphericTheme(theme) && (
+            <GlassView
+              glassEffectStyle={scope === 'friends' ? 'clear' : 'regular'}
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+            />
+          )}
           <View style={styles.scopePillInner}>
             <Users size={16} color={scope === 'friends' ? accentTextColor : '#3b82f6'} />
             <Text
@@ -659,7 +659,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             },
           ]}
         >
-          {shouldUseContentGlass() && (
+          {shouldUseContentGlass(theme) && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -727,7 +727,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             },
           ]}
         >
-          {shouldUseContentGlass() && (
+          {shouldUseContentGlass(theme) && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -782,7 +782,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             },
           ]}
         >
-          {shouldUseContentGlass() && (
+          {shouldUseContentGlass(theme) && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -847,7 +847,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
           },
         ]}
       >
-        {shouldUseContentGlass() && (
+        {shouldUseContentGlass(theme) && (
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}
@@ -958,16 +958,18 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             style={[
               styles.changeGymBtn,
               {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.7)',
+                backgroundColor: tertiarySurface,
                 borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
               },
             ]}
           >
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 14 }]}
-            />
+            {!isAtmosphericTheme(theme) && (
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: 14 }]}
+              />
+            )}
             <RefreshCw size={11} color={colors.tint} />
             <Text style={[styles.changeGymText, { color: colors.tint }]}>Cambiar gym</Text>
           </TouchableOpacity>
@@ -988,17 +990,17 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                   : 'rgba(0, 0, 0, 0.08)',
                 backgroundColor: gymFilter === 'all'
                   ? colors.tint
-                  : isDark
-                  ? 'rgba(255, 255, 255, 0.05)'
-                  : 'rgba(255, 255, 255, 0.65)',
+                  : tertiarySurface,
               },
             ]}
           >
-            <GlassView
-              glassEffectStyle={gymFilter === 'all' ? 'clear' : 'regular'}
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
-            />
+            {!isAtmosphericTheme(theme) && (
+              <GlassView
+                glassEffectStyle={gymFilter === 'all' ? 'clear' : 'regular'}
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+              />
+            )}
             <Globe size={13} color={gymFilter === 'all' ? accentTextColor : colors.textSecondary} />
             <Text
               style={[
@@ -1023,17 +1025,17 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                   : 'rgba(0, 0, 0, 0.08)',
                 backgroundColor: gymFilter === 'same_gym'
                   ? '#10b981'
-                  : isDark
-                  ? 'rgba(255, 255, 255, 0.05)'
-                  : 'rgba(255, 255, 255, 0.65)',
+                  : tertiarySurface,
               },
             ]}
           >
-            <GlassView
-              glassEffectStyle={gymFilter === 'same_gym' ? 'clear' : 'regular'}
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
-            />
+            {!isAtmosphericTheme(theme) && (
+              <GlassView
+                glassEffectStyle={gymFilter === 'same_gym' ? 'clear' : 'regular'}
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+              />
+            )}
             <Dumbbell size={13} color={gymFilter === 'same_gym' ? '#ffffff' : colors.textSecondary} />
             <Text
               style={[
@@ -1059,17 +1061,17 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                     : 'rgba(0, 0, 0, 0.08)',
                   backgroundColor: gymFilter === 'same_city'
                     ? '#3b82f6'
-                    : isDark
-                    ? 'rgba(255, 255, 255, 0.05)'
-                    : 'rgba(255, 255, 255, 0.65)',
+                    : tertiarySurface,
                 },
               ]}
             >
-              <GlassView
-                glassEffectStyle={gymFilter === 'same_city' ? 'clear' : 'regular'}
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
-              />
+              {!isAtmosphericTheme(theme) && (
+                <GlassView
+                  glassEffectStyle={gymFilter === 'same_city' ? 'clear' : 'regular'}
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                />
+              )}
               <Building2 size={13} color={gymFilter === 'same_city' ? '#ffffff' : colors.textSecondary} />
               <Text
                 style={[
@@ -1108,7 +1110,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                       },
                     ]}
                   >
-                    {shouldUseContentGlass() && (
+                    {shouldUseContentGlass(theme) && (
                       <GlassView
                         glassEffectStyle="regular"
                         colorScheme={isDark ? 'dark' : 'light'}
@@ -1187,7 +1189,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
           gym_name: log.user?.gym_name || myCurrentGym?.name || null,
           gym_city: log.user?.gym_city || myCurrentGym?.city || null,
         }
-      : log.user || {};
+      : { ...log.user, id: log.user?.id ?? log.user_id };
 
     const displayName = authorUser?.username || 'Usuario';
     const comments = Array.isArray(log.Comments) ? log.Comments : log.comments || [];
@@ -1252,14 +1254,14 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
       <View key={log.id || `post_${index}`}>
         {showOlderDivider && (
           <View style={styles.olderDividerRow}>
-            <View style={[styles.dividerLine, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)' }]} />
-            <View style={[styles.olderBadge, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)' }]}>
+            <View style={[styles.dividerLine, { backgroundColor: tertiarySurface }]} />
+            <View style={[styles.olderBadge, { backgroundColor: tertiarySurface }]}>
               <Clock size={12} color={colors.tint} />
               <Text style={[styles.olderBadgeText, { color: colors.textSecondary }]}>
                 Publicaciones de más de 7 días
               </Text>
             </View>
-            <View style={[styles.dividerLine, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)' }]} />
+            <View style={[styles.dividerLine, { backgroundColor: tertiarySurface }]} />
           </View>
         )}
 
@@ -1272,7 +1274,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             },
           ]}
         >
-          {shouldUseContentGlass() && (
+          {shouldUseContentGlass(theme) && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -1344,7 +1346,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
 
             {!isMe && !isFriend && (
               isPendingRequest ? (
-                <View style={[styles.connectStatusPill, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                <View style={[styles.connectStatusPill, { backgroundColor: tertiarySurface }]}>
                   <Clock size={12} color={colors.textSecondary} />
                   <Text style={[styles.connectStatusText, { color: colors.textSecondary }]}>Pendiente</Text>
                 </View>
@@ -1397,7 +1399,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                   style={[
                     styles.statChip,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+                      backgroundColor: tertiarySurface,
                     },
                   ]}
                 >
@@ -1412,7 +1414,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                   style={[
                     styles.statChip,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+                      backgroundColor: tertiarySurface,
                     },
                   ]}
                 >
@@ -1431,7 +1433,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                   const sets = Array.isArray(detail?.WorkoutLogSets) ? detail.WorkoutLogSets : [];
                   return (
                     <View key={dIdx} style={styles.exerciseDetailRow}>
-                      <View style={[styles.exerciseIconWrap, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                      <View style={[styles.exerciseIconWrap, { backgroundColor: tertiarySurface }]}>
                         <Dumbbell size={14} color={colors.textSecondary} />
                       </View>
                       <View style={{ flex: 1, minWidth: 0 }}>
@@ -1447,7 +1449,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                                 style={[
                                   styles.setTag,
                                   {
-                                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)',
+                                    backgroundColor: tertiarySurface,
                                   },
                                 ]}
                               >
@@ -1517,7 +1519,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                         style={[
                           styles.reactionCountBadge,
                           {
-                            backgroundColor: isSelected ? btn.color + '30' : isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                            backgroundColor: isSelected ? btn.color + '30' : tertiarySurface,
                           },
                         ]}
                       >
@@ -1569,7 +1571,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                   {comments.map((c: any) => {
                     const isCommentMe = c.user_id === userProfile?.id;
                     const canDelete = isCommentMe || isMe || userProfile?.role === 'admin';
-                    const cAuthor = c.user || {};
+                    const cAuthor = { ...c.user, id: c.user?.id ?? c.user_id };
 
                     return (
                       <View
@@ -1654,7 +1656,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             },
           ]}
         >
-          {shouldUseContentGlass() && (
+          {shouldUseContentGlass(theme) && (
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -1713,7 +1715,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                 style={[
                   styles.secondaryBtn,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                    backgroundColor: tertiarySurface,
                   },
                 ]}
               >
@@ -1737,7 +1739,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
               style={[
                 styles.loadOlderBottomBtn,
                 {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                  backgroundColor: tertiarySurface,
                   borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
                 },
               ]}

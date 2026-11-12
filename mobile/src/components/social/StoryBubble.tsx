@@ -1,16 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Plus } from 'lucide-react-native';
-import { SocialUserAvatar } from './SocialUserAvatar';
+import { SocialUserAvatar, type AvatarUser } from './SocialUserAvatar';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/routineHelpers';
 
 interface StoryBubbleProps {
-  user: {
-    username?: string;
-    profile_image_url?: string | null;
-    avatar?: string | null;
-  };
+  user: AvatarUser;
   isMe?: boolean;
   hasStories?: boolean;
   hasUnseen?: boolean;
@@ -54,7 +50,7 @@ export function StoryBubble({
           },
         ]}
       >
-        <SocialUserAvatar user={user} size={58} />
+        <SocialUserAvatar user={user} size={58} showStoryIndicator={false} />
 
         {isMe && onAdd && (
           <TouchableOpacity

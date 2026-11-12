@@ -26,14 +26,16 @@ import { DailyDetailModal } from './DailyDetailModal';
 import { StatBadge } from './StatBadge';
 import { getContrastTextColor } from '@/utils/colorUtils';
 
-export function CalendarProgressView() {
+export function CalendarProgressView({ clientHistory }: { clientHistory?: { workouts: any[]; routines: any[] } } = {}) {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const accentText = getContrastTextColor(colors.tint);
 
-  const workoutLog = useAppStore(state => state.workoutLog) || [];
-  const routines = useAppStore(state => state.routines) || [];
+  const ownWorkouts = useAppStore(state => state.workoutLog);
+  const ownRoutines = useAppStore(state => state.routines);
+  const workoutLog = clientHistory?.workouts ?? ownWorkouts ?? [];
+  const routines = clientHistory?.routines ?? ownRoutines ?? [];
 
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
@@ -567,6 +569,7 @@ export function CalendarProgressView() {
       <DailyDetailModal
         visible={showDetailModal}
         logs={selectedDayLogs}
+        clientRoutines={clientHistory?.routines}
         onClose={() => setShowDetailModal(false)}
       />
     </View>

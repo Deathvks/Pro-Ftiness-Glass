@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
-  Alert,
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
@@ -22,12 +21,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GlassView } from 'expo-glass-effect';
-import { GlassButton } from '@/components/ui/GlassButton';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getThemeBaseBackground } from '@/constants/theme';
+import { useToast } from '@/hooks/useToast';
+import { getThemeBaseBackground, getUnselectedControlColors } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
+import { AndroidHeaderBlurTarget } from '@/components/AndroidHeaderBlur';
 import ThemeBackground from '@/components/ThemeBackground';
 import { PrivacyModal } from '@/components/modals/PrivacyModal';
 import { getContrastTextColor } from '@/utils/routineHelpers';
@@ -36,9 +36,9 @@ import { getContrastTextColor } from '@/utils/routineHelpers';
 import { PrivacyBanner } from '@/components/social/PrivacyBanner';
 import { StoryBubble } from '@/components/social/StoryBubble';
 import {
-  StoryTermsModal,
-  UploadStoryModal,
-  StoryViewerModal,
+  StoryComposerModal,
+  type StoryComposerStep,
+  type StoryUploadFile,
 } from '@/components/social/StoryModals';
 import { Feed } from '@/components/social/Feed';
 import { Leaderboard } from '@/components/social/Leaderboard';
@@ -53,11 +53,14 @@ export default function SocialScreen() {
   const router = useRouter();
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
+  const { showToast } = useToast();
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const androidBlurTarget = useRef<React.ComponentRef<typeof View>>(null);
   const tabsScrollRef = useRef<any>(null);
   const mainScrollRef = useRef<any>(null);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const unselectedTab = getUnselectedControlColors(theme);
 
   const [activeTab, setActiveTab] = useState<TabKey>('feed');
 
@@ -71,124 +74,67 @@ export default function SocialScreen() {
   const fetchFriends = useAppStore(state => state.fetchFriends);
   const fetchFriendRequests = useAppStore(state => state.fetchFriendRequests);
   const fetchLeaderboard = useAppStore(state => state.fetchLeaderboard);
-  const fetchStories = useAppStore(state => state.fetchStories);
   const uploadStory = useAppStore(state => state.uploadStory);
-  const subscribeToStories = useAppStore(state => state.subscribeToStories);
-  const subscribeToSocialEvents = useAppStore(state => state.subscribeToSocialEvents);
 
   // Modals state
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const [showTermsModal, setShowTermsModal] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [storyComposer, setStoryComposer] = useState<{ visible: boolean; step: StoryComposerStep; session: number }>({
+    visible: false, step: 'terms', session: 0,
+  });
   const [isUploadingStory, setIsUploadingStory] = useState(false);
-  const [viewingStoryUserId, setViewingStoryUserId] = useState<string | number | null>(null);
+  const openStory = useAppStore(state => state.openStory);
+  const closeStoryComposer = useCallback(() => setStoryComposer(current => ({ ...current, visible: false })), []);
 
   // Initial data loading & subscriptions
   useEffect(() => {
     fetchFriends();
     fetchFriendRequests();
     fetchLeaderboard();
-    if (subscribeToStories) subscribeToStories();
-    if (subscribeToSocialEvents) subscribeToSocialEvents();
   }, []);
 
-  useEffect(() => {
-    if (userProfile?.id && fetchStories) {
-      fetchStories();
-    }
-  }, [userProfile?.id]);
-
-  // Stories computation
-  const visibleStories = useMemo(() => {
-    return stories.filter((storyUser: any) => {
-      const isFriend = socialFriends.some((f: any) => String(f.id) === String(storyUser.userId));
-      const hasPublicStories = storyUser.items?.some((item: any) => item.privacy === 'public');
-      return isFriend || hasPublicStories;
-    });
-  }, [stories, socialFriends]);
-
-  const myStoriesUnseen = useMemo(() => {
-    return myStories && myStories.some((s: any) => !s.viewed);
-  }, [myStories]);
+  const visibleStories = stories;
+  const myStoriesUnseen = myStories.some((story: any) => !story.viewed);
 
   // Handle Stories actions
   const initiateStoryUpload = async () => {
+    let step: StoryComposerStep = 'upload';
     try {
-      const accepted = await AsyncStorage.getItem('story_terms_accepted');
-      if (accepted === 'true') {
-        setShowUploadModal(true);
-      } else {
-        setShowTermsModal(true);
-      }
-    } catch {
-      setShowUploadModal(true);
-    }
+      if (await AsyncStorage.getItem('story_terms_accepted') !== 'true') step = 'terms';
+    } catch {}
+    setStoryComposer(current => ({ visible: true, step, session: current.session + 1 }));
   };
 
   const handleAcceptTerms = async () => {
     try {
       await AsyncStorage.setItem('story_terms_accepted', 'true');
     } catch {}
-    setShowTermsModal(false);
-    setShowUploadModal(true);
+    setStoryComposer(current => current.visible ? { ...current, step: 'upload' } : current);
   };
 
   const handleMyStoryClick = () => {
-    if (myStories.length > 0 && userProfile?.id) {
-      setViewingStoryUserId(userProfile.id);
-    } else {
-      initiateStoryUpload();
-    }
+    if (!openStory(userProfile?.id)) initiateStoryUpload();
   };
 
-  const handleUploadStory = async (fileData: any, privacy: string, isHDR: boolean = false) => {
+  const handleUploadStory = async (fileData: StoryUploadFile, privacy: string, isHDR: boolean) => {
     setIsUploadingStory(true);
     try {
-      const res = await uploadStory(fileData, privacy, isHDR);
-      if (res && res.success) {
-        setShowUploadModal(false);
-        Alert.alert('¡Publicada! 🎉', 'Tu historia ha sido revisada por la IA y compartida con éxito.');
-      } else {
-        const errorMsg = res?.error || 'No se pudo subir la historia';
-        if (
-          errorMsg.toLowerCase().includes('inapropiado') ||
-          errorMsg.toLowerCase().includes('nsfw') ||
-          errorMsg.toLowerCase().includes('rechazada')
-        ) {
-          Alert.alert(
-            'Contenido Rechazado por IA ⚠️',
-            'Nuestra inteligencia artificial detectó contenido no permitido (NSFW). Por favor, comparte contenido adecuado a las normas comunitarias.'
-          );
-        } else {
-          Alert.alert('Error al subir historia', errorMsg);
-        }
-      }
-    } catch (err: any) {
-      const errorMsg = err.message || 'Error al subir historia';
-      if (
-        errorMsg.toLowerCase().includes('inapropiado') ||
-        errorMsg.toLowerCase().includes('nsfw') ||
-        errorMsg.toLowerCase().includes('rechazada')
-      ) {
-        Alert.alert(
-          'Contenido Rechazado por IA ⚠️',
-          'Nuestra inteligencia artificial detectó contenido no permitido (NSFW). Por favor, comparte contenido adecuado a las normas comunitarias.'
-        );
-      } else {
-        Alert.alert('Error', errorMsg);
-      }
+      const result = await uploadStory(fileData, privacy, isHDR);
+      if (!result?.success) throw new Error(result?.error || 'No se pudo subir la historia.');
+      closeStoryComposer();
+      showToast('Historia publicada.', 'success');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo subir la historia.';
+      return /inapropiado|nsfw|rechazada/i.test(message)
+        ? 'La revisión automática detectó contenido no permitido. Elige otro archivo.'
+        : message;
     } finally {
       setIsUploadingStory(false);
     }
   };
 
   const navigateToProfile = (userId: any) => {
-    if (String(userId) === String(userProfile?.id)) {
-      router.push('/profile');
-    } else {
-      // In mobile, we can navigate to profile or show details
-      router.push('/profile');
-    }
+    if (userId == null) return;
+    router.push({ pathname: '/public-profile/[id]', params: { id: String(userId) } });
   };
 
   interface TabItem {
@@ -241,177 +187,181 @@ export default function SocialScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: bgColor }}>
-      <ThemeBackground />
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
-        <GlobalHeader title="Comunidad" scrollY={scrollY} />
-      </View>
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
-        <Animated.ScrollView
-          ref={mainScrollRef}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: false }
-          )}
-          scrollEventThrottle={16}
-          contentContainerStyle={{
-            paddingTop: insets.top + 70,
-            paddingBottom: insets.bottom + 100,
-          }}
+      <AndroidHeaderBlurTarget target={androidBlurTarget}>
+        <ThemeBackground />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
         >
-          {/* Page Subtitle Header */}
-          <View style={styles.header}>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Conecta y compite con otros atletas
-            </Text>
-          </View>
+          <Animated.ScrollView
+            ref={mainScrollRef}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: false }
+            )}
+            scrollEventThrottle={16}
+            contentContainerStyle={{
+              paddingTop: insets.top + 70,
+              paddingBottom: insets.bottom + 100,
+            }}
+          >
+            {/* Page Subtitle Header */}
+            <View style={styles.header}>
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                Conecta y compite con otros atletas
+              </Text>
+            </View>
 
-          {/* Privacy Banner */}
-          <View style={{ paddingHorizontal: 16 }}>
-            <PrivacyBanner
-              privacy={userProfile?.is_public_profile ? 'public' : 'private'}
-              onNavigate={() => setShowPrivacyModal(true)}
-            />
-          </View>
-
-          {/* Stories Horizontal Bar */}
-          <View style={styles.storiesSection}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.storiesContainer}
-            >
-              {/* My Story Bubble */}
-              <StoryBubble
-                user={{
-                  username: userProfile?.username || 'Yo',
-                  profile_image_url: userProfile?.profile_image_url,
-                  avatar: userProfile?.avatar,
-                }}
-                isMe={true}
-                hasStories={myStories.length > 0}
-                hasUnseen={myStoriesUnseen}
-                onClick={handleMyStoryClick}
-                onAdd={initiateStoryUpload}
+            {/* Privacy Banner */}
+            <View style={{ paddingHorizontal: 16 }}>
+              <PrivacyBanner
+                privacy={userProfile?.is_public_profile ? 'public' : 'private'}
+                onNavigate={() => setShowPrivacyModal(true)}
               />
+            </View>
 
-              {/* Other Users' Stories */}
-              {visibleStories.map((storyUser: any) => {
-                const rawUser = storyUser.user || {};
-                const username = storyUser.username || rawUser.username || 'Usuario';
-                const avatar =
-                  storyUser.profile_image_url ||
-                  rawUser.profile_image_url ||
-                  storyUser.avatar ||
-                  rawUser.avatar;
-                const hasUnseen =
-                  storyUser.hasUnseen !== undefined
-                    ? storyUser.hasUnseen
-                    : storyUser.items?.some((item: any) => !item.viewed);
+            {/* Stories Horizontal Bar */}
+            <View style={styles.storiesSection}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.storiesContainer}
+              >
+                {/* My Story Bubble */}
+                <StoryBubble
+                  user={{
+                    ...userProfile,
+                    username: userProfile?.username || 'Yo',
+                  }}
+                  isMe={true}
+                  hasStories={myStories.length > 0}
+                  hasUnseen={myStoriesUnseen}
+                  onClick={handleMyStoryClick}
+                  onAdd={initiateStoryUpload}
+                />
 
-                return (
-                  <StoryBubble
-                    key={storyUser.userId}
-                    user={{ username, avatar, profile_image_url: avatar }}
-                    isMe={false}
-                    hasStories={true}
-                    hasUnseen={hasUnseen}
-                    onClick={() => setViewingStoryUserId(storyUser.userId)}
-                  />
-                );
-              })}
-            </ScrollView>
-          </View>
+                {/* Other Users' Stories */}
+                {visibleStories.map((storyUser: any) => {
+                  const rawUser = storyUser.user || {};
+                  const username = storyUser.username || rawUser.username || 'Usuario';
+                  const avatar =
+                    storyUser.profile_image_url ||
+                    rawUser.profile_image_url ||
+                    storyUser.avatar ||
+                    rawUser.avatar;
+                  const hasUnseen =
+                    storyUser.hasUnseen !== undefined
+                      ? storyUser.hasUnseen
+                      : storyUser.items?.some((item: any) => !item.viewed);
 
-          {/* Horizontal Navigation Tabs */}
-          <View style={styles.tabsSection}>
-            <ScrollView
-              ref={tabsScrollRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tabsContainer}
-            >
-              {TABS.map(tab => {
-                const isActive = activeTab === tab.id;
-                const Icon = tab.icon;
-
-                return (
-                  <GlassButton
-                    key={tab.id}
-                    onPress={() => handleTabChange(tab.id)}
-                    theme={theme}
-                    noShadow={true}
-                    color={isActive ? (Platform.OS === 'ios' ? colors.tint + '22' : colors.tint) : undefined}
-                    style={[
-                      styles.tabPill,
-                      {
-                        borderColor: isActive
-                          ? colors.tint
-                          : isDark
-                          ? 'rgba(255, 255, 255, 0.12)'
-                          : 'rgba(0, 0, 0, 0.08)',
-                      },
-                    ]}
-                  >
-                    <Icon
-                      size={16}
-                      color={isActive ? colors.tint : colors.textSecondary}
-                      style={{ marginRight: 6 }}
+                  return (
+                    <StoryBubble
+                      key={storyUser.userId}
+                      user={{
+                        ...rawUser,
+                        id: storyUser.userId,
+                        username,
+                        avatar,
+                        profile_image_url: avatar,
+                        role: storyUser.role ?? rawUser.role,
+                        trainer_id: storyUser.trainer_id ?? rawUser.trainer_id,
+                      }}
+                      isMe={false}
+                      hasStories={true}
+                      hasUnseen={hasUnseen}
+                      onClick={() => openStory(storyUser.userId)}
                     />
+                  );
+                })}
+              </ScrollView>
+            </View>
 
-                    <Text
+            {/* Horizontal Navigation Tabs */}
+            <View style={styles.tabsSection}>
+              <ScrollView
+                ref={tabsScrollRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.tabsContainer}
+              >
+                {TABS.map(tab => {
+                  const isActive = activeTab === tab.id;
+                  const Icon = tab.icon;
+
+                  return (
+                    <TouchableOpacity
+                      key={tab.id}
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected: isActive }}
+                      activeOpacity={0.75}
+                      onPress={() => handleTabChange(tab.id)}
                       style={[
-                        styles.tabText,
-                        {
-                          color: isActive ? colors.tint : colors.textSecondary,
-                          fontWeight: isActive ? (Platform.OS === 'ios' ? '700' : '800') : '600',
-                        },
+                        styles.tabPill,
+                        isActive
+                          ? { backgroundColor: colors.tint + '18', borderColor: colors.tint + '48' }
+                          : unselectedTab,
                       ]}
                     >
-                      {tab.label}
-                    </Text>
+                      <Icon
+                        size={16}
+                        color={isActive ? colors.tint : colors.textSecondary}
+                        style={{ marginRight: 6 }}
+                      />
 
-                    {tab.badge && tab.badge > 0 ? (
-                      <View style={styles.tabBadge}>
-                        <Text style={styles.tabBadgeText}>{tab.badge}</Text>
-                      </View>
-                    ) : null}
-                  </GlassButton>
-                );
-              })}
-            </ScrollView>
-          </View>
+                      <Text
+                        style={[
+                          styles.tabText,
+                          {
+                            color: isActive ? colors.tint : colors.textSecondary,
+                            fontWeight: isActive ? (Platform.OS === 'ios' ? '700' : '800') : '600',
+                          },
+                        ]}
+                      >
+                        {tab.label}
+                      </Text>
 
-          {/* Tab Content */}
-          {activeTab === 'feed' && <Feed onNavigateProfile={navigateToProfile} visibleStories={visibleStories} myStories={myStories} />}
-          {activeTab === 'leaderboard' && (
-            <Leaderboard onNavigateProfile={navigateToProfile} />
-          )}
-          {activeTab === 'friends' && (
-            <FriendsTab
-              onSwitchToSearch={handleSwitchToSearch}
-              onNavigateProfile={navigateToProfile}
-            />
-          )}
-          {activeTab === 'squads' && (
-            <SquadsTab onNavigateProfile={navigateToProfile} />
-          )}
-          {activeTab === 'requests' && (
-            <RequestsTab onNavigateProfile={navigateToProfile} />
-          )}
-          {activeTab === 'search' && (
-            <SearchTab
-              onNavigateProfile={navigateToProfile}
-              onFocusInput={handleFocusSearch}
-            />
-          )}
-        </Animated.ScrollView>
-      </KeyboardAvoidingView>
+                      {tab.badge && tab.badge > 0 ? (
+                        <View style={styles.tabBadge}>
+                          <Text style={styles.tabBadgeText}>{tab.badge}</Text>
+                        </View>
+                      ) : null}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            {/* Tab Content */}
+            {activeTab === 'feed' && <Feed onNavigateProfile={navigateToProfile} visibleStories={visibleStories} myStories={myStories} />}
+            {activeTab === 'leaderboard' && (
+              <Leaderboard onNavigateProfile={navigateToProfile} />
+            )}
+            {activeTab === 'friends' && (
+              <FriendsTab
+                onSwitchToSearch={handleSwitchToSearch}
+                onNavigateProfile={navigateToProfile}
+              />
+            )}
+            {activeTab === 'squads' && (
+              <SquadsTab onNavigateProfile={navigateToProfile} />
+            )}
+            {activeTab === 'requests' && (
+              <RequestsTab onNavigateProfile={navigateToProfile} />
+            )}
+            {activeTab === 'search' && (
+              <SearchTab
+                onNavigateProfile={navigateToProfile}
+                onFocusInput={handleFocusSearch}
+              />
+            )}
+          </Animated.ScrollView>
+        </KeyboardAvoidingView>
+      </AndroidHeaderBlurTarget>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
+        <GlobalHeader title="Comunidad" scrollY={scrollY} androidBlurTarget={androidBlurTarget} />
+      </View>
 
       {/* MODALS */}
       <PrivacyModal
@@ -419,26 +369,14 @@ export default function SocialScreen() {
         onClose={() => setShowPrivacyModal(false)}
       />
 
-      <StoryTermsModal
-        visible={showTermsModal}
+      <StoryComposerModal
+        {...storyComposer}
+        busy={isUploadingStory}
+        onClose={closeStoryComposer}
         onAccept={handleAcceptTerms}
-        onReject={() => setShowTermsModal(false)}
-      />
-
-      <UploadStoryModal
-        visible={showUploadModal}
-        onClose={() => setShowUploadModal(false)}
         onUpload={handleUploadStory}
-        isUploading={isUploadingStory}
       />
 
-      {viewingStoryUserId !== null && (
-        <StoryViewerModal
-          visible={true}
-          userId={viewingStoryUserId}
-          onClose={() => setViewingStoryUserId(null)}
-        />
-      )}
     </View>
   );
 }
@@ -478,6 +416,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 40,
     borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   tabText: {
     fontSize: 13,

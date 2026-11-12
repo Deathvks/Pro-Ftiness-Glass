@@ -26,6 +26,7 @@ import {
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import GlobalHeader from '@/components/GlobalHeader';
+import { AndroidHeaderBlurTarget } from '@/components/AndroidHeaderBlur';
 
 // Subcomponents
 import { DateNavigator } from '@/components/nutrition/DateNavigator';
@@ -55,6 +56,7 @@ export default function NutritionScreen() {
   const colors = useAppColors();
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const androidBlurTarget = useRef<React.ComponentRef<typeof View>>(null);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
   // Store State
@@ -366,187 +368,187 @@ export default function NutritionScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Sticky Global Header */}
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
-        <GlobalHeader title="Nutrición" scrollY={scrollY} />
-      </View>
-
-      <Animated.ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingTop: insets.top + 70,
-            paddingBottom: insets.bottom + 100,
-          },
-        ]}
-        showsVerticalScrollIndicator={false}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-          useNativeDriver: Platform.OS !== 'web',
-        })}
-        scrollEventThrottle={16}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.tint}
-            colors={[colors.tint]}
+      <AndroidHeaderBlurTarget target={androidBlurTarget}>
+        <Animated.ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: insets.top + 70,
+              paddingBottom: insets.bottom + 100,
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+            useNativeDriver: Platform.OS !== 'web',
+          })}
+          scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.tint}
+              colors={[colors.tint]}
+            />
+          }
+        >
+          {/* Promo Banner linking to Asesoría (Matching Frontend) */}
+          <PromoBanner
+            type="nutrition"
+            onPress={() => router.push('/asesoria' as any)}
           />
-        }
-      >
-        {/* Promo Banner linking to Asesoría (Matching Frontend) */}
-        <PromoBanner
-          type="nutrition"
-          onPress={() => router.push('/asesoria' as any)}
-        />
 
-        {/* Date Navigator */}
-        <DateNavigator
-          selectedDate={selectedDate}
-          onDateChange={fetchDataForDate}
-        />
+          {/* Date Navigator */}
+          <DateNavigator
+            selectedDate={selectedDate}
+            onDateChange={fetchDataForDate}
+          />
 
-        {/* Smart Nutrition Coach Diagnostic Banner (Matching frontend: only when foods exist) */}
-        {nutritionLog && nutritionLog.length > 0 && nutritionPlan ? (
-          <TouchableOpacity
-            activeOpacity={0.88}
-            onPress={() => {
-              try {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              } catch {}
-              setShowNutritionCoachModal(true);
-            }}
-            style={[
-              styles.coachBanner,
-              {
-                backgroundColor: nutritionPlan.isWarning
-                  ? 'rgba(245, 158, 11, 0.12)'
-                  : nutritionPlan.isOptimal
-                  ? 'rgba(16, 185, 129, 0.12)'
-                  : colors.tint + '12',
-                borderColor: nutritionPlan.isWarning
-                  ? 'rgba(245, 158, 11, 0.3)'
-                  : nutritionPlan.isOptimal
-                  ? 'rgba(16, 185, 129, 0.3)'
-                  : colors.tint + '30',
-              },
-            ]}
-          >
-            <View
+          {/* Smart Nutrition Coach Diagnostic Banner (Matching frontend: only when foods exist) */}
+          {nutritionLog && nutritionLog.length > 0 && nutritionPlan ? (
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={() => {
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch {}
+                setShowNutritionCoachModal(true);
+              }}
               style={[
-                styles.coachIconWrap,
+                styles.coachBanner,
                 {
                   backgroundColor: nutritionPlan.isWarning
-                    ? 'rgba(245, 158, 11, 0.22)'
+                    ? 'rgba(245, 158, 11, 0.12)'
                     : nutritionPlan.isOptimal
-                    ? 'rgba(16, 185, 129, 0.22)'
-                    : colors.tint + '22',
+                    ? 'rgba(16, 185, 129, 0.12)'
+                    : colors.tint + '12',
+                  borderColor: nutritionPlan.isWarning
+                    ? 'rgba(245, 158, 11, 0.3)'
+                    : nutritionPlan.isOptimal
+                    ? 'rgba(16, 185, 129, 0.3)'
+                    : colors.tint + '30',
                 },
               ]}
             >
-              {nutritionPlan.isWarning ? (
-                <AlertTriangle size={20} color="#f59e0b" strokeWidth={2.5} />
-              ) : nutritionPlan.isOptimal ? (
-                <CheckCircle2 size={20} color="#10b981" strokeWidth={2.5} />
-              ) : (
-                <Target size={20} color={colors.tint} strokeWidth={2.5} />
-              )}
-            </View>
+              <View
+                style={[
+                  styles.coachIconWrap,
+                  {
+                    backgroundColor: nutritionPlan.isWarning
+                      ? 'rgba(245, 158, 11, 0.22)'
+                      : nutritionPlan.isOptimal
+                      ? 'rgba(16, 185, 129, 0.22)'
+                      : colors.tint + '22',
+                  },
+                ]}
+              >
+                {nutritionPlan.isWarning ? (
+                  <AlertTriangle size={20} color="#f59e0b" strokeWidth={2.5} />
+                ) : nutritionPlan.isOptimal ? (
+                  <CheckCircle2 size={20} color="#10b981" strokeWidth={2.5} />
+                ) : (
+                  <Target size={20} color={colors.tint} strokeWidth={2.5} />
+                )}
+              </View>
 
-            <View style={styles.coachBannerInfo}>
-              <View style={styles.coachTopTags}>
-                <View
-                  style={[
-                    styles.coachStatusBadge,
-                    {
-                      backgroundColor: nutritionPlan.isWarning
-                        ? 'rgba(245, 158, 11, 0.2)'
-                        : nutritionPlan.isOptimal
-                        ? 'rgba(16, 185, 129, 0.2)'
-                        : colors.tint + '20',
-                    },
-                  ]}
-                >
-                  <Text
+              <View style={styles.coachBannerInfo}>
+                <View style={styles.coachTopTags}>
+                  <View
                     style={[
-                      styles.coachStatusText,
+                      styles.coachStatusBadge,
                       {
-                        color: nutritionPlan.isWarning
-                          ? '#f59e0b'
+                        backgroundColor: nutritionPlan.isWarning
+                          ? 'rgba(245, 158, 11, 0.2)'
                           : nutritionPlan.isOptimal
-                          ? '#10b981'
-                          : colors.tint,
+                          ? 'rgba(16, 185, 129, 0.2)'
+                          : colors.tint + '20',
                       },
                     ]}
                   >
-                    {nutritionPlan.isWarning
-                      ? `Aviso Nutricional (${nutritionPlan.warningsCount} ${
-                          nutritionPlan.warningsCount === 1 ? 'alerta' : 'alertas'
-                        }) !`
-                      : nutritionPlan.isOptimal
-                      ? '¡Día Nutricional en Racha! ✓'
-                      : 'Objetivo Nutricional'}
+                    <Text
+                      style={[
+                        styles.coachStatusText,
+                        {
+                          color: nutritionPlan.isWarning
+                            ? '#f59e0b'
+                            : nutritionPlan.isOptimal
+                            ? '#10b981'
+                            : colors.tint,
+                        },
+                      ]}
+                    >
+                      {nutritionPlan.isWarning
+                        ? `Aviso Nutricional (${nutritionPlan.warningsCount} ${
+                            nutritionPlan.warningsCount === 1 ? 'alerta' : 'alertas'
+                          }) !`
+                        : nutritionPlan.isOptimal
+                        ? '¡Día Nutricional en Racha! ✓'
+                        : 'Objetivo Nutricional'}
+                    </Text>
+                  </View>
+
+                  <Text style={[styles.coachGoalLabel, { color: colors.textMuted }]}>
+                    Meta: {nutritionPlan.userGoal.label}
                   </Text>
                 </View>
 
-                <Text style={[styles.coachGoalLabel, { color: colors.textMuted }]}>
-                  Meta: {nutritionPlan.userGoal.label}
+                <Text style={[styles.coachBannerDesc, { color: colors.text }]} numberOfLines={2}>
+                  {nutritionPlan.isWarning
+                    ? 'Ajustes recomendados para hoy: Revisa proteína, calorías o hidratación.'
+                    : nutritionPlan.isOptimal
+                    ? '¡Tus macros y calorías están perfectamente ajustados a tu meta!'
+                    : 'Pautas recomendadas para completar tus objetivos de nutrición hoy.'}
                 </Text>
               </View>
 
-              <Text style={[styles.coachBannerDesc, { color: colors.text }]} numberOfLines={2}>
-                {nutritionPlan.isWarning
-                  ? 'Ajustes recomendados para hoy: Revisa proteína, calorías o hidratación.'
-                  : nutritionPlan.isOptimal
-                  ? '¡Tus macros y calorías están perfectamente ajustados a tu meta!'
-                  : 'Pautas recomendadas para completar tus objetivos de nutrición hoy.'}
-              </Text>
-            </View>
+              <ChevronRight size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          ) : null}
 
-            <ChevronRight size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-        ) : null}
-
-        {/* Daily Summary Card (Bento Grid vs SVG Donut Chart + Coach Pill) */}
-        <DailySummary
-          totals={totals}
-          targets={targets}
-          onOpenSugarModal={() => setModal({ type: 'sugar' })}
-          nutritionPlan={nutritionPlan}
-          onOpenNutritionCoach={() => setShowNutritionCoachModal(true)}
-        />
-
-        {/* Water Tracker Card */}
-        <WaterTrackerCard
-          currentMl={waterLog?.quantity_ml || 0}
-          targetMl={waterTarget}
-          onPress={() => setModal({ type: 'water' })}
-        />
-
-        {/* Creatine Tracker Card */}
-        <CreatineTrackerCard
-          creatineTarget={creatineTarget}
-          dosesCount={todaysCreatineLog?.length || 0}
-          onPress={() => setShowCreatineModal(true)}
-        />
-
-        {/* 4 Meal Sections with Copy feature */}
-        {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(mealKey => (
-          <MealSection
-            key={mealKey}
-            mealType={mealKey}
-            title={mealLabels[mealKey]}
-            totalCalories={mealTotals[mealKey] || 0}
-            logs={meals[mealKey]}
-            onAddFood={() => setModal({ type: 'food', data: { mealType: mealKey } })}
-            onScanBarcode={() => setModal({ type: 'food', data: { mealType: mealKey, initialScan: true } })}
-            onEditFood={item => setModal({ type: 'food', data: { ...item, mealType: mealKey } })}
-            onDeleteFood={item => setLogToDelete(item)}
-            onClearMeal={() => setMealGroupToDelete(mealKey)}
-            onViewFood={item => setViewingLog(item)}
-            onCopyMeal={() => setMealCopy({ destinationMealType: mealKey })}
+          {/* Daily Summary Card (Bento Grid vs SVG Donut Chart + Coach Pill) */}
+          <DailySummary
+            totals={totals}
+            targets={targets}
+            onOpenSugarModal={() => setModal({ type: 'sugar' })}
+            nutritionPlan={nutritionPlan}
+            onOpenNutritionCoach={() => setShowNutritionCoachModal(true)}
           />
-        ))}
-      </Animated.ScrollView>
+
+          {/* Water Tracker Card */}
+          <WaterTrackerCard
+            currentMl={waterLog?.quantity_ml || 0}
+            targetMl={waterTarget}
+            onPress={() => setModal({ type: 'water' })}
+          />
+
+          {/* Creatine Tracker Card */}
+          <CreatineTrackerCard
+            creatineTarget={creatineTarget}
+            dosesCount={todaysCreatineLog?.length || 0}
+            onPress={() => setShowCreatineModal(true)}
+          />
+
+          {/* 4 Meal Sections with Copy feature */}
+          {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(mealKey => (
+            <MealSection
+              key={mealKey}
+              mealType={mealKey}
+              title={mealLabels[mealKey]}
+              totalCalories={mealTotals[mealKey] || 0}
+              logs={meals[mealKey]}
+              onAddFood={() => setModal({ type: 'food', data: { mealType: mealKey } })}
+              onScanBarcode={() => setModal({ type: 'food', data: { mealType: mealKey, initialScan: true } })}
+              onEditFood={item => setModal({ type: 'food', data: { ...item, mealType: mealKey } })}
+              onDeleteFood={item => setLogToDelete(item)}
+              onClearMeal={() => setMealGroupToDelete(mealKey)}
+              onViewFood={item => setViewingLog(item)}
+              onCopyMeal={() => setMealCopy({ destinationMealType: mealKey })}
+            />
+          ))}
+        </Animated.ScrollView>
+      </AndroidHeaderBlurTarget>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
+        <GlobalHeader title="Nutrición" scrollY={scrollY} androidBlurTarget={androidBlurTarget} />
+      </View>
 
       {/* MODALS */}
 

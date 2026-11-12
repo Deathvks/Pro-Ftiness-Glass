@@ -1,6 +1,5 @@
 import useAppStore from '@/store/useAppStore';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from 'react-native';
+import { Colors, isAtmosphericTheme, type ThemeColor } from '@/constants/theme';
 import { useMemo } from 'react';
 
 /**
@@ -8,24 +7,11 @@ import { useMemo } from 'react';
  * Replaces the system-only useTheme hook so user-selected themes (oled, galaxy, etc) apply correctly.
  */
 export function useAppColors() {
-  const storeTheme = useAppStore(state => state.theme);
-  const storeAccent = useAppStore(state => state.accent);
-  const systemScheme = useColorScheme() ?? 'dark';
-  
+  const theme = useAppStore(state => state.theme);
+  const accent = useAppStore(state => isAtmosphericTheme(state.theme) ? undefined : state.accent);
+
   return useMemo(() => {
-    // Si el tema del store es "system" o no existe en los Colors, usa el del sistema, o un fallback
-    const activeTheme = (storeTheme === 'system' ? systemScheme : storeTheme) || 'dark';
-    
-    // Obtenemos la paleta de colores del tema
-    const baseColors = Colors[activeTheme as keyof typeof Colors] || Colors.dark;
-
-    // Los temas especiales usan su propio acento (igual que en la web): ignoramos el acento manual
-    const isSpecialTheme = ['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(activeTheme);
-
-    // Retornamos los colores, sobreescribiendo el color de acento (tint) si existe en el store
-    return {
-      ...baseColors,
-      ...(storeAccent && !isSpecialTheme ? { tint: storeAccent } : {})
-    };
-  }, [storeTheme, storeAccent, systemScheme]);
+    const base = Colors[theme as ThemeColor] || Colors.dark;
+    return accent && accent !== base.tint ? { ...base, tint: accent } : base;
+  }, [theme, accent]);
 }

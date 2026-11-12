@@ -68,7 +68,7 @@ import { LiquidGlassSwitch } from '@/components/ui/LiquidGlassSwitch';
 import { WorkoutDataTransferModal } from '@/components/modals/WorkoutDataTransferModal';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getThemeBaseBackground, getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getThemeBaseBackground, getAppleCardSurfaceStyle, getUnselectedControlColors, shouldUseContentGlass, usesFrontendCardSurface } from '@/constants/theme';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import * as userService from '@/services/userService';
 import * as sessionService from '@/services/sessionService';
@@ -108,7 +108,7 @@ function GlassSurface({
 }) {
   const theme = useAppStore(state => state.theme) || 'oled';
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass();
+  const useGlass = shouldUseContentGlass(theme);
   const effectiveRadius = isIOS ? 20 : radius;
   const innerRadius = Math.max(0, effectiveRadius - 1);
 
@@ -175,7 +175,11 @@ export default function SettingsScreen() {
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const glassBorder = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
-  const subtleItemBg = Platform.OS === 'ios' && !shouldUseContentGlass() ? (isDark ? '#2C2C2E' : '#F2F2F7') : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)');
+  const subtleItemBg = usesFrontendCardSurface(theme)
+    ? getUnselectedControlColors(theme).backgroundColor
+    : Platform.OS === 'ios'
+      ? (isDark ? '#2C2C2E' : '#F2F2F7')
+      : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)');
   const activeTintContrast = getContrastTextColor(colors.tint);
 
   const params = useLocalSearchParams<{ section?: string }>();

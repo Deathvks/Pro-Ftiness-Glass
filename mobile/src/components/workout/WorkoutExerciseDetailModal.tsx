@@ -21,6 +21,7 @@ import {
   AlertCircle,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
+import { getThemeBaseBackground, usesFrontendCardSurface } from '@/constants/theme';
 import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -39,6 +40,7 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
 }) => {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
+  const useFrontendSurface = usesFrontendCardSurface(theme);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
   const allExercises = useAppStore(state => state.allExercises) || [];
@@ -260,18 +262,16 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
       sheetStyle={[
         styles.modalSheet,
         {
-          backgroundColor: isDark ? 'rgba(22, 22, 28, 0.85)' : 'rgba(255, 255, 255, 0.90)',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.88)',
+          backgroundColor: useFrontendSurface ? getThemeBaseBackground(theme) : isDark ? 'rgba(22, 22, 28, 0.85)' : 'rgba(255, 255, 255, 0.90)',
+          borderColor: useFrontendSurface ? colors.border : isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.88)',
         },
       ]}
     >
       {exercise ? (
         <>
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
+          {!useFrontendSurface && (
+            <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          )}
 
           {/* Barra de arrastre superior tipo cápsula Apple (Swipe down to dismiss) */}
           <View pointerEvents="none" style={styles.dragIndicatorWrapper}>

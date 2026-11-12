@@ -1,4 +1,4 @@
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastColor, getContrastTextColor } from '@/utils/colorUtils';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
@@ -26,6 +26,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { getUnselectedControlColors, usesFrontendCardSurface } from '@/constants/theme';
 import { getExerciseList } from '@/services/exerciseService';
 import apiClient from '@/services/apiClient';
 import { SelectModal, SelectOption } from '@/components/ui/SelectModal';
@@ -64,6 +65,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
+  const filterTextColor = isIOS ? colors.text : getContrastTextColor(colors.tint);
 
   const [view, setView] = useState<'list' | 'detail' | 'summary'>('list');
   const [exercises, setExercises] = useState<any[]>([]);
@@ -235,13 +237,16 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
     }
   };
 
-  const innerPillBg = isIOS
+  const innerPillBg = usesFrontendCardSurface(theme)
+    ? getUnselectedControlColors(theme).backgroundColor
+    : isIOS
     ? isDark
       ? '#3A3A3C'
       : '#F2F2F7'
     : isDark
     ? 'rgba(255,255,255,0.06)'
     : 'rgba(0,0,0,0.05)';
+  const hasStagedExercises = stagedExercises.length > 0;
 
   const renderExerciseItem = ({ item }: { item: any }) => {
     const isStaged = stagedIds.has(item.id);
@@ -260,7 +265,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
             borderColor: isStaged ? colors.tint : colors.border,
             borderWidth: isStaged ? 1.5 : isIOS ? 0 : 1,
           },
-          getAppleSheetCardStyle(isDark, 22),
+          getAppleSheetCardStyle(isDark, 22, theme),
           isStaged && {
             borderWidth: 1.5,
             borderColor: colors.tint,
@@ -381,23 +386,15 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
             },
           ]}
         >
-          {view !== 'list' ? (
-            <TouchableOpacity
-              onPress={() => setView('list')}
-              activeOpacity={0.75}
-              style={[styles.headerCircleBtn, { backgroundColor: innerPillBg }]}
-            >
-              <ArrowLeft size={19} color={colors.text} />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={onClose}
-              activeOpacity={0.75}
-              style={[styles.headerCircleBtn, { backgroundColor: innerPillBg }]}
-            >
-              <X size={19} color={colors.text} />
-            </TouchableOpacity>
-          )}
+          <GlassButton
+            theme={theme}
+            noShadow
+            accessibilityLabel={view === 'list' ? 'Cerrar biblioteca' : 'Volver a los ejercicios'}
+            onPress={view === 'list' ? onClose : () => setView('list')}
+            style={styles.headerCircleBtn}
+          >
+            {view === 'list' ? <X size={19} color={colors.text} /> : <ArrowLeft size={19} color={colors.text} />}
+          </GlassButton>
 
           <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 8 }}>
             <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
@@ -414,38 +411,25 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
           {isReadOnly || view === 'summary' || view === 'detail' ? (
             <View style={{ width: 38 }} />
           ) : (
-            <TouchableOpacity
-              activeOpacity={0.8}
+            <GlassButton
+              theme={theme}
+              noShadow
+              color={hasStagedExercises ? colors.tint + '24' : undefined}
+              accessibilityLabel={`Ver ejercicios seleccionados (${stagedExercises.length})`}
               onPress={() => setView('summary')}
-              style={[
-                styles.cartPillBtn,
-                {
-                  backgroundColor:
-                    stagedExercises.length > 0 ? colors.tint : innerPillBg,
-                },
-              ]}
+              style={styles.cartPillBtn}
             >
-              <ListChecks
-                size={15}
-                color={
-                  stagedExercises.length > 0
-                    ? getContrastColor(colors.tint, theme)
-                    : colors.textSecondary
-                }
-              />
+              <ListChecks size={15} color={hasStagedExercises ? colors.text : colors.textSecondary} />
               <Text
                 style={{
-                  color:
-                    stagedExercises.length > 0
-                      ? getContrastColor(colors.tint, theme)
-                      : colors.textSecondary,
+                  color: hasStagedExercises ? colors.text : colors.textSecondary,
                   fontWeight: '800',
                   fontSize: 13,
                 }}
               >
                 Ver ({stagedExercises.length})
               </Text>
-            </TouchableOpacity>
+            </GlassButton>
           )}
         </View>
 
@@ -462,7 +446,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                     borderColor: colors.border,
                     borderWidth: isIOS ? 0 : 1,
                   },
-                  getAppleSheetCardStyle(isDark, 16),
+                  getAppleSheetCardStyle(isDark, 16, theme),
                 ]}
               >
                 <Search size={18} color={colors.textSecondary} style={styles.searchIcon} />
@@ -496,6 +480,8 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                     <TouchableOpacity
                       key={f.id}
                       activeOpacity={0.75}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
                       onPress={() => {
                         try {
                           Haptics.selectionAsync();
@@ -510,26 +496,14 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                               borderColor: colors.tint,
                               borderWidth: isIOS ? 1 : 0,
                             }
-                          : {
-                              backgroundColor: isIOS
-                                ? isDark
-                                  ? '#2C2C2E'
-                                  : '#FFFFFF'
-                                : innerPillBg,
-                              borderWidth: isIOS ? 0 : 1,
-                              borderColor: colors.border,
-                            },
+                          : { ...getUnselectedControlColors(theme), borderWidth: StyleSheet.hairlineWidth },
                       ]}
                     >
                       <Text
                         style={{
                           fontSize: 13,
                           fontWeight: active ? '700' : '600',
-                          color: active
-                            ? isIOS
-                              ? colors.tint
-                              : getContrastColor(colors.tint, theme)
-                            : colors.textSecondary,
+                          color: active ? filterTextColor : colors.textSecondary,
                         }}
                       >
                         {f.label}
@@ -610,7 +584,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                     backgroundColor: colors.card,
                     borderRadius: 20,
                   },
-                  getAppleSheetCardStyle(isDark, 20),
+                  getAppleSheetCardStyle(isDark, 20, theme),
                 ]}
               >
                 <Text
@@ -663,7 +637,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                     marginTop: 14,
                     gap: 10,
                   },
-                  getAppleSheetCardStyle(isDark, 18),
+                  getAppleSheetCardStyle(isDark, 18, theme),
                 ]}
               >
                 {isAiLoading ? (
@@ -688,7 +662,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                       borderRadius: 18,
                       marginTop: 14,
                     },
-                    getAppleSheetCardStyle(isDark, 18),
+                    getAppleSheetCardStyle(isDark, 18, theme),
                   ]}
                 >
                   <View
@@ -773,7 +747,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                         borderColor: colors.border,
                         borderWidth: isIOS ? 0 : 1,
                       },
-                      getAppleSheetCardStyle(isDark, 22),
+                      getAppleSheetCardStyle(isDark, 22, theme),
                     ]}
                   >
                     {/* Header row inside preview card */}

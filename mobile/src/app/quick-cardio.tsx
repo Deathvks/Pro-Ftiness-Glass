@@ -69,7 +69,7 @@ function ActivitySheet({ activity, weight, saving, onClose, onSave, onStartGPS }
           </>
         )}
 
-        <View style={[styles.metricCard, { backgroundColor: colors.card }, getAppleSheetCardStyle(isDark)]}>
+        <View style={[styles.metricCard, { backgroundColor: colors.card }, getAppleSheetCardStyle(isDark, 16, theme)]}>
           <View style={styles.spreadRow}>
             <View style={styles.inline}>
               <Clock size={17} color={colors.tint} />
@@ -96,7 +96,7 @@ function ActivitySheet({ activity, weight, saving, onClose, onSave, onStartGPS }
           </View>
         </View>
 
-        <View style={[styles.metricCard, styles.spreadRow, { backgroundColor: colors.card }, getAppleSheetCardStyle(isDark)]}>
+        <View style={[styles.metricCard, styles.spreadRow, { backgroundColor: colors.card }, getAppleSheetCardStyle(isDark, 16, theme)]}>
           <View>
             <Text style={[styles.secondary, { color: colors.textSecondary }]}>Estimación</Text>
             <Text style={[styles.metricValue, { color: colors.text }]}>
@@ -134,7 +134,7 @@ export default function QuickCardioScreen() {
   const bodyWeightLog = useAppStore(state => state.bodyWeightLog);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass();
+  const useGlass = shouldUseContentGlass(theme);
   const weight = getCardioWeight(bodyWeightLog, user?.weight);
   const [query, setQuery] = useState('');
   const [intensity, setIntensity] = useState('all');

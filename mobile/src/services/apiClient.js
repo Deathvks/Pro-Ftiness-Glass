@@ -68,7 +68,7 @@ if (__DEV__) {
 
 const apiClient = async (endpoint, options = {}) => {
     const token = useAppStore.getState().token;
-    const { body, cardioUserId, queueWhenOffline: allowQueue, ...customConfig } = options;
+    const { body, cardioUserId, queueWhenOffline: allowQueue, timeout = 30000, ...customConfig } = options;
 
     // Headers por defecto.
     const headers = { ...customConfig.headers };
@@ -137,7 +137,7 @@ const apiClient = async (endpoint, options = {}) => {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos de timeout para tareas pesadas
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
     config.signal = controller.signal;
 
     try {

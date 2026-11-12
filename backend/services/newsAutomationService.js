@@ -899,8 +899,8 @@ REGLAS OBLIGATORIAS DE ADAPTACIÓN:
   }
 
   updateSchedule(hour, minute = 0) {
-    this.scheduledHour = parseInt(hour, 10) || 9;
-    this.scheduledMinute = parseInt(minute, 10) || 0;
+    this.scheduledHour = hour;
+    this.scheduledMinute = minute;
     this.nextRunAt = calculateNextRun(this.scheduledHour, this.scheduledMinute);
     this.addLog(`⏰ Hora programada actualizada a las ${String(this.scheduledHour).padStart(2, '0')}:${String(this.scheduledMinute).padStart(2, '0')}`, 'info');
     this.savePersistedState();

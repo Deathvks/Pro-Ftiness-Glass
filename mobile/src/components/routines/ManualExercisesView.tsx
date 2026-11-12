@@ -31,7 +31,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, getUnselectedControlColors, shouldUseContentGlass } from '@/constants/theme';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import apiClient from '@/services/apiClient';
 import { getExerciseList } from '@/services/exerciseService';
@@ -125,7 +125,7 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
               onPress={onClose}
               style={[
                 styles.closeIconBtn,
-                { backgroundColor: isIOS ? (isDark ? '#2C2C2E' : '#E5E5EA') : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)') },
+                { backgroundColor: getUnselectedControlColors(theme).backgroundColor },
               ]}
             >
               <X size={18} color={colors.text} />
@@ -184,9 +184,7 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
                         style={[
                           styles.routineTag,
                           {
-                            backgroundColor: isIOS
-                              ? (isDark ? '#2C2C2E' : '#FFFFFF')
-                              : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)'),
+                            backgroundColor: getUnselectedControlColors(theme).backgroundColor,
                             borderColor: isIOS
                               ? 'transparent'
                               : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'),
@@ -213,9 +211,7 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
                       style={[
                         styles.historyItem,
                         {
-                          backgroundColor: isIOS
-                            ? (isDark ? '#2C2C2E' : '#FFFFFF')
-                            : (isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)'),
+                          backgroundColor: getUnselectedControlColors(theme).backgroundColor,
                           borderColor: isIOS
                             ? 'transparent'
                             : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)'),
@@ -379,7 +375,7 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
               onPress={onClose}
               style={[
                 styles.closeIconBtn,
-                { backgroundColor: isIOS ? (isDark ? '#2C2C2E' : '#E5E5EA') : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)') },
+                { backgroundColor: getUnselectedControlColors(theme).backgroundColor },
               ]}
             >
               <X size={18} color={colors.text} />
@@ -444,9 +440,7 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
                     style={[
                       styles.searchInputContainer,
                       {
-                        backgroundColor: isIOS
-                          ? (isDark ? '#2C2C2E' : '#FFFFFF')
-                          : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)'),
+                        backgroundColor: getUnselectedControlColors(theme).backgroundColor,
                         borderColor: isIOS
                           ? 'transparent'
                           : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
@@ -476,9 +470,7 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
                       style={[
                         styles.searchResultsContainer,
                         {
-                          backgroundColor: isIOS
-                            ? (isDark ? '#2C2C2E' : '#FFFFFF')
-                            : (isDark ? 'rgba(28, 28, 36, 0.98)' : 'rgba(245, 245, 247, 0.98)'),
+                          backgroundColor: colors.card,
                           borderColor: isIOS
                             ? 'transparent'
                             : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
@@ -592,7 +584,7 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
               <TouchableOpacity
                 style={[
                   styles.cancelBtn,
-                  { backgroundColor: isIOS ? (isDark ? '#2C2C2E' : '#E5E5EA') : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)') },
+                  { backgroundColor: getUnselectedControlColors(theme).backgroundColor },
                 ]}
                 onPress={onClose}
               >
@@ -627,7 +619,7 @@ export const ManualExercisesView: React.FC = () => {
   const theme = useAppStore((state) => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const iosTertiaryBg = isDark ? '#2C2C2E' : '#F2F2F7';
+  const controlBackground = getUnselectedControlColors(theme).backgroundColor;
 
   const [exercises, setExercises] = useState<ManualExerciseItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -751,9 +743,7 @@ export const ManualExercisesView: React.FC = () => {
           style={[
             styles.searchBar,
             {
-              backgroundColor: isIOS
-                ? (isDark ? '#1C1C1E' : '#FFFFFF')
-                : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)'),
+              backgroundColor: controlBackground,
               borderColor: isIOS
                 ? 'transparent'
                 : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
@@ -789,11 +779,11 @@ export const ManualExercisesView: React.FC = () => {
             getAppleCardSurfaceStyle(theme, 20),
             !isIOS && {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+              backgroundColor: colors.card,
             },
           ]}
         >
-          {shouldUseContentGlass() && (
+          {shouldUseContentGlass(theme) && (
             <GlassView
               style={StyleSheet.absoluteFill}
               glassEffectStyle="regular"
@@ -822,11 +812,11 @@ export const ManualExercisesView: React.FC = () => {
                 getAppleCardSurfaceStyle(theme, 20),
                 !isIOS && {
                   borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.65)',
+                  backgroundColor: colors.card,
                 },
               ]}
             >
-              {shouldUseContentGlass() && (
+              {shouldUseContentGlass(theme) && (
                 <GlassView
                   style={StyleSheet.absoluteFill}
                   glassEffectStyle="regular"
@@ -853,7 +843,7 @@ export const ManualExercisesView: React.FC = () => {
                   <TouchableOpacity
                     style={[
                       styles.smallIconBtn,
-                      { backgroundColor: isIOS ? iosTertiaryBg : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)') },
+                      { backgroundColor: controlBackground },
                     ]}
                     onPress={() => setInfoExercise(ex.name)}
                   >
@@ -876,7 +866,7 @@ export const ManualExercisesView: React.FC = () => {
                   <View
                     style={[
                       styles.statBadge,
-                      { backgroundColor: isIOS ? iosTertiaryBg : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)') },
+                      { backgroundColor: controlBackground },
                     ]}
                   >
                     <Dumbbell size={11} color={colors.textSecondary} />
@@ -890,7 +880,7 @@ export const ManualExercisesView: React.FC = () => {
                   <View
                     style={[
                       styles.statBadge,
-                      { backgroundColor: isIOS ? iosTertiaryBg : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)') },
+                      { backgroundColor: controlBackground },
                     ]}
                   >
                     <Text style={[styles.rLetter, { color: colors.tint }]}>R</Text>

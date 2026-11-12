@@ -59,7 +59,7 @@ function GlassSurface({
 }) {
   const theme = useAppStore(state => state.theme) || 'oled';
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass();
+  const useGlass = shouldUseContentGlass(theme);
   const innerRadius = Math.max(0, (isIOS ? 20 : radius) - 1);
 
   return (

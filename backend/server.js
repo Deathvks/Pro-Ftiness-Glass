@@ -200,6 +200,7 @@ app.use('/api/routines', routineRoutes);
 app.use('/api/template-routines', templateRoutinesRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/workouts', workoutRoutes);
+app.use('/api/admin/security', securityRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/2fa', twoFactorRoutes);
@@ -213,7 +214,6 @@ app.use('/api/squads', squadRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/trainer', trainerRoutes);
 app.use('/api/chat', chatRoutes);
-app.use('/api/admin/security', securityRoutes);
 app.use('/api/news', newsRoutes);
 
 // Helper para escapar caracteres especiales reservados en XML/RSS

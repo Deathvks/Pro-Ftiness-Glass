@@ -19,7 +19,7 @@ export default function BentoStatCard({
 }: any) {
     const theme = useAppStore(state => state.theme) || 'oled';
     const isIOS = Platform.OS === 'ios';
-    const useGlass = shouldUseContentGlass();
+    const useGlass = shouldUseContentGlass(theme);
     const surface = (isIOS || isAtmosphericTheme(theme)) && getAppleCardSurfaceStyle(theme, 28);
     const color = iconColor || themeColors?.tint || '#22c55e';
     const CardWrapper = onPress ? TouchableOpacity : View;

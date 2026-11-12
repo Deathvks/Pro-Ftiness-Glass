@@ -22,7 +22,7 @@ export const CreatineTrackerCard: React.FC<CreatineTrackerCardProps> = ({
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass();
+  const useGlass = shouldUseContentGlass(theme);
 
   const hasLogged = dosesCount > 0;
 

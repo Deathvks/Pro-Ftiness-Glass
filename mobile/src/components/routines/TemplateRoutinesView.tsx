@@ -25,7 +25,7 @@ import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass, getUnselectedControlColors } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 
 const DEFAULT_TEMPLATES = [
@@ -104,9 +104,7 @@ export function TemplateRoutinesView() {
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const innerSurfaceBg = isIOS
-    ? (isDark ? '#2C2C2E' : '#F2F2F7')
-    : (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)');
+  const innerSurfaceBg = getUnselectedControlColors(theme).backgroundColor;
 
   const createRoutine = useAppStore(state => state.createRoutine);
   const startWorkout = useAppStore(state => state.startWorkout);
@@ -178,7 +176,7 @@ export function TemplateRoutinesView() {
     }
   };
 
-  const handleStartTemplateDirect = async (template: typeof DEFAULT_TEMPLATES[0]) => {
+  const handleStartTemplateDirect = (template: typeof DEFAULT_TEMPLATES[0]) => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
@@ -215,9 +213,9 @@ export function TemplateRoutinesView() {
             {
               text: 'Descartar e iniciar plantilla',
               style: 'destructive',
-              onPress: async () => {
+              onPress: () => {
                 if (stopWorkout) stopWorkout();
-                if (startWorkout) await startWorkout(routineObj);
+                if (startWorkout) startWorkout(routineObj);
                 router.push('/workout');
               },
             },
@@ -232,7 +230,7 @@ export function TemplateRoutinesView() {
     }
 
     if (startWorkout) {
-      await startWorkout(routineObj);
+      startWorkout(routineObj);
     }
     router.push('/workout');
   };
@@ -244,9 +242,7 @@ export function TemplateRoutinesView() {
         style={[
           styles.searchWrap,
           {
-            backgroundColor: isIOS
-              ? (isDark ? '#1C1C1E' : '#FFFFFF')
-              : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)'),
+            backgroundColor: innerSurfaceBg,
             borderColor: isIOS ? 'transparent' : colors.border,
             borderWidth: isIOS ? 0 : 1,
           },
@@ -275,9 +271,7 @@ export function TemplateRoutinesView() {
                 {
                   backgroundColor: isAct
                     ? colors.tint
-                    : isIOS
-                    ? (isDark ? '#1C1C1E' : '#FFFFFF')
-                    : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
+                    : innerSurfaceBg,
                   borderColor: isAct ? colors.tint : (isIOS ? 'transparent' : colors.border),
                   borderWidth: isIOS ? 0 : 1,
                 },
@@ -310,14 +304,12 @@ export function TemplateRoutinesView() {
                 styles.templateCard,
                 getAppleCardSurfaceStyle(theme, 20),
                 !isIOS && {
-                  backgroundColor: isDark
-                    ? 'rgba(255, 255, 255, 0.03)'
-                    : 'rgba(255, 255, 255, 0.65)',
+                  backgroundColor: colors.card,
                   borderColor: colors.border,
                 },
               ]}
             >
-              {shouldUseContentGlass() && (
+              {shouldUseContentGlass(theme) && (
                 <GlassView
                   glassEffectStyle="regular"
                   colorScheme={isDark ? 'dark' : 'light'}

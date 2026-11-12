@@ -5,7 +5,7 @@ import { GlassView } from 'expo-glass-effect';
 import { GlassButton } from '@/components/ui/GlassButton';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass, getUnselectedControlColors } from '@/constants/theme';
 import { SocialUserAvatar } from './SocialUserAvatar';
 import { ConfirmationModal } from './ConfirmationModal';
 
@@ -19,9 +19,7 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const tertiarySurface = isDark
-    ? (isIOS ? '#2C2C2E' : 'rgba(255, 255, 255, 0.04)')
-    : (isIOS ? '#F2F2F7' : 'rgba(0, 0, 0, 0.03)');
+  const tertiarySurface = getUnselectedControlColors(theme).backgroundColor;
 
   const socialFriends = useAppStore(state => state.socialFriends) || [];
   const removeFriend = useAppStore(state => state.removeFriend);
@@ -88,7 +86,7 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
           !isIOS && { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
         ]}
       >
-        {shouldUseContentGlass() && (
+        {shouldUseContentGlass(theme) && (
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}
@@ -113,7 +111,7 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
               { backgroundColor: tertiarySurface },
             ]}
           >
-            <View style={[styles.emptyIconBox, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)' }]}>
+            <View style={[styles.emptyIconBox, { backgroundColor: getUnselectedControlColors(theme).backgroundColor }]}>
               <Users size={32} color={colors.textSecondary} />
             </View>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
@@ -191,7 +189,7 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
                   style={[
                     styles.pageBtn,
                     {
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+                      backgroundColor: getUnselectedControlColors(theme).backgroundColor,
                       opacity: page === 1 ? 0.3 : 1,
                     },
                   ]}
@@ -209,7 +207,7 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
                   style={[
                     styles.pageBtn,
                     {
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+                      backgroundColor: getUnselectedControlColors(theme).backgroundColor,
                       opacity: page === totalPages ? 0.3 : 1,
                     },
                   ]}

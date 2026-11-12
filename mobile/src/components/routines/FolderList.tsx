@@ -6,6 +6,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { Folder, FolderOpen } from 'lucide-react-native';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { getContrastTextColor } from '@/utils/routineHelpers';
+import { getUnselectedControlColors } from '@/constants/theme';
 
 interface FolderListProps {
   folders: string[];
@@ -16,7 +17,7 @@ interface FolderListProps {
 export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderListProps) {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
-  const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const controlColors = getUnselectedControlColors(theme);
   const accentColor = colors.tint;
   const isIOS = Platform.OS === 'ios';
 
@@ -44,10 +45,10 @@ export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderLi
             onPress={() => onSelectFolder(opt.id)}
             theme={theme}
             noShadow={true}
-            color={isActive ? (isIOS ? accentColor + '22' : accentColor) : undefined}
+            color={isActive ? (isIOS ? accentColor + '22' : accentColor) : controlColors.backgroundColor}
             style={[
               styles.tab,
-              { borderColor: isActive ? (isIOS ? accentColor + '50' : accentColor) : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)') }
+              { borderColor: isActive ? (isIOS ? accentColor + '50' : accentColor) : controlColors.borderColor }
             ]}
           >
             {isNamedFolder && (
