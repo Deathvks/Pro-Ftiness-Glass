@@ -311,6 +311,7 @@ const Workout = ({ timer, setView, navParams }) => {
         const workoutData = {
             routineId: activeWorkout.routineId,
             routineName: activeWorkout.routineName,
+            workout_date: activeWorkout.startTime || new Date().toISOString(),
             duration_seconds: timer,
             notes: notes,
             calories_burned: finalCalories,

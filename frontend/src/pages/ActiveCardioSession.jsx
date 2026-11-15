@@ -147,6 +147,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
 
   const watchIdRef = useRef(null);
   const timerRef = useRef(null);
+  const startTimeRef = useRef(savedState?.startTime || null);
 
   useEffect(() => {
     if (savedState && savedState.status === 'running' && savedState.lastTimestamp) {
@@ -161,6 +162,9 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
 
   useEffect(() => {
     if (status !== 'idle' && activityId) {
+      if (!startTimeRef.current) {
+        startTimeRef.current = new Date().toISOString();
+      }
       const stateToSave = {
         activityId,
         status,
@@ -168,7 +172,8 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
         path,
         distance,
         lastPosition: position,
-        lastTimestamp: Date.now()
+        lastTimestamp: Date.now(),
+        startTime: startTimeRef.current
       };
       localStorage.setItem(LS_KEY, JSON.stringify(stateToSave));
     }
@@ -217,6 +222,10 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
     if (permissionStatus === 'denied') {
       setShowPermissionModal(true);
       return;
+    }
+
+    if (!startTimeRef.current) {
+      startTimeRef.current = new Date().toISOString();
     }
 
     setStatus('running');
@@ -318,7 +327,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
 
     const payload = {
       routineName: activity.name,
-      workout_date: new Date().toISOString(),
+      workout_date: startTimeRef.current || new Date().toISOString(),
       duration_seconds: seconds,
       calories_burned: calories,
       notes: `${userNote}\n${gpsNote}`,

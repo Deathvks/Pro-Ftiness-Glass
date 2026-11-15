@@ -20,6 +20,43 @@ const calculate1RM = (weight, reps) => {
 // AÑADIDO: RoutineExercise para guardar las metas/recordatorios
 const { WorkoutLog, WorkoutLogDetail, WorkoutLogSet, PersonalRecord, User, Friendship, RoutineExercise, sequelize } = models;
 
+const getTimeZoneOffsetMs = (utcDate, timeZone) => {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  });
+  const parts = Object.fromEntries(dtf.formatToParts(utcDate).map((p) => [p.type, p.value]));
+  const asUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second)
+  );
+  return asUtc - utcDate.getTime();
+};
+
+const getDayBoundsForTimeZone = (year, month, day, timeZone) => {
+  const wallStart = Date.UTC(year, month - 1, day, 0, 0, 0, 0);
+  const startOff1 = getTimeZoneOffsetMs(new Date(wallStart), timeZone);
+  const startOff2 = getTimeZoneOffsetMs(new Date(wallStart - startOff1), timeZone);
+  const startOfDay = new Date(wallStart - startOff2);
+
+  const wallEnd = Date.UTC(year, month - 1, day, 23, 59, 59, 0);
+  const endOff1 = getTimeZoneOffsetMs(new Date(wallEnd), timeZone);
+  const endOff2 = getTimeZoneOffsetMs(new Date(wallEnd - endOff1), timeZone);
+  const endOfDay = new Date(wallEnd - endOff2 + 999);
+
+  return { startOfDay, endOfDay };
+};
+
 export const getWorkoutHistory = async (req, res, next) => {
   try {
     const { date, startDate, endDate, tzOffset } = req.query;
@@ -35,10 +72,23 @@ export const getWorkoutHistory = async (req, res, next) => {
         startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0) + offsetMin * 60 * 1000);
         endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999) + offsetMin * 60 * 1000);
       } else {
-        startOfDay = new Date(year, month - 1, day);
-        startOfDay.setHours(0, 0, 0, 0);
-        endOfDay = new Date(year, month - 1, day);
-        endOfDay.setHours(23, 59, 59, 999);
+        const userRecord = await User.findByPk(req.user.userId, { attributes: ['timezone'] });
+        const userTz = userRecord?.timezone;
+        let resolved = false;
+        if (userTz) {
+          try {
+            ({ startOfDay, endOfDay } = getDayBoundsForTimeZone(year, month, day, userTz));
+            resolved = true;
+          } catch {
+            resolved = false;
+          }
+        }
+        if (!resolved) {
+          startOfDay = new Date(year, month - 1, day);
+          startOfDay.setHours(0, 0, 0, 0);
+          endOfDay = new Date(year, month - 1, day);
+          endOfDay.setHours(23, 59, 59, 999);
+        }
       }
 
       whereCondition.workout_date = {
@@ -133,6 +183,9 @@ export const logWorkoutSession = async (req, res, next) => {
 
     if (incomingDate) {
       finalDate = new Date(incomingDate);
+      if (isNaN(finalDate.getTime())) {
+        finalDate = new Date();
+      }
     } else {
       const today = new Date();
       finalDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -422,6 +475,7 @@ export const logWorkoutSession = async (req, res, next) => {
       res.status(201).json({
       message: 'Entrenamiento guardado con éxito',
       workoutId: newWorkoutLog.id,
+      workout_date: newWorkoutLog.workout_date,
       newPRs: newPRs,
       xpAdded: xpAdded,
       streak: workoutStreak,

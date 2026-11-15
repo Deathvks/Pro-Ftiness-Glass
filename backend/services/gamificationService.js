@@ -51,7 +51,7 @@ const normalizeDate = (inputDate) => {
 
 // --- HELPER PRIVADO: GESTIÓN DE ESTADO ---
 const getDailyState = (user, rawDate) => {
-    const dateKey = normalizeDate(rawDate);
+    const dateKey = trainingDateKey(rawDate ?? new Date(), trainingDateFormatter(user?.timezone)) || normalizeDate(rawDate);
     // Aseguramos que daily_gamification_state sea un objeto
     let state = user.daily_gamification_state || {};
     if (typeof state === 'string') {

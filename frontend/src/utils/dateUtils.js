@@ -40,12 +40,12 @@ const toValidDate = (input) => {
   return null;
 };
 
-// Formatear fecha para mostrar YYYY-MM-DD
+// Formatear fecha para mostrar YYYY-MM-DD (respetando fecha local en timestamps ISO)
 export const formatDate = (date) => {
   if (!date) return '';
   if (typeof date === 'string') {
-    const m = date.match(/^(\d{4}-\d{2}-\d{2})/);
-    if (m) return m[1];
+    const trimmed = date.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
   }
   const d = toValidDate(date);
   if (!d) return '';
@@ -117,11 +117,11 @@ export const formatDateToShort = (dateInput) => {
     return dateInput.trim();
   }
 
-  // Si es un string que empieza con YYYY-MM-DD (ISO 8601 o fecha directa)
+  // Si es un string date-only YYYY-MM-DD sin componente horario
   if (typeof dateInput === 'string') {
-    const isoMatch = dateInput.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (isoMatch) {
-      const [, year, month, day] = isoMatch;
+    const pureDateMatch = dateInput.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (pureDateMatch) {
+      const [, year, month, day] = pureDateMatch;
       return `${day}/${month}/${year}`;
     }
   }

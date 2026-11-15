@@ -49,8 +49,11 @@ const WorkoutShareCard = forwardRef(({
         return url;
     }, [userAvatar]);
 
-    // Format date in Spanish / local
-    const dateStr = new Date().toLocaleDateString('es-ES', {
+    // Format date in Spanish / local (respetando la fecha de inicio de la sesión si existe)
+    const rawWorkoutDate = workoutData?.workout_date || workoutData?.date;
+    const parsedWorkoutDate = rawWorkoutDate ? new Date(rawWorkoutDate) : null;
+    const displayDate = parsedWorkoutDate && !isNaN(parsedWorkoutDate.getTime()) ? parsedWorkoutDate : new Date();
+    const dateStr = displayDate.toLocaleDateString('es-ES', {
         weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
     }).toUpperCase().replace('.', '');
 

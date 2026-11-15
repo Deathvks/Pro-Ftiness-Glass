@@ -11,6 +11,7 @@ import * as creatinaService from '../services/creatinaService';
 import * as exerciseService from '../services/exerciseService';
 import * as personalRecordService from '../services/personalRecordService';
 import { APP_VERSION } from '../config/version';
+import { formatDateForQuery } from '../utils/dateUtils';
 
 let initialFetchInFlight = null;
 let initialFetchRetryCount = 0;
@@ -40,7 +41,7 @@ const isTransientInitialError = (error) => {
   );
 };
 
-const getTodayDateString = () => new Date().toISOString().split('T')[0];
+const getTodayDateString = () => formatDateForQuery(new Date());
 
 const CACHE_VERSION_KEY = 'pfg_cache_version';
 const INITIAL_CACHE_KEY = 'pfg_cached_initial_state_v1';
