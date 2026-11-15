@@ -9,6 +9,7 @@ export interface CardioSession {
   activityId: string;
   elapsedMs: number;
   startedAt: number | null;
+  sessionStartTime?: string;
   path: CardioPoint[];
   distance: number;
 }
@@ -82,9 +83,10 @@ export function readCardioNotes(notes: unknown): { text: string; path: CardioPoi
 export function cardioWorkoutPayload(activity: CardioActivity, seconds: number, weight: number, route?: CardioSession) {
   const manualNote = `Cardio Rápido: ${activity.name} (${activity.intensity}). Registrado desde Quick Cardio.`;
   const routeNote = route && `Sesión GPS: ${formatCardioDistance(route.distance)}. Ritmo: ${formatCardioPace(seconds, route.distance)}.`;
+  const routeStartDate = route?.sessionStartTime || (route?.startedAt ? new Date(route.startedAt).toISOString() : null);
   return {
     routineName: activity.name,
-    workout_date: new Date().toISOString(),
+    workout_date: routeStartDate || new Date().toISOString(),
     duration_seconds: seconds,
     calories_burned: estimateCardioCalories(activity.mets, weight, seconds),
     notes: route?.path.length ? `${routeNote}\n${GPS_MARKER}${JSON.stringify(route.path)}` : routeNote || manualNote,

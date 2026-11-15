@@ -167,7 +167,13 @@ function Tracker({ activityId, userId, recovered }: { activityId?: string; userI
     const time = Date.now();
     setNow(time);
     setFollow(true);
-    setSession(current => current.startedAt === null ? { ...current, startedAt: time } : current);
+    setSession(current => current.startedAt === null
+      ? {
+          ...current,
+          startedAt: time,
+          sessionStartTime: current.sessionStartTime || new Date(time).toISOString(),
+        }
+      : current);
   };
 
   const retryLocation = () => {

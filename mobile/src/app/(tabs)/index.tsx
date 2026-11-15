@@ -57,6 +57,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { getAppleCardSurfaceStyle, isAtmosphericTheme, shouldUseContentGlass } from '@/constants/theme';
 import { getContrastColor, getContrastTextColor } from '@/utils/colorUtils';
 import { isSameDay } from '@/utils/helpers';
+import { formatDateForQuery } from '@/utils/dateUtils';
 import { getTrainingWeek, trainingDateFormatter } from '@/utils/weeklyTraining';
 import { enrichGymWithMedia } from '@/utils/gymMedia';
 import { Image as ExpoImage } from 'expo-image';
@@ -1537,11 +1538,11 @@ export default function Dashboard() {
 
       <CreatineTrackerModal
         visible={showCreatineModal}
-        selectedDate={new Date().toISOString().split('T')[0]}
+        selectedDate={formatDateForQuery(new Date())}
         creatineTarget={2}
         onClose={() => setShowCreatineModal(false)}
         onRefresh={() => {
-          if (fetchDataForDate) fetchDataForDate(new Date().toISOString().split('T')[0]);
+          if (fetchDataForDate) fetchDataForDate(formatDateForQuery(new Date()));
         }}
       />
 

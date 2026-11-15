@@ -250,6 +250,7 @@ export default function WorkoutScreen() {
     const workoutData = {
       routineId: activeWorkout.routineId,
       routineName: activeWorkout.routineName,
+      workout_date: activeWorkout.startTime || new Date().toISOString(),
       duration_seconds: timerSeconds,
       notes: notes,
       calories_burned: finalCalories,

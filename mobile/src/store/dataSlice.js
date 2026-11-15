@@ -10,8 +10,9 @@ import * as templateRoutineService from '../services/templateRoutineService';
 import * as creatinaService from '../services/creatinaService';
 import * as exerciseService from '../services/exerciseService';
 import * as personalRecordService from '../services/personalRecordService';
+import { formatDateForQuery } from '../utils/dateUtils';
 
-const getTodayDateString = () => new Date().toISOString().split('T')[0];
+const getTodayDateString = () => formatDateForQuery(new Date());
 let exerciseCatalogRequest;
 
 const initialState = {

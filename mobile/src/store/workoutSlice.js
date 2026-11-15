@@ -1,6 +1,7 @@
 /* frontend/src/store/workoutSlice.js */
 import * as workoutService from '../services/workoutService';
 import { formatDateForQuery } from '../utils/dateUtils';
+import { isSameDay } from '../utils/helpers';
 import * as Crypto from 'expo-crypto';
 
 const stopNativeTimer = () => {
@@ -181,19 +182,25 @@ export const createWorkoutSlice = (set, get) => ({
 
   fetchTodaysCompletedRoutines: async () => {
     try {
-      const todayQuery = formatDateForQuery(new Date());
+      const today = new Date();
+      const todayQuery = formatDateForQuery(today);
 
       const workouts = await workoutService.getWorkouts({
         date: todayQuery
       });
 
-      if (Array.isArray(workouts)) {
-        const completedIds = workouts
-          .map(w => w.routine_id || w.routineId)
-          .filter(id => id != null);
+      const apiCompletedIds = Array.isArray(workouts)
+        ? workouts
+            .filter(w => !w?.workout_date || isSameDay(new Date(w.workout_date), today))
+            .map(w => w.routine_id || w.routineId)
+            .filter(id => id != null)
+        : [];
 
-        set({ completedRoutineIdsToday: [...new Set(completedIds)] });
-      }
+      const localCompletedIds = (get().workoutLog || [])
+        .filter(log => log?.routine_id && log?.workout_date && isSameDay(new Date(log.workout_date), today))
+        .map(log => log.routine_id);
+
+      set({ completedRoutineIdsToday: [...new Set([...apiCompletedIds, ...localCompletedIds])] });
     } catch (error) {
       console.error("Error obteniendo rutinas completadas hoy:", error);
     }
@@ -677,6 +684,7 @@ export const createWorkoutSlice = (set, get) => ({
     const workoutData = {
         routineId: activeWorkout.routineId,
         routineName: activeWorkout.routineName || 'Entrenamiento libre',
+        workout_date: activeWorkout.startTime,
         duration_seconds: duration_seconds,
         notes: "Autoguardado por límite de 4 horas.",
         calories_burned: calories_burned,
@@ -711,7 +719,9 @@ export const createWorkoutSlice = (set, get) => ({
     try {
       const state = get();
       const activeWorkout = standalone ? null : state.activeWorkout;
-      const workoutDate = (standalone ? workoutData.workout_date : activeWorkout?.startTime) || new Date().toISOString();
+      const workoutDate = (standalone
+        ? (workoutData.workout_date || workoutData.date)
+        : (workoutData?.workout_date || workoutData?.date || activeWorkout?.startTime)) || new Date().toISOString();
 
       // INTERCEPTOR: Borramos/Consumimos las metas que no hayan sido actualizadas hoy
       let processedDetails = workoutData.details;
@@ -728,7 +738,8 @@ export const createWorkoutSlice = (set, get) => ({
       const finalWorkoutData = {
         ...workoutData,
         details: processedDetails || workoutData.details,
-        date: workoutDate, 
+        workout_date: workoutDate,
+        date: workoutDate,
         visibility: activeWorkout?.is_from_trainer ? 'private' : ((typeof localStorage !== 'undefined' ? localStorage.getItem('globalWorkoutVisibility') : null) || 'friends'),
         notifyFriends: (typeof localStorage !== 'undefined' ? localStorage.getItem('globalNotifyFriends') : null) !== 'false'
       };
@@ -737,9 +748,10 @@ export const createWorkoutSlice = (set, get) => ({
       const offlineOptions = standalone ? { cardioUserId, queueWhenOffline: cardioUserId != null } : undefined;
       const responseData = await workoutService.logWorkout(finalWorkoutData, offlineOptions);
 
-      if (workoutData.routineId) {
+      // Solo marcamos como completada hoy si la sesión se inició en el día local actual
+      if (workoutData.routineId && isSameDay(new Date(workoutDate), new Date())) {
         const current = get().completedRoutineIdsToday;
-        if (!current.includes(workoutData.routineId)) {
+        if (!current.some(id => String(id) === String(workoutData.routineId))) {
           set({ completedRoutineIdsToday: [...current, workoutData.routineId] });
         }
       }
@@ -752,8 +764,8 @@ export const createWorkoutSlice = (set, get) => ({
         get().addXp(responseData.xpAdded, 'Entrenamiento guardado');
       }
 
-      const todayStr = formatDateForQuery(new Date());
-      if (get().checkStreak) get().checkStreak(todayStr);
+      const workoutDayStr = formatDateForQuery(new Date(workoutDate));
+      if (get().checkStreak) get().checkStreak(workoutDayStr);
       if (get().unlockBadge) get().unlockBadge('first_workout');
 
       if (responseData.newPRs && responseData.newPRs.length > 0) {

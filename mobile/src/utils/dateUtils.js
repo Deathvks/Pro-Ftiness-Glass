@@ -1,16 +1,30 @@
-/* frontend/src/utils/dateUtils.js */
+/* mobile/src/utils/dateUtils.js */
 
-// Formatear fecha para mostrar
+const parseLocalSafeDate = (date) => {
+  if (!date) return null;
+  if (date instanceof Date) return isNaN(date.getTime()) ? null : date;
+  const str = String(date).trim();
+  if (!str) return null;
+  const pureDate = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (pureDate) {
+    return new Date(Number(pureDate[1]), Number(pureDate[2]) - 1, Number(pureDate[3]));
+  }
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+// Formatear fecha para mostrar (siempre fecha local YYYY-MM-DD)
 export const formatDate = (date) => {
-  if (!date) return '';
-  const d = new Date(date);
-  return d.toISOString().split('T')[0];
+  const d = parseLocalSafeDate(date);
+  if (!d) return '';
+  return formatDateForQuery(d);
 };
 
 // Formatear fecha para mostrar al usuario
 export const formatDateForDisplay = (date) => {
   if (!date) return '';
-  const d = new Date(date + 'T00:00:00');
+  const d = parseLocalSafeDate(date);
+  if (!d) return '';
   return d.toLocaleDateString('es-ES', {
     weekday: 'long',
     year: 'numeric',
@@ -19,9 +33,9 @@ export const formatDateForDisplay = (date) => {
   });
 };
 
-// Obtener fecha de hoy en formato YYYY-MM-DD
+// Obtener fecha de hoy en formato YYYY-MM-DD (local)
 export const getTodayDate = () => {
-  return new Date().toISOString().split('T')[0];
+  return formatDateForQuery(new Date());
 };
 
 // Verificar si una fecha es hoy
@@ -38,12 +52,12 @@ export const getDaysAgo = (days) => {
 
 // Parsear fecha desde string
 export const parseDate = (dateString) => {
-  return new Date(dateString + 'T00:00:00');
+  return parseLocalSafeDate(dateString) || new Date();
 };
 
-// Obtener fecha de hoy en formato YYYY-MM-DD
+// Obtener fecha de hoy en formato YYYY-MM-DD (local)
 export const getTodayString = () => {
-  return new Date().toISOString().split('T')[0];
+  return getTodayDate();
 };
 
 // Calcular días entre fechas
