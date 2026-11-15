@@ -24,9 +24,9 @@ const mapDocument = (dark: boolean) => `<!DOCTYPE html>
     if (window.L) {
       document.getElementById('unavailable').remove();
       const map = L.map('map', { zoomControl: false });
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/${dark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png', {
-        maxZoom: 20,
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: '&copy; Esri, OpenStreetMap contributors'
       }).addTo(map);
       const pathLayer = L.polyline([], { weight: 5, opacity: 0.85 }).addTo(map);
       const marker = L.circleMarker([0, 0], { radius: 7, color: '#fff', weight: 2, fillOpacity: 1 });
