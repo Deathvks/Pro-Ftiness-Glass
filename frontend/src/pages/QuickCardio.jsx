@@ -9,7 +9,6 @@ import { useToast } from '../hooks/useToast';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import CustomSelect from '../components/CustomSelect';
-import { useAppTheme } from '../hooks/useAppTheme';
 
 const INTENSITY_OPTIONS = [
   { value: 'all', label: 'Todas' },
@@ -30,8 +29,6 @@ const getTabClass = (isActive) => `mx-1.5 my-2 px-5 py-2.5 text-sm font-bold rou
 const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) => {
   const [duration, setDuration] = useState(30);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { accent } = useAppTheme();
 
   const estimatedCalories = useMemo(() => {
     if (!activity) return 0;
@@ -102,41 +99,49 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
               <span className="text-2xl font-black text-accent font-mono tracking-tighter leading-none">{duration} <span className="text-sm">min</span></span>
             </div>
 
-            <input
-              type="range"
-              min={min}
-              max={max}
-              step="5"
-              value={duration}
-              onChange={(e) => setDuration(parseInt(e.target.value))}
-              className={`w-full h-3 rounded-full cursor-pointer appearance-none outline-none transition-all
-                bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 shadow-inner
-                focus:border-accent/50
-                [&::-webkit-slider-thumb]:appearance-none
-                [&::-webkit-slider-thumb]:w-6
-                [&::-webkit-slider-thumb]:h-6
-                [&::-webkit-slider-thumb]:rounded-full
-                [&::-webkit-slider-thumb]:bg-white
-                [&::-webkit-slider-thumb]:border-[4px]
-                [&::-webkit-slider-thumb]:border-accent
-                [&::-webkit-slider-thumb]:shadow-md
-                [&::-webkit-slider-thumb]:transition-transform
-                [&::-webkit-slider-thumb]:hover:scale-110
-                
-                [&::-moz-range-thumb]:w-6
-                [&::-moz-range-thumb]:h-6
-                [&::-moz-range-thumb]:rounded-full
-                [&::-moz-range-thumb]:bg-white
-                [&::-moz-range-thumb]:border-[4px]
-                [&::-moz-range-thumb]:border-accent
-                [&::-moz-range-thumb]:shadow-md
-                [&::-moz-range-thumb]:transition-transform
-                [&::-moz-range-thumb]:hover:scale-110
-              `}
-              style={{
-                backgroundImage: `linear-gradient(to right, ${accent || '#3b82f6'} ${percentage}%, transparent ${percentage}%)`
-              }}
-            />
+            <div className="relative flex items-center h-6">
+              <div className="absolute inset-x-0 h-3 rounded-full bg-black/10 dark:bg-white/10 border border-black/10 dark:border-white/10 shadow-inner overflow-hidden pointer-events-none">
+                <div
+                  className="h-full rounded-full transition-[width] duration-75"
+                  style={{
+                    width: `${percentage}%`,
+                    background: 'var(--color-accent-gradient, var(--color-accent))'
+                  }}
+                />
+              </div>
+              <input
+                type="range"
+                min={min}
+                max={max}
+                step="5"
+                value={duration}
+                onChange={(e) => setDuration(parseInt(e.target.value, 10))}
+                className={`relative z-10 w-full h-3 rounded-full cursor-pointer appearance-none outline-none bg-transparent
+                  [&::-webkit-slider-runnable-track]:bg-transparent
+                  [&::-moz-range-track]:bg-transparent
+                  [&::-webkit-slider-thumb]:appearance-none
+                  [&::-webkit-slider-thumb]:w-6
+                  [&::-webkit-slider-thumb]:h-6
+                  [&::-webkit-slider-thumb]:rounded-full
+                  [&::-webkit-slider-thumb]:bg-white
+                  [&::-webkit-slider-thumb]:border-[4px]
+                  [&::-webkit-slider-thumb]:border-accent
+                  [&::-webkit-slider-thumb]:shadow-md
+                  [&::-webkit-slider-thumb]:transition-transform
+                  [&::-webkit-slider-thumb]:hover:scale-110
+                  
+                  [&::-moz-range-thumb]:w-6
+                  [&::-moz-range-thumb]:h-6
+                  [&::-moz-range-thumb]:rounded-full
+                  [&::-moz-range-thumb]:bg-white
+                  [&::-moz-range-thumb]:border-[4px]
+                  [&::-moz-range-thumb]:border-accent
+                  [&::-moz-range-thumb]:shadow-md
+                  [&::-moz-range-thumb]:transition-transform
+                  [&::-moz-range-thumb]:hover:scale-110
+                `}
+              />
+            </div>
 
             <div className="flex justify-between text-[10px] font-bold text-text-tertiary uppercase tracking-widest mt-3 px-1">
               <span>5 min</span>

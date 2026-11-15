@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   Play, Pause, Square, MapPin, Navigation,
-  Clock, Flame, Footprints, ChevronLeft
+  Clock, Flame, Footprints, ChevronLeft, RefreshCw
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -13,7 +13,9 @@ import {
   calculateDistance, 
   calculatePace, 
   formatDistance, 
-  getCurrentLocation, 
+  getCurrentLocation,
+  getLocationPermissionState,
+  isLocationPermissionError,
   watchLocation, 
   clearLocationWatch 
 } from '../utils/gpsUtils';
@@ -25,9 +27,6 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import PermissionModal from '../components/PermissionModal';
 
 const LS_KEY = 'active_cardio_session';
-
-// Color exacto del tema oscuro de la web (extraído de index.css)
-const DARK_THEME_COLOR = '#0c111b';
 
 // Función auxiliar para generar el icono con el color dinámico
 const createUserIcon = (color) => {
@@ -70,41 +69,28 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
 
   // --- TEMA PARA EL MAPA Y ACENTOS ---
   const { theme, accent } = useAppTheme();
+  const [accentColor, setAccentColor] = useState('#22c55e');
 
-  // Icono de usuario dinámico basado en el color de acento
-  const userIcon = useMemo(() => createUserIcon(accent), [accent]);
-
-  // Lógica para determinar el estilo del mapa
-  const mapConfig = useMemo(() => {
-    const isSystemDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const effectiveTheme = theme === 'system' ? (isSystemDark ? 'dark' : 'light') : theme;
-
-    if (effectiveTheme === 'light') {
-      return {
-        url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-        opacity: 1,
-        bgColor: '#f7fafc',
-        className: '',
-        gradientFrom: 'from-bg-primary/80'
-      };
-    } else if (effectiveTheme === 'oled') {
-      return {
-        url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        opacity: 1,
-        bgColor: '#000000',
-        className: '',
-        gradientFrom: 'from-black/80'
-      };
-    } else {
-      return {
-        url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        opacity: 0.5,
-        bgColor: DARK_THEME_COLOR,
-        className: 'map-tiles-dark-adjusted',
-        gradientFrom: 'from-bg-primary/80'
-      };
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const computed = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim();
+    if (computed) {
+      setAccentColor(computed);
     }
-  }, [theme]);
+  }, [theme, accent]);
+
+  // Icono de usuario dinámico basado en el color de acento resuelto
+  const userIcon = useMemo(() => createUserIcon(accentColor), [accentColor]);
+
+  // Proveedor gratuito de mapas estilo callejero tipo Google Maps (sin API Key)
+  const mapConfig = useMemo(() => ({
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri, OpenStreetMap contributors',
+    opacity: 1,
+    bgColor: '#e5e3df',
+    className: '',
+    gradientFrom: 'from-black/50'
+  }), []);
 
   // --- LÓGICA DE INICIALIZACIÓN Y RECUPERACIÓN ---
   const getSavedState = () => {
@@ -138,6 +124,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
   const [distance, setDistance] = useState(savedState?.distance || 0);
 
   const [permissionStatus, setPermissionStatus] = useState('prompt');
+  const [isRetryingLocation, setIsRetryingLocation] = useState(false);
   const [followUser, setFollowUser] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
@@ -188,25 +175,34 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
     return userProfile?.weight || 75;
   }, [bodyWeightLog, userProfile]);
 
+  const requestInitialLocation = useCallback(async () => {
+    setIsRetryingLocation(true);
+    try {
+      const pos = await getCurrentLocation();
+      setPosition([pos.lat, pos.lng]);
+      setPermissionStatus('granted');
+      setShowPermissionModal(false);
+    } catch (err) {
+      console.error('Error inicial GPS:', err);
+      const denied = isLocationPermissionError(err) || (await getLocationPermissionState()) === 'denied';
+      setPermissionStatus(denied ? 'denied' : 'unavailable');
+      if (denied) {
+        setShowPermissionModal(true);
+      }
+    } finally {
+      setIsRetryingLocation(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!activity) {
       goBack();
       return;
     }
 
-    // Inicializamos la posición usando gpsUtils (maneja Web/Nativo)
+    // Inicializamos la posición usando gpsUtils (maneja Web/Nativo y fallback en PC)
     if (!position) {
-      getCurrentLocation()
-        .then((pos) => {
-          setPosition([pos.lat, pos.lng]);
-          setPermissionStatus('granted');
-        })
-        .catch((err) => {
-          console.error("Error inicial GPS:", err);
-          // Si falla, asumimos que no hay permisos o GPS
-          setPermissionStatus('denied');
-          setShowPermissionModal(true);
-        });
+      requestInitialLocation();
     } else {
       setPermissionStatus('granted');
     }
@@ -216,7 +212,56 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
     }
 
     return () => stopTracking();
-  }, [activity, addToast]);
+  }, [activity, requestInitialLocation]);
+
+  // Escuchar cambios de permiso en Web (cuando el usuario activa ubicación en PC/navegador sin recargar)
+  useEffect(() => {
+    if (position || typeof window === 'undefined') return undefined;
+
+    let cancelled = false;
+    let permStatusObj = null;
+
+    const handlePermissionGranted = () => {
+      if (!cancelled) {
+        requestInitialLocation();
+      }
+    };
+
+    if (navigator.permissions?.query) {
+      navigator.permissions
+        .query({ name: 'geolocation' })
+        .then((statusObj) => {
+          if (cancelled) return;
+          permStatusObj = statusObj;
+          permStatusObj.onchange = () => {
+            if (statusObj.state === 'granted') {
+              handlePermissionGranted();
+            }
+          };
+        })
+        .catch(() => {});
+    }
+
+    const handleFocusOrVisible = async () => {
+      if (document.visibilityState && document.visibilityState !== 'visible') return;
+      if (permissionStatus === 'denied' || permissionStatus === 'unavailable') {
+        const state = await getLocationPermissionState();
+        if (state === 'granted') {
+          handlePermissionGranted();
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleFocusOrVisible);
+    document.addEventListener('visibilitychange', handleFocusOrVisible);
+
+    return () => {
+      cancelled = true;
+      if (permStatusObj) permStatusObj.onchange = null;
+      window.removeEventListener('focus', handleFocusOrVisible);
+      document.removeEventListener('visibilitychange', handleFocusOrVisible);
+    };
+  }, [position, permissionStatus, requestInitialLocation]);
 
   const startSession = async (isResuming = false) => {
     if (permissionStatus === 'denied') {
@@ -365,25 +410,39 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  if (permissionStatus === 'denied') {
+  if (permissionStatus === 'denied' || permissionStatus === 'unavailable') {
+    const isDenied = permissionStatus === 'denied';
     return (
       <>
         <div className="min-h-screen bg-bg-primary flex flex-col items-center justify-center p-6 text-center animate-fade-in">
           <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
             <MapPin size={40} className="text-red-500" />
           </div>
-          <h2 className="text-2xl font-bold text-text-primary mb-2">Ubicación desactivada</h2>
-          <p className="text-text-secondary mb-8">
-            Para registrar tu ruta en el mapa, necesitamos acceso a tu ubicación.
-            Por favor, actívala en los ajustes de tu dispositivo.
+          <h2 className="text-2xl font-bold text-text-primary mb-2">
+            {isDenied ? 'Ubicación desactivada' : 'No se pudo obtener tu ubicación'}
+          </h2>
+          <p className="text-text-secondary max-w-md mb-8">
+            {isDenied
+              ? 'Para registrar tu ruta en el mapa, necesitamos acceso a tu ubicación. Actívala en tu navegador o dispositivo y pulsa «Reintentar».'
+              : 'El permiso parece activo, pero tu dispositivo o navegador no pudo fijar la ubicación. Comprueba la ubicación del sistema (Windows/macOS) o vuelve a intentarlo.'}
           </p>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap justify-center gap-3">
             <button onClick={goBack} className="px-6 py-3 bg-bg-secondary rounded-full font-bold text-text-primary transition hover:scale-105">
               Volver
             </button>
-            <button onClick={() => setShowPermissionModal(true)} className="px-6 py-3 bg-accent rounded-full font-bold text-accent-contrast transition hover:scale-105">
-              ¿Cómo activar?
+            <button
+              onClick={requestInitialLocation}
+              disabled={isRetryingLocation}
+              className="px-6 py-3 bg-accent rounded-full font-bold text-accent-contrast transition hover:scale-105 flex items-center gap-2 disabled:opacity-60"
+            >
+              <RefreshCw size={18} className={isRetryingLocation ? 'animate-spin' : ''} />
+              {isRetryingLocation ? 'Comprobando...' : 'Reintentar'}
             </button>
+            {isDenied && (
+              <button onClick={() => setShowPermissionModal(true)} className="px-6 py-3 bg-bg-secondary border border-glass-border rounded-full font-bold text-text-primary transition hover:scale-105">
+                ¿Cómo activar?
+              </button>
+            )}
           </div>
         </div>
         
@@ -391,6 +450,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
           isOpen={showPermissionModal} 
           onClose={() => setShowPermissionModal(false)} 
           permissionName="Ubicación" 
+          onRetry={requestInitialLocation}
         />
       </>
     );
@@ -400,14 +460,6 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
 
   return (
     <div className="relative w-full h-screen bg-bg-primary flex flex-col overflow-hidden">
-      <style>
-        {`
-          .map-tiles-dark-adjusted {
-            filter: brightness(0.9) contrast(1.1);
-          }
-        `}
-      </style>
-
       <div
         className="absolute inset-0 z-0"
         style={{ backgroundColor: mapConfig.bgColor }}
@@ -422,11 +474,12 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
           >
             <TileLayer
               url={mapConfig.url}
-              attribution='&copy; CartoDB'
+              attribution={mapConfig.attribution}
+              maxZoom={19}
               opacity={mapConfig.opacity}
               className={mapConfig.className}
             />
-            <Polyline positions={path} pathOptions={{ color: accent, weight: 5, opacity: 0.8 }} />
+            <Polyline positions={path} pathOptions={{ color: accentColor, weight: 5, opacity: 0.85 }} />
             <Marker position={position} icon={userIcon} />
             <MapRecenter position={position} follow={followUser} />
           </MapContainer>
@@ -488,7 +541,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
             <button 
               onClick={() => startSession()} 
               className="w-20 h-20 bg-accent rounded-full flex items-center justify-center hover:scale-105 transition-transform"
-              style={{ boxShadow: `0 0 30px ${accent}66` }}
+              style={{ boxShadow: `0 0 30px ${accentColor}66` }}
             >
               <Play size={32} className="text-bg-secondary ml-1" fill="currentColor" />
             </button>
@@ -498,7 +551,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
             <button 
               onClick={pauseSession} 
               className="w-20 h-20 bg-accent rounded-full flex items-center justify-center hover:scale-105 transition-transform"
-              style={{ boxShadow: `0 0 30px ${accent}66` }}
+              style={{ boxShadow: `0 0 30px ${accentColor}66` }}
             >
               <Pause size={32} className="text-bg-secondary" fill="currentColor" />
             </button>
@@ -509,7 +562,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
               <button 
                 onClick={resumeSession} 
                 className="w-16 h-16 bg-accent rounded-full flex items-center justify-center hover:scale-105 transition-transform"
-                style={{ boxShadow: `0 0 20px ${accent}66` }}
+                style={{ boxShadow: `0 0 20px ${accentColor}66` }}
               >
                 <Play size={24} className="text-bg-secondary ml-1" fill="currentColor" />
               </button>

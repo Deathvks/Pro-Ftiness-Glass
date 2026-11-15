@@ -45,37 +45,91 @@ export const calculatePace = (seconds, meters) => {
 // --- Funciones de Geolocalización (Híbridas Web/Nativo) ---
 
 /**
+ * Consulta el estado actual del permiso de geolocalización tanto en Nativo como en Web.
+ * Devuelve 'granted', 'denied', 'prompt' o 'unknown'.
+ */
+export const getLocationPermissionState = async () => {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const permissions = await Geolocation.checkPermissions();
+      return permissions.location || permissions.coarseLocation || 'prompt';
+    }
+    if (typeof navigator !== 'undefined' && navigator.permissions?.query) {
+      const status = await navigator.permissions.query({ name: 'geolocation' });
+      return status.state || 'unknown';
+    }
+  } catch (err) {
+    console.warn('No se pudo consultar navigator.permissions:', err);
+  }
+  return 'unknown';
+};
+
+export const isLocationPermissionError = (error) => {
+  if (!error) return false;
+  if (error.permissionDenied === true || error.code === 1) return true;
+  const msg = String(error.message || '').toLowerCase();
+  return msg.includes('denied') || msg.includes('denegado') || msg.includes('permission');
+};
+
+const toCoordsPayload = (position) => ({
+  lat: position.coords.latitude,
+  lng: position.coords.longitude,
+  accuracy: position.coords.accuracy,
+  timestamp: position.timestamp
+});
+
+/**
  * Obtiene la posición actual gestionando permisos.
- * Funciona en Web (pide permiso al navegador) y Nativo (pide permiso al OS).
+ * En Web/PC hace fallback automático a baja precisión (Wi-Fi/IP) si alta precisión falla o caduca.
  */
 export const getCurrentLocation = async () => {
   try {
-    // Solo verificamos permisos explícitamente en Nativo para asegurar el flujo
+    // Verificamos permisos explícitamente en Nativo para asegurar el flujo
     if (Capacitor.isNativePlatform()) {
       const permissions = await Geolocation.checkPermissions();
-      
+
       if (permissions.location !== 'granted') {
         const request = await Geolocation.requestPermissions();
         if (request.location !== 'granted') {
-          throw new Error('Permiso de ubicación denegado por el usuario.');
+          const deniedErr = new Error('Permiso de ubicación denegado por el usuario.');
+          deniedErr.permissionDenied = true;
+          deniedErr.code = 1;
+          throw deniedErr;
         }
       }
     }
 
-    // getCurrentPosition funciona en ambos (en Web usa navigator.geolocation)
-    const position = await Geolocation.getCurrentPosition({
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0
-    });
+    try {
+      const position = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 15000
+      });
+      return toCoordsPayload(position);
+    } catch (primaryError) {
+      if (isLocationPermissionError(primaryError)) {
+        primaryError.permissionDenied = true;
+        throw primaryError;
+      }
 
-    return {
-      lat: position.coords.latitude,
-      lng: position.coords.longitude,
-      accuracy: position.coords.accuracy,
-      timestamp: position.timestamp
-    };
+      // En PC / navegadores sin chip GPS dedicado, alta precisión suele dar TIMEOUT o POSITION_UNAVAILABLE;
+      // reintentar con ubicación aproximada (Wi-Fi / red / caché reciente) antes de rendirse.
+      const fallbackPosition = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: false,
+        timeout: 12000,
+        maximumAge: 60000
+      });
+      return toCoordsPayload(fallbackPosition);
+    }
   } catch (error) {
+    if (!isLocationPermissionError(error)) {
+      const permState = await getLocationPermissionState();
+      if (permState === 'denied') {
+        error.permissionDenied = true;
+      }
+    } else {
+      error.permissionDenied = true;
+    }
     console.error('Error obteniendo ubicación:', error);
     throw error;
   }

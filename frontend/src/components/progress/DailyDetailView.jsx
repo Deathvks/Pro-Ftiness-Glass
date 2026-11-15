@@ -346,7 +346,9 @@ const DailyDetailView = ({ logs, onClose, isTrainerMode = false }) => {
                           doubleClickZoom={false}>
                           
                           <TileLayer
-                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+                            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+                            maxZoom={19}
+                            attribution="&copy; Esri, OpenStreetMap contributors" />
                           
                           <Polyline
                             positions={gpsData.path}
@@ -453,7 +455,10 @@ const DailyDetailView = ({ logs, onClose, isTrainerMode = false }) => {
               zoom={15}
               style={{ height: '100%', width: '100%' }}>
               
-              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+              <TileLayer
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+                maxZoom={19}
+                attribution="&copy; Esri, OpenStreetMap contributors" />
               <Polyline positions={expandedMapPath} pathOptions={{ color: '#22c55e', weight: 5, opacity: 0.9 }} />
             </MapContainer>
           </div>
