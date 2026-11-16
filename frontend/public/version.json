@@ -1,6 +1,6 @@
 {
-  "version": "7.16.35",
-  "releaseNotes": "Actualización v7.16.35: mapa GPS con estilo Google Maps real y fondo sólido/legible en el panel inferior de controles.",
+  "version": "7.16.36",
+  "releaseNotes": "Actualización v7.16.36: visualización responsive de fecha/hora de inicio y fin en calendario y detalle, y opción para corregir o mover la fecha de entrenamientos guardados.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",

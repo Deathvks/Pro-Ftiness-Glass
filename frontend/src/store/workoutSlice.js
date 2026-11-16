@@ -1080,6 +1080,27 @@ export const createWorkoutSlice = (set, get) => ({
     }
   },
 
+  updateWorkoutDate: async (workoutId, workoutDate) => {
+    try {
+      const response = await workoutService.updateWorkoutDate(workoutId, workoutDate);
+      const updatedDate = response?.workout_date || workoutDate;
+      set((state) => ({
+        workoutLog: (state.workoutLog || []).map((log) =>
+          String(log.id) === String(workoutId) ? { ...log, workout_date: updatedDate } : log
+        ),
+      }));
+      await get().fetchInitialData();
+      await get().fetchTodaysCompletedRoutines();
+
+      return { success: true, workout_date: updatedDate, message: 'Fecha del entrenamiento actualizada.' };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Error al actualizar la fecha: ${error.message}`,
+      };
+    }
+  },
+
   _showLocalPRNotification: async (newPRs) => {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
       console.log('Notificaciones no soportadas por el navegador.');

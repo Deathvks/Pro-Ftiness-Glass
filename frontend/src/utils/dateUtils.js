@@ -146,3 +146,57 @@ export const formatDateForQuery = (date) => {
   return `${year}-${month}-${day}`;
 };
 // --- FIN DE LA MODIFICACIÓN ---
+
+/**
+ * Calcula y formatea la ventana de inicio y fin de un entrenamiento en hora local.
+ */
+export const getWorkoutTimeWindow = (workoutDateInput, durationSeconds = 0) => {
+  const start = toValidDate(workoutDateInput);
+  if (!start) return null;
+
+  const durationSec = Math.max(0, Number(durationSeconds) || 0);
+  const end = new Date(start.getTime() + durationSec * 1000);
+
+  const dateFmt = { day: '2-digit', month: 'short', year: 'numeric' };
+  const shortDateFmt = { day: '2-digit', month: 'short' };
+  const timeFmt = { hour: '2-digit', minute: '2-digit', hour12: false };
+
+  const startDateKey = formatDate(start);
+  const endDateKey = formatDate(end);
+
+  return {
+    start,
+    end,
+    crossesMidnight: Boolean(startDateKey && endDateKey && startDateKey !== endDateKey),
+    startDateLabel: start.toLocaleDateString('es-ES', dateFmt),
+    startShortDateLabel: start.toLocaleDateString('es-ES', shortDateFmt),
+    startTimeLabel: start.toLocaleTimeString('es-ES', timeFmt),
+    endDateLabel: end.toLocaleDateString('es-ES', dateFmt),
+    endShortDateLabel: end.toLocaleDateString('es-ES', shortDateFmt),
+    endTimeLabel: end.toLocaleTimeString('es-ES', timeFmt),
+  };
+};
+
+/**
+ * Convierte cualquier fecha a formato local 'YYYY-MM-DDTHH:mm' para <input type="datetime-local">.
+ */
+export const toLocalDateTimeInputValue = (dateInput) => {
+  const d = toValidDate(dateInput);
+  if (!d) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+/**
+ * Convierte un valor 'YYYY-MM-DDTHH:mm' de <input type="datetime-local"> a ISO string conservando los segundos originales si existían.
+ */
+export const fromLocalDateTimeInputValue = (localValue, originalDateInput = null) => {
+  if (!localValue) return null;
+  const parsed = new Date(localValue);
+  if (isNaN(parsed.getTime())) return null;
+  const orig = toValidDate(originalDateInput);
+  if (orig) {
+    parsed.setSeconds(orig.getSeconds(), orig.getMilliseconds());
+  }
+  return parsed.toISOString();
+};

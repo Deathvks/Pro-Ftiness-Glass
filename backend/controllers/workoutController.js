@@ -489,8 +489,67 @@ export const logWorkoutSession = async (req, res, next) => {
   }
 };
 
-export const updateWorkoutLog = async (req, res) => {
-  res.status(501).json({ error: 'Funcionalidad de editar no implementada todavía.' });
+export const updateWorkoutLog = async (req, res, next) => {
+  const { workoutId } = req.params;
+  const { userId } = req.user;
+  const { workout_date } = req.body || {};
+
+  if (!workout_date) {
+    return res.status(400).json({ error: 'Se requiere una fecha de inicio válida.' });
+  }
+
+  const parsedDate = new Date(workout_date);
+  if (isNaN(parsedDate.getTime())) {
+    return res.status(400).json({ error: 'Formato de fecha inválido.' });
+  }
+
+  const t = await sequelize.transaction();
+  try {
+    const workoutLog = await WorkoutLog.findOne({
+      where: { id: workoutId, user_id: userId },
+      transaction: t
+    });
+
+    if (!workoutLog) {
+      await t.rollback();
+      return res.status(404).json({ error: 'Entrenamiento no encontrado.' });
+    }
+
+    const previousDate = workoutLog.workout_date ? new Date(workoutLog.workout_date) : null;
+    workoutLog.workout_date = parsedDate;
+    await workoutLog.save({ transaction: t });
+
+    if (previousDate && !isNaN(previousDate.getTime())) {
+      const windowStart = new Date(previousDate.getTime() - 5000);
+      const windowEnd = new Date(previousDate.getTime() + 5000);
+      await PersonalRecord.update(
+        { date: parsedDate },
+        {
+          where: {
+            user_id: userId,
+            date: { [Op.between]: [windowStart, windowEnd] }
+          },
+          transaction: t
+        }
+      );
+    }
+
+    await t.commit();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('feed_update');
+    }
+
+    return res.json({
+      message: 'Fecha del entrenamiento actualizada.',
+      workoutId: workoutLog.id,
+      workout_date: workoutLog.workout_date
+    });
+  } catch (error) {
+    if (!t.finished) await t.rollback();
+    return next(error);
+  }
 };
 
 export const deleteWorkoutLog = async (req, res, next) => {

@@ -13,8 +13,10 @@ import {
     CheckCircle2
 } from 'lucide-react';
 import GlassCard from '../GlassCard';
+import WorkoutTimeRange from './WorkoutTimeRange';
 import useAppStore from '../../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
+import { getWorkoutTimeWindow } from '../../utils/dateUtils';
 
 const CalendarView = ({ setDetailedLog, workouts, className = '' }) => {
     const { workoutLog: storeWorkoutLog, routines } = useAppStore(
@@ -182,6 +184,9 @@ const CalendarView = ({ setDetailedLog, workouts, className = '' }) => {
         const dayStr = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
         const dayLogs = workoutsByDate[dayStr] || [];
         const hasWorkout = dayLogs.length > 0;
+        const hasCrossMidnight = dayLogs.some(
+            (l) => getWorkoutTimeWindow(l.workout_date, l.duration_seconds || l.duration || 0)?.crossesMidnight
+        );
         const isToday = isCurrentMonth && currentDayNumber === day;
         const isSelected = selectedDateStr === dayStr;
 
@@ -190,6 +195,7 @@ const CalendarView = ({ setDetailedLog, workouts, className = '' }) => {
                 key={day}
                 type="button"
                 onClick={() => handleDayClick(dayStr)}
+                title={hasCrossMidnight ? 'Incluye entreno iniciado este día y finalizado tras las 00:00' : undefined}
                 className={`relative flex items-center justify-center aspect-square rounded-[18px] sm:rounded-2xl text-sm sm:text-base transition-all duration-200 outline-none select-none
                     ${isSelected 
                         ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg-primary font-black z-10 scale-105 shadow-md' 
@@ -413,11 +419,16 @@ const CalendarView = ({ setDetailedLog, workouts, className = '' }) => {
                                                         {exercisesCount} ejercicios · {setsCount} series
                                                     </p>
                                                 </div>
-                                                <div className="flex items-center gap-1.5 text-xs font-bold text-accent bg-accent/10 px-2.5 py-1 rounded-full">
+                                                <div className="flex items-center gap-1.5 text-xs font-bold text-accent bg-accent/10 px-2.5 py-1 rounded-full shrink-0">
                                                     <Clock size={12} />
                                                     {durationMin} min
                                                 </div>
                                             </div>
+
+                                            <WorkoutTimeRange
+                                                startDate={log.workout_date}
+                                                durationSeconds={log.duration_seconds || log.duration || 0}
+                                            />
 
                                             {volumeKg > 0 && (
                                                 <div className="flex items-center gap-4 text-xs text-text-secondary pt-1 border-t border-black/5 dark:border-white/5">
