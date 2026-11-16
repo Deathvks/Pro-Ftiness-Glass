@@ -1,20 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, ImageBackground, Animated, Platform, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getThemeBaseBackground, getAppleCardSurfaceStyle, shouldUseContentGlass, usesFrontendCardSurface } from '@/constants/theme';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import GlobalHeader from '@/components/GlobalHeader';
 import { AndroidHeaderBlurTarget } from '@/components/AndroidHeaderBlur';
 import ThemeBackground from '@/components/ThemeBackground';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { TourTarget } from '@/components/tutorials/TourTarget';
+import { useRegisterTourScroll } from '@/components/tutorials/tourRegistry';
+import { TutorialsCenterModal } from '@/components/tutorials/TutorialsCenterModal';
+import { AppTutorial, TUTORIAL_COMPLETION_ACTIONS } from '@/data/tutorials';
 import { 
   BarChart2, 
+  BookOpen,
   MessageCircle, 
   Trophy, 
   Paintbrush, 
@@ -231,30 +237,79 @@ export default function Hub() {
 
   const unreadChats = useAppStore(state => state.unreadChats);
   const fetchUnreadChats = useAppStore(state => state.fetchUnreadChats);
+  const showTutorialsCenter = useAppStore((state: any) => state.showTutorialsCenter);
+  const setShowTutorialsCenter = useAppStore((state: any) => state.setShowTutorialsCenter);
+  const startPageTutorial = useAppStore((state: any) => state.startPageTutorial);
   const [visitedAsesoria, setVisitedAsesoria] = useState(true);
+  const [hasOpenedTutorials, setHasOpenedTutorials] = useState(true);
 
   useEffect(() => {
     if (userProfile?.id) {
       AsyncStorage.getItem(`visited_asesoria_${userProfile.id}`).then(val => {
         setVisitedAsesoria(val === 'true');
       });
+      AsyncStorage.getItem(`tutorials_opened_from_hub_${userProfile.id}`).then(val => {
+        setHasOpenedTutorials(val === 'true');
+      });
       fetchUnreadChats?.();
     }
   }, [userProfile?.id, fetchUnreadChats]);
 
+  useFocusEffect(
+    useCallback(() => {
+      try {
+        if (typeof localStorage !== 'undefined' && localStorage.getItem('open_tutorials_on_hub') === 'true') {
+          localStorage.removeItem('open_tutorials_on_hub');
+          setShowTutorialsCenter(true);
+        }
+      } catch {}
+    }, [setShowTutorialsCenter]),
+  );
+
+  const handleOpenTutorials = () => {
+    if (userProfile?.id) {
+      AsyncStorage.setItem(`tutorials_opened_from_hub_${userProfile.id}`, 'true').catch(() => {});
+    }
+    setHasOpenedTutorials(true);
+    setShowTutorialsCenter(true);
+  };
+
+  const handleStartTutorial = (tutorial: AppTutorial) => {
+    const store: any = useAppStore.getState();
+    const completionAction = TUTORIAL_COMPLETION_ACTIONS[tutorial.id];
+    if (completionAction && store[completionAction]) store[completionAction]();
+    if (tutorial.id === 'routines' && typeof localStorage !== 'undefined') {
+      localStorage.setItem('routinesForceTab', 'myRoutines');
+      localStorage.setItem('routinesSelectedFolder', 'all');
+    }
+    setShowTutorialsCenter(false);
+    startPageTutorial(tutorial, true);
+    router.push(tutorial.route as any);
+  };
+
   const scrollY = React.useRef(new Animated.Value(0)).current;
+  const scrollOffsetRef = useRef(0);
+  const scrollViewRef = useRef<any>(null);
   const androidBlurTarget = React.useRef<React.ComponentRef<typeof View>>(null);
   const insets = useSafeAreaInsets();
   const useGlass = shouldUseContentGlass(theme);
+
+  useRegisterTourScroll('/(tabs)/hub', scrollViewRef, useCallback(() => scrollOffsetRef.current, []));
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background }}>
       <AndroidHeaderBlurTarget target={androidBlurTarget}>
         <ThemeBackground />
         <Animated.ScrollView
+          ref={scrollViewRef}
           contentContainerStyle={{ padding: 16, paddingTop: insets.top + 72, paddingBottom: 150 }}
           showsVerticalScrollIndicator={false}
-          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+            useNativeDriver: true,
+            listener: (e: any) => {
+              scrollOffsetRef.current = e?.nativeEvent?.contentOffset?.y || 0;
+            },
+          })}
           scrollEventThrottle={16}
         >
 
@@ -320,14 +375,37 @@ export default function Hub() {
               />
             )}
 
-            <HubButton
-              icon={BarChart2}
-              title="Tu Progreso"
-              description="Estadísticas, RM y volumen"
-              colors={colors}
-              iosBadgeColor={colors.tint}
-              onPress={() => router.push('/progress' as any)}
-            />
+            <TourTarget id="#hub-tutorials">
+              <HubButton
+                icon={BookOpen}
+                title="Tutoriales"
+                description="Guías visuales de cada sección"
+                colors={colors}
+                iosBadgeColor={colors.tint}
+                badge={!hasOpenedTutorials}
+                rightContent={
+                  !hasOpenedTutorials ? (
+                    <View style={{ backgroundColor: colors.tint, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '900', color: getContrastTextColor(colors.tint), textTransform: 'uppercase' }}>
+                        Nuevo
+                      </Text>
+                    </View>
+                  ) : null
+                }
+                onPress={handleOpenTutorials}
+              />
+            </TourTarget>
+
+            <TourTarget id="#hub-progress">
+              <HubButton
+                icon={BarChart2}
+                title="Tu Progreso"
+                description="Estadísticas, RM y volumen"
+                colors={colors}
+                iosBadgeColor={colors.tint}
+                onPress={() => router.push('/progress' as any)}
+              />
+            </TourTarget>
 
             {isClient && (
               <HubButton
@@ -347,45 +425,49 @@ export default function Hub() {
               />
             )}
 
-            <HubButton
-              icon={Trophy}
-              title="Retos y Misiones"
-              description="Gana XP y sube de nivel"
-              colors={colors}
-              iosBadgeColor="#FF9F0A"
-              onPress={() => router.push('/challenges' as any)}
-            />
+            <TourTarget id="#hub-challenges">
+              <HubButton
+                icon={Trophy}
+                title="Retos y Misiones"
+                description="Gana XP y sube de nivel"
+                colors={colors}
+                iosBadgeColor="#FF9F0A"
+                onPress={() => router.push('/challenges' as any)}
+              />
+            </TourTarget>
 
-            <HubButton
-              icon={Paintbrush}
-              title="Apariencia"
-              description="Temas, acentos y colores"
-              colors={colors}
-              iosBadgeColor="#BF5AF2"
-              onPress={() => router.push('/appearance')}
-              rightContent={
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginRight: 2 }}>
-                  <Text
-                    style={{
-                      fontSize: isIOS ? 15 : 11,
-                      fontWeight: isIOS ? '400' : '700',
-                      color: isIOS ? colors.textSecondary : colors.tint,
-                      letterSpacing: -0.2,
-                    }}
-                  >
-                    {getThemeLabel(themePreference || theme)}
-                  </Text>
-                  <View style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: 6,
-                    backgroundColor: colors.tint,
-                    borderWidth: 1.5,
-                    borderColor: 'rgba(255, 255, 255, 0.4)',
-                  }} />
-                </View>
-              }
-            />
+            <TourTarget id="#hub-appearance">
+              <HubButton
+                icon={Paintbrush}
+                title="Apariencia"
+                description="Temas, acentos y colores"
+                colors={colors}
+                iosBadgeColor="#BF5AF2"
+                onPress={() => router.push('/appearance')}
+                rightContent={
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginRight: 2 }}>
+                    <Text
+                      style={{
+                        fontSize: isIOS ? 15 : 11,
+                        fontWeight: isIOS ? '400' : '700',
+                        color: isIOS ? colors.textSecondary : colors.tint,
+                        letterSpacing: -0.2,
+                      }}
+                    >
+                      {getThemeLabel(themePreference || theme)}
+                    </Text>
+                    <View style={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: 6,
+                      backgroundColor: colors.tint,
+                      borderWidth: 1.5,
+                      borderColor: 'rgba(255, 255, 255, 0.4)',
+                    }} />
+                  </View>
+                }
+              />
+            </TourTarget>
 
             <HubButton
               icon={Share2}
@@ -414,15 +496,17 @@ export default function Hub() {
               onPress={() => router.push('/support' as any)}
             />
 
-            <HubButton
-              icon={Settings}
-              title="Ajustes"
-              description="Cuenta, privacidad y notificaciones"
-              colors={colors}
-              iosBadgeColor="#8E8E93"
-              isLast={!isTrainer && !isAdmin}
-              onPress={() => router.push('/settings' as any)}
-            />
+            <TourTarget id="#hub-settings">
+              <HubButton
+                icon={Settings}
+                title="Ajustes"
+                description="Cuenta, privacidad y notificaciones"
+                colors={colors}
+                iosBadgeColor="#8E8E93"
+                isLast={!isTrainer && !isAdmin}
+                onPress={() => router.push('/settings' as any)}
+              />
+            </TourTarget>
 
             {isTrainer && (
               <HubButton
@@ -455,6 +539,12 @@ export default function Hub() {
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
         <GlobalHeader title="Menú" scrollY={scrollY} androidBlurTarget={androidBlurTarget} />
       </View>
+      <TutorialsCenterModal
+        visible={Boolean(showTutorialsCenter)}
+        userRole={userProfile?.role}
+        onClose={() => setShowTutorialsCenter(false)}
+        onStart={handleStartTutorial}
+      />
     </View>
   );
 }

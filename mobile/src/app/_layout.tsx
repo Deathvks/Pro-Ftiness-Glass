@@ -20,6 +20,7 @@ import { DynamicIslandTimer } from '@/components/workout/DynamicIslandTimer';
 import { RestTimerModal } from '@/components/workout/RestTimerModal';
 import { OfflineDownloadFloatingBar } from '@/components/OfflineDownloadFloatingBar';
 import { StoryHost } from '@/components/social/StoryHost';
+import { TourOverlay } from '@/components/tutorials/TourOverlay';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -249,6 +250,7 @@ export default function RootLayout() {
         <RestTimerModal />
         <OfflineDownloadFloatingBar />
         <StoryHost />
+        <TourOverlay />
         <ToastContainer />
       </ThemeProvider>
     </GestureHandlerRootView>

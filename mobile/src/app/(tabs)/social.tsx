@@ -31,6 +31,8 @@ import { AndroidHeaderBlurTarget } from '@/components/AndroidHeaderBlur';
 import ThemeBackground from '@/components/ThemeBackground';
 import { PrivacyModal } from '@/components/modals/PrivacyModal';
 import { getContrastTextColor } from '@/utils/routineHelpers';
+import { TourTarget } from '@/components/tutorials/TourTarget';
+import { useRegisterTourScroll } from '@/components/tutorials/tourRegistry';
 
 // Subcomponents
 import { PrivacyBanner } from '@/components/social/PrivacyBanner';
@@ -59,6 +61,8 @@ export default function SocialScreen() {
   const androidBlurTarget = useRef<React.ComponentRef<typeof View>>(null);
   const tabsScrollRef = useRef<any>(null);
   const mainScrollRef = useRef<any>(null);
+  const mainScrollOffsetRef = useRef(0);
+  useRegisterTourScroll('/(tabs)/social', mainScrollRef, useCallback(() => mainScrollOffsetRef.current, []));
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const unselectedTab = getUnselectedControlColors(theme);
 
@@ -199,7 +203,12 @@ export default function SocialScreen() {
             showsVerticalScrollIndicator={false}
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-              { useNativeDriver: false }
+              {
+                useNativeDriver: false,
+                listener: (e: any) => {
+                  mainScrollOffsetRef.current = e?.nativeEvent?.contentOffset?.y || 0;
+                },
+              }
             )}
             scrollEventThrottle={16}
             contentContainerStyle={{
@@ -215,14 +224,17 @@ export default function SocialScreen() {
             </View>
 
             {/* Privacy Banner */}
-            <View style={{ paddingHorizontal: 16 }}>
-              <PrivacyBanner
-                privacy={userProfile?.is_public_profile ? 'public' : 'private'}
-                onNavigate={() => setShowPrivacyModal(true)}
-              />
-            </View>
+            <TourTarget id="#social-privacy-banner">
+              <View style={{ paddingHorizontal: 16 }}>
+                <PrivacyBanner
+                  privacy={userProfile?.is_public_profile ? 'public' : 'private'}
+                  onNavigate={() => setShowPrivacyModal(true)}
+                />
+              </View>
+            </TourTarget>
 
             {/* Stories Horizontal Bar */}
+            <TourTarget id="#social-stories">
             <View style={styles.storiesSection}>
               <ScrollView
                 horizontal
@@ -277,8 +289,10 @@ export default function SocialScreen() {
                 })}
               </ScrollView>
             </View>
+            </TourTarget>
 
             {/* Horizontal Navigation Tabs */}
+            <TourTarget id="#social-tabs">
             <View style={styles.tabsSection}>
               <ScrollView
                 ref={tabsScrollRef}
@@ -332,6 +346,7 @@ export default function SocialScreen() {
                 })}
               </ScrollView>
             </View>
+            </TourTarget>
 
             {/* Tab Content */}
             {activeTab === 'feed' && <Feed onNavigateProfile={navigateToProfile} visibleStories={visibleStories} myStories={myStories} />}

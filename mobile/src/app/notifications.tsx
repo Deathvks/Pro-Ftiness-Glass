@@ -41,6 +41,7 @@ import GlobalHeader from '@/components/GlobalHeader';
 import { GlassView } from 'expo-glass-effect';
 import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import { TourTarget } from '@/components/tutorials/TourTarget';
 
 // --- Helpers de Fecha Robustos ---
 const parseDateSafe = (dateStr: any) => {
@@ -291,6 +292,7 @@ export default function NotificationsScreen() {
 
   return (
     <AnimatedScreen header={headerContent}>
+      <TourTarget id="#tutorial-notifications-main">
       {/* ================= HEADER SECCIÓN NOVEDADES / ACCIONES ================= */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20, marginTop: 8 }}>
         <View>
@@ -658,6 +660,7 @@ export default function NotificationsScreen() {
           )}
         </View>
       )}
+      </TourTarget>
 
       {/* ================= MODAL: DETALLES DE INICIO DE SESIÓN (TRUE LIQUID GLASS) ================= */}
       <Modal 

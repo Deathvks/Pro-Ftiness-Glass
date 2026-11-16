@@ -1,11 +1,13 @@
-import React, { useRef, useState } from 'react';
-import { View, Animated, Platform, KeyboardAvoidingView, StyleSheet, type ScrollViewInstance, type ScrollViewProps } from 'react-native';
+import React, { useCallback, useRef, useState } from 'react';
+import { View, Animated, Platform, KeyboardAvoidingView, StyleSheet, type NativeSyntheticEvent, type NativeScrollEvent, type ScrollViewInstance, type ScrollViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePathname } from 'expo-router';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getThemeBaseBackground } from '@/constants/theme';
 import ThemeBackground from '@/components/ThemeBackground';
 import { AndroidHeaderBlurTarget, type HeaderBlurRef } from '@/components/AndroidHeaderBlur';
+import { useRegisterTourScroll } from '@/components/tutorials/tourRegistry';
 
 interface AnimatedScreenProps extends Pick<ScrollViewProps, 'onScroll' | 'onLayout' | 'onContentSizeChange'> {
     header: React.ReactNode;
@@ -32,11 +34,31 @@ export default function AnimatedScreen({
     onContentSizeChange,
 }: AnimatedScreenProps) {
     const [scrollY] = useState(() => new Animated.Value(0));
+    const pathname = usePathname();
+    const internalScrollRef = useRef<ScrollViewInstance>(null);
+    const scrollOffsetRef = useRef(0);
     const androidBlurTarget = useRef<React.ComponentRef<typeof View>>(null);
     const insets = useSafeAreaInsets();
     const theme = useAppStore(state => state.theme) || 'oled';
     const colors = useAppColors();
     const backgroundColor = colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background;
+
+    const mergedScrollRef = useCallback((instance: ScrollViewInstance | null) => {
+        (internalScrollRef as React.MutableRefObject<ScrollViewInstance | null>).current = instance;
+        if (typeof scrollRef === 'function') {
+            scrollRef(instance);
+        } else if (scrollRef && typeof scrollRef === 'object') {
+            (scrollRef as React.MutableRefObject<ScrollViewInstance | null>).current = instance;
+        }
+    }, [scrollRef]);
+
+    useRegisterTourScroll(pathname || '/', internalScrollRef, useCallback(() => scrollOffsetRef.current, []));
+
+    const handleScrollListener = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        scrollOffsetRef.current = event.nativeEvent.contentOffset.y || 0;
+        onScroll?.(event);
+    }, [onScroll]);
+
     const screenHeader = !fixedHeader && React.isValidElement<{ scrollY?: Animated.Value; androidBlurTarget?: HeaderBlurRef }>(header)
         ? React.cloneElement(header, { scrollY, androidBlurTarget })
         : header;
@@ -45,7 +67,7 @@ export default function AnimatedScreen({
             <ThemeBackground />
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.fill}>
                 <Animated.ScrollView
-                    ref={scrollRef}
+                    ref={mergedScrollRef}
                     automaticallyAdjustContentInsets={fixedHeader ? false : undefined}
                     onLayout={onLayout}
                     onContentSizeChange={onContentSizeChange}
@@ -53,7 +75,7 @@ export default function AnimatedScreen({
                     keyboardShouldPersistTaps={keyboardShouldPersistTaps}
                     onScroll={Animated.event(
                         [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                        { useNativeDriver: Platform.OS !== 'web', listener: onScroll }
+                        { useNativeDriver: Platform.OS !== 'web', listener: handleScrollListener }
                     )}
                     scrollEventThrottle={16}
                     contentContainerStyle={{

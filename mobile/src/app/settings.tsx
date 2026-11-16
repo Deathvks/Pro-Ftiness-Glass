@@ -67,6 +67,8 @@ import GlobalHeader from '@/components/GlobalHeader';
 import ThemeBackground from '@/components/ThemeBackground';
 import { LiquidGlassSwitch } from '@/components/ui/LiquidGlassSwitch';
 import { WorkoutDataTransferModal } from '@/components/modals/WorkoutDataTransferModal';
+import { TourTarget } from '@/components/tutorials/TourTarget';
+import { useRegisterTourScroll } from '@/components/tutorials/tourRegistry';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getThemeBaseBackground, getAppleCardSurfaceStyle, getUnselectedControlColors, shouldUseContentGlass, usesFrontendCardSurface } from '@/constants/theme';
@@ -167,6 +169,9 @@ export default function SettingsScreen() {
   const { width: windowWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollViewRef = useRef<any>(null);
+  const scrollOffsetRef = useRef(0);
+  useRegisterTourScroll('/settings', scrollViewRef, useCallback(() => scrollOffsetRef.current, []));
   const isMobile = windowWidth < 600;
 
   const theme = useAppStore(state => state.theme) || 'oled';
@@ -734,6 +739,7 @@ export default function SettingsScreen() {
       </View>
 
       <Animated.ScrollView
+        ref={scrollViewRef}
         contentContainerStyle={{
           paddingHorizontal: isMobile ? 14 : Math.max(16, (windowWidth - 640) / 2),
           paddingTop: insets.top + 72,
@@ -742,6 +748,9 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
           useNativeDriver: true,
+          listener: (e: any) => {
+            scrollOffsetRef.current = e?.nativeEvent?.contentOffset?.y || 0;
+          },
         })}
         scrollEventThrottle={16}
       >
@@ -750,6 +759,7 @@ export default function SettingsScreen() {
         {/* ========================================================= */}
         {activeTab === null && (
           <View style={styles.verticalListContainer}>
+            <TourTarget id="#tutorial-settings-tabs">
             <GlassSurface radius={26} isDark={isDark} borderColor={glassBorder} style={styles.menuCard}>
               <View style={styles.menuList}>
                 {SETTINGS_SECTIONS.map((section, idx) => {
@@ -811,6 +821,7 @@ export default function SettingsScreen() {
                 })}
               </View>
             </GlassSurface>
+            </TourTarget>
 
             {/* Versión de la App y Atajos */}
             <View style={styles.footerInfoBox}>
@@ -828,6 +839,7 @@ export default function SettingsScreen() {
         {/* CASO 2: CONTENIDO DE CADA SECCIÓN (activeTab !== null)    */}
         {/* ========================================================= */}
         {activeTab !== null && (
+          <TourTarget id="#tutorial-settings-content">
           <View style={styles.sectionDetailContainer}>
             {/* ================= 1. ENTRENAMIENTO ================= */}
             {activeTab === 'workout' && (
@@ -1844,6 +1856,7 @@ export default function SettingsScreen() {
                             localStorage.setItem('open_tutorials_on_hub', 'true');
                           }
                         } catch {}
+                        useAppStore.getState().setShowTutorialsCenter?.(true);
                         router.push('/(tabs)/hub');
                       }}
                       activeOpacity={0.7}
@@ -2242,6 +2255,7 @@ export default function SettingsScreen() {
               </View>
             )}
           </View>
+          </TourTarget>
         )}
       </Animated.ScrollView>
 

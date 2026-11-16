@@ -6,6 +6,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { BookCopy, Compass, Dumbbell, Flame } from 'lucide-react-native';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { getContrastTextColor } from '@/utils/routineHelpers';
+import { TourTarget } from '@/components/tutorials/TourTarget';
 
 export type TabKey = 'myRoutines' | 'explore' | 'manualExercises' | 'quickCardio';
 
@@ -46,7 +47,7 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
         const Icon = tab.icon;
         const activeForeground = isIOS ? accentColor : getContrastTextColor(accentColor);
 
-        return (
+        const btn = (
           <GlassButton
             key={tab.key}
             onPress={() => onChangeTab(tab.key)}
@@ -76,6 +77,15 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
             </Text>
           </GlassButton>
         );
+
+        if (tab.key === 'manualExercises') {
+          return (
+            <TourTarget key={tab.key} id="#tutorial-routines-manual-exercises-tab">
+              {btn}
+            </TourTarget>
+          );
+        }
+        return btn;
       })}
 
       {/* Cardio Rápido (Flame icon) */}

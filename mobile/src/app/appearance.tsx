@@ -46,6 +46,8 @@ import GlobalHeader from '@/components/GlobalHeader';
 import LevelBadge from '@/components/LevelBadge';
 import ThemeBackground, { preloadThemeBackgrounds } from '@/components/ThemeBackground';
 import { LiquidGlassSwitch } from '@/components/ui/LiquidGlassSwitch';
+import { TourTarget } from '@/components/tutorials/TourTarget';
+import { useRegisterTourScroll } from '@/components/tutorials/tourRegistry';
 
 export interface AccentOption {
   id: string;
@@ -300,6 +302,9 @@ export default function AppearanceScreen() {
 
   const colors = useAppColors();
   const [scrollY] = useState(() => new Animated.Value(0));
+  const flatListRef = useRef<any>(null);
+  const scrollOffsetRef = useRef(0);
+  useRegisterTourScroll('/appearance', flatListRef, React.useCallback(() => scrollOffsetRef.current, []));
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isTestingTheme = !!testedTheme;
@@ -473,6 +478,7 @@ export default function AppearanceScreen() {
 
   function renderSection({ item }: { item: AppearanceSection }) {
     if (item === 'themes') return (
+        <TourTarget id="#tutorial-appearance-my-themes">
         <GlassSurface radius={28} theme={theme} isDark={isDark} borderColor={glassBorder} style={[styles.card, { padding: isMobile ? 16 : 22 }]}>
           <Pressable
             onPress={() => setIsMyThemesOpen(!isMyThemesOpen)}
@@ -717,6 +723,7 @@ export default function AppearanceScreen() {
             </View>
           )}
         </GlassSurface>
+        </TourTarget>
     );
 
     if (item === 'base') return (
@@ -724,6 +731,7 @@ export default function AppearanceScreen() {
           <SectionTitle icon={Palette} title="Apariencia de la App" color={colors.text} iconColor={accentText} iconBackground={subtleBg} />
 
           {/* Temas Base */}
+          <TourTarget id="#tutorial-appearance-base-themes">
           <View style={{ marginBottom: 26 }}>
             <SubHeading color={colors.textSecondary}>Tema Principal</SubHeading>
             <View style={[styles.themeGrid, isMobile && { flexWrap: 'wrap' }]}>
@@ -757,10 +765,12 @@ export default function AppearanceScreen() {
               })}
             </View>
           </View>
+          </TourTarget>
         </GlassSurface>
     );
 
     if (item === 'experience') return (
+        <TourTarget id="#tutorial-appearance-haptics">
         <GlassSurface radius={28} theme={theme} isDark={isDark} borderColor={glassBorder} part="bottom" style={[styles.sectionCard, { paddingHorizontal: cardPadding, paddingBottom: cardPadding }]}>
           <View>
             <SubHeading color={colors.textSecondary}>Experiencia UX</SubHeading>
@@ -798,9 +808,10 @@ export default function AppearanceScreen() {
             </Pressable>
           </View>
         </GlassSurface>
+        </TourTarget>
     );
 
-    return (
+    const accentCard = (
       <GlassSurface radius={28} theme={theme} isDark={isDark} borderColor={glassBorder} part="middle" style={[styles.sectionCard, { paddingHorizontal: cardPadding }]}>
         <View style={{ opacity: isSpecialActive ? 0.5 : 1 }} pointerEvents={isSpecialActive ? 'none' : 'auto'}>
           {item === 0 ? <SubHeading color={colors.textSecondary}>Acento de Color</SubHeading> : <>
@@ -813,6 +824,10 @@ export default function AppearanceScreen() {
         </View>
       </GlassSurface>
     );
+
+    return item === 0 ? (
+      <TourTarget id="#tutorial-appearance-accents">{accentCard}</TourTarget>
+    ) : accentCard;
   }
 
   return (
@@ -825,6 +840,7 @@ export default function AppearanceScreen() {
       </View>
 
       <Animated.FlatList
+        ref={flatListRef}
         data={APPEARANCE_SECTIONS}
         renderItem={renderSection}
         keyExtractor={String}
@@ -839,6 +855,9 @@ export default function AppearanceScreen() {
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
           useNativeDriver: Platform.OS !== 'web',
+          listener: (e: any) => {
+            scrollOffsetRef.current = e?.nativeEvent?.contentOffset?.y || 0;
+          },
         })}
         scrollEventThrottle={16}
       />

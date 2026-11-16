@@ -11,6 +11,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { getAppleCardSurfaceStyle, getThemeSurfaceMode, shouldUseContentGlass } from '@/constants/theme';
 import useAppStore from '@/store/useAppStore';
 import apiClient from '@/services/apiClient';
+import { TourTarget } from '@/components/tutorials/TourTarget';
 
 export default function AdminIndex() {
   const router = useRouter();
@@ -20,7 +21,10 @@ export default function AdminIndex() {
   const isIOS = Platform.OS === 'ios';
   return (
     <AdminScreen title="Panel Admin" fallback="/(tabs)/hub">
-      <AdminSystemBar />
+      <TourTarget id="#tutorial-admin-panel">
+        <AdminSystemBar />
+      </TourTarget>
+      <TourTarget id="#tutorial-admin-tabs">
       <View accessibilityLabel="Apartados del panel Admin"
         style={[styles.list, { backgroundColor: colors.card, borderColor: colors.border }, getAppleCardSurfaceStyle(theme, 24)]}>
         {shouldUseContentGlass(theme) && <GlassView pointerEvents="none" glassEffectStyle="regular" colorScheme={dark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />}
@@ -45,6 +49,7 @@ export default function AdminIndex() {
           </View>;
         })}
       </View>
+      </TourTarget>
     </AdminScreen>
   );
 }

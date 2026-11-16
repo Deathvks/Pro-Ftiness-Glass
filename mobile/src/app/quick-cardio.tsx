@@ -12,6 +12,7 @@ import GlobalHeader from '@/components/GlobalHeader';
 import { RoutinesTabs } from '@/components/routines/RoutinesTabs';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { SelectModal } from '@/components/ui/SelectModal';
+import { TourTarget } from '@/components/tutorials/TourTarget';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
 import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { CARDIO_ACTIVITIES, CARDIO_INTENSITIES, type CardioActivity } from '@/data/cardioActivities';
@@ -224,6 +225,7 @@ export default function QuickCardioScreen() {
           </GlassButton>
         )}
 
+        <TourTarget id="#tutorial-cardio-search">
         <View style={styles.filters}>
           <View style={[...cardSurface, styles.search]}>
             <Search size={19} color={colors.textSecondary} />
@@ -253,7 +255,9 @@ export default function QuickCardioScreen() {
             <Text style={[styles.actionLabel, { color: colors.text }]}>{intensity === 'all' ? 'Todas' : intensity}</Text>
           </GlassButton>
         </View>
+        </TourTarget>
 
+        <TourTarget id="#tutorial-cardio-list">
         {filtered.length === 0 ? (
           <View style={[...cardSurface, styles.empty]}>
             <Search size={26} color={colors.textSecondary} />
@@ -298,6 +302,7 @@ export default function QuickCardioScreen() {
             })}
           </View>
         )}
+        </TourTarget>
       </View>
 
       <SelectModal

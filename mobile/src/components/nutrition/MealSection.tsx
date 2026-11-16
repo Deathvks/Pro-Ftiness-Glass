@@ -7,6 +7,7 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getAppleCardSurfaceStyle, getUnselectedControlColors, shouldUseContentGlass, usesFrontendCardSurface } from '@/constants/theme';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
+import { TourTarget } from '@/components/tutorials/TourTarget';
 
 export interface FoodLogItem {
   id: number;
@@ -35,6 +36,7 @@ interface MealSectionProps {
   onViewFood: (log: FoodLogItem) => void;
   onCopyMeal?: (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => void;
   onScanBarcode?: () => void;
+  isTourTarget?: boolean;
 }
 
 export const MealSection: React.FC<MealSectionProps> = ({
@@ -49,6 +51,7 @@ export const MealSection: React.FC<MealSectionProps> = ({
   onViewFood,
   onCopyMeal,
   onScanBarcode,
+  isTourTarget = false,
 }) => {
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
@@ -145,26 +148,31 @@ export const MealSection: React.FC<MealSectionProps> = ({
                   <ScanBarcode size={17} color={colors.textSecondary} />
                 </TouchableOpacity>
               )}
-              <TouchableOpacity
-                onPress={() => {
-                  try {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  } catch {}
-                  onAddFood();
-                }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={[
-                  styles.actionIconBtn,
-                  {
-                    backgroundColor: colors.tint + '18',
-                    borderColor: colors.tint + '35',
-                    borderWidth: 1,
-                  },
-                ]}
-                activeOpacity={0.7}
-              >
-                <Plus size={18} color={colors.tint} />
-              </TouchableOpacity>
+              {(() => {
+                const addBtn = (
+                  <TouchableOpacity
+                    onPress={() => {
+                      try {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      } catch {}
+                      onAddFood();
+                    }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={[
+                      styles.actionIconBtn,
+                      {
+                        backgroundColor: colors.tint + '18',
+                        borderColor: colors.tint + '35',
+                        borderWidth: 1,
+                      },
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <Plus size={18} color={colors.tint} />
+                  </TouchableOpacity>
+                );
+                return isTourTarget ? <TourTarget id="#add-food-btn">{addBtn}</TourTarget> : addBtn;
+              })()}
             </View>
           </View>
 

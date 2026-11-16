@@ -46,6 +46,7 @@ import TrainerProfileModal from '@/components/TrainerProfileModal';
 import { GlassButton } from '@/components/ui/GlassButton';
 import ChatVideoMessage from '@/components/chat/ChatVideoMessage';
 import FullscreenVideoModal from '@/components/chat/FullscreenVideoModal';
+import { TourTarget } from '@/components/tutorials/TourTarget';
 
 interface TrainerInfo extends AvatarUser {
   id: string | number;
@@ -526,6 +527,7 @@ export default function AsesoriaScreen() {
       <ThemeBackground />
 
       {/* Header */}
+      <TourTarget id="#tutorial-advice-main">
       <View
         style={[
           styles.header,
@@ -601,8 +603,10 @@ export default function AsesoriaScreen() {
           </TouchableOpacity>
         )}
       </View>
+      </TourTarget>
 
       {/* Main Conversation Container with Keyboard Avoidance */}
+      <TourTarget id="#tutorial-advice-conversation" style={styles.flexOne}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flexOne}
@@ -873,6 +877,7 @@ export default function AsesoriaScreen() {
           </View>
         )}
       </KeyboardAvoidingView>
+      </TourTarget>
 
       {/* Trainer Profile Modal */}
       <TrainerProfileModal

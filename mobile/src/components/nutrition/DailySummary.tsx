@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
+import { TourTarget } from '@/components/tutorials/TourTarget';
 
 interface Totals {
   calories: number;
@@ -368,15 +369,17 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
             <View style={styles.gridContainer}>
               {/* Row 1: Calorías & Proteínas */}
               <View style={styles.gridRow}>
-                <NutritionStatCard
-                  icon={<Flame size={24} color="#f97316" />}
-                  iconBg="rgba(249, 115, 22, 0.15)"
-                  title="Calorías"
-                  value={Math.round(totals.calories).toLocaleString('es-ES')}
-                  unit={`/ ${targets.calories.toLocaleString('es-ES')} kcal`}
-                  isDark={isDark}
-                  colors={colors}
-                />
+                <TourTarget id="#calories-ring" style={{ flex: 1 }}>
+                  <NutritionStatCard
+                    icon={<Flame size={24} color="#f97316" />}
+                    iconBg="rgba(249, 115, 22, 0.15)"
+                    title="Calorías"
+                    value={Math.round(totals.calories).toLocaleString('es-ES')}
+                    unit={`/ ${targets.calories.toLocaleString('es-ES')} kcal`}
+                    isDark={isDark}
+                    colors={colors}
+                  />
+                </TourTarget>
                 <NutritionStatCard
                   icon={<Beef size={24} color="#ef4444" />}
                   iconBg="rgba(239, 68, 68, 0.15)"
@@ -389,6 +392,7 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
               </View>
 
               {/* Row 2: Carbos & Grasas */}
+              <TourTarget id="#macro-stats">
               <View style={styles.gridRow}>
                 <NutritionStatCard
                   icon={<Wheat size={24} color="#3b82f6" />}
@@ -409,6 +413,7 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
                   colors={colors}
                 />
               </View>
+              </TourTarget>
 
               {/* Row 3: Azúcar (Full-width card, red danger if limit exceeded) */}
               <NutritionStatCard
@@ -437,6 +442,7 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
           ) : (
             /* VIEW: CHART */
             <View style={styles.chartContainer}>
+              <TourTarget id="#calories-ring">
               <View style={styles.chartWrapper}>
                 <Svg width={140} height={140} viewBox="0 0 140 140" style={{ transform: [{ rotate: '-90deg' }] }}>
                   {/* Background Track */}
@@ -517,8 +523,10 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
                   {renderCenterInfo()}
                 </View>
               </View>
+              </TourTarget>
 
               {/* Macro Pills Row */}
+              <TourTarget id="#macro-stats">
               <View style={styles.macroPillsRow}>
                 <TouchableOpacity
                   onPress={() => handleSelectMacro('protein')}
@@ -597,6 +605,7 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
                   <Text style={[styles.macroPillPct, { color: isSugarHigh ? '#ef4444' : colors.textMuted }]}>{Math.round(sugarPct)}%</Text>
                 </TouchableOpacity>
               </View>
+              </TourTarget>
             </View>
           )}
         </View>

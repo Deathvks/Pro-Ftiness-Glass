@@ -14,6 +14,7 @@ import { RecordsProgressView } from '@/components/progress/RecordsProgressView';
 import { BodyWeightProgressView } from '@/components/progress/BodyWeightProgressView';
 import { MeasurementsProgressView } from '@/components/progress/MeasurementsProgressView';
 import { CalendarProgressView } from '@/components/progress/CalendarProgressView';
+import { TourTarget } from '@/components/tutorials/TourTarget';
 
 export default function ProgressScreen() {
   const router = useRouter();
@@ -98,16 +99,24 @@ export default function ProgressScreen() {
       }
     >
       {activeSection === null && (
-        <ProgressSectionList onSelectSection={handleSelectSection} />
+        <TourTarget id="#tutorial-progress-tabs">
+          <ProgressSectionList onSelectSection={handleSelectSection} />
+        </TourTarget>
       )}
 
-      {activeSection === 'heatmap' && <MuscleHeatmapView />}
-      {activeSection === 'exercise' && <ExerciseProgressionView />}
-      {activeSection === 'nutrition' && <NutritionProgressView />}
-      {activeSection === 'records' && <RecordsProgressView />}
-      {activeSection === 'bodyWeight' && <BodyWeightProgressView />}
-      {activeSection === 'measurements' && <MeasurementsProgressView />}
-      {activeSection === 'calendar' && <CalendarProgressView />}
+      {activeSection !== null && (
+        <TourTarget id="#tutorial-progress-panel">
+          <>
+            {activeSection === 'heatmap' && <MuscleHeatmapView />}
+            {activeSection === 'exercise' && <ExerciseProgressionView />}
+            {activeSection === 'nutrition' && <NutritionProgressView />}
+            {activeSection === 'records' && <RecordsProgressView />}
+            {activeSection === 'bodyWeight' && <BodyWeightProgressView />}
+            {activeSection === 'measurements' && <MeasurementsProgressView />}
+            {activeSection === 'calendar' && <CalendarProgressView />}
+          </>
+        </TourTarget>
+      )}
     </AnimatedScreen>
   );
 }

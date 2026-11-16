@@ -34,6 +34,8 @@ import GlobalHeader from '@/components/GlobalHeader';
 import ThemeBackground from '@/components/ThemeBackground';
 import { BugReportModal } from '@/components/modals/BugReportModal';
 import { APP_VERSION, isRemoteNewer } from '@/config/version';
+import { TourTarget } from '@/components/tutorials/TourTarget';
+import { useRegisterTourScroll } from '@/components/tutorials/tourRegistry';
 
 const SUPPORT_EMAIL = 'soporte@profitnessglass.es';
 const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419';
@@ -214,6 +216,9 @@ export default function SupportScreen() {
   const { width: windowWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollViewRef = useRef<any>(null);
+  const scrollOffsetRef = useRef(0);
+  useRegisterTourScroll('/support', scrollViewRef, React.useCallback(() => scrollOffsetRef.current, []));
 
   const isMobile = windowWidth < 600;
   const isIOS = Platform.OS === 'ios';
@@ -309,6 +314,7 @@ export default function SupportScreen() {
       </View>
 
       <Animated.ScrollView
+        ref={scrollViewRef}
         contentContainerStyle={{
           paddingHorizontal: isMobile ? 16 : Math.max(16, (windowWidth - 640) / 2),
           paddingTop: insets.top + 72,
@@ -317,6 +323,9 @@ export default function SupportScreen() {
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
           useNativeDriver: true,
+          listener: (e: any) => {
+            scrollOffsetRef.current = e?.nativeEvent?.contentOffset?.y || 0;
+          },
         })}
         scrollEventThrottle={16}
       >
@@ -338,6 +347,7 @@ export default function SupportScreen() {
           </Text>
         )}
 
+        <TourTarget id="#tutorial-support-main">
         <GlassSurface
           radius={28}
           isDark={isDark}
@@ -384,20 +394,22 @@ export default function SupportScreen() {
             />
 
             {/* Reportar un problema */}
-            <SupportItem
-              icon={Bug}
-              title="Reportar un problema"
-              subtitle="¿Algo no funciona bien?"
-              onPress={() => {
-                try {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                } catch {}
-                setShowBugModal(true);
-              }}
-              isDark={isDark}
-              colors={colors}
-              iconColor="#FF453A"
-            />
+            <TourTarget id="#tutorial-support-bug">
+              <SupportItem
+                icon={Bug}
+                title="Reportar un problema"
+                subtitle="¿Algo no funciona bien?"
+                onPress={() => {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  } catch {}
+                  setShowBugModal(true);
+                }}
+                isDark={isDark}
+                colors={colors}
+                iconColor="#FF453A"
+              />
+            </TourTarget>
 
             {/* Contactar Soporte */}
             <SupportItem
@@ -412,6 +424,7 @@ export default function SupportScreen() {
             />
           </View>
         </GlassSurface>
+        </TourTarget>
 
         {/* ================= 2. APP INFO ================= */}
         {isIOS && (

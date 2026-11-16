@@ -31,6 +31,7 @@ import { getAppleCardSurfaceStyle, getUnselectedControlColors, shouldUseContentG
 import GlobalHeader from '@/components/GlobalHeader';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { TourTarget } from '@/components/tutorials/TourTarget';
 import { RoutinesTabs } from '@/components/routines/RoutinesTabs';
 import { FolderList } from '@/components/routines/FolderList';
 import { RoutineCard } from '@/components/routines/RoutineCard';
@@ -440,18 +441,21 @@ export default function RoutinesScreen() {
       <PromoBanner type="routines" onPress={() => router.push('/asesoria' as any)} />
 
       {/* 3. TABS PRINCIPALES (MIS RUTINAS, EXPLORAR, MANUALES, CARDIO RÁPIDO) */}
-      <View style={styles.tabsRow}>
-        <RoutinesTabs
-          activeTab={activeTab}
-          onChangeTab={nextTab => router.setParams({ tab: nextTab })}
-          onQuickCardio={() => router.push('/quick-cardio')}
-        />
-      </View>
+      <TourTarget id="#routines-tabs">
+        <View style={styles.tabsRow}>
+          <RoutinesTabs
+            activeTab={activeTab}
+            onChangeTab={nextTab => router.setParams({ tab: nextTab })}
+            onQuickCardio={() => router.push('/quick-cardio')}
+          />
+        </View>
+      </TourTarget>
 
       {/* 4. CONTENIDO DE PESTAÑA: MIS RUTINAS */}
       {activeTab === 'myRoutines' && (
         <>
           {/* BOTONES DE ACCIÓN (DEBAJO DE LAS PESTAÑAS, IGUAL QUE EN EL FRONTEND) */}
+          <TourTarget id="#routines-actions">
           <View style={styles.actionButtonsContainer}>
             {/* Fila 1: Crear Rutina (destacado) + IA */}
             <View style={styles.actionRow1}>
@@ -526,6 +530,7 @@ export default function RoutinesScreen() {
               )}
             </View>
           </View>
+          </TourTarget>
 
           {/* BANNER "VER TU PROGRESO" */}
           <TouchableOpacity
@@ -592,6 +597,7 @@ export default function RoutinesScreen() {
 
           {/* BLOQUE DE BÚSQUEDA Y CARPETAS */}
           <View style={styles.filterSection}>
+            <TourTarget id="#routines-search">
             <View
               style={[
                 styles.searchContainer,
@@ -613,6 +619,7 @@ export default function RoutinesScreen() {
                 </TouchableOpacity>
               )}
             </View>
+            </TourTarget>
 
             {/* SELECTOR DE CARPETAS */}
             {routines && routines.length > 0 && (

@@ -43,6 +43,7 @@ import socialService from '@/services/socialService';
 import * as userService from '@/services/userService';
 import { forkRoutine } from '@/services/routineService';
 import { enrichGymWithMedia } from '@/utils/gymMedia';
+import { TourTarget } from '@/components/tutorials/TourTarget';
 import { getSocket } from '@/services/socket';
 import { SocialUserAvatar } from './SocialUserAvatar';
 import { Image as ExpoImage } from 'expo-image';
@@ -1639,7 +1640,11 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
 
   return (
     <View style={styles.container}>
-      {renderScopeSelector()}
+      <TourTarget id="#social-feed-scopes">
+        {renderScopeSelector()}
+      </TourTarget>
+      <TourTarget id="#social-feed-content">
+      <View>
       {renderGymSection()}
 
       {isLoading ? (
@@ -1756,6 +1761,8 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
           )}
         </View>
       )}
+      </View>
+      </TourTarget>
 
       {/* Gym Location Modal */}
       <GymLocationModal

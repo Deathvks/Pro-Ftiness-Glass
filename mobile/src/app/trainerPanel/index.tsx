@@ -11,6 +11,7 @@ import { TrainerRoutines } from '@/components/trainer/TrainerRoutines';
 import { useAppColors } from '@/hooks/useAppColors';
 import { TRAINING_DAYS, changeTrainerClient, trainerClients, type TrainerClient } from '@/services/trainerService';
 import useAppStore from '@/store/useAppStore';
+import { TourTarget } from '@/components/tutorials/TourTarget';
 
 type TrainerTab = 'active' | 'chats' | 'past' | 'exercises' | 'routines';
 const DATES = [['all', 'Cualquier fecha'], ['today', 'Hoy'], ['week', 'Última semana'], ['month', 'Último mes']] as const;
@@ -27,6 +28,7 @@ export default function TrainerPanel() {
   useFocusEffect(useCallback(() => { setFocus(value => value + 1); }, []));
 
   return <AdminScreen title="Panel de Entrenador" fallback="/(tabs)/hub">
+    <TourTarget id="#tutorial-trainer-panel" style={styles.stack}>
     <AdminButton icon={UserPlus} label="Añadir nuevo cliente" variant="primary" onPress={() => router.push('/trainerPanel/alta')} />
     <AdminSegments<TrainerTab> value={tab} onChange={setTab} options={[
       ['active', 'Activos'], ['chats', unread ? 'Asesorías (' + unread + ')' : 'Asesorías'],
@@ -54,6 +56,7 @@ export default function TrainerPanel() {
           emptyLabel="No se encontraron clientes con esos filtros." render={client => <ClientCard client={client} reload={reload} />} />
       </>;
     }}</AdminLoad>}
+    </TourTarget>
   </AdminScreen>;
 }
 

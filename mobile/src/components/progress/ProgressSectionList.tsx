@@ -7,6 +7,7 @@ import { PROGRESS_SECTIONS, ProgressSectionId } from '@/config/progressSections'
 import { useAppColors } from '@/hooks/useAppColors';
 import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import useAppStore from '@/store/useAppStore';
+import { TourTarget } from '@/components/tutorials/TourTarget';
 
 interface ProgressSectionListProps {
   onSelectSection: (sectionId: ProgressSectionId) => void;
@@ -68,8 +69,7 @@ export function ProgressSectionList({ onSelectSection }: ProgressSectionListProp
           const isLast = index === PROGRESS_SECTIONS.length - 1;
           const iosBadgeBg = IOS_SECTION_COLORS[section.id] || colors.tint;
 
-          return (
-            <React.Fragment key={section.id}>
+          const row = (
               <TouchableOpacity
                 activeOpacity={0.65}
                 onPress={() => handlePress(section.id)}
@@ -136,7 +136,15 @@ export function ProgressSectionList({ onSelectSection }: ProgressSectionListProp
                   strokeWidth={2.2}
                 />
               </TouchableOpacity>
+          );
 
+          return (
+            <React.Fragment key={section.id}>
+              {section.id === 'calendar' ? (
+                <TourTarget id="#progress-tab-calendar">{row}</TourTarget>
+              ) : (
+                row
+              )}
               {!isLast && (
                 <View
                   style={[

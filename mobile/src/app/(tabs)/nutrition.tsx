@@ -27,6 +27,8 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import GlobalHeader from '@/components/GlobalHeader';
 import { AndroidHeaderBlurTarget } from '@/components/AndroidHeaderBlur';
+import { TourTarget } from '@/components/tutorials/TourTarget';
+import { useRegisterTourScroll } from '@/components/tutorials/tourRegistry';
 
 // Subcomponents
 import { DateNavigator } from '@/components/nutrition/DateNavigator';
@@ -56,7 +58,10 @@ export default function NutritionScreen() {
   const colors = useAppColors();
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollViewRef = useRef<any>(null);
+  const scrollOffsetRef = useRef(0);
   const androidBlurTarget = useRef<React.ComponentRef<typeof View>>(null);
+  useRegisterTourScroll('/(tabs)/nutrition', scrollViewRef, useCallback(() => scrollOffsetRef.current, []));
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
   // Store State
@@ -370,6 +375,7 @@ export default function NutritionScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <AndroidHeaderBlurTarget target={androidBlurTarget}>
         <Animated.ScrollView
+          ref={scrollViewRef}
           contentContainerStyle={[
             styles.scrollContent,
             {
@@ -380,6 +386,9 @@ export default function NutritionScreen() {
           showsVerticalScrollIndicator={false}
           onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
             useNativeDriver: Platform.OS !== 'web',
+            listener: (e: any) => {
+              scrollOffsetRef.current = e?.nativeEvent?.contentOffset?.y || 0;
+            },
           })}
           scrollEventThrottle={16}
           refreshControl={
@@ -398,10 +407,12 @@ export default function NutritionScreen() {
           />
 
           {/* Date Navigator */}
-          <DateNavigator
-            selectedDate={selectedDate}
-            onDateChange={fetchDataForDate}
-          />
+          <TourTarget id="#date-navigator">
+            <DateNavigator
+              selectedDate={selectedDate}
+              onDateChange={fetchDataForDate}
+            />
+          </TourTarget>
 
           {/* Smart Nutrition Coach Diagnostic Banner (Matching frontend: only when foods exist) */}
           {nutritionLog && nutritionLog.length > 0 && nutritionPlan ? (
@@ -514,11 +525,13 @@ export default function NutritionScreen() {
           />
 
           {/* Water Tracker Card */}
-          <WaterTrackerCard
-            currentMl={waterLog?.quantity_ml || 0}
-            targetMl={waterTarget}
-            onPress={() => setModal({ type: 'water' })}
-          />
+          <TourTarget id="#water-tracker">
+            <WaterTrackerCard
+              currentMl={waterLog?.quantity_ml || 0}
+              targetMl={waterTarget}
+              onPress={() => setModal({ type: 'water' })}
+            />
+          </TourTarget>
 
           {/* Creatine Tracker Card */}
           <CreatineTrackerCard
@@ -535,6 +548,7 @@ export default function NutritionScreen() {
               title={mealLabels[mealKey]}
               totalCalories={mealTotals[mealKey] || 0}
               logs={meals[mealKey]}
+              isTourTarget={mealKey === 'breakfast'}
               onAddFood={() => setModal({ type: 'food', data: { mealType: mealKey } })}
               onScanBarcode={() => setModal({ type: 'food', data: { mealType: mealKey, initialScan: true } })}
               onEditFood={item => setModal({ type: 'food', data: { ...item, mealType: mealKey } })}

@@ -92,9 +92,12 @@ const useAppStore = create((set, get) => ({
             try { set({ galaxyEffectsEnabled: JSON.parse(galaxyEffects) }); } catch(e){}
         }
         
-                const tours = ['tourCompleted', 'nutritionTourCompleted', 'routineTourCompleted', 'socialTourCompleted', 'hubTourCompleted'];
+        const tours = ['tourCompleted', 'nutritionTourCompleted', 'routineTourCompleted', 'socialTourCompleted', 'hubTourCompleted'];
+        const uid = get().userProfile?.id;
         tours.forEach(tour => {
-            if (localStorage.getItem(tour) === 'true') set({ [tour]: true });
+            if (localStorage.getItem(tour) === 'true' || (uid && localStorage.getItem(`${tour}_${uid}`) === 'true')) {
+                set({ [tour]: true });
+            }
         });
         
         const routineDraft = localStorage.getItem('routineEditorState');
@@ -245,6 +248,15 @@ const useAppStore = create((set, get) => ({
         set({ restSoundEnabled: enabled });
     },
 
+    // --- Tutoriales guiados interactivos bajo demanda ---
+    activeTutorial: null,
+    showTutorialsCenter: false,
+    setShowTutorialsCenter: (visible) => set({ showTutorialsCenter: Boolean(visible) }),
+    startPageTutorial: (tutorial, returnToHub = false) => set({
+        activeTutorial: tutorial ? { tutorial, returnToHub: Boolean(returnToHub), startedAt: Date.now() } : null,
+    }),
+    clearPageTutorial: () => set({ activeTutorial: null }),
+
     // --- Configuración Global: Tour Guiado General ---
     tourCompleted: (() => {
         try {
@@ -256,7 +268,11 @@ const useAppStore = create((set, get) => ({
 
     completeTour: () => {
         try {
-            if (typeof localStorage !== 'undefined') localStorage.setItem('tourCompleted', 'true');
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem('tourCompleted', 'true');
+                const uid = get().userProfile?.id;
+                if (uid) localStorage.setItem(`tourCompleted_${uid}`, 'true');
+            }
         } catch (e) {
             console.warn(e);
         }
@@ -265,7 +281,11 @@ const useAppStore = create((set, get) => ({
 
     resetTour: () => {
         try {
-            if (typeof localStorage !== 'undefined') localStorage.removeItem('tourCompleted');
+            if (typeof localStorage !== 'undefined') {
+                localStorage.removeItem('tourCompleted');
+                const uid = get().userProfile?.id;
+                if (uid) localStorage.removeItem(`tourCompleted_${uid}`);
+            }
         } catch (e) { }
         set({ tourCompleted: false });
     },
@@ -281,7 +301,11 @@ const useAppStore = create((set, get) => ({
 
     completeNutritionTour: () => {
         try {
-            if (typeof localStorage !== 'undefined') localStorage.setItem('nutritionTourCompleted', 'true');
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem('nutritionTourCompleted', 'true');
+                const uid = get().userProfile?.id;
+                if (uid) localStorage.setItem(`nutritionTourCompleted_${uid}`, 'true');
+            }
         } catch (e) {
             console.warn(e);
         }
@@ -290,7 +314,11 @@ const useAppStore = create((set, get) => ({
 
     resetNutritionTour: () => {
         try {
-            if (typeof localStorage !== 'undefined') localStorage.removeItem('nutritionTourCompleted');
+            if (typeof localStorage !== 'undefined') {
+                localStorage.removeItem('nutritionTourCompleted');
+                const uid = get().userProfile?.id;
+                if (uid) localStorage.removeItem(`nutritionTourCompleted_${uid}`);
+            }
         } catch (e) { }
         set({ nutritionTourCompleted: false });
     },
@@ -306,7 +334,11 @@ const useAppStore = create((set, get) => ({
 
     completeRoutineTour: () => {
         try {
-            if (typeof localStorage !== 'undefined') localStorage.setItem('routineTourCompleted', 'true');
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem('routineTourCompleted', 'true');
+                const uid = get().userProfile?.id;
+                if (uid) localStorage.setItem(`routineTourCompleted_${uid}`, 'true');
+            }
         } catch (e) {
             console.warn(e);
         }
@@ -315,7 +347,11 @@ const useAppStore = create((set, get) => ({
 
     resetRoutineTour: () => {
         try {
-            if (typeof localStorage !== 'undefined') localStorage.removeItem('routineTourCompleted');
+            if (typeof localStorage !== 'undefined') {
+                localStorage.removeItem('routineTourCompleted');
+                const uid = get().userProfile?.id;
+                if (uid) localStorage.removeItem(`routineTourCompleted_${uid}`);
+            }
         } catch (e) { }
         set({ routineTourCompleted: false });
     },
@@ -331,7 +367,11 @@ const useAppStore = create((set, get) => ({
 
     completeSocialTour: () => {
         try {
-            if (typeof localStorage !== 'undefined') localStorage.setItem('socialTourCompleted', 'true');
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem('socialTourCompleted', 'true');
+                const uid = get().userProfile?.id;
+                if (uid) localStorage.setItem(`socialTourCompleted_${uid}`, 'true');
+            }
         } catch (e) {
             console.warn(e);
         }
@@ -340,7 +380,11 @@ const useAppStore = create((set, get) => ({
 
     resetSocialTour: () => {
         try {
-            if (typeof localStorage !== 'undefined') localStorage.removeItem('socialTourCompleted');
+            if (typeof localStorage !== 'undefined') {
+                localStorage.removeItem('socialTourCompleted');
+                const uid = get().userProfile?.id;
+                if (uid) localStorage.removeItem(`socialTourCompleted_${uid}`);
+            }
         } catch (e) { }
         set({ socialTourCompleted: false });
     },
@@ -356,7 +400,11 @@ const useAppStore = create((set, get) => ({
 
     completeHubTour: () => {
         try {
-            if (typeof localStorage !== 'undefined') localStorage.setItem('hubTourCompleted', 'true');
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem('hubTourCompleted', 'true');
+                const uid = get().userProfile?.id;
+                if (uid) localStorage.setItem(`hubTourCompleted_${uid}`, 'true');
+            }
         } catch (e) {
             console.warn(e);
         }
@@ -365,9 +413,40 @@ const useAppStore = create((set, get) => ({
 
     resetHubTour: () => {
         try {
-            if (typeof localStorage !== 'undefined') localStorage.removeItem('hubTourCompleted');
+            if (typeof localStorage !== 'undefined') {
+                localStorage.removeItem('hubTourCompleted');
+                const uid = get().userProfile?.id;
+                if (uid) localStorage.removeItem(`hubTourCompleted_${uid}`);
+            }
         } catch (e) { }
         set({ hubTourCompleted: false });
+    },
+
+    // Sincronización bidireccional de tours para el usuario activo
+    syncToursForUser: (profile) => {
+        if (!profile?.id || typeof localStorage === 'undefined') return;
+        const uid = profile.id;
+        const tourList = [
+            'tourCompleted',
+            'nutritionTourCompleted',
+            'routineTourCompleted',
+            'socialTourCompleted',
+            'hubTourCompleted',
+        ];
+        tourList.forEach((key) => {
+            try {
+                const userDone = localStorage.getItem(`${key}_${uid}`) === 'true';
+                const globalDone = localStorage.getItem(key) === 'true';
+                if (userDone && !globalDone) {
+                    localStorage.setItem(key, 'true');
+                } else if (globalDone && !userDone) {
+                    localStorage.setItem(`${key}_${uid}`, 'true');
+                }
+                if (userDone || globalDone) {
+                    set({ [key]: true });
+                }
+            } catch {}
+        });
     }
 }));
 

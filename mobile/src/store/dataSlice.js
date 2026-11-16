@@ -97,6 +97,10 @@ export const createDataSlice = (set, get) => ({
 
       set({ userProfile: profileData, isAuthenticated: true });
 
+      if (get().syncToursForUser) {
+        get().syncToursForUser(profileData);
+      }
+
       if (profileData && get().setGamificationData) {
         get().setGamificationData({
           xp: profileData.xp,

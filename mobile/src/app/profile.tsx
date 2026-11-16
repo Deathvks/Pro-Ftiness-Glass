@@ -54,6 +54,7 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
+import { TourTarget } from '@/components/tutorials/TourTarget';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 import { getUserRoleRingConfig } from '@/utils/userRoleUtils';
@@ -375,7 +376,9 @@ export default function ProfileScreen() {
     <AnimatedScreen header={<GlobalHeader title="Editar Perfil" showBackButton onBackPress={handleBack} />} paddingHorizontal={16} paddingBottom={insets.bottom + 100}>
       <View style={styles.container}>
         {/* 1. SECCIÓN DE IDENTIDAD & AVATAR ESTILO FRONTEND */}
+        <TourTarget id="#tutorial-profile-header">
         <View style={styles.identitySection}>
+          <TourTarget id="#tutorial-profile-identity" style={{ alignItems: 'center' }}>
           <TouchableOpacity
             onPress={handlePickImage}
             activeOpacity={0.9}
@@ -428,9 +431,12 @@ export default function ProfileScreen() {
           <Text style={[styles.displayEmail, { color: colors.textSecondary }]}>
             {userProfile?.email || 'Sin correo asociado'}
           </Text>
+          </TourTarget>
         </View>
+        </TourTarget>
 
         {/* 2. GRUPO: DATOS BÁSICOS (Grouped Card iOS Style) */}
+        <TourTarget id="#tutorial-profile-form">
         <View style={styles.groupSection}>
           <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>DATOS BÁSICOS</Text>
           <GlassSurface
@@ -506,6 +512,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </GlassSurface>
         </View>
+        </TourTarget>
 
         {/* BOTÓN GUARDAR CAMBIOS (Visible solo si hay modificaciones, estilo frontend) */}
         {isDirty && (

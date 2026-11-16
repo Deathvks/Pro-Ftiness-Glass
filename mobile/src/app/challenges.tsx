@@ -40,6 +40,8 @@ import { getThemeBaseBackground } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import ThemeBackground from '@/components/ThemeBackground';
 import RewardsModal from '@/components/modals/RewardsModal';
+import { TourTarget } from '@/components/tutorials/TourTarget';
+import { useRegisterTourScroll } from '@/components/tutorials/tourRegistry';
 
 export interface Challenge {
   id: string;
@@ -215,6 +217,9 @@ export default function ChallengesScreen() {
   const { width: windowWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollViewRef = useRef<any>(null);
+  const scrollOffsetRef = useRef(0);
+  useRegisterTourScroll('/challenges', scrollViewRef, React.useCallback(() => scrollOffsetRef.current, []));
 
   const isMobile = windowWidth < 600;
 
@@ -307,10 +312,13 @@ export default function ChallengesScreen() {
 
       {/* Header fijo superior con botón de regreso */}
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
-        <GlobalHeader title="Retos y Misiones" scrollY={scrollY} showBackButton />
+        <TourTarget id="#tutorial-challenges-header">
+          <GlobalHeader title="Retos y Misiones" scrollY={scrollY} showBackButton />
+        </TourTarget>
       </View>
 
       <Animated.ScrollView
+        ref={scrollViewRef}
         contentContainerStyle={{
           paddingHorizontal: isMobile ? 14 : Math.max(16, (windowWidth - 640) / 2),
           paddingTop: insets.top + 72,
@@ -319,6 +327,9 @@ export default function ChallengesScreen() {
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
           useNativeDriver: true,
+          listener: (e: any) => {
+            scrollOffsetRef.current = e?.nativeEvent?.contentOffset?.y || 0;
+          },
         })}
         scrollEventThrottle={16}
         refreshControl={
@@ -331,6 +342,7 @@ export default function ChallengesScreen() {
         }
       >
         {/* ================= RETO INFINITO: INVITAR A UN AMIGO ================= */}
+        <TourTarget id="#tutorial-challenges-referral">
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleCopyReferral}
@@ -405,8 +417,10 @@ export default function ChallengesScreen() {
             </Text>
           </TouchableOpacity>
         </TouchableOpacity>
+        </TourTarget>
 
         {/* ================= 3. SEGMENTED TABS ================= */}
+        <TourTarget id="#tutorial-challenges-tabs">
         <View
           style={[
             styles.tabsContainer,
@@ -497,6 +511,7 @@ export default function ChallengesScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+        </TourTarget>
 
         {/* ================= 4. CONTENIDO DE PESTAÑAS ================= */}
         {loading ? (

@@ -72,6 +72,7 @@ import DashboardInsights from '@/components/DashboardInsights';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
 import { useToast } from '@/hooks/useToast';
+import { TourTarget } from '@/components/tutorials/TourTarget';
 
 import { PRShareModal } from '@/components/modals/PRShareModal';
 import { PRListModal } from '@/components/modals/PRListModal';
@@ -602,6 +603,7 @@ export default function Dashboard() {
       </View>
 
       {/* 2. GAMIFICACION CON ESCUDO DE RACHA */}
+      <TourTarget id="#tour-gamification">
       <TouchableOpacity
         onPress={() => setShowXPModal(true)}
         activeOpacity={0.8}
@@ -682,6 +684,7 @@ export default function Dashboard() {
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
+      </TourTarget>
 
       {/* 3. BANNER DE ENTRENAMIENTO EN CURSO (solo si el cronómetro ha iniciado >= 1s) */}
       {activeWorkout && isWorkoutTimerActive && (
@@ -843,6 +846,7 @@ export default function Dashboard() {
       <DashboardInsights workoutLog={workoutLog} bodyWeightLog={bodyWeightLog} colors={colors} />
 
       {/* 6. STATS GRID 2x2 (META SEMANAL / CALORÍAS / TIEMPO / QUEMADAS) */}
+      <TourTarget id="#tour-stats">
       <View style={{ marginBottom: 24, gap: 12 }}>
         {/* Fila 1 */}
         <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -987,8 +991,10 @@ export default function Dashboard() {
           />
         </View>
       </View>
+      </TourTarget>
 
       {/* 7. NUTRICIÓN (5 ANILLOS CIRCULARES CON ALERTAS Y MODALES) */}
+      <TourTarget id="#tour-nutrition">
       <View
         style={[
           styles.glassCardBase, cardSurface,
@@ -1106,8 +1112,10 @@ export default function Dashboard() {
           </View>
         </View>
       </View>
+      </TourTarget>
 
       {/* 8. CARDIO RÁPIDO */}
+      <TourTarget id="#tour-quick-cardio">
       <View style={{ marginBottom: 24 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 }}>
           <HeartPulse size={22} color={colors.tint} />
@@ -1184,8 +1192,10 @@ export default function Dashboard() {
           </TouchableOpacity>
         </View>
       </View>
+      </TourTarget>
 
       {/* 9. MIS RUTINAS */}
+      <TourTarget id="#tour-routines">
       <View style={{ marginBottom: 24 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -1381,8 +1391,10 @@ export default function Dashboard() {
           <ChevronRight size={18} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
+      </TourTarget>
 
       {/* 10. PESO CORPORAL */}
+      <TourTarget id="#tour-weight">
       <View
         style={[
           styles.glassCardBase, cardSurface,
@@ -1469,6 +1481,7 @@ export default function Dashboard() {
           )}
         </View>
       </View>
+      </TourTarget>
 
 
 
