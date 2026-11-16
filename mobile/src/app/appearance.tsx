@@ -844,8 +844,8 @@ export default function AppearanceScreen() {
         data={APPEARANCE_SECTIONS}
         renderItem={renderSection}
         keyExtractor={String}
-        initialNumToRender={2}
-        maxToRenderPerBatch={2}
+        initialNumToRender={APPEARANCE_SECTIONS.length}
+        maxToRenderPerBatch={APPEARANCE_SECTIONS.length}
         windowSize={5}
         contentContainerStyle={{
           paddingHorizontal: isMobile ? 14 : Math.max(16, (windowWidth - 640) / 2),

@@ -11,6 +11,8 @@ export interface TargetRect {
 interface ScrollEntry {
   getRef: () => any;
   getOffset: () => number;
+  lastProgrammaticOffset?: number;
+  lastProgrammaticAt?: number;
 }
 
 const targetRegistry = new Map<string, React.RefObject<any>>();
@@ -18,7 +20,8 @@ const scrollRegistry = new Map<string, ScrollEntry>();
 
 export function normalizeRouteKey(pathname: string | null | undefined): string {
   if (!pathname) return '/';
-  const cleaned = pathname.replace(/\/+$/, '') || '/';
+  const withoutQuery = pathname.split('?')[0];
+  const cleaned = withoutQuery.replace(/\/+$/, '') || '/';
   if (cleaned === '/(tabs)' || cleaned === '/(tabs)/index' || cleaned === '/index') {
     return '/';
   }
@@ -111,11 +114,52 @@ function invokeScrollToOffset(scroller: any, offset: number) {
   return false;
 }
 
+async function waitForTargetSettle(id: string, maxWaitMs = 680): Promise<TargetRect | null> {
+  const start = Date.now();
+  await new Promise(r => setTimeout(r, 110));
+  let prev = await measureTourTarget(id);
+  let stableCount = 0;
+
+  while (Date.now() - start < maxWaitMs) {
+    await new Promise(r => setTimeout(r, 65));
+    const cur = await measureTourTarget(id);
+    if (!cur) return prev;
+    if (
+      prev &&
+      Math.abs(cur.x - prev.x) <= 1.5 &&
+      Math.abs(cur.y - prev.y) <= 1.5
+    ) {
+      stableCount += 1;
+      if (stableCount >= 2) {
+        return cur;
+      }
+    } else {
+      stableCount = 0;
+    }
+    prev = cur;
+  }
+
+  return prev;
+}
+
+function readCurrentScrollOffset(entry: ScrollEntry): number {
+  const tracked = entry.getOffset();
+  if (
+    entry.lastProgrammaticOffset != null &&
+    entry.lastProgrammaticAt != null &&
+    Date.now() - entry.lastProgrammaticAt < 900 &&
+    Math.abs(tracked - entry.lastProgrammaticOffset) > 40
+  ) {
+    return entry.lastProgrammaticOffset;
+  }
+  return tracked;
+}
+
 export async function scrollTourTargetIntoView(
   id: string,
   routeKey: string,
-  topMargin = 104,
-  bottomReserved = 230,
+  topMargin = 100,
+  bottomReserved = 240,
 ): Promise<TargetRect | null> {
   const initialRect = await measureTourTarget(id);
   if (!initialRect) return null;
@@ -123,7 +167,8 @@ export async function scrollTourTargetIntoView(
   const winHeight = Dimensions.get('window').height;
   const visibleBottom = winHeight - bottomReserved;
   const isComfortablyVisible =
-    initialRect.y >= topMargin && initialRect.y + Math.min(initialRect.height, 140) <= visibleBottom;
+    initialRect.y >= topMargin &&
+    initialRect.y + Math.min(initialRect.height, 140) <= visibleBottom;
 
   if (isComfortablyVisible) {
     return initialRect;
@@ -135,14 +180,34 @@ export async function scrollTourTargetIntoView(
   }
 
   const scroller = scrollEntry.getRef();
-  const currentOffset = scrollEntry.getOffset();
-  const desiredY = Math.max(topMargin, winHeight * 0.24);
+  const currentOffset = readCurrentScrollOffset(scrollEntry);
+  const desiredY = Math.max(topMargin, winHeight * 0.22);
   const delta = initialRect.y - desiredY;
   const nextOffset = Math.max(0, currentOffset + delta);
 
   const scrolled = invokeScrollToOffset(scroller, nextOffset);
   if (!scrolled) return initialRect;
 
-  await new Promise(r => setTimeout(r, 340));
-  return (await measureTourTarget(id)) || initialRect;
+  scrollEntry.lastProgrammaticOffset = nextOffset;
+  scrollEntry.lastProgrammaticAt = Date.now();
+
+  const settled = await waitForTargetSettle(id, 680);
+  if (!settled) return initialRect;
+
+  // Fine-tune once if target is still outside comfortable band after deceleration
+  const needsCorrection =
+    settled.y < topMargin - 12 ||
+    settled.y + Math.min(settled.height, 120) > visibleBottom + 12;
+
+  if (needsCorrection) {
+    const correctedOffset = Math.max(0, nextOffset + (settled.y - desiredY));
+    if (Math.abs(correctedOffset - nextOffset) > 16) {
+      invokeScrollToOffset(scroller, correctedOffset);
+      scrollEntry.lastProgrammaticOffset = correctedOffset;
+      scrollEntry.lastProgrammaticAt = Date.now();
+      return (await waitForTargetSettle(id, 380)) || settled;
+    }
+  }
+
+  return settled;
 }

@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Modal,
+  BackHandler,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -48,11 +47,10 @@ function buildSpotlightPath(
 ): string {
   const x = Math.max(4, rect.x - pad);
   const y = Math.max(4, rect.y - pad);
-  const w = Math.min(winW - x - 4, rect.width + pad * 2);
-  const h = Math.min(winH - y - 4, rect.height + pad * 2);
+  const w = Math.max(24, Math.min(winW - x - 4, rect.width + pad * 2));
+  const h = Math.max(24, Math.min(winH - y - 4, rect.height + pad * 2));
   const cr = Math.min(r, w / 2, h / 2);
 
-  // Outer clockwise rectangle + inner counter-clockwise rounded rectangle (evenodd rule)
   return [
     `M0 0 H${winW} V${winH} H0 Z`,
     `M${x + cr} ${y}`,
@@ -96,12 +94,35 @@ export function TourOverlay() {
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
-  const [cardHeight, setCardHeight] = useState(210);
+  const [cardHeight, setCardHeight] = useState(215);
+  const cardHeightRef = useRef(215);
+  const overlayRef = useRef<React.ComponentRef<typeof View>>(null);
+  const overlayOriginRef = useRef({ x: 0, y: 0 });
   const sessionRef = useRef<ActiveSession | null>(null);
   sessionRef.current = session;
   const startedAutoIdsRef = useRef<Set<string>>(new Set());
 
   const normalizedPath = useMemo(() => normalizeRouteKey(pathname), [pathname]);
+
+  const measureOverlayOrigin = useCallback(() => {
+    return new Promise<{ x: number; y: number }>(resolve => {
+      const node: any = overlayRef.current;
+      if (!node || typeof node.measureInWindow !== 'function') {
+        resolve(overlayOriginRef.current);
+        return;
+      }
+      try {
+        node.measureInWindow((x: number, y: number) => {
+          if (!Number.isNaN(x) && !Number.isNaN(y)) {
+            overlayOriginRef.current = { x, y };
+          }
+          resolve(overlayOriginRef.current);
+        });
+      } catch {
+        resolve(overlayOriginRef.current);
+      }
+    });
+  }, []);
 
   const endSession = useCallback(
     (navigateBackIfRequested = true) => {
@@ -131,6 +152,16 @@ export function TourOverlay() {
     [router],
   );
 
+  // Android back button closes active tour instead of leaving overlay orphaned
+  useEffect(() => {
+    if (!session || Platform.OS === 'web') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      endSession(true);
+      return true;
+    });
+    return () => sub.remove();
+  }, [session, endSession]);
+
   // 1. Handle manual PageTutorial launched from TutorialsCenter
   useEffect(() => {
     if (!activeTutorial?.tutorial) return;
@@ -145,9 +176,9 @@ export function TourOverlay() {
       if (cancelled) return;
       const currentNormalized = normalizeRouteKey(pathname);
       if (currentNormalized !== expectedRoute) {
-        if (attempts < 16) {
+        if (attempts < 20) {
           attempts += 1;
-          timer = setTimeout(tryStart, 350);
+          timer = setTimeout(tryStart, 180);
         }
         return;
       }
@@ -155,14 +186,14 @@ export function TourOverlay() {
       const resolvedSteps = tutorial.steps.filter(
         (step: TutorialStep) => !step.element || hasTourTarget(step.element),
       );
+      const elementMatches = resolvedSteps.filter((s: TutorialStep) => Boolean(s.element)).length;
 
-      if (resolvedSteps.length < 1 && attempts < 14) {
+      if (elementMatches === 0 && attempts < 10) {
         attempts += 1;
-        timer = setTimeout(tryStart, 400);
+        timer = setTimeout(tryStart, 220);
         return;
       }
 
-      // If targets still aren't ready after waiting, fallback to steps without requiring DOM match
       const finalSteps = resolvedSteps.length > 0 ? resolvedSteps : tutorial.steps;
 
       useAppStore.getState().setTourActive?.(true);
@@ -179,7 +210,7 @@ export function TourOverlay() {
       });
     };
 
-    timer = setTimeout(tryStart, 550);
+    timer = setTimeout(tryStart, 160);
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
@@ -229,7 +260,7 @@ export function TourOverlay() {
 
       if (elementStepsCount === 0 && attempts < 8) {
         attempts += 1;
-        timer = setTimeout(startAutoWhenReady, 600);
+        timer = setTimeout(startAutoWhenReady, 450);
         return;
       }
 
@@ -254,7 +285,7 @@ export function TourOverlay() {
       });
     };
 
-    timer = setTimeout(startAutoWhenReady, 1400);
+    timer = setTimeout(startAutoWhenReady, 750);
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
@@ -278,7 +309,7 @@ export function TourOverlay() {
     hubTourCompleted,
   ]);
 
-  // Cancel active tour if user navigates away unexpectedly (except when launched)
+  // End active session only if user genuinely navigated away from the tour route
   useEffect(() => {
     if (!session) return;
     if (normalizeRouteKey(session.route) !== normalizedPath) {
@@ -286,7 +317,7 @@ export function TourOverlay() {
     }
   }, [normalizedPath, session, endSession]);
 
-  // 3. Measure & scroll current step's target whenever session/stepIndex changes
+  // 3. Measure & scroll current step's target whenever session or stepIndex changes
   useEffect(() => {
     if (!session) return;
     const step = session.steps[stepIndex];
@@ -296,26 +327,41 @@ export function TourOverlay() {
 
     const locateStep = async () => {
       if (!step.element) {
+        if (!cancelled) setTargetRect(null);
+        return;
+      }
+
+      const origin = await measureOverlayOrigin();
+      const rawRect = await scrollTourTargetIntoView(
+        step.element,
+        session.route,
+        insets.top + 80,
+        Math.max(cardHeightRef.current + insets.bottom + 36, 250),
+      );
+      if (cancelled) return;
+
+      if (!rawRect) {
         setTargetRect(null);
         return;
       }
 
-      const rect = await scrollTourTargetIntoView(
-        step.element,
-        session.route,
-        insets.top + 78,
-        Math.max(cardHeight + insets.bottom + 36, 250),
-      );
-      if (!cancelled) {
-        setTargetRect(rect);
-      }
+      // Clamp rect into visible overlay coordinate space so spotlight stays exact on target
+      const relX = Math.max(4, rawRect.x - origin.x);
+      const relY = Math.max(4, rawRect.y - origin.y);
+      const clampedH = Math.min(rawRect.height, winH - relY - 12);
+      setTargetRect({
+        x: relX,
+        y: relY,
+        width: Math.min(rawRect.width, winW - relX - 8),
+        height: Math.max(32, clampedH),
+      });
     };
 
     void locateStep();
     return () => {
       cancelled = true;
     };
-  }, [session, stepIndex, insets.top, insets.bottom, cardHeight, winW, winH]);
+  }, [session, stepIndex, insets.top, insets.bottom, winW, winH, measureOverlayOrigin]);
 
   if (!session) return null;
 
@@ -357,7 +403,6 @@ export function TourOverlay() {
     endSession(true);
   };
 
-  // Determine smart popover vertical position
   const pad = 6;
   const horizontalMargin = 16;
   const maxCardWidth = Math.min(winW - horizontalMargin * 2, 430);
@@ -386,164 +431,173 @@ export function TourOverlay() {
 
   const spotlightX = targetRect ? Math.max(4, targetRect.x - pad) : 0;
   const spotlightY = targetRect ? Math.max(4, targetRect.y - pad) : 0;
-  const spotlightW = targetRect ? Math.min(winW - spotlightX - 4, targetRect.width + pad * 2) : 0;
-  const spotlightH = targetRect ? Math.min(winH - spotlightY - 4, targetRect.height + pad * 2) : 0;
+  const spotlightW = targetRect
+    ? Math.max(24, Math.min(winW - spotlightX - 4, targetRect.width + pad * 2))
+    : 0;
+  const spotlightH = targetRect
+    ? Math.max(24, Math.min(winH - spotlightY - 4, targetRect.height + pad * 2))
+    : 0;
 
   return (
-    <Modal
-      visible={true}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={handleClose}
+    <View
+      ref={overlayRef}
+      onLayout={() => void measureOverlayOrigin()}
+      pointerEvents="auto"
+      style={styles.root}
     >
-      <View style={styles.root} pointerEvents="box-none">
-        {/* SVG Spotlight Backdrop */}
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose}>
-          <Svg width={winW} height={winH} style={StyleSheet.absoluteFill}>
-            {targetRect ? (
-              <>
-                <Path
-                  d={buildSpotlightPath(winW, winH, targetRect, pad, 18)}
-                  fill="rgba(0, 0, 0, 0.72)"
-                  fillRule="evenodd"
-                />
-                <Rect
-                  x={spotlightX}
-                  y={spotlightY}
-                  width={spotlightW}
-                  height={spotlightH}
-                  rx={18}
-                  ry={18}
-                  fill="transparent"
-                  stroke={colors.tint}
-                  strokeWidth={2.5}
-                />
-              </>
-            ) : (
-              <Rect x={0} y={0} width={winW} height={winH} fill="rgba(0, 0, 0, 0.72)" />
-            )}
-          </Svg>
-        </Pressable>
-
-        {/* Floating Popover Card */}
-        <View
-          onLayout={e => {
-            const h = Math.round(e.nativeEvent.layout.height);
-            if (h > 0 && Math.abs(h - cardHeight) > 4) setCardHeight(h);
-          }}
-          style={[
-            styles.cardContainer,
-            {
-              top: cardTop,
-              width: maxCardWidth,
-              alignSelf: 'center',
-              backgroundColor: colors.card,
-              borderColor: isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)',
-              ...(isIOS ? getAppleCardSurfaceStyle(theme, 24) : null),
-            },
-          ]}
-        >
-          {useGlass && (
-            <GlassView
-              pointerEvents="none"
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-            />
+      {/* Dimmed SVG Spotlight Backdrop — captures stray taps without closing accidentally */}
+      <View pointerEvents="auto" style={StyleSheet.absoluteFill}>
+        <Svg width={winW} height={winH} style={StyleSheet.absoluteFill}>
+          {targetRect ? (
+            <>
+              <Path
+                d={buildSpotlightPath(winW, winH, targetRect, pad, 18)}
+                fill="rgba(0, 0, 0, 0.72)"
+                fillRule="evenodd"
+              />
+              <Rect
+                x={spotlightX}
+                y={spotlightY}
+                width={spotlightW}
+                height={spotlightH}
+                rx={18}
+                ry={18}
+                fill="transparent"
+                stroke={colors.tint}
+                strokeWidth={2.5}
+              />
+            </>
+          ) : (
+            <Rect x={0} y={0} width={winW} height={winH} fill="rgba(0, 0, 0, 0.72)" />
           )}
+        </Svg>
+      </View>
 
-          {/* Header row: progress badge + close */}
-          <View style={styles.cardHeader}>
-            <View style={[styles.progressPill, { backgroundColor: colors.tint + '22' }]}>
-              <Sparkles size={13} color={colors.tint} />
-              <Text style={[styles.progressText, { color: colors.tint }]}>
-                {progressLabel}
-              </Text>
-            </View>
+      {/* Floating Popover Card */}
+      <View
+        pointerEvents="auto"
+        onLayout={e => {
+          const h = Math.round(e.nativeEvent.layout.height);
+          if (h > 0) {
+            cardHeightRef.current = h;
+            if (Math.abs(h - cardHeight) > 6) setCardHeight(h);
+          }
+        }}
+        style={[
+          styles.cardContainer,
+          {
+            top: cardTop,
+            width: maxCardWidth,
+            alignSelf: 'center',
+            backgroundColor: colors.card,
+            borderColor: isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)',
+            ...(isIOS ? getAppleCardSurfaceStyle(theme, 24) : null),
+          },
+        ]}
+      >
+        {useGlass && (
+          <GlassView
+            pointerEvents="none"
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+          />
+        )}
 
-            <TouchableOpacity
-              onPress={handleClose}
-              hitSlop={10}
-              accessibilityLabel="Cerrar tutorial"
-              style={[
-                styles.closeBtn,
-                { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
-              ]}
-            >
-              <X size={16} color={colors.textSecondary} />
-            </TouchableOpacity>
+        <View style={styles.cardHeader}>
+          <View style={[styles.progressPill, { backgroundColor: colors.tint + '22' }]}>
+            <Sparkles size={13} color={colors.tint} />
+            <Text style={[styles.progressText, { color: colors.tint }]}>
+              {progressLabel}
+            </Text>
           </View>
 
-          {/* Title & Description */}
-          <Text style={[styles.title, { color: colors.text }]}>{step.title}</Text>
-          <Text style={[styles.description, { color: colors.textSecondary }]}>
-            {step.description}
-          </Text>
+          <TouchableOpacity
+            onPress={handleClose}
+            hitSlop={12}
+            accessibilityLabel="Cerrar tutorial"
+            style={[
+              styles.closeBtn,
+              { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
+            ]}
+          >
+            <X size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
 
-          {/* Step dots indicator */}
-          {total > 1 && (
-            <View style={styles.dotsRow}>
-              {session.steps.map((_, idx) => (
-                <View
-                  key={idx}
-                  style={[
-                    styles.dot,
-                    {
-                      width: idx === stepIndex ? 18 : 6,
-                      backgroundColor:
-                        idx === stepIndex
-                          ? colors.tint
-                          : isDark
-                          ? 'rgba(255,255,255,0.2)'
-                          : 'rgba(0,0,0,0.16)',
-                    },
-                  ]}
-                />
-              ))}
-            </View>
-          )}
+        <Text style={[styles.title, { color: colors.text }]}>{step.title}</Text>
+        <Text style={[styles.description, { color: colors.textSecondary }]}>
+          {step.description}
+        </Text>
 
-          {/* Footer Buttons */}
-          <View style={styles.footer}>
-            {!isFirst ? (
-              <TouchableOpacity
-                onPress={handlePrev}
-                activeOpacity={0.75}
+        {total > 1 && (
+          <View style={styles.dotsRow}>
+            {session.steps.map((_, idx) => (
+              <View
+                key={idx}
                 style={[
-                  styles.prevBtn,
+                  styles.dot,
                   {
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                    width: idx === stepIndex ? 18 : 6,
+                    backgroundColor:
+                      idx === stepIndex
+                        ? colors.tint
+                        : isDark
+                        ? 'rgba(255,255,255,0.2)'
+                        : 'rgba(0,0,0,0.16)',
                   },
                 ]}
-              >
-                <ChevronLeft size={16} color={colors.text} />
-                <Text style={[styles.prevText, { color: colors.text }]}>Atrás</Text>
-              </TouchableOpacity>
-            ) : (
-              <View />
-            )}
-
-            <TouchableOpacity
-              onPress={handleNext}
-              activeOpacity={0.8}
-              style={[styles.nextBtn, { backgroundColor: colors.tint }]}
-            >
-              <Text style={[styles.nextText, { color: tintText }]}>
-                {isLast ? session.doneBtnText : 'Siguiente'}
-              </Text>
-              {!isLast && <ChevronRight size={16} color={tintText} />}
-            </TouchableOpacity>
+              />
+            ))}
           </View>
+        )}
+
+        <View style={styles.footer}>
+          {!isFirst ? (
+            <TouchableOpacity
+              onPress={handlePrev}
+              activeOpacity={0.75}
+              hitSlop={6}
+              style={[
+                styles.prevBtn,
+                {
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                },
+              ]}
+            >
+              <ChevronLeft size={16} color={colors.text} />
+              <Text style={[styles.prevText, { color: colors.text }]}>Atrás</Text>
+            </TouchableOpacity>
+          ) : (
+            <View />
+          )}
+
+          <TouchableOpacity
+            onPress={handleNext}
+            activeOpacity={0.8}
+            hitSlop={6}
+            style={[styles.nextBtn, { backgroundColor: colors.tint }]}
+          >
+            <Text style={[styles.nextText, { color: tintText }]}>
+              {isLast ? session.doneBtnText : 'Siguiente'}
+            </Text>
+            {!isLast && <ChevronRight size={16} color={tintText} />}
+          </TouchableOpacity>
         </View>
       </View>
-    </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 9998,
+    elevation: 30,
   },
   cardContainer: {
     position: 'absolute',
@@ -555,7 +609,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.35,
     shadowRadius: 20,
-    elevation: 14,
+    elevation: 32,
   },
   cardHeader: {
     flexDirection: 'row',
