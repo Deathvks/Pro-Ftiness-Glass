@@ -16,9 +16,7 @@ import { useAppTheme } from '../../hooks/useAppTheme';
 
 const DailyDetailView = ({ logs, onClose, isTrainerMode = false }) => {
   const { t } = useTranslation(['exercise_names']);
-  const { accent, resolvedTheme } = useAppTheme();
-  const isDarkMap = ['dark', 'oled', 'galaxy', 'desert-dark', 'ocean-dark'].includes(resolvedTheme);
-  const mapTileClass = resolvedTheme === 'oled' ? 'map-tiles-oled-mode' : isDarkMap ? 'map-tiles-dark-mode' : '';
+  const { accent } = useAppTheme();
 
   // AÑADIDO: Traemos 'routines' para buscar el nombre actualizado
   const { userProfile, bodyWeightLog, deleteWorkoutLog, routines } = useAppStore((state) => ({
@@ -350,7 +348,6 @@ const DailyDetailView = ({ logs, onClose, isTrainerMode = false }) => {
                           <TileLayer
                             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
                             maxZoom={19}
-                            className={mapTileClass}
                             attribution="&copy; Esri, OpenStreetMap contributors" />
                           
                           <Polyline
@@ -461,7 +458,6 @@ const DailyDetailView = ({ logs, onClose, isTrainerMode = false }) => {
               <TileLayer
                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
                 maxZoom={19}
-                className={mapTileClass}
                 attribution="&copy; Esri, OpenStreetMap contributors" />
               <Polyline positions={expandedMapPath} pathOptions={{ color: '#22c55e', weight: 5, opacity: 0.9 }} />
             </MapContainer>

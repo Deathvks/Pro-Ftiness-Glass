@@ -67,7 +67,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
     logWorkout: state.logWorkout
   })));
 
-  // --- TEMA PARA EL MAPA Y ACENTOS ---
+  // --- TEMA PARA ACENTOS DEL MARCADOR Y RUTA ---
   const { theme, accent, resolvedTheme } = useAppTheme();
   const [accentColor, setAccentColor] = useState('#22c55e');
 
@@ -82,41 +82,15 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
   // Icono de usuario dinámico basado en el color de acento resuelto
   const userIcon = useMemo(() => createUserIcon(accentColor), [accentColor]);
 
-  // Proveedor gratuito estilo Google Maps (Esri World Street Map) adaptado al tema activo
-  const mapConfig = useMemo(() => {
-    const isDarkTheme = ['dark', 'oled', 'galaxy', 'desert-dark', 'ocean-dark'].includes(resolvedTheme);
-
-    if (!isDarkTheme) {
-      return {
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-        attribution: '&copy; Esri, OpenStreetMap contributors',
-        opacity: 1,
-        bgColor: resolvedTheme === 'desert' ? '#f0dec5' : resolvedTheme === 'ocean' ? '#e0f2fe' : '#f7fafc',
-        className: '',
-        gradientFrom: 'from-bg-primary/70'
-      };
-    }
-
-    if (resolvedTheme === 'oled') {
-      return {
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-        attribution: '&copy; Esri, OpenStreetMap contributors',
-        opacity: 0.92,
-        bgColor: '#000000',
-        className: 'map-tiles-oled-mode',
-        gradientFrom: 'from-black/80'
-      };
-    }
-
-    return {
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-      attribution: '&copy; Esri, OpenStreetMap contributors',
-      opacity: 0.88,
-      bgColor: resolvedTheme === 'desert-dark' ? '#1c120d' : '#0c111b',
-      className: 'map-tiles-dark-mode',
-      gradientFrom: 'from-bg-primary/80'
-    };
-  }, [resolvedTheme]);
+  // Mapa estilo callejero clásico (aspecto tipo Google Maps, gratuito y sin API Key)
+  const mapConfig = useMemo(() => ({
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri, OpenStreetMap contributors',
+    opacity: 1,
+    bgColor: '#e5e3df',
+    className: '',
+    gradientFrom: 'from-black/45'
+  }), []);
 
   // --- LÓGICA DE INICIALIZACIÓN Y RECUPERACIÓN ---
   const getSavedState = () => {
