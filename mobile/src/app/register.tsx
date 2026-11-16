@@ -25,6 +25,7 @@ import useAppStore from '@/store/useAppStore';
 import { registerUser, verifyEmail, resendVerificationEmail } from '@/services/authService';
 import { EMAIL_CONSENT_VERSION, EMAIL_CONSENT_TEXT } from '@/config/emailConsent';
 import { LegalDocumentModal, LegalDocType } from '@/components/modals/LegalDocumentModal';
+import { GoogleTermsModal } from '@/components/modals/GoogleTermsModal';
 import { runOAuthFlow, type OAuthProvider } from '@/utils/oauthAuth';
 
 const GoogleIcon = ({ size }: { size: number }) => (
@@ -62,6 +63,7 @@ export default function Register() {
   // Modal Legal
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [legalDocType, setLegalDocType] = useState<LegalDocType>('privacy');
+  const [showGoogleTerms, setShowGoogleTerms] = useState(false);
 
   // Verification state
   const [needsVerification, setNeedsVerification] = useState(false);
@@ -170,7 +172,7 @@ export default function Register() {
     else router.push('/privacy');
   };
 
-  const handleOAuthPress = async (provider: OAuthProvider, label: string) => {
+  const executeOAuth = async (provider: OAuthProvider, label: string) => {
     try {
       setIsLoading(true);
       await runOAuthFlow(provider, referralCode);
@@ -179,6 +181,14 @@ export default function Register() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleOAuthPress = async (provider: OAuthProvider, label: string) => {
+    if (provider === 'google' && useAppStore.getState().cookieConsent !== 'accepted') {
+      setShowGoogleTerms(true);
+      return;
+    }
+    await executeOAuth(provider, label);
   };
 
   const validateForm = () => {
@@ -1011,6 +1021,16 @@ export default function Register() {
         visible={showLegalModal}
         onClose={() => setShowLegalModal(false)}
         initialDoc={legalDocType}
+      />
+
+      <GoogleTermsModal
+        visible={showGoogleTerms}
+        previouslyDeclined={useAppStore.getState().cookieConsent === 'declined'}
+        onAccept={() => {
+          setShowGoogleTerms(false);
+          void executeOAuth('google', 'Google');
+        }}
+        onClose={() => setShowGoogleTerms(false)}
       />
     </KeyboardAvoidingView>
   );

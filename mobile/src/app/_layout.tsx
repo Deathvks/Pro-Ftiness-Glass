@@ -23,10 +23,15 @@ import { RestTimerModal } from '@/components/workout/RestTimerModal';
 import { OfflineDownloadFloatingBar } from '@/components/OfflineDownloadFloatingBar';
 import { StoryHost } from '@/components/social/StoryHost';
 import { TourOverlay } from '@/components/tutorials/TourOverlay';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WelcomeModal } from '@/components/modals/WelcomeModal';
 import { VersionUpdater } from '@/components/VersionUpdater';
 import { CookieConsentBanner } from '@/components/CookieConsentBanner';
 import { DomainMigrationModal } from '@/components/modals/DomainMigrationModal';
+import { ForcePasswordResetModal } from '@/components/modals/ForcePasswordResetModal';
+import { EmailVerificationModal } from '@/components/modals/EmailVerificationModal';
+import { TwoFactorPromoModal } from '@/components/modals/TwoFactorPromoModal';
+import { MilestoneLevelUpModal } from '@/components/modals/MilestoneLevelUpModal';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -37,6 +42,10 @@ export default function RootLayout() {
   
   const isAuthenticated = useAppStore(state => state.isAuthenticated);
   const userProfile = useAppStore(state => state.userProfile);
+  const gamificationLevel = useAppStore(state => state.gamification?.level || state.userProfile?.level || 1);
+  const [show2FAPromo, setShow2FAPromo] = useState(false);
+  const [milestoneLevel, setMilestoneLevel] = useState<number | null>(null);
+  const [dismissedEmailVerify, setDismissedEmailVerify] = useState(false);
   const cardioUserId = userProfile?.id;
   const hasPendingCardio = useAppStore(state => state.syncQueue.some((item: QueuedRequest) => item.cardioUserId === cardioUserId));
   const router = useRouter();
@@ -271,6 +280,46 @@ export default function RootLayout() {
     return () => linkSub.remove();
   }, [isReady, router]);
 
+  // Promoción 2FA (1 vez si el usuario no tiene 2FA activo) y hitos de nivel (10, 20, ..., 100)
+  useEffect(() => {
+    if (!isReady || !isAuthenticated || !userProfile?.id) {
+      setShow2FAPromo(false);
+      setMilestoneLevel(null);
+      return;
+    }
+
+    const uid = userProfile.id;
+    const forceReset = Boolean((userProfile as any).force_password_reset);
+    const needsVerify = userProfile.email_verified === false;
+    const needsOnboarding = !userProfile.goal && userProfile.role !== 'trainee';
+
+    if (!forceReset && !needsVerify && !needsOnboarding && !userProfile.two_factor_enabled) {
+      AsyncStorage.getItem(`two_factor_promo_dismissed_${uid}`)
+        .then(val => {
+          if (val !== 'true') {
+            setShow2FAPromo(true);
+          }
+        })
+        .catch(() => {});
+    } else {
+      setShow2FAPromo(false);
+    }
+
+    const MILESTONES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+    const currentLvl = Number(gamificationLevel) || 1;
+    const highestMilestone = [...MILESTONES].reverse().find(m => currentLvl >= m);
+    if (highestMilestone) {
+      AsyncStorage.getItem(`seen_milestone_level_${uid}`)
+        .then(raw => {
+          const seen = Number(raw || '0');
+          if (highestMilestone > seen) {
+            setMilestoneLevel(highestMilestone);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isReady, isAuthenticated, userProfile, gamificationLevel]);
+
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme);
   const themePreference = useAppStore(state => state.themePreference);
@@ -346,6 +395,54 @@ export default function RootLayout() {
         <WelcomeModal />
         <DomainMigrationModal />
         <CookieConsentBanner />
+        <ForcePasswordResetModal
+          visible={Boolean(isReady && isAuthenticated && (userProfile as any)?.force_password_reset)}
+        />
+        <EmailVerificationModal
+          visible={Boolean(
+            isReady &&
+              isAuthenticated &&
+              userProfile &&
+              !(userProfile as any)?.force_password_reset &&
+              userProfile.email_verified === false &&
+              !dismissedEmailVerify
+          )}
+          currentEmail={userProfile?.email}
+          onEmailUpdated={() => {
+            void useAppStore.getState().fetchInitialData?.();
+          }}
+          onCodeSent={() => {
+            setDismissedEmailVerify(true);
+          }}
+          onClose={() => setDismissedEmailVerify(true)}
+        />
+        <TwoFactorPromoModal
+          visible={show2FAPromo}
+          onConfigure={() => {
+            if (userProfile?.id) {
+              AsyncStorage.setItem(`two_factor_promo_dismissed_${userProfile.id}`, 'true').catch(() => {});
+            }
+            setShow2FAPromo(false);
+            router.push('/two-factor-setup');
+          }}
+          onClose={() => {
+            if (userProfile?.id) {
+              AsyncStorage.setItem(`two_factor_promo_dismissed_${userProfile.id}`, 'true').catch(() => {});
+            }
+            setShow2FAPromo(false);
+          }}
+        />
+        <MilestoneLevelUpModal
+          visible={milestoneLevel !== null}
+          level={milestoneLevel || 10}
+          onClose={() => {
+            if (userProfile?.id && milestoneLevel) {
+              AsyncStorage.setItem(`seen_milestone_level_${userProfile.id}`, String(milestoneLevel)).catch(() => {});
+              void useAppStore.getState().unlockMilestone?.(milestoneLevel);
+            }
+            setMilestoneLevel(null);
+          }}
+        />
         <TourOverlay />
         <ToastContainer />
       </ThemeProvider>

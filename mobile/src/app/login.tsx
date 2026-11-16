@@ -33,6 +33,7 @@ import Svg, { Path } from 'react-native-svg';
 import useAppStore from '@/store/useAppStore';
 import { verifyEmail, resendVerificationEmail, resend2FACode } from '@/services/authService';
 import { LegalDocumentModal, LegalDocType } from '@/components/modals/LegalDocumentModal';
+import { GoogleTermsModal } from '@/components/modals/GoogleTermsModal';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 import { runOAuthFlow, type OAuthProvider } from '@/utils/oauthAuth';
 
@@ -64,6 +65,7 @@ export default function Login() {
   // Legal Modal
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [legalDocType, setLegalDocType] = useState<LegalDocType>('privacy');
+  const [showGoogleTerms, setShowGoogleTerms] = useState(false);
 
   // Verification state (cuentas pendientes de verificar)
   const [needsVerification, setNeedsVerification] = useState(false);
@@ -170,7 +172,7 @@ export default function Login() {
     }
   };
 
-  const handleOAuthPress = async (provider: OAuthProvider, label: string) => {
+  const executeOAuth = async (provider: OAuthProvider, label: string) => {
     try {
       setIsLoading(true);
       await runOAuthFlow(provider);
@@ -179,6 +181,14 @@ export default function Login() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleOAuthPress = async (provider: OAuthProvider, label: string) => {
+    if (provider === 'google' && useAppStore.getState().cookieConsent !== 'accepted') {
+      setShowGoogleTerms(true);
+      return;
+    }
+    await executeOAuth(provider, label);
   };
 
   const validateForm = () => {
@@ -917,6 +927,16 @@ export default function Login() {
         visible={showLegalModal}
         onClose={() => setShowLegalModal(false)}
         initialDoc={legalDocType}
+      />
+
+      <GoogleTermsModal
+        visible={showGoogleTerms}
+        previouslyDeclined={useAppStore.getState().cookieConsent === 'declined'}
+        onAccept={() => {
+          setShowGoogleTerms(false);
+          void executeOAuth('google', 'Google');
+        }}
+        onClose={() => setShowGoogleTerms(false)}
       />
     </KeyboardAvoidingView>
   );

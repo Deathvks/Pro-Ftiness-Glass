@@ -1,6 +1,8 @@
 /* mobile/src/components/workout/WorkoutSummaryModal.tsx */
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   View,
   Text,
   StyleSheet,
@@ -9,6 +11,8 @@ import {
   ScrollView,
   Pressable,
 } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import {
   Trophy,
   Clock,
@@ -22,6 +26,7 @@ import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { formatWorkoutTime } from '@/utils/workoutHelpers';
+import { WorkoutShareCard } from '@/components/workout/WorkoutShareCard';
 import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 
 interface WorkoutSummaryModalProps {
@@ -37,7 +42,10 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
 }) => {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
+  const userProfile = useAppStore(state => state.userProfile);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const shareCardRef = useRef<React.ComponentRef<typeof View>>(null);
+  const [isSharing, setIsSharing] = useState(false);
 
   if (!visible || !workoutData) return null;
 
@@ -59,6 +67,31 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
     onClose();
+  };
+
+  const handleShareWorkout = async () => {
+    if (!shareCardRef.current || isSharing) return;
+    setIsSharing(true);
+    try {
+      const uri = await captureRef(shareCardRef, {
+        format: 'png',
+        quality: 1,
+        result: 'tmpfile',
+      });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'image/png',
+          dialogTitle: 'Compartir Entrenamiento',
+          UTI: 'public.png',
+        });
+      } else {
+        Alert.alert('Compartir', 'No disponible en este dispositivo.');
+      }
+    } catch {
+      Alert.alert('Error', 'No se pudo generar la tarjeta para compartir.');
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   return (
@@ -169,6 +202,31 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
               </View>
             </View>
 
+            {/* Botón Compartir Tarjeta PNG */}
+            <TouchableOpacity
+              onPress={() => void handleShareWorkout()}
+              disabled={isSharing}
+              style={[
+                styles.finishBtn,
+                {
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  marginBottom: 10,
+                },
+              ]}
+              activeOpacity={0.82}
+            >
+              {isSharing ? (
+                <ActivityIndicator size="small" color={colors.tint} />
+              ) : (
+                <>
+                  <Share2 size={17} color={colors.tint} style={{ marginRight: 8 }} />
+                  <Text style={[styles.finishBtnText, { color: colors.text }]}>Compartir Resumen PNG</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
             {/* Botón Finalizar / Salir */}
             <TouchableOpacity
               onPress={handleFinish}
@@ -190,6 +248,16 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
             </TouchableOpacity>
           </ScrollView>
         </View>
+      </View>
+
+      <View pointerEvents="none" style={{ position: 'absolute', left: -9999, top: 0 }}>
+        <WorkoutShareCard
+          ref={shareCardRef}
+          workoutData={workoutData}
+          userName={userProfile?.name || userProfile?.username}
+          userAvatar={userProfile?.profile_image_url}
+          accentColor={colors.tint}
+        />
       </View>
     </Modal>
   );

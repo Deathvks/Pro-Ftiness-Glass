@@ -47,6 +47,7 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import ChatVideoMessage from '@/components/chat/ChatVideoMessage';
 import FullscreenVideoModal from '@/components/chat/FullscreenVideoModal';
 import { TourTarget } from '@/components/tutorials/TourTarget';
+import { CoachingPromoModal } from '@/components/modals/CoachingPromoModal';
 
 interface TrainerInfo extends AvatarUser {
   id: string | number;
@@ -127,6 +128,16 @@ export default function AsesoriaScreen() {
   const [trainer, setTrainer] = useState<TrainerInfo | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showTrainerProfile, setShowTrainerProfile] = useState(false);
+  const [showCoachingPromo, setShowCoachingPromo] = useState(false);
+
+  useEffect(() => {
+    if (!userId || isTrainee) return;
+    AsyncStorage.getItem(`coaching_promo_seen_${userId}`)
+      .then(val => {
+        if (val !== 'true') setShowCoachingPromo(true);
+      })
+      .catch(() => {});
+  }, [userId, isTrainee]);
   const [newMessage, setNewMessage] = useState('');
   const [fullscreenVideo, setFullscreenVideo] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -891,6 +902,17 @@ export default function AsesoriaScreen() {
         visible={!!fullscreenVideo}
         url={fullscreenVideo}
         onClose={() => setFullscreenVideo(null)}
+      />
+
+      {/* Coaching Promo Modal */}
+      <CoachingPromoModal
+        visible={showCoachingPromo}
+        onClose={() => {
+          if (userId) {
+            AsyncStorage.setItem(`coaching_promo_seen_${userId}`, 'true').catch(() => {});
+          }
+          setShowCoachingPromo(false);
+        }}
       />
     </View>
   );
