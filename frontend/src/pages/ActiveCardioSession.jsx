@@ -68,7 +68,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
   })));
 
   // --- TEMA PARA EL MAPA Y ACENTOS ---
-  const { theme, accent } = useAppTheme();
+  const { theme, accent, resolvedTheme } = useAppTheme();
   const [accentColor, setAccentColor] = useState('#22c55e');
 
   useEffect(() => {
@@ -77,20 +77,46 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
     if (computed) {
       setAccentColor(computed);
     }
-  }, [theme, accent]);
+  }, [theme, accent, resolvedTheme]);
 
   // Icono de usuario dinámico basado en el color de acento resuelto
   const userIcon = useMemo(() => createUserIcon(accentColor), [accentColor]);
 
-  // Proveedor gratuito de mapas estilo callejero tipo Google Maps (sin API Key)
-  const mapConfig = useMemo(() => ({
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-    attribution: '&copy; Esri, OpenStreetMap contributors',
-    opacity: 1,
-    bgColor: '#e5e3df',
-    className: '',
-    gradientFrom: 'from-black/50'
-  }), []);
+  // Proveedor gratuito estilo Google Maps (Esri World Street Map) adaptado al tema activo
+  const mapConfig = useMemo(() => {
+    const isDarkTheme = ['dark', 'oled', 'galaxy', 'desert-dark', 'ocean-dark'].includes(resolvedTheme);
+
+    if (!isDarkTheme) {
+      return {
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+        attribution: '&copy; Esri, OpenStreetMap contributors',
+        opacity: 1,
+        bgColor: resolvedTheme === 'desert' ? '#f0dec5' : resolvedTheme === 'ocean' ? '#e0f2fe' : '#f7fafc',
+        className: '',
+        gradientFrom: 'from-bg-primary/70'
+      };
+    }
+
+    if (resolvedTheme === 'oled') {
+      return {
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+        attribution: '&copy; Esri, OpenStreetMap contributors',
+        opacity: 0.92,
+        bgColor: '#000000',
+        className: 'map-tiles-oled-mode',
+        gradientFrom: 'from-black/80'
+      };
+    }
+
+    return {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+      attribution: '&copy; Esri, OpenStreetMap contributors',
+      opacity: 0.88,
+      bgColor: resolvedTheme === 'desert-dark' ? '#1c120d' : '#0c111b',
+      className: 'map-tiles-dark-mode',
+      gradientFrom: 'from-bg-primary/80'
+    };
+  }, [resolvedTheme]);
 
   // --- LÓGICA DE INICIALIZACIÓN Y RECUPERACIÓN ---
   const getSavedState = () => {
@@ -414,7 +440,13 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
     const isDenied = permissionStatus === 'denied';
     return (
       <>
-        <div className="min-h-screen bg-bg-primary flex flex-col items-center justify-center p-6 text-center animate-fade-in">
+        <div
+          className="min-h-[100dvh] bg-bg-primary flex flex-col items-center justify-center p-6 text-center animate-fade-in"
+          style={{
+            paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 1.5rem)',
+            paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 1.5rem)'
+          }}
+        >
           <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
             <MapPin size={40} className="text-red-500" />
           </div>
@@ -459,7 +491,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
   if (!activity) return null;
 
   return (
-    <div className="relative w-full h-screen bg-bg-primary flex flex-col overflow-hidden">
+    <div className="relative w-full h-[100dvh] bg-bg-primary flex flex-col overflow-hidden">
       <div
         className="absolute inset-0 z-0"
         style={{ backgroundColor: mapConfig.bgColor }}
@@ -491,86 +523,111 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
         )}
       </div>
 
-      <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${mapConfig.gradientFrom} to-transparent z-10 pointer-events-none`} />
+      <div
+        className={`absolute top-0 left-0 right-0 bg-gradient-to-b ${mapConfig.gradientFrom} to-transparent z-10 pointer-events-none`}
+        style={{ height: 'calc(5.5rem + var(--safe-top, env(safe-area-inset-top, 0px)))' }}
+      />
 
-      <div className="absolute top-0 left-0 right-0 z-20 p-4 flex justify-between items-start">
-        <button onClick={handleBackClick} className="p-3 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition">
-          <ChevronLeft size={24} />
-        </button>
-        <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-2">
-          <activity.icon size={16} className={activity.color} />
-          <span className="font-bold text-white text-sm">{activity.name}</span>
+      <div
+        className="absolute top-0 left-0 right-0 z-40 pointer-events-none"
+        style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
+      >
+        <div className="h-14 px-4 flex justify-between items-center">
+          <button
+            onClick={handleBackClick}
+            className="pointer-events-auto p-2.5 bg-black/50 backdrop-blur-md rounded-full text-white hover:bg-black/70 border border-white/15 transition active:scale-95"
+          >
+            <ChevronLeft size={22} />
+          </button>
+          <div className="pointer-events-auto bg-black/50 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 flex items-center gap-2">
+            <activity.icon size={15} className={activity.color} />
+            <span className="font-bold text-white text-xs sm:text-sm">{activity.name}</span>
+          </div>
+          <button
+            onClick={() => setFollowUser(!followUser)}
+            className={`pointer-events-auto p-2.5 backdrop-blur-md rounded-full border transition active:scale-95 ${
+              followUser
+                ? 'bg-accent text-accent-contrast border-transparent'
+                : 'bg-black/50 text-white border-white/15 hover:bg-black/70'
+            }`}
+          >
+            <Navigation size={20} fill={followUser ? "currentColor" : "none"} />
+          </button>
         </div>
-        <button onClick={() => setFollowUser(!followUser)} className={`p-3 backdrop-blur-md rounded-full transition ${followUser ? 'bg-accent text-bg-primary' : 'bg-black/40 text-accent-contrast'}`}>
-          <Navigation size={24} fill={followUser ? "currentColor" : "none"} />
-        </button>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 z-20 bg-bg-primary/90 backdrop-blur-xl rounded-t-3xl border-t border-text-primary/10 p-6 pb-28 md:pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-slide-up">
-        <div className="text-center mb-6">
-          <div className="text-6xl font-black font-mono text-text-primary tracking-tight">{formatTime(seconds)}</div>
-          <p className="text-xs text-text-muted uppercase tracking-widest mt-1">Tiempo Transcurrido</p>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="flex flex-col items-center">
-            <div className="flex items-end gap-1 mb-1">
-              <span className="text-2xl font-bold text-text-primary">{formatDistance(distance).split(' ')[0]}</span>
-              <span className="text-xs text-text-tertiary mb-1.5">{formatDistance(distance).split(' ')[1]}</span>
+      <div
+        className="absolute bottom-0 left-0 right-0 z-20 bg-bg-primary/90 backdrop-blur-xl rounded-t-3xl border-t border-text-primary/10 px-5 pt-3.5 shadow-[0_-10px_40px_rgba(0,0,0,0.45)] animate-slide-up"
+        style={{ paddingBottom: 'calc(1rem + var(--safe-bottom, env(safe-area-inset-bottom, 0px)))' }}
+      >
+        <div className="max-w-lg mx-auto">
+          <div className="flex items-baseline justify-center gap-2 mb-2.5">
+            <div className="text-4xl sm:text-5xl font-black font-mono text-text-primary tracking-tight leading-none">
+              {formatTime(seconds)}
             </div>
-            <div className="flex items-center gap-1 text-xs text-text-secondary"><Footprints size={12} /> Distancia</div>
+            <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Tiempo</span>
           </div>
-          <div className="flex flex-col items-center border-x border-text-primary/10">
-            <div className="flex items-end gap-1 mb-1">
-              <span className="text-2xl font-bold text-text-primary">{calculatePace(seconds, distance).split(' ')[0]}</span>
-              <span className="text-xs text-text-tertiary mb-1.5">/km</span>
+
+          <div className="grid grid-cols-3 gap-2 mb-3.5">
+            <div className="flex flex-col items-center">
+              <div className="flex items-end gap-1">
+                <span className="text-lg sm:text-xl font-bold text-text-primary leading-tight">{formatDistance(distance).split(' ')[0]}</span>
+                <span className="text-[11px] text-text-tertiary mb-0.5">{formatDistance(distance).split(' ')[1]}</span>
+              </div>
+              <div className="flex items-center gap-1 text-[11px] text-text-secondary"><Footprints size={11} /> Distancia</div>
             </div>
-            <div className="flex items-center gap-1 text-xs text-text-secondary"><Clock size={12} /> Ritmo</div>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="flex items-end gap-1 mb-1">
-              <span className="text-2xl font-bold text-text-primary">{Math.round(activity.mets * currentWeight * (seconds / 3600))}</span>
-              <span className="text-xs text-text-tertiary mb-1.5">kcal</span>
+            <div className="flex flex-col items-center border-x border-text-primary/10">
+              <div className="flex items-end gap-1">
+                <span className="text-lg sm:text-xl font-bold text-text-primary leading-tight">{calculatePace(seconds, distance).split(' ')[0]}</span>
+                <span className="text-[11px] text-text-tertiary mb-0.5">/km</span>
+              </div>
+              <div className="flex items-center gap-1 text-[11px] text-text-secondary"><Clock size={11} /> Ritmo</div>
             </div>
-            <div className="flex items-center gap-1 text-xs text-text-secondary"><Flame size={12} /> Energía</div>
+            <div className="flex flex-col items-center">
+              <div className="flex items-end gap-1">
+                <span className="text-lg sm:text-xl font-bold text-text-primary leading-tight">{Math.round(activity.mets * currentWeight * (seconds / 3600))}</span>
+                <span className="text-[11px] text-text-tertiary mb-0.5">kcal</span>
+              </div>
+              <div className="flex items-center gap-1 text-[11px] text-text-secondary"><Flame size={11} /> Energía</div>
+            </div>
           </div>
-        </div>
 
-        <div className="flex justify-center items-center gap-6">
-          {status === 'idle' && (
-            <button 
-              onClick={() => startSession()} 
-              className="w-20 h-20 bg-accent rounded-full flex items-center justify-center hover:scale-105 transition-transform"
-              style={{ boxShadow: `0 0 30px ${accentColor}66` }}
-            >
-              <Play size={32} className="text-bg-secondary ml-1" fill="currentColor" />
-            </button>
-          )}
-
-          {status === 'running' && (
-            <button 
-              onClick={pauseSession} 
-              className="w-20 h-20 bg-accent rounded-full flex items-center justify-center hover:scale-105 transition-transform"
-              style={{ boxShadow: `0 0 30px ${accentColor}66` }}
-            >
-              <Pause size={32} className="text-bg-secondary" fill="currentColor" />
-            </button>
-          )}
-
-          {status === 'paused' && (
-            <>
+          <div className="flex justify-center items-center gap-4">
+            {status === 'idle' && (
               <button 
-                onClick={resumeSession} 
-                className="w-16 h-16 bg-accent rounded-full flex items-center justify-center hover:scale-105 transition-transform"
-                style={{ boxShadow: `0 0 20px ${accentColor}66` }}
+                onClick={() => startSession()} 
+                className="w-14 h-14 bg-accent text-accent-contrast rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                style={{ boxShadow: `0 0 24px ${accentColor}66` }}
               >
-                <Play size={24} className="text-bg-secondary ml-1" fill="currentColor" />
+                <Play size={24} className="ml-0.5" fill="currentColor" />
               </button>
-              <button onClick={handleFinishClick} disabled={isSaving} className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform disabled:opacity-50">
-                {isSaving ? <Spinner size={24} color="border-white" /> : <Square size={24} className="text-white" fill="currentColor" />}
+            )}
+
+            {status === 'running' && (
+              <button 
+                onClick={pauseSession} 
+                className="w-14 h-14 bg-accent text-accent-contrast rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                style={{ boxShadow: `0 0 24px ${accentColor}66` }}
+              >
+                <Pause size={24} fill="currentColor" />
               </button>
-            </>
-          )}
+            )}
+
+            {status === 'paused' && (
+              <>
+                <button 
+                  onClick={resumeSession} 
+                  className="w-14 h-14 bg-accent text-accent-contrast rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  style={{ boxShadow: `0 0 20px ${accentColor}66` }}
+                >
+                  <Play size={22} className="ml-0.5" fill="currentColor" />
+                </button>
+                <button onClick={handleFinishClick} disabled={isSaving} className="w-14 h-14 bg-red-500 rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform disabled:opacity-50">
+                  {isSaving ? <Spinner size={22} color="border-white" /> : <Square size={20} className="text-white" fill="currentColor" />}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

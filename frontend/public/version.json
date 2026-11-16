@@ -1,6 +1,6 @@
 {
-  "version": "7.16.32",
-  "releaseNotes": "Actualización v7.16.32: entrenamientos nocturnos asignados al día de inicio, barra de duración en Cardio Rápido, detección de ubicación en PC y mapa sin API Key.",
+  "version": "7.16.33",
+  "releaseNotes": "Actualización v7.16.33: mapa GPS adaptado a temas oscuros y claros, controles superiores protegidos del notch y panel inferior más compacto.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",

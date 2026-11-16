@@ -2070,3 +2070,12 @@ html.dark .dark\:border-white\/10 {
 html.dark .dark\:ring-white\/10 {
   --tw-ring-color: rgba(255, 255, 255, 0.04);
 }
+
+/* Adaptación de tiles de mapa (Esri World Street Map) a temas oscuros y OLED */
+.map-tiles-dark-mode {
+  filter: invert(100%) hue-rotate(180deg) brightness(0.92) contrast(0.96) saturate(0.85);
+}
+
+.map-tiles-oled-mode {
+  filter: invert(100%) hue-rotate(180deg) brightness(0.84) contrast(1.08) saturate(0.8);
+}
