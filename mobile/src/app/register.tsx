@@ -12,23 +12,20 @@ import {
   Image,
   useColorScheme as useDeviceColorScheme,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
-import { Sparkles, UserPlus, ArrowRight, CheckCircle2, Eye, EyeOff, Mail, Check, ShieldCheck, Scale, FileText } from 'lucide-react-native';
+import { Sparkles, UserPlus, ArrowRight, CheckCircle2, Eye, EyeOff, Mail, Check, ShieldCheck, Scale, FileText, Gift } from 'lucide-react-native';
 import { FontAwesome5, FontAwesome6 } from '@expo/vector-icons';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
 import { LinearGradient } from 'expo-linear-gradient';
 import useAppStore from '@/store/useAppStore';
 import { registerUser, verifyEmail, resendVerificationEmail } from '@/services/authService';
 import { EMAIL_CONSENT_VERSION, EMAIL_CONSENT_TEXT } from '@/config/emailConsent';
 import { LegalDocumentModal, LegalDocType } from '@/components/modals/LegalDocumentModal';
-
-WebBrowser.maybeCompleteAuthSession();
+import { runOAuthFlow, type OAuthProvider } from '@/utils/oauthAuth';
 
 const GoogleIcon = ({ size }: { size: number }) => (
   <Svg width={size} height={size} viewBox="0 0 48 48">
@@ -50,6 +47,7 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
@@ -72,18 +70,15 @@ export default function Register() {
   const inputRefs = React.useRef<Array<any>>([]);
 
   const router = useRouter();
+  const routeParams = useLocalSearchParams<{ ref?: string }>();
   const colors = useAppColors();
   const theme = colors;
   const currentStoreTheme = useAppStore(state => state.theme);
+  const twoFactorPending = useAppStore(state => state.twoFactorPending);
   const isDark = !['light', 'ocean', 'desert'].includes(currentStoreTheme);
   const contrastColor = getContrastColor(theme.tint, currentStoreTheme);
   const colorScheme = useDeviceColorScheme();
   const insets = useSafeAreaInsets();
-
-  const handleGoogleLogin = useAppStore(state => state.handleGoogleLogin);
-  const handleDiscordLogin = useAppStore(state => state.handleDiscordLogin);
-  const handleXLogin = useAppStore(state => state.handleXLogin);
-  const handleGithubLogin = useAppStore(state => state.handleGithubLogin);
 
   // Requisitos interactivos de contraseña
   const reqs = [
@@ -123,6 +118,26 @@ export default function Register() {
   }, [resendCooldown, needsVerification]);
 
   React.useEffect(() => {
+    const refParam = Array.isArray(routeParams.ref) ? routeParams.ref[0] : routeParams.ref;
+    if (refParam && refParam.trim()) {
+      const cleanRef = refParam.trim();
+      setReferralCode(cleanRef);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('pending_ref', cleanRef);
+      }
+    } else if (typeof localStorage !== 'undefined') {
+      const pending = localStorage.getItem('pending_ref');
+      if (pending) setReferralCode(pending);
+    }
+  }, [routeParams.ref]);
+
+  React.useEffect(() => {
+    if (twoFactorPending) {
+      router.replace('/login');
+    }
+  }, [twoFactorPending, router]);
+
+  React.useEffect(() => {
     const savedNeedsVerification = typeof localStorage !== 'undefined' ? localStorage.getItem('needs_verification') : null;
     const savedEmail = typeof localStorage !== 'undefined' ? localStorage.getItem('verification_email') : null;
     if (savedNeedsVerification === 'true' && savedEmail) {
@@ -155,83 +170,12 @@ export default function Register() {
     else router.push('/privacy');
   };
 
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'mobile' });
-
-  const startAsync = async ({ authUrl, returnUrl }: { authUrl: string; returnUrl: string }) => {
-    const result = await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
-    if (result.type === 'success' && result.url) {
-      const params: Record<string, string> = {};
-      const queryPart = result.url.includes('#') ? result.url.split('#')[1] : result.url.split('?')[1];
-      if (queryPart) {
-        queryPart.split('&').forEach(pair => {
-          const [key, value] = pair.split('=');
-          if (key) params[key] = decodeURIComponent(value || '');
-        });
-      }
-      return { type: 'success' as const, params, url: result.url };
-    }
-    return result;
-  };
-
-  const handleGoogleClick = async () => {
+  const handleOAuthPress = async (provider: OAuthProvider, label: string) => {
     try {
-      const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=email%20profile&state=google`;
-      const result = await startAsync({ authUrl, returnUrl: redirectUri });
-      if (result.type === 'success' && 'params' in result && result.params.access_token) {
-        setIsLoading(true);
-        await handleGoogleLogin({ token: result.params.access_token });
-      }
+      setIsLoading(true);
+      await runOAuthFlow(provider, referralCode);
     } catch (e: any) {
-      alert('Error conectando con Google: ' + (e.message || e));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDiscordClick = async () => {
-    try {
-      const DISCORD_CLIENT_ID = process.env.EXPO_PUBLIC_DISCORD_CLIENT_ID;
-      const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify%20email&state=discord`;
-      const result = await startAsync({ authUrl, returnUrl: redirectUri });
-      if (result.type === 'success' && 'params' in result && result.params.access_token) {
-        setIsLoading(true);
-        await handleDiscordLogin({ token: result.params.access_token });
-      }
-    } catch (e: any) {
-      alert('Error conectando con Discord: ' + (e.message || e));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleXClick = async () => {
-    try {
-      const X_CLIENT_ID = process.env.EXPO_PUBLIC_X_CLIENT_ID;
-      const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${X_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=tweet.read%20users.read&state=x&code_challenge=challenge&code_challenge_method=plain`;
-      const result = await startAsync({ authUrl, returnUrl: redirectUri });
-      if (result.type === 'success' && 'params' in result && result.params.code) {
-        setIsLoading(true);
-        await handleXLogin({ code: result.params.code, redirectUri, codeVerifier: 'challenge' });
-      }
-    } catch (e: any) {
-      alert('Error conectando con X: ' + (e.message || e));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGithubClick = async () => {
-    try {
-      const GITHUB_CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
-      const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email&state=github`;
-      const result = await startAsync({ authUrl, returnUrl: redirectUri });
-      if (result.type === 'success' && 'params' in result && result.params.code) {
-        setIsLoading(true);
-        await handleGithubLogin({ code: result.params.code });
-      }
-    } catch (e: any) {
-      alert('Error conectando con Github: ' + (e.message || e));
+      alert(`Error conectando con ${label}: ` + (e.message || e));
     } finally {
       setIsLoading(false);
     }
@@ -283,7 +227,9 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      const currentRef = typeof localStorage !== 'undefined' ? localStorage.getItem('pending_ref') : null;
+      const currentRef =
+        referralCode.trim() ||
+        (typeof localStorage !== 'undefined' ? localStorage.getItem('pending_ref') : null);
 
       await registerUser({
         username: username.trim(),
@@ -605,6 +551,48 @@ export default function Register() {
                   )}
                 </View>
 
+                {/* REFERRAL CODE INPUT (AUTO-POPULATED VIA ?ref= OR EDITABLE) */}
+                <View style={styles.inputWrapper}>
+                  <View style={{ position: 'relative', justifyContent: 'center' }}>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        {
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                          borderColor:
+                            referralCode.trim().length > 0
+                              ? theme.tint + '80'
+                              : focusedInput === 'referral'
+                              ? theme.tint
+                              : isDark
+                              ? 'rgba(255, 255, 255, 0.12)'
+                              : 'rgba(0, 0, 0, 0.07)',
+                          color: theme.text,
+                          paddingLeft: 40,
+                        },
+                      ]}
+                      placeholder="Código de invitación (opcional)"
+                      placeholderTextColor={theme.textSecondary}
+                      value={referralCode}
+                      onChangeText={val => {
+                        setReferralCode(val);
+                        if (typeof localStorage !== 'undefined') {
+                          if (val.trim()) localStorage.setItem('pending_ref', val.trim());
+                          else localStorage.removeItem('pending_ref');
+                        }
+                      }}
+                      onFocus={() => setFocusedInput('referral')}
+                      onBlur={() => setFocusedInput(null)}
+                      autoCapitalize="characters"
+                    />
+                    <Gift
+                      size={17}
+                      color={referralCode.trim().length > 0 ? theme.tint : theme.textSecondary}
+                      style={{ position: 'absolute', left: 14 }}
+                    />
+                  </View>
+                </View>
+
                 {/* CHECKBOX OBLIGATORIO DE CONSENTIMIENTO RGPD / LOPDGDD */}
                 <View style={styles.consentBlock}>
                   <TouchableOpacity
@@ -751,7 +739,7 @@ export default function Register() {
                 {/* SOCIAL BUTTONS */}
                 <View style={styles.socialContainer}>
                   <TouchableOpacity
-                    onPress={handleGoogleClick}
+                    onPress={() => handleOAuthPress('google', 'Google')}
                     disabled={isLoading}
                     style={[
                       styles.socialButton,
@@ -765,7 +753,7 @@ export default function Register() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    onPress={handleDiscordClick}
+                    onPress={() => handleOAuthPress('discord', 'Discord')}
                     disabled={isLoading}
                     style={[styles.socialButton, { backgroundColor: '#5865F2', borderColor: '#5865F2' }]}
                   >
@@ -773,7 +761,15 @@ export default function Register() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    onPress={handleXClick}
+                    onPress={() => handleOAuthPress('facebook', 'Facebook')}
+                    disabled={isLoading}
+                    style={[styles.socialButton, { backgroundColor: '#1877F2', borderColor: '#1877F2' }]}
+                  >
+                    <FontAwesome5 name="facebook-f" size={20} color="#fff" />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => handleOAuthPress('x', 'X')}
                     disabled={isLoading}
                     style={[
                       styles.socialButton,
@@ -787,7 +783,7 @@ export default function Register() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    onPress={handleGithubClick}
+                    onPress={() => handleOAuthPress('github', 'GitHub')}
                     disabled={isLoading}
                     style={[
                       styles.socialButton,
@@ -798,6 +794,14 @@ export default function Register() {
                     ]}
                   >
                     <FontAwesome5 name="github" size={22} color={colorScheme === 'light' ? '#fff' : '#333'} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => handleOAuthPress('spotify', 'Spotify')}
+                    disabled={isLoading}
+                    style={[styles.socialButton, { backgroundColor: '#1DB954', borderColor: '#1DB954' }]}
+                  >
+                    <FontAwesome5 name="spotify" size={22} color="#fff" />
                   </TouchableOpacity>
                 </View>
 
@@ -1176,9 +1180,10 @@ const styles = StyleSheet.create({
   },
   socialContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   socialButton: {
     width: 44,

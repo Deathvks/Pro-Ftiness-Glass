@@ -15,6 +15,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
+import { buildSharedRoutineUrl } from '@/utils/deepLinking';
 
 interface RoutineShareSettingsModalProps {
   visible: boolean;
@@ -46,8 +47,7 @@ export const RoutineShareSettingsModal: React.FC<RoutineShareSettingsModalProps>
 
   if (!visible || !routine) return null;
 
-  const baseUrl = 'https://pro-fitness-glass.zeabur.app';
-  const shareUrl = `${baseUrl}/share/routine/${routine.id}`;
+  const shareUrl = buildSharedRoutineUrl(routine.id);
 
   const handleVisibilityChange = async (newVisibility: string) => {
     if (newVisibility === visibility || isUpdating) return;

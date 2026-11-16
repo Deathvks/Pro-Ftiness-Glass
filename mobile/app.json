@@ -9,6 +9,11 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
+      "associatedDomains": [
+        "applinks:profitnessglass.es",
+        "applinks:www.profitnessglass.es",
+        "applinks:pro-fitness-glass.zeabur.app"
+      ],
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Permite a ProFitnessGlass usar tu ubicación para encontrar gimnasios cercanos y registrar tus rutas de cardio.",
         "NSCameraUsageDescription": "Permite a ProFitnessGlass escanear códigos de barras de alimentos para registrar tus comidas rápidamente."
@@ -29,6 +34,14 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
+            {
+              "scheme": "https",
+              "host": "profitnessglass.es"
+            },
+            {
+              "scheme": "https",
+              "host": "www.profitnessglass.es"
+            },
             {
               "scheme": "https",
               "host": "pro-fitness-glass.zeabur.app"

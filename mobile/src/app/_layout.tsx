@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, usePathname, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
+import * as Linking from 'expo-linking';
 import { Appearance, AppState, Platform } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -9,6 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { initLocalStorage } from '@/utils/localStoragePolyfill';
 import { installHapticsInterceptor } from '@/utils/haptics';
 import { loadCardioSession, syncPendingCardio } from '@/utils/cardio';
+import { resolveDeepLink } from '@/utils/deepLinking';
 import { syncPushOnAppStart } from '@/services/nativeNotifications';
 import useAppStore, { applyNativeColorScheme } from '@/store/useAppStore';
 import type { QueuedRequest } from '@/store/syncSlice';
@@ -85,25 +87,32 @@ export default function RootLayout() {
     const inOnboarding = segments[0] === 'onboarding';
     const inLegal = ['privacy', 'terms', 'legal-notice', 'cookies'].includes(segments[0]);
     const inNews = segments[0] === 'noticias';
+    const inShare = segments[0] === 'share';
 
     const needsOnboarding = isAuthenticated && userProfile && !userProfile.goal && userProfile.role !== 'trainee';
 
-    if (!isAuthenticated && !inLogin && !inRegister && !inForgot && !inLegal && !inNews) {
+    if (!isAuthenticated && !inLogin && !inRegister && !inForgot && !inLegal && !inNews && !inShare) {
       router.replace('/login');
-    } else if (needsOnboarding && !inOnboarding && !inNews) {
+    } else if (needsOnboarding && !inOnboarding && !inNews && !inShare) {
       // Bloquear acceso hasta que complete el onboarding
       router.replace('/onboarding');
     } else if (isAuthenticated && (inLogin || inRegister || inForgot)) {
       if (needsOnboarding) {
         router.replace('/onboarding');
       } else {
-        router.replace('/(tabs)');
+        const pendingRedirect = typeof localStorage !== 'undefined' ? localStorage.getItem('post_auth_redirect') : null;
+        if (pendingRedirect && pendingRedirect.startsWith('/')) {
+          localStorage.removeItem('post_auth_redirect');
+          router.replace(pendingRedirect as any);
+        } else {
+          router.replace('/(tabs)');
+        }
       }
     } else if (isAuthenticated && !hasRestoredPath) {
       setHasRestoredPath(true);
       // Only restore if we're currently at the root/index - don't redirect if already navigated
       const atRoot = segments.length <= 1 || (segments[0] === '(tabs)' && (!segments[1] || (segments[1] as string) === 'index'));
-      if (atRoot && !needsOnboarding && !inNews) {
+      if (atRoot && !needsOnboarding && !inNews && !inShare) {
         const lastPath = typeof localStorage !== 'undefined' ? localStorage.getItem('last_path') : null;
         if (lastPath && lastPath !== '/' && lastPath !== '/index' && !lastPath.includes('login') && !lastPath.includes('register') && !lastPath.includes('onboarding')) {
           setTimeout(() => {
@@ -188,6 +197,52 @@ export default function RootLayout() {
     };
   }, [isReady, router]);
 
+  // Deep Links / Enlaces compartidos (Universal Links, App Links y esquema mobile://)
+  useEffect(() => {
+    if (!isReady) return;
+
+    const handleIncomingUrl = (url: string | null | undefined) => {
+      const target = resolveDeepLink(url);
+      if (!target) return;
+
+      const isPublicDeepLink =
+        target.pathname.startsWith('/share/') ||
+        target.pathname.startsWith('/noticias') ||
+        target.pathname === '/login' ||
+        target.pathname === '/register';
+
+      if (!useAppStore.getState().isAuthenticated && !isPublicDeepLink) {
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('post_auth_redirect', target.pathname);
+          }
+        } catch {}
+        router.replace('/login');
+        return;
+      }
+
+      try {
+        if (target.params) {
+          router.push({ pathname: target.pathname as any, params: target.params });
+        } else {
+          router.push(target.pathname as any);
+        }
+      } catch {}
+    };
+
+    Linking.getInitialURL()
+      .then(url => {
+        if (url) handleIncomingUrl(url);
+      })
+      .catch(() => {});
+
+    const linkSub = Linking.addEventListener('url', event => {
+      handleIncomingUrl(event.url);
+    });
+
+    return () => linkSub.remove();
+  }, [isReady, router]);
+
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme);
   const themePreference = useAppStore(state => state.themePreference);
@@ -245,6 +300,7 @@ export default function RootLayout() {
           <Stack.Screen name="workout" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="quick-cardio" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="active-cardio" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="share/routine/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
         </Stack>
         <DynamicIslandTimer />
         <RestTimerModal />
