@@ -17,6 +17,7 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { TourTarget } from '@/components/tutorials/TourTarget';
 import { useRegisterTourScroll } from '@/components/tutorials/tourRegistry';
 import { TutorialsCenterModal } from '@/components/tutorials/TutorialsCenterModal';
+import { AppRatingModal } from '@/components/modals/AppRatingModal';
 import { AppTutorial, TUTORIAL_COMPLETION_ACTIONS } from '@/data/tutorials';
 import { 
   BarChart2, 
@@ -30,7 +31,8 @@ import {
   Settings, 
   Users, 
   ShieldCheck,
-  ChevronRight 
+  ChevronRight,
+  Star
 } from 'lucide-react-native';
 
 const HubButton = ({
@@ -242,6 +244,7 @@ export default function Hub() {
   const startPageTutorial = useAppStore((state: any) => state.startPageTutorial);
   const [visitedAsesoria, setVisitedAsesoria] = useState(true);
   const [hasOpenedTutorials, setHasOpenedTutorials] = useState(true);
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   useEffect(() => {
     if (userProfile?.id) {
@@ -534,6 +537,67 @@ export default function Hub() {
 
           </View>
 
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch {}
+              setShowRatingModal(true);
+            }}
+            style={[
+              getAppleCardSurfaceStyle(theme, 22),
+              {
+                marginTop: 16,
+                overflow: 'hidden',
+                borderWidth: 1,
+                borderColor: 'rgba(245, 158, 11, 0.32)',
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={
+                theme === 'oled' || ['neon', 'midnight', 'sunset', 'cyberpunk', 'bloodmoon', 'aurora', 'abyss'].includes(theme)
+                  ? ['rgba(245, 158, 11, 0.22)', 'rgba(249, 115, 22, 0.10)', 'rgba(234, 179, 8, 0.08)']
+                  : ['rgba(245, 158, 11, 0.16)', 'rgba(251, 146, 60, 0.08)', 'rgba(254, 243, 199, 0.35)']
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingHorizontal: 18,
+                paddingVertical: 15,
+                gap: 12,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    backgroundColor: 'rgba(245, 158, 11, 0.22)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Star size={20} color="#f59e0b" fill="#f59e0b" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text }}>
+                    ¿Qué nota nos pones?
+                  </Text>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                    Valora la app y comparte tu opinión con nosotros
+                  </Text>
+                </View>
+              </View>
+              <ChevronRight size={18} color="#f59e0b" />
+            </LinearGradient>
+          </TouchableOpacity>
+
         </Animated.ScrollView>
       </AndroidHeaderBlurTarget>
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
@@ -544,6 +608,10 @@ export default function Hub() {
         userRole={userProfile?.role}
         onClose={() => setShowTutorialsCenter(false)}
         onStart={handleStartTutorial}
+      />
+      <AppRatingModal
+        visible={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
       />
     </View>
   );

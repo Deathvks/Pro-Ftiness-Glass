@@ -88,12 +88,20 @@ export default function RootLayout() {
     const inLegal = ['privacy', 'terms', 'legal-notice', 'cookies'].includes(segments[0]);
     const inNews = segments[0] === 'noticias';
     const inShare = segments[0] === 'share';
+    const inPublicUtility = [
+      'calculadora-1rm',
+      'calculadora-calorias-macros',
+      'faq',
+      'sobre-nosotros',
+      'ejercicios',
+      'mantenimiento',
+    ].includes(segments[0]);
 
     const needsOnboarding = isAuthenticated && userProfile && !userProfile.goal && userProfile.role !== 'trainee';
 
-    if (!isAuthenticated && !inLogin && !inRegister && !inForgot && !inLegal && !inNews && !inShare) {
+    if (!isAuthenticated && !inLogin && !inRegister && !inForgot && !inLegal && !inNews && !inShare && !inPublicUtility) {
       router.replace('/login');
-    } else if (needsOnboarding && !inOnboarding && !inNews && !inShare) {
+    } else if (needsOnboarding && !inOnboarding && !inNews && !inShare && !inPublicUtility) {
       // Bloquear acceso hasta que complete el onboarding
       router.replace('/onboarding');
     } else if (isAuthenticated && (inLogin || inRegister || inForgot)) {
@@ -209,7 +217,19 @@ export default function RootLayout() {
         target.pathname.startsWith('/share/') ||
         target.pathname.startsWith('/noticias') ||
         target.pathname === '/login' ||
-        target.pathname === '/register';
+        target.pathname === '/register' ||
+        [
+          '/privacy',
+          '/terms',
+          '/legal-notice',
+          '/cookies',
+          '/calculadora-1rm',
+          '/calculadora-calorias-macros',
+          '/faq',
+          '/sobre-nosotros',
+          '/ejercicios',
+          '/mantenimiento',
+        ].includes(target.pathname);
 
       if (!useAppStore.getState().isAuthenticated && !isPublicDeepLink) {
         try {
@@ -283,6 +303,12 @@ export default function RootLayout() {
           <Stack.Screen name="terms" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="legal-notice" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="cookies" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="calculadora-1rm" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="calculadora-calorias-macros" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="faq" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="sobre-nosotros" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="ejercicios" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="mantenimiento" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="profile" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="settings" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="admin" options={{ headerShown: false, animation: 'slide_from_right' }} />

@@ -117,6 +117,24 @@ export function resolveDeepLink(rawUrl: string | null | undefined): ResolvedDeep
   if (normalized === '/routines' || normalized === '/nutrition' || normalized === '/social' || normalized === '/hub') {
     return { pathname: `/(tabs)${normalized}` };
   }
+  if (normalized === '/aviso-legal' || normalized === '/legal') {
+    return { pathname: '/legal-notice' };
+  }
+  if (['/privacy', '/terms', '/legal-notice', '/cookies'].includes(normalized)) {
+    return { pathname: normalized };
+  }
+  if (
+    [
+      '/calculadora-1rm',
+      '/calculadora-calorias-macros',
+      '/ejercicios',
+      '/faq',
+      '/sobre-nosotros',
+      '/mantenimiento',
+    ].includes(normalized)
+  ) {
+    return { pathname: normalized };
+  }
   if (
     [
       '/challenges',

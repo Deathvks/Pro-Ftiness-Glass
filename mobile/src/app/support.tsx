@@ -23,7 +23,13 @@ import {
   Mail,
   Binary,
   CheckCircle2,
+  Calculator,
+  Utensils,
+  Dumbbell,
+  HelpCircle,
+  Users,
 } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 
@@ -213,6 +219,7 @@ function SupportItem({
 }
 
 export default function SupportScreen() {
+  const router = useRouter();
   const { width: windowWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -543,6 +550,94 @@ export default function SupportScreen() {
                 {isUpToDate ? 'Actualizada' : 'Nueva versión'}
               </Text>
             </View>
+          </View>
+        </GlassSurface>
+
+        {/* ================= 3. CALCULADORAS, FAQ Y GUÍAS PÚBLICAS ================= */}
+        {isIOS && (
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: '600',
+              color: colors.textSecondary,
+              textTransform: 'uppercase',
+              letterSpacing: 0.4,
+              marginLeft: 16,
+              marginBottom: 8,
+              marginTop: 24,
+            }}
+          >
+            Herramientas y Guías Públicas
+          </Text>
+        )}
+
+        <GlassSurface
+          radius={28}
+          isDark={isDark}
+          borderColor={glassBorder}
+          style={[styles.card, { padding: isIOS ? 0 : isMobile ? 16 : 22, marginTop: isIOS ? 0 : 16 }]}
+        >
+          {!isIOS && (
+            <View style={styles.sectionTitleRow}>
+              <View style={[styles.sectionIconBox, { backgroundColor: '#10b9811A' }]}>
+                <Calculator size={22} color="#10b981" strokeWidth={2.4} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Calculadoras, FAQ y Guías</Text>
+                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+                  Utilidades deportivas gratuitas y documentación oficial.
+                </Text>
+              </View>
+            </View>
+          )}
+
+          <View style={[styles.itemsList, isIOS && { gap: 0 }]}>
+            <SupportItem
+              icon={Calculator}
+              title="Calculadora de 1RM"
+              subtitle="Epley, Brzycki y Lander + zonas de carga"
+              onPress={() => router.push('/calculadora-1rm' as any)}
+              isDark={isDark}
+              colors={colors}
+              iconColor="#0A84FF"
+            />
+            <SupportItem
+              icon={Utensils}
+              title="Calculadora de Calorías y Macros"
+              subtitle="TMB, TDEE, proteínas, hidratación y creatina"
+              onPress={() => router.push('/calculadora-calorias-macros' as any)}
+              isDark={isDark}
+              colors={colors}
+              iconColor="#30D158"
+            />
+            <SupportItem
+              icon={Dumbbell}
+              title="Guía Técnica de Ejercicios"
+              subtitle="Técnica paso a paso, errores comunes y rutinas"
+              onPress={() => router.push('/ejercicios' as any)}
+              isDark={isDark}
+              colors={colors}
+              iconColor="#FF9F0A"
+            />
+            <SupportItem
+              icon={HelpCircle}
+              title="Preguntas Frecuentes (FAQ)"
+              subtitle="Respuestas rápidas sobre la app, IA y 2FA"
+              onPress={() => router.push('/faq' as any)}
+              isDark={isDark}
+              colors={colors}
+              iconColor="#AF52DE"
+            />
+            <SupportItem
+              icon={Users}
+              title="Sobre Nosotros"
+              subtitle="Misión gratuita, módulos y desarrollador"
+              onPress={() => router.push('/sobre-nosotros' as any)}
+              isDark={isDark}
+              colors={colors}
+              iconColor="#5E5CE6"
+              isLast
+            />
           </View>
         </GlassSurface>
       </Animated.ScrollView>

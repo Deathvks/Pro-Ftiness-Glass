@@ -186,7 +186,7 @@ function ArticleReader({ data }: { data: NewsDetail }) {
 
       <NewsSurface><View style={styles.panel}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Herramientas de gimnasio</Text>
-        {TOOLS.map(tool => <Pressable key={tool.path} accessibilityRole="link" onPress={() => openLink(tool.path)}
+        {TOOLS.map(tool => <Pressable key={tool.path} accessibilityRole="link" onPress={() => router.push(tool.path as any)}
           style={[styles.tool, { borderTopColor: colors.border }]}>
           <View style={{ flex: 1, gap: 3 }}>
             <Text style={{ color: colors.text, fontSize: 14, fontWeight: '800' }}>{tool.title}</Text>
