@@ -15,7 +15,7 @@ export const getVapidKey = () => {
 
 /**
  * Envía el objeto de suscripción push al backend para guardarlo.
- * @param {PushSubscription} subscription - El objeto de suscripción generado por el navegador.
+ * @param {{ endpoint: string, keys?: { p256dh: string, auth: string } } | PushSubscription} subscription - Objeto de suscripción push.
  */
 export const subscribeToPush = (subscription) => {
   return apiClient('/notifications/subscribe', {

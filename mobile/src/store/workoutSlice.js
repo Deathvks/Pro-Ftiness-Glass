@@ -1,11 +1,16 @@
 /* frontend/src/store/workoutSlice.js */
 import * as workoutService from '../services/workoutService';
+import {
+  scheduleRestTimerNotification,
+  cancelRestTimerNotification,
+  presentInstantNotification,
+} from '../services/nativeNotifications';
 import { formatDateForQuery } from '../utils/dateUtils';
 import { isSameDay } from '../utils/helpers';
 import * as Crypto from 'expo-crypto';
 
 const stopNativeTimer = () => {
-  // TODO: Implementar temporizador nativo para React Native en el futuro si es necesario.
+  void cancelRestTimerNotification();
 };
 
 const getAccentColor = () => {
@@ -563,6 +568,7 @@ export const createWorkoutSlice = (set, get) => ({
     };
     set(newState);
     setRestTimerInStorage(newState);
+    void scheduleRestTimerNotification(durationInSeconds, get().activeWorkout?.routineName);
   },
 
   setRestTimerMode: (mode) => {
@@ -572,16 +578,20 @@ export const createWorkoutSlice = (set, get) => ({
   },
 
   togglePauseRestTimer: () => {
-    const { isRestTimerPaused, restTimerEndTime, restTimerRemaining } = get();
+    const { isRestTimerPaused, restTimerEndTime, restTimerRemaining, activeWorkout } = get();
     let newState;
 
     if (isRestTimerPaused) {
-      const newEndTime = Date.now() + restTimerRemaining;
+      const remainingMs = Math.max(0, restTimerRemaining || 0);
+      const newEndTime = Date.now() + remainingMs;
       newState = {
         isRestTimerPaused: false,
         restTimerEndTime: newEndTime,
         restTimerRemaining: null,
       };
+      if (remainingMs > 1000) {
+        void scheduleRestTimerNotification(Math.ceil(remainingMs / 1000), activeWorkout?.routineName);
+      }
     } else {
       const now = Date.now();
       const remaining = restTimerEndTime ? restTimerEndTime - now : 0;
@@ -628,6 +638,12 @@ export const createWorkoutSlice = (set, get) => ({
         restTimerInitialDuration: Math.max(1, newInitial),
       };
       setRestTimerInStorage({ ...state, ...newState });
+      const remainingSec = Math.ceil((newEndTime - now) / 1000);
+      if (remainingSec > 1) {
+        void scheduleRestTimerNotification(remainingSec, state.activeWorkout?.routineName);
+      } else {
+        stopNativeTimer();
+      }
 
       return newState;
     });
@@ -836,40 +852,18 @@ export const createWorkoutSlice = (set, get) => ({
   },
 
   _showLocalPRNotification: async (newPRs) => {
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-      console.log('Notificaciones no soportadas por el navegador.');
-      return;
-    }
-
     try {
-      const permission = Notification.permission;
-      if (permission !== 'granted') {
-        return;
-      }
-
-      const registration = await navigator.serviceWorker.ready;
-      if (!registration) {
-        console.error('Service Worker no está listo para la notificación.');
-        return;
-      }
-
       const title = '¡Nuevo Récord Personal!';
       const body =
         newPRs.length === 1
-          ? `¡Has conseguido un nuevo PR en tu entrenamiento!`
+          ? '¡Has conseguido un nuevo PR en tu entrenamiento!'
           : `¡Felicidades! Has conseguido ${newPRs.length} nuevos PRs.`;
 
-      const options = {
-        body: body,
-        icon: '/pwa-192x192.webp',
-        badge: '/pwa-192x192.webp',
-        tag: 'pr-notification',
-        data: {
-          url: '/progress',
-        },
-      };
-
-      await registration.showNotification(title, options);
+      await presentInstantNotification({
+        title,
+        body,
+        data: { url: '/progress' },
+      });
     } catch (err) {
       console.error('Error al mostrar notificación local de PR:', err);
     }

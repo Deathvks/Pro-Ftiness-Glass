@@ -8,6 +8,7 @@ import {
   Animated,
   ActivityIndicator,
   Alert,
+  Linking,
   Share,
   useWindowDimensions,
   Platform,
@@ -73,6 +74,12 @@ import { getContrastTextColor } from '@/utils/colorUtils';
 import * as userService from '@/services/userService';
 import * as sessionService from '@/services/sessionService';
 import * as notificationService from '@/services/notificationService';
+import {
+  getDevicePushState,
+  registerDeviceForPushNotifications,
+  unregisterDevicePushNotifications,
+  presentInstantNotification,
+} from '@/services/nativeNotifications';
 import { logoutUser, disable2FA } from '@/services/authService';
 import { getExerciseList } from '@/services/exerciseService';
 import {
@@ -210,7 +217,17 @@ export default function SettingsScreen() {
   const [defaultFeedScope, setDefaultFeedScope] = useState<'global' | 'gym' | 'friends'>('global');
 
   // Estados de push
-  const [pushEnabled, setPushEnabled] = useState(true);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [devicePushMeta, setDevicePushMeta] = useState<{
+    permissionStatus: 'granted' | 'denied' | 'undetermined';
+    hasRemoteToken: boolean;
+    isExpoGoAndroid: boolean;
+  }>({
+    permissionStatus: 'undetermined',
+    hasRemoteToken: false,
+    isExpoGoAndroid: false,
+  });
+  const [isTogglingDevicePush, setIsTogglingDevicePush] = useState(false);
   const [pushPreferences, setPushPreferences] = useState<Record<string, boolean>>({
     training: true,
     coaching: true,
@@ -283,9 +300,20 @@ export default function SettingsScreen() {
     } catch {}
   }, []);
 
-  // Cargar preferencias push al entrar en la pestaña notificaciones
+  // Cargar preferencias push y estado real del dispositivo al entrar en la pestaña notificaciones
   useEffect(() => {
     if (activeTab === 'notifications' && userProfile?.id) {
+      getDevicePushState(userProfile.id)
+        .then(state => {
+          setPushEnabled(state.enabled);
+          setDevicePushMeta({
+            permissionStatus: state.permissionStatus,
+            hasRemoteToken: Boolean(state.endpoint),
+            isExpoGoAndroid: state.isExpoGoAndroid,
+          });
+        })
+        .catch(() => {});
+
       notificationService
         .getPushPreferences()
         .then(prefs => {
@@ -458,6 +486,44 @@ export default function SettingsScreen() {
       Alert.alert('Error', 'No se pudo actualizar la preferencia de email.');
     } finally {
       setIsUpdatingEmailPref(false);
+    }
+  };
+
+  // Activar/desactivar notificaciones reales en este dispositivo
+  const handleToggleDevicePush = async (nextVal: boolean) => {
+    if (isTogglingDevicePush) return;
+    setIsTogglingDevicePush(true);
+    try {
+      if (nextVal) {
+        const res = await registerDeviceForPushNotifications(userProfile?.id);
+        if (!res.ok) {
+          setPushEnabled(false);
+          setDevicePushMeta(prev => ({ ...prev, permissionStatus: 'denied', hasRemoteToken: false }));
+          Alert.alert(
+            'Permiso de notificaciones requerido',
+            'Para recibir avisos de descanso, récords y alertas en este dispositivo, activa las notificaciones en los ajustes del sistema.',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Abrir Ajustes', onPress: () => void Linking.openSettings() },
+            ]
+          );
+        } else {
+          setPushEnabled(true);
+          setDevicePushMeta(prev => ({
+            ...prev,
+            permissionStatus: 'granted',
+            hasRemoteToken: Boolean(res.endpoint),
+          }));
+          useAppStore.getState().showToast?.(res.message);
+        }
+      } else {
+        await unregisterDevicePushNotifications(userProfile?.id);
+        setPushEnabled(false);
+        setDevicePushMeta(prev => ({ ...prev, hasRemoteToken: false }));
+        useAppStore.getState().showToast?.('Notificaciones pausadas en este dispositivo');
+      }
+    } finally {
+      setIsTogglingDevicePush(false);
     }
   };
 
@@ -1398,19 +1464,55 @@ export default function SettingsScreen() {
                           Activar en este dispositivo
                         </Text>
                         <Text style={[styles.rowItemSubtitle, { color: colors.textSecondary }]}>
-                          Recibir avisos de actividad y avisos importantes
+                          {pushEnabled
+                            ? devicePushMeta.hasRemoteToken
+                              ? 'Permisos activos y dispositivo suscrito al servidor'
+                              : devicePushMeta.isExpoGoAndroid
+                                ? 'Permisos activos (avisos locales en Expo Go; push remoto en build)'
+                                : 'Permisos y recordatorios locales activos en este dispositivo'
+                            : devicePushMeta.permissionStatus === 'denied'
+                              ? 'Permiso bloqueado en los ajustes del dispositivo'
+                              : 'Activa permisos para recibir avisos y alertas de descanso'}
                         </Text>
                       </View>
                       <LiquidGlassSwitch
                         value={pushEnabled}
-                        onValueChange={val => {
-                          setPushEnabled(val);
-                          useAppStore.getState().showToast?.(val ? 'Push activadas' : 'Push pausadas');
-                        }}
+                        onValueChange={val => void handleToggleDevicePush(val)}
                         tintColor={colors.tint}
                         isDark={isDark}
+                        disabled={isTogglingDevicePush}
                       />
                     </View>
+
+                    {pushEnabled && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          try {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          } catch {}
+                          void presentInstantNotification({
+                            title: '🔔 Pro Fitness Glass',
+                            body: 'Las notificaciones en este dispositivo funcionan correctamente.',
+                            data: { url: '/notifications' },
+                          });
+                        }}
+                        activeOpacity={0.7}
+                        style={[styles.settingRowItem, { backgroundColor: subtleItemBg }]}
+                      >
+                        <View style={[styles.rowIconCircle, { backgroundColor: colors.tint + '1A' }]}>
+                          <Sparkles size={18} color={colors.tint} />
+                        </View>
+                        <View style={{ flex: 1, marginRight: 8 }}>
+                          <Text style={[styles.rowItemTitle, { color: colors.text }]}>
+                            Probar notificación local
+                          </Text>
+                          <Text style={[styles.rowItemSubtitle, { color: colors.textSecondary }]}>
+                            Envía un aviso de prueba a este dispositivo
+                          </Text>
+                        </View>
+                        <ChevronRight size={18} color={colors.textSecondary} />
+                      </TouchableOpacity>
+                    )}
 
                     {PUSH_OPTIONS.map(opt => (
                       <View key={opt.purpose} style={[styles.settingRowItem, { backgroundColor: subtleItemBg }]}>

@@ -1,13 +1,15 @@
 import { StatusBar } from 'expo-status-bar';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, usePathname, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { Appearance, AppState } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import { Appearance, AppState, Platform } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { initLocalStorage } from '@/utils/localStoragePolyfill';
 import { installHapticsInterceptor } from '@/utils/haptics';
 import { loadCardioSession, syncPendingCardio } from '@/utils/cardio';
+import { syncPushOnAppStart } from '@/services/nativeNotifications';
 import useAppStore, { applyNativeColorScheme } from '@/store/useAppStore';
 import type { QueuedRequest } from '@/store/syncSlice';
 import ThemeBackground from '@/components/ThemeBackground';
@@ -141,13 +143,49 @@ export default function RootLayout() {
     };
   }, [cardioUserId, hasPendingCardio, isAuthenticated, isReady]);
 
-  // Cargar datos iniciales
+  // Cargar datos iniciales y sincronizar notificaciones push del dispositivo
   useEffect(() => {
     if (isReady && isAuthenticated) {
       useAppStore.getState().fetchInitialData();
       useAppStore.getState().fetchDataForDate(new Date().toISOString().split('T')[0]);
+      if (userProfile?.id) {
+        void syncPushOnAppStart(userProfile.id);
+      }
     }
-  }, [isReady, isAuthenticated]);
+  }, [isReady, isAuthenticated, userProfile?.id]);
+
+  // Listeners nativos de notificaciones recibidas y pulsadas
+  useEffect(() => {
+    if (!isReady || Platform.OS === 'web') return;
+
+    const navigateFromNotification = (response: Notifications.NotificationResponse | null) => {
+      if (!response || !useAppStore.getState().isAuthenticated) return;
+      const rawUrl = response.notification?.request?.content?.data?.url;
+      const target = typeof rawUrl === 'string' && rawUrl.startsWith('/') ? rawUrl : '/notifications';
+      try {
+        router.push(target as any);
+      } catch {}
+    };
+
+    Notifications.getLastNotificationResponseAsync()
+      .then(navigateFromNotification)
+      .catch(() => {});
+
+    const receivedSub = Notifications.addNotificationReceivedListener(() => {
+      const store = useAppStore.getState();
+      if (store.isAuthenticated) {
+        store.incrementUnreadCount?.();
+        void store.fetchNotifications?.(1);
+      }
+    });
+
+    const responseSub = Notifications.addNotificationResponseReceivedListener(navigateFromNotification);
+
+    return () => {
+      receivedSub.remove();
+      responseSub.remove();
+    };
+  }, [isReady, router]);
 
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme);
