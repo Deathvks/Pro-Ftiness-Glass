@@ -111,6 +111,15 @@ export function resolveDeepLink(rawUrl: string | null | undefined): ResolvedDeep
   if (normalized === '/login') {
     return { pathname: '/login' };
   }
+  if (normalized === '/reset-password') {
+    return {
+      pathname: '/reset-password',
+      params: queryParams.token ? { token: queryParams.token } : undefined,
+    };
+  }
+  if (normalized === '/forgot-password') {
+    return { pathname: '/forgot-password' };
+  }
   if (normalized === '/dashboard') {
     return { pathname: '/(tabs)' };
   }

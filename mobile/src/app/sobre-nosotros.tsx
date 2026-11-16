@@ -27,6 +27,9 @@ import {
 
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
+import { MaintenanceNoticeBanner } from '@/components/MaintenanceNoticeBanner';
+import { PublicPageFooter } from '@/components/PublicPageFooter';
+import { SEOHead } from '@/components/SEOHead';
 import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -144,6 +147,8 @@ export default function AboutUsScreen() {
       }
     >
       <View style={styles.container}>
+        <SEOHead title="Sobre Nosotros - Pro Fitness Glass" route="/sobre-nosotros" />
+        <MaintenanceNoticeBanner />
         {/* Hero */}
         <View style={styles.hero}>
           <View style={styles.liveBadge}>
@@ -279,6 +284,7 @@ export default function AboutUsScreen() {
             </TouchableOpacity>
           </LinearGradient>
         </GlassCard>
+        <PublicPageFooter />
       </View>
     </AnimatedScreen>
   );

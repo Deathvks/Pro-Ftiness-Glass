@@ -6,6 +6,8 @@ import { Bolt, CheckCircle2, Globe, HelpCircle, Lock, Server } from 'lucide-reac
 
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
+import { PublicPageFooter } from '@/components/PublicPageFooter';
+import { SEOHead } from '@/components/SEOHead';
 import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -62,6 +64,7 @@ export default function MaintenanceInfoScreen() {
       }
     >
       <View style={styles.container}>
+        <SEOHead title="Estado del Sistema - Pro Fitness Glass" route="/mantenimiento" />
         <View style={styles.hero}>
           <View style={styles.statusBadge}>
             <View style={styles.statusDot} />
@@ -132,6 +135,7 @@ export default function MaintenanceInfoScreen() {
           <Server size={16} color={contrastColor} />
           <Text style={[styles.backBtnText, { color: contrastColor }]}>Entendido, volver a la aplicación</Text>
         </TouchableOpacity>
+        <PublicPageFooter />
       </View>
     </AnimatedScreen>
   );

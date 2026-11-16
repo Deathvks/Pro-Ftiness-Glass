@@ -7,6 +7,9 @@ import { ActivityIndicator, Linking, Platform, Pressable, Share, StyleSheet, Tex
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
 import NewsMarkdown from '@/components/news/NewsMarkdown';
+import { ArticleSEO } from '@/components/news/ArticleSEO';
+import { AdSenseSlot } from '@/components/news/AdSenseSlot';
+import { PublicPageFooter } from '@/components/PublicPageFooter';
 import { DEFAULT_AUTHOR, NewsAction, NewsAuthor, NewsCard, NewsCover, NewsMeta, NewsSurface } from '@/components/news/NewsUI';
 import { useAppColors } from '@/hooks/useAppColors';
 import { useNewsResource } from '@/hooks/useNewsResource';
@@ -148,6 +151,7 @@ function ArticleReader({ data }: { data: NewsDetail }) {
 
   return (
     <>
+      <ArticleSEO article={article} />
       <View style={styles.articleHeader}>
         <View style={styles.topRow}>
           {!!article.category && <NewsAction label={article.category} onPress={() => router.dismissTo({
@@ -173,6 +177,7 @@ function ArticleReader({ data }: { data: NewsDetail }) {
 
       {!!article.image_url && <NewsSurface><NewsCover article={article} badges={false} /></NewsSurface>}
       {!!article.content && <NewsMarkdown content={article.content} fontSize={READER_FONT_SIZES[fontStep]} onOpenLink={openLink} />}
+      <AdSenseSlot slotId="article_mid" />
       <ArticleReaction article={article} />
 
       {!!tags.length && <View style={styles.section}>
@@ -215,6 +220,7 @@ function ArticleReader({ data }: { data: NewsDetail }) {
         <Text accessibilityRole="header" style={[styles.sectionTitle, { color: colors.text }]}>También te puede interesar</Text>
         {relatedNews.map(item => <NewsCard key={item.slug} article={item} onPress={() => openArticle(item.slug)} />)}
       </View>}
+      <PublicPageFooter />
     </>
   );
 }

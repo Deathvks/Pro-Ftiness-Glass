@@ -28,6 +28,9 @@ import {
 
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
+import { MaintenanceNoticeBanner } from '@/components/MaintenanceNoticeBanner';
+import { PublicPageFooter } from '@/components/PublicPageFooter';
+import { SEOHead } from '@/components/SEOHead';
 import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -239,6 +242,8 @@ export default function MacroCalculatorScreen() {
       }
     >
       <View style={styles.container}>
+        <SEOHead title="Calculadora de Calorías y Macros - Pro Fitness Glass" route="/calculadora-calorias-macros" />
+        <MaintenanceNoticeBanner />
         <View style={styles.hero}>
           <View style={[styles.badge, { backgroundColor: '#10b9811A', borderColor: '#10b98140' }]}>
             <Utensils size={13} color="#10b981" />
@@ -457,6 +462,7 @@ export default function MacroCalculatorScreen() {
             <ArrowRight size={16} color="#06281e" />
           </TouchableOpacity>
         </GlassCard>
+        <PublicPageFooter />
       </View>
     </AnimatedScreen>
   );

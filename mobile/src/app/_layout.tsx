@@ -25,6 +25,8 @@ import { StoryHost } from '@/components/social/StoryHost';
 import { TourOverlay } from '@/components/tutorials/TourOverlay';
 import { WelcomeModal } from '@/components/modals/WelcomeModal';
 import { VersionUpdater } from '@/components/VersionUpdater';
+import { CookieConsentBanner } from '@/components/CookieConsentBanner';
+import { DomainMigrationModal } from '@/components/modals/DomainMigrationModal';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -86,6 +88,8 @@ export default function RootLayout() {
     const inLogin = segments[0] === 'login';
     const inRegister = segments[0] === 'register';
     const inForgot = segments[0] === 'forgot-password';
+    const inResetPassword = segments[0] === 'reset-password';
+    const inNotFound = segments[0] === '+not-found';
     const inOnboarding = segments[0] === 'onboarding';
     const inLegal = ['privacy', 'terms', 'legal-notice', 'cookies'].includes(segments[0]);
     const inNews = segments[0] === 'noticias';
@@ -101,9 +105,9 @@ export default function RootLayout() {
 
     const needsOnboarding = isAuthenticated && userProfile && !userProfile.goal && userProfile.role !== 'trainee';
 
-    if (!isAuthenticated && !inLogin && !inRegister && !inForgot && !inLegal && !inNews && !inShare && !inPublicUtility) {
+    if (!isAuthenticated && !inLogin && !inRegister && !inForgot && !inResetPassword && !inNotFound && !inLegal && !inNews && !inShare && !inPublicUtility) {
       router.replace('/login');
-    } else if (needsOnboarding && !inOnboarding && !inNews && !inShare && !inPublicUtility) {
+    } else if (needsOnboarding && !inOnboarding && !inNews && !inShare && !inPublicUtility && !inResetPassword && !inNotFound) {
       // Bloquear acceso hasta que complete el onboarding
       router.replace('/onboarding');
     } else if (isAuthenticated && (inLogin || inRegister || inForgot)) {
@@ -220,6 +224,8 @@ export default function RootLayout() {
         target.pathname.startsWith('/noticias') ||
         target.pathname === '/login' ||
         target.pathname === '/register' ||
+        target.pathname === '/forgot-password' ||
+        target.pathname === '/reset-password' ||
         [
           '/privacy',
           '/terms',
@@ -301,6 +307,8 @@ export default function RootLayout() {
           <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="register" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="forgot-password" options={{ headerShown: false, animation: 'fade' }} />
+          <Stack.Screen name="reset-password" options={{ headerShown: false, animation: 'fade' }} />
+          <Stack.Screen name="+not-found" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="privacy" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="terms" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="legal-notice" options={{ headerShown: false, animation: 'slide_from_right' }} />
@@ -336,6 +344,8 @@ export default function RootLayout() {
         <StoryHost />
         <VersionUpdater />
         <WelcomeModal />
+        <DomainMigrationModal />
+        <CookieConsentBanner />
         <TourOverlay />
         <ToastContainer />
       </ThemeProvider>

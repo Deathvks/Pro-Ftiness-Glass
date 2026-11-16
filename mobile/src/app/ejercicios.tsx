@@ -27,6 +27,9 @@ import {
 
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
+import { MaintenanceNoticeBanner } from '@/components/MaintenanceNoticeBanner';
+import { PublicPageFooter } from '@/components/PublicPageFooter';
+import { SEOHead } from '@/components/SEOHead';
 import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -335,6 +338,8 @@ export default function PublicExercisesScreen() {
       }
     >
       <View style={styles.container}>
+        <SEOHead title="Guía de Ejercicios y Rutinas - Pro Fitness Glass" route="/ejercicios" />
+        <MaintenanceNoticeBanner />
         <View style={styles.hero}>
           <View style={[styles.badge, { backgroundColor: colors.tint + '1A', borderColor: colors.tint + '40' }]}>
             <Dumbbell size={13} color={colors.tint} />
@@ -503,6 +508,7 @@ export default function PublicExercisesScreen() {
             <ArrowRight size={15} color={contrastColor} />
           </TouchableOpacity>
         </GlassCard>
+        <PublicPageFooter />
       </View>
     </AnimatedScreen>
   );

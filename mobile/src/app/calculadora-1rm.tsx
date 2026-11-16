@@ -30,6 +30,9 @@ import {
 
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
+import { MaintenanceNoticeBanner } from '@/components/MaintenanceNoticeBanner';
+import { PublicPageFooter } from '@/components/PublicPageFooter';
+import { SEOHead } from '@/components/SEOHead';
 import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -167,6 +170,8 @@ export default function OneRMCalculatorScreen() {
       }
     >
       <View style={styles.container}>
+        <SEOHead title="Calculadora 1RM Máximo - Pro Fitness Glass" route="/calculadora-1rm" />
+        <MaintenanceNoticeBanner />
         {/* Hero */}
         <View style={styles.hero}>
           <View style={[styles.badge, { backgroundColor: colors.tint + '1A', borderColor: colors.tint + '40' }]}>
@@ -484,6 +489,7 @@ export default function OneRMCalculatorScreen() {
             <ArrowRight size={16} color={contrastColor} />
           </TouchableOpacity>
         </GlassCard>
+        <PublicPageFooter />
       </View>
     </AnimatedScreen>
   );
