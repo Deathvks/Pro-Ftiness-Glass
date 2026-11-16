@@ -1,6 +1,6 @@
 {
-  "version": "7.16.31",
-  "releaseNotes": "Actualización v7.16.31: portadas de noticias verificadas, sin repeticiones y con una portada propia cuando falta una foto válida.",
+  "version": "7.16.32",
+  "releaseNotes": "Actualización v7.16.32: entrenamientos nocturnos asignados al día de inicio, barra de duración en Cardio Rápido, detección de ubicación en PC y mapa sin API Key.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",
