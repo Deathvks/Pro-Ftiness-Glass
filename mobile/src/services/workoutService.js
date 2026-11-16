@@ -17,3 +17,7 @@ export const logWorkout = (workoutData, options) => {
 export const deleteWorkout = (workoutId) => {
     return apiClient(`/workouts/${workoutId}`, { method: 'DELETE' });
 };
+
+export const updateWorkoutDate = (workoutId, workoutDate) => {
+    return apiClient(`/workouts/${workoutId}`, { body: { workout_date: workoutDate }, method: 'PUT' });
+};

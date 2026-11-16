@@ -1,31 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
-  Modal,
   TouchableOpacity,
   ScrollView,
-  Pressable,
   Alert,
+  Share,
 } from 'react-native';
-import { GlassView } from 'expo-glass-effect';
 import {
   X,
   Trash2,
   Clock,
   Flame,
   TrendingUp,
-  Dumbbell,
-  BarChartHorizontal,
   MapPin,
+  CalendarClock,
+  Share2,
+  ArrowLeft,
+  Check,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import { CardioMap } from '@/components/CardioMap';
+import { WorkoutTimeRange } from './WorkoutTimeRange';
 import { readCardioNotes, type CardioPoint } from '@/utils/cardio';
+import { getContrastTextColor } from '@/utils/colorUtils';
+import {
+  formatDate,
+  formatDateForDisplay,
+  getWorkoutTimeWindow,
+  splitLocalDateAndTime,
+  combineLocalDateAndTime,
+} from '@/utils/dateUtils';
 
 interface DailyDetailModalProps {
   visible: boolean;
@@ -43,15 +55,119 @@ export function DailyDetailModal({
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const accentText = getContrastTextColor(colors.tint);
 
   const ownRoutines = useAppStore(state => state.routines);
   const routines = clientRoutines ?? ownRoutines ?? [];
   const deleteWorkoutLog = useAppStore(state => state.deleteWorkoutLog);
+  const updateWorkoutDate = useAppStore(state => state.updateWorkoutDate);
+  const showToast = useAppStore(state => state.showToast);
 
   const [deletedIds, setDeletedIds] = useState<number[]>([]);
+  const [dateOverrides, setDateOverrides] = useState<Record<number, string>>({});
+  const [editingLogId, setEditingLogId] = useState<number | null>(null);
+  const [editingDatePart, setEditingDatePart] = useState<string>('');
+  const [editingTimePart, setEditingTimePart] = useState<string>('');
+  const [isSavingDate, setIsSavingDate] = useState<boolean>(false);
   const [expandedPath, setExpandedPath] = useState<CardioPoint[] | null>(null);
 
-  const visibleLogs = logs.filter(l => !deletedIds.includes(l.id));
+  useEffect(() => {
+    if (visible) {
+      setDeletedIds([]);
+      setDateOverrides({});
+      setEditingLogId(null);
+      setExpandedPath(null);
+    }
+  }, [visible, logs]);
+
+  const openedDayKey = useMemo(
+    () => (logs[0]?.workout_date ? formatDate(logs[0].workout_date) : ''),
+    [logs]
+  );
+
+  const visibleLogs = logs
+    .filter(l => !deletedIds.includes(l.id))
+    .map(l => (dateOverrides[l.id] ? { ...l, workout_date: dateOverrides[l.id] } : l));
+
+  const headerDateLabel = useMemo(() => {
+    const firstDate = visibleLogs[0]?.workout_date || logs[0]?.workout_date;
+    return firstDate ? formatDateForDisplay(firstDate) : '';
+  }, [visibleLogs, logs]);
+
+  const handleStartEditDate = (log: any) => {
+    if (editingLogId === log.id) {
+      setEditingLogId(null);
+      return;
+    }
+    const { datePart, timePart } = splitLocalDateAndTime(log.workout_date);
+    setEditingLogId(log.id);
+    setEditingDatePart(datePart);
+    setEditingTimePart(timePart);
+  };
+
+  const handleShiftEditing = (deltaDays: number, deltaHours: number, originalDate: any) => {
+    const iso = combineLocalDateAndTime(editingDatePart, editingTimePart, originalDate) || originalDate;
+    const d = iso ? new Date(iso) : new Date();
+    if (isNaN(d.getTime())) return;
+    if (deltaDays !== 0) d.setDate(d.getDate() + deltaDays);
+    if (deltaHours !== 0) d.setHours(d.getHours() + deltaHours);
+    const { datePart, timePart } = splitLocalDateAndTime(d);
+    setEditingDatePart(datePart);
+    setEditingTimePart(timePart);
+  };
+
+  const handleSaveDate = async (log: any) => {
+    const iso = combineLocalDateAndTime(editingDatePart, editingTimePart, log.workout_date);
+    if (!iso) {
+      Alert.alert('Fecha inválida', 'Usa el formato AAAA-MM-DD y HH:MM.');
+      return;
+    }
+    if (!updateWorkoutDate) return;
+
+    setIsSavingDate(true);
+    const res = await updateWorkoutDate(log.id, iso);
+    setIsSavingDate(false);
+
+    if (res?.success) {
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {}
+      showToast?.(res.message || 'Fecha actualizada.');
+      const nextDate = res.workout_date || iso;
+      setDateOverrides(prev => ({ ...prev, [log.id]: nextDate }));
+      setEditingLogId(null);
+
+      const newDayKey = formatDate(nextDate);
+      if (openedDayKey && newDayKey && newDayKey !== openedDayKey) {
+        const nextDeleted = [...deletedIds, log.id];
+        setDeletedIds(nextDeleted);
+        if (logs.filter(l => !nextDeleted.includes(l.id)).length === 0) {
+          onClose();
+        }
+      }
+    } else {
+      Alert.alert('No se pudo actualizar', res?.message || 'Error al actualizar la fecha del entrenamiento.');
+    }
+  };
+
+  const handleShare = async (log: any) => {
+    const routineName = getRoutineName(log);
+    const durationSec = log.duration_seconds || log.duration || 0;
+    const durationMin = Math.round(durationSec / 60);
+    const volume = calculateVolume(log);
+    const wInfo = getWorkoutTimeWindow(log.workout_date, durationSec);
+
+    const lines = [`🏋️ ${routineName} — Pro Fitness Glass`];
+    if (wInfo) {
+      lines.push(`Inicio: ${wInfo.startDateLabel} · ${wInfo.startTimeLabel}`);
+      lines.push(`Fin: ${wInfo.endDateLabel} · ${wInfo.endTimeLabel}${wInfo.crossesMidnight ? ' (+1 día)' : ''}`);
+    }
+    lines.push(`Duración: ${durationMin} min${volume > 0 ? ` · Volumen: ${Math.round(volume).toLocaleString('es-ES')} kg` : ''}${log.calories_burned > 0 ? ` · ${log.calories_burned} kcal` : ''}`);
+
+    try {
+      await Share.share({ message: lines.join('\n') });
+    } catch {}
+  };
 
   const handleDelete = (logId: number) => {
     Alert.alert(
@@ -116,7 +232,8 @@ export function DailyDetailModal({
                 <Text style={[styles.title, { color: colors.text }]}>
                   Detalles de Sesión
                 </Text>
-                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                <Text style={[styles.subtitle, { color: colors.textSecondary, textTransform: 'capitalize' }]}>
+                  {headerDateLabel ? `${headerDateLabel} · ` : ''}
                   {visibleLogs.length}{' '}
                   {visibleLogs.length === 1 ? 'entrenamiento' : 'entrenamientos'}
                 </Text>
@@ -194,13 +311,190 @@ export function DailyDetailModal({
                         </View>
                       </View>
 
-                      {!clientRoutines && <TouchableOpacity
-                        onPress={() => handleDelete(log.id)}
-                        style={styles.deleteBtn}
-                      >
-                        <Trash2 size={16} color="#f43f5e" />
-                      </TouchableOpacity>}
+                      {!clientRoutines && (
+                        <View style={styles.actionsRow}>
+                          <TouchableOpacity
+                            accessibilityLabel="Cambiar fecha de inicio"
+                            onPress={() => handleStartEditDate(log)}
+                            style={[
+                              styles.iconActionBtn,
+                              {
+                                backgroundColor: editingLogId === log.id
+                                  ? colors.tint + '24'
+                                  : isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                              },
+                            ]}
+                          >
+                            <CalendarClock
+                              size={16}
+                              color={editingLogId === log.id ? colors.tint : colors.textSecondary}
+                            />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            accessibilityLabel="Compartir entrenamiento"
+                            onPress={() => handleShare(log)}
+                            style={[
+                              styles.iconActionBtn,
+                              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' },
+                            ]}
+                          >
+                            <Share2 size={16} color={colors.textSecondary} />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            accessibilityLabel="Eliminar entrenamiento"
+                            onPress={() => handleDelete(log.id)}
+                            style={styles.deleteBtn}
+                          >
+                            <Trash2 size={16} color="#f43f5e" />
+                          </TouchableOpacity>
+                        </View>
+                      )}
                     </View>
+
+                    <WorkoutTimeRange
+                      startDate={log.workout_date}
+                      durationSeconds={log.duration_seconds || log.duration || 0}
+                      showYear
+                      style={{ marginTop: 12 }}
+                    />
+
+                    {editingLogId === log.id && (() => {
+                      const previewIso = combineLocalDateAndTime(editingDatePart, editingTimePart, log.workout_date);
+                      return (
+                        <View
+                          style={[
+                            styles.editDateBox,
+                            {
+                              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.7)',
+                              borderColor: colors.border,
+                            },
+                          ]}
+                        >
+                          <View style={styles.editDateHeader}>
+                            <View style={styles.editDateTitleRow}>
+                              <CalendarClock size={14} color={colors.tint} />
+                              <Text style={[styles.editDateTitle, { color: colors.text }]}>
+                                Ajustar fecha de inicio
+                              </Text>
+                            </View>
+                            <TouchableOpacity
+                              onPress={() => handleShiftEditing(-1, 0, log.workout_date)}
+                              style={[styles.prevDayBtn, { backgroundColor: colors.tint + '20' }]}
+                              activeOpacity={0.75}
+                            >
+                              <ArrowLeft size={12} color={colors.tint} />
+                              <Text style={[styles.prevDayBtnText, { color: colors.tint }]}>
+                                Mover al día anterior
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+
+                          <View style={styles.editControlsRow}>
+                            <View
+                              style={[
+                                styles.stepperField,
+                                {
+                                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                                  borderColor: colors.border,
+                                },
+                              ]}
+                            >
+                              <TouchableOpacity
+                                accessibilityLabel="Día anterior"
+                                onPress={() => handleShiftEditing(-1, 0, log.workout_date)}
+                                style={styles.stepIconBtn}
+                              >
+                                <ChevronLeft size={15} color={colors.textSecondary} />
+                              </TouchableOpacity>
+                              <TextInput
+                                value={editingDatePart}
+                                onChangeText={setEditingDatePart}
+                                placeholder="AAAA-MM-DD"
+                                placeholderTextColor={colors.textSecondary}
+                                maxLength={10}
+                                style={[styles.dateInput, { color: colors.text }]}
+                              />
+                              <TouchableOpacity
+                                accessibilityLabel="Día siguiente"
+                                onPress={() => handleShiftEditing(1, 0, log.workout_date)}
+                                style={styles.stepIconBtn}
+                              >
+                                <ChevronRight size={15} color={colors.textSecondary} />
+                              </TouchableOpacity>
+                            </View>
+
+                            <View
+                              style={[
+                                styles.stepperField,
+                                styles.timeStepperField,
+                                {
+                                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                                  borderColor: colors.border,
+                                },
+                              ]}
+                            >
+                              <TouchableOpacity
+                                accessibilityLabel="Hora menos 1"
+                                onPress={() => handleShiftEditing(0, -1, log.workout_date)}
+                                style={styles.stepIconBtn}
+                              >
+                                <ChevronLeft size={15} color={colors.textSecondary} />
+                              </TouchableOpacity>
+                              <TextInput
+                                value={editingTimePart}
+                                onChangeText={setEditingTimePart}
+                                placeholder="HH:MM"
+                                placeholderTextColor={colors.textSecondary}
+                                maxLength={5}
+                                style={[styles.dateInput, { color: colors.text }]}
+                              />
+                              <TouchableOpacity
+                                accessibilityLabel="Hora más 1"
+                                onPress={() => handleShiftEditing(0, 1, log.workout_date)}
+                                style={styles.stepIconBtn}
+                              >
+                                <ChevronRight size={15} color={colors.textSecondary} />
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+
+                          {previewIso && (
+                            <WorkoutTimeRange
+                              startDate={previewIso}
+                              durationSeconds={log.duration_seconds || log.duration || 0}
+                              showYear
+                            />
+                          )}
+
+                          <View style={styles.editActionsRow}>
+                            <TouchableOpacity
+                              onPress={() => setEditingLogId(null)}
+                              style={[
+                                styles.cancelEditBtn,
+                                { borderColor: colors.border },
+                              ]}
+                            >
+                              <Text style={[styles.cancelEditText, { color: colors.textSecondary }]}>
+                                Cancelar
+                              </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              disabled={isSavingDate}
+                              onPress={() => handleSaveDate(log)}
+                              style={[
+                                styles.saveEditBtn,
+                                { backgroundColor: colors.tint, opacity: isSavingDate ? 0.6 : 1 },
+                              ]}
+                            >
+                              <Check size={14} color={accentText} />
+                              <Text style={[styles.saveEditText, { color: accentText }]}>
+                                {isSavingDate ? 'Guardando...' : 'Guardar'}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      );
+                    })()}
 
                     {cardio.path.length > 0 && (
                       <TouchableOpacity
@@ -451,6 +745,108 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 12,
     backgroundColor: 'rgba(244, 63, 94, 0.1)',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  iconActionBtn: {
+    padding: 8,
+    borderRadius: 12,
+  },
+  editDateBox: {
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 10,
+  },
+  editDateHeader: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  editDateTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  editDateTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  prevDayBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  prevDayBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  editControlsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  stepperField: {
+    flexGrow: 1,
+    flexBasis: 155,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    paddingHorizontal: 4,
+    height: 38,
+  },
+  timeStepperField: {
+    flexBasis: 115,
+  },
+  stepIconBtn: {
+    padding: 6,
+  },
+  dateInput: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+    textAlign: 'center',
+    paddingVertical: 0,
+  },
+  editActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  cancelEditBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelEditText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  saveEditBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  saveEditText: {
+    fontSize: 12,
+    fontWeight: '800',
   },
   exerciseBox: {
     borderTopWidth: 1,

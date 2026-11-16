@@ -24,6 +24,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { DailyDetailModal } from './DailyDetailModal';
 import { StatBadge } from './StatBadge';
+import { WorkoutTimeRange } from './WorkoutTimeRange';
 import { getContrastTextColor } from '@/utils/colorUtils';
 
 export function CalendarProgressView({ clientHistory }: { clientHistory?: { workouts: any[]; routines: any[] } } = {}) {
@@ -496,6 +497,12 @@ export function CalendarProgressView({ clientHistory }: { clientHistory?: { work
                   >
                     {exercisesCount} ejercicios · {setsCount} series
                   </Text>
+
+                  <WorkoutTimeRange
+                    startDate={log.workout_date}
+                    durationSeconds={log.duration_seconds || log.duration || 0}
+                    style={{ marginTop: 8 }}
+                  />
 
                   {volume > 0 && (
                     <View style={styles.sessionMetricsRow}>

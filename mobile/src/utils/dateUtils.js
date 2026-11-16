@@ -88,3 +88,72 @@ export const formatDateForQuery = (date) => {
   return `${year}-${month}-${day}`;
 };
 // --- FIN DE LA MODIFICACIÓN ---
+
+export const getWorkoutTimeWindow = (workoutDateInput, durationSeconds = 0) => {
+  const start = parseLocalSafeDate(workoutDateInput);
+  if (!start) return null;
+
+  const durationSec = Math.max(0, Number(durationSeconds) || 0);
+  const end = new Date(start.getTime() + durationSec * 1000);
+
+  const dateFmt = { day: '2-digit', month: 'short', year: 'numeric' };
+  const shortDateFmt = { day: '2-digit', month: 'short' };
+  const timeFmt = { hour: '2-digit', minute: '2-digit', hour12: false };
+
+  const startDateKey = formatDate(start);
+  const endDateKey = formatDate(end);
+
+  return {
+    start,
+    end,
+    crossesMidnight: Boolean(startDateKey && endDateKey && startDateKey !== endDateKey),
+    startDateLabel: start.toLocaleDateString('es-ES', dateFmt),
+    startShortDateLabel: start.toLocaleDateString('es-ES', shortDateFmt),
+    startTimeLabel: start.toLocaleTimeString('es-ES', timeFmt),
+    endDateLabel: end.toLocaleDateString('es-ES', dateFmt),
+    endShortDateLabel: end.toLocaleDateString('es-ES', shortDateFmt),
+    endTimeLabel: end.toLocaleTimeString('es-ES', timeFmt),
+  };
+};
+
+export const splitLocalDateAndTime = (dateInput) => {
+  const d = parseLocalSafeDate(dateInput);
+  if (!d) return { datePart: '', timePart: '' };
+  const pad = (n) => String(n).padStart(2, '0');
+  return {
+    datePart: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    timePart: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+  };
+};
+
+export const combineLocalDateAndTime = (datePart, timePart, originalDateInput = null) => {
+  const dateMatch = String(datePart || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const timeMatch = String(timePart || '').trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!dateMatch || !timeMatch) return null;
+
+  const year = Number(dateMatch[1]);
+  const month = Number(dateMatch[2]);
+  const day = Number(dateMatch[3]);
+  const hour = Number(timeMatch[1]);
+  const minute = Number(timeMatch[2]);
+
+  if (month < 1 || month > 12 || day < 1 || day > 31 || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return null;
+  }
+
+  const combined = new Date(year, month - 1, day, hour, minute, 0, 0);
+  if (
+    isNaN(combined.getTime()) ||
+    combined.getFullYear() !== year ||
+    combined.getMonth() !== month - 1 ||
+    combined.getDate() !== day
+  ) {
+    return null;
+  }
+
+  const orig = parseLocalSafeDate(originalDateInput);
+  if (orig) {
+    combined.setSeconds(orig.getSeconds(), orig.getMilliseconds());
+  }
+  return combined.toISOString();
+};
