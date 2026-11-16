@@ -36,3 +36,17 @@ export const askTrainerAI = async (prompt, context = '') => {
     throw error;
   }
 };
+
+export const scanFoodImage = async (imageBase64, mimeType = 'image/jpeg') => {
+  try {
+    const response = await apiClient('/ai/scan-food', {
+      body: { imageBase64, mimeType },
+      allowQueue: false,
+      timeout: 45000,
+    });
+    return response;
+  } catch (error) {
+    console.error('Error en scanFoodImage:', error);
+    throw error;
+  }
+};

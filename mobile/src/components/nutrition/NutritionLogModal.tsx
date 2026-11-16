@@ -33,8 +33,10 @@ import {
   ChevronRight,
   Flame,
   ScanBarcode,
+  Sparkles,
 } from 'lucide-react-native';
 import { BarcodeScannerModal } from './BarcodeScannerModal';
+import { FoodScannerModal, type ScannedAIFoodResult } from './FoodScannerModal';
 import { GlassView } from 'expo-glass-effect';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -102,6 +104,8 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
   // Active tab state
   const [activeTab, setActiveTab] = useState<TabType>(logToEdit ? 'manual' : 'search');
   const [showScanner, setShowScanner] = useState(false);
+  const [showAIScanner, setShowAIScanner] = useState(false);
+  const [aiDetectedSummary, setAiDetectedSummary] = useState<string | null>(null);
 
   // Search state (Enter-only)
   const [searchTerm, setSearchTerm] = useState('');
@@ -141,6 +145,8 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
         Keyboard.dismiss();
         setShowScanner(true);
       }
+      setShowAIScanner(false);
+      setAiDetectedSummary(null);
       if (logToEdit) {
         setActiveTab('manual');
         setItemsToAdd([]);
@@ -207,6 +213,25 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
       description: `Producto [${barcode}]`,
     }));
     setIsPer100g(true);
+  };
+
+  const handleAIFoodScanned = (aiResult: ScannedAIFoodResult) => {
+    setShowAIScanner(false);
+    setSelectedFoodForDetail(null);
+    setActiveTab('manual');
+    setIsPer100g(false);
+    setAiDetectedSummary(aiResult.description?.trim() || null);
+    setManualForm(prev => ({
+      ...prev,
+      description: String(aiResult.name || 'Plato analizado').trim(),
+      weight_g: '100',
+      calories: String(Math.round(Number(aiResult.calories) || 0)),
+      protein_g: String(Number(aiResult.protein) || 0),
+      carbs_g: String(Number(aiResult.carbs) || 0),
+      fats_g: String(Number(aiResult.fat) || 0),
+      sugars_g: '',
+      image_url: aiResult.imageUri || prev.image_url || '',
+    }));
   };
 
   // ==================== SEARCH (ENTER-ONLY) ====================
@@ -677,6 +702,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
       setItemsToAdd(prev => [...prev, newItem]);
 
       // Reset form so user can add another manual item
+      setAiDetectedSummary(null);
       setManualForm({
         description: '',
         weight_g: '100',
@@ -1391,6 +1417,26 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             } catch {}
                             Keyboard.dismiss();
+                            setShowAIScanner(true);
+                          }}
+                          style={[
+                            styles.searchActionBtn,
+                            {
+                              backgroundColor: colors.tint + '18',
+                              marginRight: 6,
+                            },
+                          ]}
+                          activeOpacity={0.8}
+                          accessibilityLabel="Escanear comida con IA"
+                        >
+                          <Sparkles size={16} color={colors.tint} strokeWidth={2.3} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => {
+                            try {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            } catch {}
+                            Keyboard.dismiss();
                             setShowScanner(true);
                           }}
                           style={[
@@ -1599,6 +1645,28 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                               <Text style={[styles.emptyPromptText, { color: colors.textSecondary, marginTop: 12 }]}>
                                 Escribe arriba y pulsa Enter
                               </Text>
+                              <TouchableOpacity
+                                onPress={() => {
+                                  try {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  } catch {}
+                                  Keyboard.dismiss();
+                                  setShowAIScanner(true);
+                                }}
+                                activeOpacity={0.82}
+                                style={[
+                                  styles.aiPromptBtn,
+                                  {
+                                    backgroundColor: colors.tint + '18',
+                                    borderColor: colors.tint + '40',
+                                  },
+                                ]}
+                              >
+                                <Sparkles size={15} color={colors.tint} strokeWidth={2.4} />
+                                <Text style={[styles.aiPromptBtnText, { color: colors.tint }]}>
+                                  Analizar plato con cámara IA
+                                </Text>
+                              </TouchableOpacity>
                             </View>
                           )}
                         </View>
@@ -1843,6 +1911,56 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                       {/* TAB 4: MANUAL */}
                       {activeTab === 'manual' && (
                         <View style={styles.manualFormSection}>
+                          {!logToEdit && (
+                            <TouchableOpacity
+                              onPress={() => {
+                                try {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                } catch {}
+                                Keyboard.dismiss();
+                                setShowAIScanner(true);
+                              }}
+                              activeOpacity={0.82}
+                              style={[
+                                styles.aiManualBannerBtn,
+                                {
+                                  backgroundColor: colors.tint + '15',
+                                  borderColor: colors.tint + '38',
+                                },
+                              ]}
+                            >
+                              <View style={[styles.aiManualIconBox, { backgroundColor: colors.tint }]}>
+                                <Camera size={16} color={getContrastTextColor(colors.tint)} />
+                              </View>
+                              <View style={{ flex: 1 }}>
+                                <Text style={[styles.aiManualTitle, { color: colors.text }]}>
+                                  Estimar macros con cámara IA
+                                </Text>
+                                <Text style={[styles.aiManualSub, { color: colors.textSecondary }]}>
+                                  Haz una foto al plato y rellena calorías y macros al instante
+                                </Text>
+                              </View>
+                              <Sparkles size={16} color={colors.tint} />
+                            </TouchableOpacity>
+                          )}
+
+                          {Boolean(aiDetectedSummary) && (
+                            <View
+                              style={[
+                                styles.aiSummaryBanner,
+                                {
+                                  backgroundColor: colors.tint + '14',
+                                  borderColor: colors.tint + '35',
+                                },
+                              ]}
+                            >
+                              <Sparkles size={14} color={colors.tint} style={{ marginTop: 2 }} />
+                              <Text style={[styles.aiSummaryText, { color: colors.text }]}>
+                                {aiDetectedSummary}
+                              </Text>
+                            </View>
+                          )}
+
                           {/* Food Name */}
                           <View style={styles.formGroup}>
                             <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
@@ -2276,6 +2394,16 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
           onClose={() => setShowScanner(false)}
           onFoodScanned={handleFoodScanned}
           onManualCreate={handleManualCreateFromBarcode}
+        />
+      )}
+
+      {/* AI Photo Food Scanner (embedded overlay) */}
+      {showAIScanner && (
+        <FoodScannerModal
+          visible={showAIScanner}
+          embedded={true}
+          onClose={() => setShowAIScanner(false)}
+          onScanComplete={handleAIFoodScanned}
         />
       )}
     </SwipeableBottomSheet>
@@ -2869,5 +2997,56 @@ const styles = StyleSheet.create({
   saveAllBtnText: {
     fontSize: 15,
     fontWeight: '800',
+  },
+  aiPromptBtn: {
+    marginTop: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  aiPromptBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  aiManualBannerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  aiManualIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiManualTitle: {
+    fontSize: 13.5,
+    fontWeight: '800',
+  },
+  aiManualSub: {
+    fontSize: 11.5,
+    marginTop: 1,
+  },
+  aiSummaryBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  aiSummaryText: {
+    flex: 1,
+    fontSize: 12.5,
+    lineHeight: 18,
+    fontWeight: '600',
   },
 });
