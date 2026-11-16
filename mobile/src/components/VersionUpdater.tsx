@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Download, Sparkles, X } from 'lucide-react-native';
@@ -28,7 +29,13 @@ import useAppStore from '@/store/useAppStore';
 import { getContrastTextColor } from '@/utils/colorUtils';
 
 const REMOTE_VERSION_URL = 'https://profitnessglass.es/version.json';
-const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419';
+const PLAY_STORE_MARKET_URI = 'market://details?id=com.profitnessglass.app';
+const PLAY_STORE_WEB_URL = 'https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419';
+
+const IS_EXPO_GO_OR_DEV =
+  __DEV__ ||
+  Constants.appOwnership === 'expo' ||
+  Constants.executionEnvironment === 'storeClient';
 
 export function VersionUpdater() {
   const insets = useSafeAreaInsets();
@@ -37,11 +44,7 @@ export function VersionUpdater() {
   const isAuthenticated = useAppStore(state => state.isAuthenticated);
   const contrastText = getContrastTextColor(colors.tint);
 
-  const [remoteRelease, setRemoteRelease] = useState<{
-    version: string;
-    downloadUrl?: string;
-    releaseNotes?: string;
-  } | null>(null);
+  const [remoteRelease, setRemoteRelease] = useState<any>(null);
   const [isDismissed, setIsDismissed] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -64,16 +67,12 @@ export function VersionUpdater() {
       const data = await response.json();
       if (!data?.version) return;
 
-      if (isRemoteNewer(APP_VERSION, data.version)) {
-        setRemoteRelease({
-          version: data.version,
-          downloadUrl: data.downloadUrl,
-          releaseNotes: data.releaseNotes || data.notes,
-        });
+      // En Expo Go / entorno local no mostramos aviso de descarga web externa
+      if (!IS_EXPO_GO_OR_DEV && isRemoteNewer(APP_VERSION, data.version)) {
+        setRemoteRelease(data);
         return;
       }
 
-      // Si estamos en la versión actual o superior, comprobar novedades no vistas
       if (isAuthenticated && data.welcome?.title) {
         const storedTitle = await AsyncStorage.getItem('lastSeenWelcomeTitle').catch(() => null);
         if (!hasSeenCurrentWelcome(storedTitle, data.welcome.title)) {
@@ -85,7 +84,7 @@ export function VersionUpdater() {
         }
       }
     } catch {
-      // Sin conexión o timeout puntual: no interrumpir al usuario
+      // Sin conexión o timeout puntual
     } finally {
       inFlightRef.current = false;
     }
@@ -113,17 +112,32 @@ export function VersionUpdater() {
     setIsUpdating(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         window.location.reload();
         return;
       }
-      const targetUrl =
-        Platform.OS === 'android'
-          ? remoteRelease.downloadUrl || GOOGLE_PLAY_URL
-          : 'https://profitnessglass.es';
-      await Linking.openURL(targetUrl);
+
+      // En Android nativo standalone abrimos el APK directo o Play Store nativo (market://)
+      if (Platform.OS === 'android') {
+        if (remoteRelease.downloadUrl) {
+          await Linking.openURL(remoteRelease.downloadUrl);
+          return;
+        }
+        const canMarket = await Linking.canOpenURL(PLAY_STORE_MARKET_URI).catch(() => false);
+        await Linking.openURL(canMarket ? PLAY_STORE_MARKET_URI : PLAY_STORE_WEB_URL);
+        return;
+      }
+
+      // En iOS mostramos las novedades dentro de la propia app en lugar de redirigir al navegador web
+      setIsDismissed(true);
+      useAppStore.setState({
+        showWelcomeModal: true,
+        welcomeRemoteData: remoteRelease,
+        welcomeRemoteVersion: remoteRelease.version,
+      } as any);
     } catch {
-      // Silenciar si no hay navegador disponible
+      // Fallo silencioso
     } finally {
       setIsUpdating(false);
     }

@@ -13,6 +13,7 @@ import {
   Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   X,
   MapPin,
@@ -439,6 +440,7 @@ export function GymLocationModal({
   return (
     <SwipeableBottomSheet
       scrollable
+      edgeToEdge
       visible={isModalVisible}
       onClose={onClose}
       isDark={isDark}
@@ -447,7 +449,7 @@ export function GymLocationModal({
       maxHeight="90%"
       avoidKeyboard
     >
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, minHeight: 0 }}>
           {/* Header */}
           <View
             style={[
@@ -490,8 +492,10 @@ export function GymLocationModal({
           </View>
 
           <ScrollView
+            style={{ flex: 1 }}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
             {/* Gimnasio actual con foto de club y logo oficial */}
             {activeGym && (
@@ -947,6 +951,7 @@ export function GymLocationModal({
                 })}
               </View>
             ) : null}
+            <SafeAreaView edges={['bottom']} />
           </ScrollView>
       </View>
     </SwipeableBottomSheet>

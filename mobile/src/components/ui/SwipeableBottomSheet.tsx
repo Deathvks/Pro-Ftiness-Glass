@@ -259,6 +259,36 @@ interface SwipeableBottomSheetProps {
   children: React.ReactNode;
 }
 
+function SheetSafeBody({
+  edgeToEdge,
+  hasExplicitHeight,
+  contentContainerStyle,
+  children,
+}: {
+  edgeToEdge: boolean;
+  hasExplicitHeight: boolean;
+  contentContainerStyle?: StyleProp<ViewStyle>;
+  children: React.ReactNode;
+}) {
+  // Se mide dentro del SafeAreaProvider propio del Modal para no heredar la altura de la TabBar
+  const modalInsets = useSafeAreaInsets();
+  return (
+    <View
+      style={[
+        {
+          flexShrink: 1,
+          minHeight: 0,
+          paddingBottom: edgeToEdge ? 0 : Math.max(modalInsets.bottom, 16),
+        },
+        hasExplicitHeight ? { flex: 1 } : undefined,
+        contentContainerStyle,
+      ]}
+    >
+      {children}
+    </View>
+  );
+}
+
 export function SwipeableBottomSheet({
   visible,
   onClose,
@@ -275,7 +305,6 @@ export function SwipeableBottomSheet({
   contentContainerStyle,
   children,
 }: SwipeableBottomSheetProps) {
-  const insets = useSafeAreaInsets();
   const theme = useAppStore(state => state.theme) || (isDark ? 'oled' : 'light');
   const resolvedBg = getThemeBaseBackground(theme);
   const resolvedBorder = getThemedModalBorderColor(theme);
@@ -296,7 +325,6 @@ export function SwipeableBottomSheet({
           backgroundColor: resolvedBg,
           maxHeight,
           height,
-          paddingBottom: edgeToEdge ? 0 : Math.max(insets.bottom, 16),
           borderWidth: 1,
           borderBottomWidth: 0,
           borderColor: resolvedBorder,
@@ -320,9 +348,13 @@ export function SwipeableBottomSheet({
           />
         </View>
       )}
-      <View style={[{ flexShrink: 1, minHeight: 0 }, height ? { flex: 1 } : undefined, contentContainerStyle]}>
+      <SheetSafeBody
+        edgeToEdge={edgeToEdge}
+        hasExplicitHeight={Boolean(height)}
+        contentContainerStyle={contentContainerStyle}
+      >
         {children}
-      </View>
+      </SheetSafeBody>
     </SwipeableSheetModal>
   );
 }
