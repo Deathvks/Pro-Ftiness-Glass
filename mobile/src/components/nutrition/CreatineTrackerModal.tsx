@@ -31,6 +31,7 @@ import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
+import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import {
   formatDateForDisplay,
@@ -790,70 +791,60 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
         </View>
       </SwipeableBottomSheet>
 
-      {/* 4. MODAL DE EDICIÓN (Liquid Glass) */}
+      {/* 4. MODAL DE EDICIÓN (Tematizado) */}
       {showEditModal && editingLog && (
-        <Modal visible={true} transparent animationType="fade" onRequestClose={handleCloseEdit}>
-          <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        <Modal visible={true} transparent statusBarTranslucent navigationBarTranslucent animationType="fade" onRequestClose={handleCloseEdit}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={[
+              StyleSheet.absoluteFill,
+              styles.modalOverlay,
+              {
+                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.72)' : 'rgba(0, 0, 0, 0.45)',
+              },
+            ]}
+          >
+            <Pressable
+              onPress={handleCloseEdit}
+              style={StyleSheet.absoluteFill}
+            />
+            <Pressable
+              onPress={e => e.stopPropagation()}
               style={[
-                StyleSheet.absoluteFill,
-                styles.modalOverlay,
+                styles.editModalWrapper,
                 {
-                  backgroundColor: isDark ? 'rgba(0, 0, 0, 0.55)' : 'rgba(255, 255, 255, 0.35)',
+                  backgroundColor: getThemedModalSurfaceColor(theme),
+                  borderColor: getThemedModalBorderColor(theme),
                 },
               ]}
             >
-              <Pressable
-                onPress={handleCloseEdit}
-                style={StyleSheet.absoluteFill}
-              />
-              <Pressable
-                onPress={e => e.stopPropagation()}
-                style={[
-                  styles.editModalWrapper,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
-                  },
-                ]}
-              >
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={StyleSheet.absoluteFill}
-                />
+              <ModalThemeBackground theme={theme} />
 
-                <View style={styles.editModalContent}>
-                  {/* Header */}
-                  <View
+              <View style={styles.editModalContent}>
+                {/* Header */}
+                <View
+                  style={[
+                    styles.header,
+                    {
+                      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                    },
+                  ]}
+                >
+                  <Text style={[styles.headerTitle, { color: colors.text }]}>Editar Registro</Text>
+                  <TouchableOpacity
+                    onPress={handleCloseEdit}
                     style={[
-                      styles.header,
+                      styles.closeBtn,
                       {
-                        borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
                       },
                     ]}
+                    activeOpacity={0.7}
                   >
-                    <Text style={[styles.headerTitle, { color: colors.text }]}>Editar Registro</Text>
-                    <TouchableOpacity
-                      onPress={handleCloseEdit}
-                      style={[
-                        styles.closeBtn,
-                        {
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                        },
-                      ]}
-                      activeOpacity={0.7}
-                    >
-                      <GlassView
-                        glassEffectStyle="regular"
-                        colorScheme={isDark ? 'dark' : 'light'}
-                        style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
-                      />
-                      <X size={18} color={colors.textSecondary} />
-                    </TouchableOpacity>
-                  </View>
+                    <X size={18} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
 
                   <View style={{ gap: 14 }}>
                     {/* Fecha (Read-only) */}
@@ -957,7 +948,6 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                 </View>
               </Pressable>
             </KeyboardAvoidingView>
-          </GlassView>
         </Modal>
       )}
     </>

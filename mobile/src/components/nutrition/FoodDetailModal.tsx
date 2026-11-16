@@ -106,7 +106,7 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
       backgroundColor={colors.card}
       maxHeight="88%"
     >
-      <View style={styles.card}>
+      <View style={[styles.card, { borderWidth: 0 }]}>
               {/* Image banner */}
               <View
                 style={[
@@ -169,7 +169,7 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
               </View>
 
               {/* Title & Calories / Weight */}
-              <ScrollView style={styles.scrollContent} contentContainerStyle={{ padding: 20 }}>
+              <ScrollView style={styles.scrollContent} contentContainerStyle={{ padding: 20, paddingBottom: 28 }} showsVerticalScrollIndicator={false}>
                 <Text style={[styles.foodTitle, { color: colors.text }]}>{food.description || food.name}</Text>
 
                 <View
@@ -307,6 +307,7 @@ const styles = StyleSheet.create({
     maxHeight: '88%',
   },
   card: {
+    flexShrink: 1,
     borderRadius: 32,
     borderWidth: 1,
     overflow: 'hidden',
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   scrollContent: {
-    maxHeight: 400,
+    flexShrink: 1,
   },
   foodTitle: {
     fontSize: 20,

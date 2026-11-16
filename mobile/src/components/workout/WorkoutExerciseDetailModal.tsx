@@ -20,9 +20,10 @@ import {
   FileText,
   AlertCircle,
 } from 'lucide-react-native';
-import { GlassView } from 'expo-glass-effect';
-import { getThemeBaseBackground, usesFrontendCardSurface } from '@/constants/theme';
+import { getThemeBaseBackground } from '@/constants/theme';
 import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
+import { ModalThemeBackground, getThemedModalBorderColor } from '@/components/ui/ModalThemeBackground';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -40,8 +41,8 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
 }) => {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
-  const useFrontendSurface = usesFrontendCardSurface(theme);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const insets = useSafeAreaInsets();
 
   const allExercises = useAppStore(state => state.allExercises) || [];
   const getOrFetchAllExercises = useAppStore(state => state.getOrFetchAllExercises);
@@ -262,16 +263,15 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
       sheetStyle={[
         styles.modalSheet,
         {
-          backgroundColor: useFrontendSurface ? getThemeBaseBackground(theme) : isDark ? 'rgba(22, 22, 28, 0.85)' : 'rgba(255, 255, 255, 0.90)',
-          borderColor: useFrontendSurface ? colors.border : isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.88)',
+          backgroundColor: getThemeBaseBackground(theme),
+          borderColor: getThemedModalBorderColor(theme),
+          paddingBottom: Math.max(insets.bottom, 12),
         },
       ]}
     >
       {exercise ? (
         <>
-          {!useFrontendSurface && (
-            <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-          )}
+          <ModalThemeBackground theme={theme} />
 
           {/* Barra de arrastre superior tipo cápsula Apple (Swipe down to dismiss) */}
           <View pointerEvents="none" style={styles.dragIndicatorWrapper}>

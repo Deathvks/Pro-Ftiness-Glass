@@ -116,7 +116,7 @@ export const WeeklyRecapModal: React.FC<WeeklyRecapModalProps> = ({
   if (!visible || !weeklyData) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent statusBarTranslucent navigationBarTranslucent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.contentContainer}>
 

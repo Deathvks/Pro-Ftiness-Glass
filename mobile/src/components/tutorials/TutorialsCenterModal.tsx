@@ -12,8 +12,8 @@ import {
   type ScrollViewInstance,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
+import { ModalThemeBackground, getThemedModalCardColor } from '@/components/ui/ModalThemeBackground';
 import {
   Activity,
   BarChart3,
@@ -113,7 +113,7 @@ export function TutorialsCenterModal({
   const theme = useAppStore((s: any) => s.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass(theme);
+  const themedCardBg = getThemedModalCardColor(theme);
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -169,6 +169,7 @@ export function TutorialsCenterModal({
       transparent
       animationType="slide"
       statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={onClose}
     >
       <View style={[styles.backdrop, { paddingTop: insets.top + 12 }]}>
@@ -180,9 +181,11 @@ export function TutorialsCenterModal({
             {
               backgroundColor: sheetBg,
               borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+              overflow: 'hidden',
             },
           ]}
         >
+          <ModalThemeBackground theme={theme} />
           {/* Header */}
           <View
             style={[
@@ -314,7 +317,7 @@ export function TutorialsCenterModal({
                       style={[
                         styles.categoryRow,
                         {
-                          backgroundColor: colors.card,
+                          backgroundColor: themedCardBg,
                           borderColor: isDark
                             ? 'rgba(255,255,255,0.07)'
                             : 'rgba(0,0,0,0.06)',
@@ -322,14 +325,6 @@ export function TutorialsCenterModal({
                         },
                       ]}
                     >
-                      {useGlass && (
-                        <GlassView
-                          pointerEvents="none"
-                          glassEffectStyle="regular"
-                          colorScheme={isDark ? 'dark' : 'light'}
-                          style={[StyleSheet.absoluteFill, { borderRadius: 22 }]}
-                        />
-                      )}
                       <View style={[styles.catIconBox, { backgroundColor: colors.tint + '1A' }]}>
                         <CatIcon size={21} color={colors.tint} />
                       </View>
@@ -407,7 +402,7 @@ export function TutorialsCenterModal({
                         style={[
                           styles.tutorialCard,
                           {
-                            backgroundColor: colors.card,
+                            backgroundColor: themedCardBg,
                             borderColor: isDark
                               ? 'rgba(255,255,255,0.08)'
                               : 'rgba(0,0,0,0.06)',
@@ -415,15 +410,6 @@ export function TutorialsCenterModal({
                           },
                         ]}
                       >
-                        {useGlass && (
-                          <GlassView
-                            pointerEvents="none"
-                            glassEffectStyle="regular"
-                            colorScheme={isDark ? 'dark' : 'light'}
-                            style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-                          />
-                        )}
-
                         <View style={styles.cardTopRow}>
                           <View style={[styles.catIconBox, { backgroundColor: colors.tint + '1A' }]}>
                             <Icon size={22} color={colors.tint} />

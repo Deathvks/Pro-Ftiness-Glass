@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Pressable } from 'react-native';
-import { GlassView } from 'expo-glass-effect';
 import { ShieldCheck, Scale, FileText, Lock, Mail, HeartPulse, X, Check, Globe } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 
 export type LegalDocType = 'privacy' | 'terms' | 'legalNotice';
 
@@ -28,7 +28,7 @@ export function LegalDocumentModal({ visible, onClose, initialDoc = 'privacy' }:
   }, [visible, initialDoc]);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent statusBarTranslucent navigationBarTranslucent animationType="fade" onRequestClose={onClose}>
       <View
         style={[
           styles.backdrop,
@@ -43,16 +43,12 @@ export function LegalDocumentModal({ visible, onClose, initialDoc = 'privacy' }:
           style={[
             styles.modalContainer,
             {
-              backgroundColor: isDark ? 'rgba(20, 20, 26, 0.92)' : 'rgba(255, 255, 255, 0.96)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: getThemedModalSurfaceColor(theme),
+              borderColor: getThemedModalBorderColor(theme),
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
+          <ModalThemeBackground theme={theme} />
 
           {/* Header */}
           <View style={styles.header}>

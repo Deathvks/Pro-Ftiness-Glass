@@ -94,7 +94,7 @@ export const PRShareModal: React.FC<PRShareModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent statusBarTranslucent navigationBarTranslucent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.contentContainer}>
           

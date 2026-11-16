@@ -18,11 +18,11 @@ import {
   ArrowRight,
   Share2,
 } from 'lucide-react-native';
-import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { formatWorkoutTime } from '@/utils/workoutHelpers';
+import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 
 interface WorkoutSummaryModalProps {
   visible: boolean;
@@ -62,22 +62,18 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent statusBarTranslucent navigationBarTranslucent animationType="fade">
       <View style={[styles.overlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.45)' }]}>
         <View
           style={[
             styles.card,
             {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
+              backgroundColor: getThemedModalSurfaceColor(theme),
+              borderColor: getThemedModalBorderColor(theme),
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
+          <ModalThemeBackground theme={theme} />
 
           <ScrollView contentContainerStyle={styles.scrollContent}>
             {/* Trophy celebration header */}

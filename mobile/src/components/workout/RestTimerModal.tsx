@@ -19,8 +19,9 @@ import {
   Pause,
   Square,
 } from 'lucide-react-native';
-import { GlassView } from 'expo-glass-effect';
 import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
+import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -39,6 +40,7 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const insets = useSafeAreaInsets();
 
   const restTimerEndTime = useAppStore(state => state.restTimerEndTime);
   const restTimerInitialDuration = useAppStore(state => state.restTimerInitialDuration);
@@ -208,16 +210,13 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
       sheetStyle={[
         styles.modalContent,
         {
-          backgroundColor: isDark ? 'rgba(20, 20, 28, 0.94)' : 'rgba(255, 255, 255, 0.94)',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.1)',
+          backgroundColor: getThemedModalSurfaceColor(theme),
+          borderColor: getThemedModalBorderColor(theme),
+          paddingBottom: Math.max(insets.bottom + 18, 36),
         },
       ]}
     >
-      <GlassView
-        glassEffectStyle="regular"
-        colorScheme={isDark ? 'dark' : 'light'}
-        style={StyleSheet.absoluteFill}
-      />
+      <ModalThemeBackground theme={theme} />
 
       <View
         pointerEvents="none"

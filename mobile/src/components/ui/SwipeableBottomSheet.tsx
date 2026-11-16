@@ -22,8 +22,14 @@ import {
 } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { Colors, getThemeBaseBackground, usesFrontendCardSurface } from '@/constants/theme';
+import { Colors, getThemeBaseBackground } from '@/constants/theme';
 import useAppStore from '@/store/useAppStore';
+import {
+  ModalThemeBackground,
+  getThemedModalBorderColor,
+  getThemedModalCardColor,
+  getThemedModalSurfaceColor,
+} from '@/components/ui/ModalThemeBackground';
 
 const HEADER_DRAG_HEIGHT = 120;
 
@@ -48,8 +54,8 @@ export function SwipeableSheetModal({
   dismissOnBackdrop = true,
   dismissible = true,
   avoidKeyboard = false,
-  statusBarTranslucent = false,
-  navigationBarTranslucent = false,
+  statusBarTranslucent = true,
+  navigationBarTranslucent = true,
   dragAreaHeight,
   sheetStyle,
   children,
@@ -201,22 +207,23 @@ export function SwipeableSheetModal({
       navigationBarTranslucent={navigationBarTranslucent}
       onRequestClose={dismissAnimated}
     >
-      <GestureHandlerRootView>
-        {navigationBarTranslucent ? <SafeAreaProvider>{content}</SafeAreaProvider> : content}
+      <GestureHandlerRootView style={styles.rootFlex}>
+        <SafeAreaProvider>{content}</SafeAreaProvider>
       </GestureHandlerRootView>
     </Modal>
   );
 }
 
-export function getAppleSheetSurfaceStyle(isDark: boolean, radius = 28): ViewStyle {
-  if (Platform.OS !== 'ios') return {};
+export function getAppleSheetSurfaceStyle(isDark: boolean, radius = 28, theme?: string): ViewStyle {
+  const activeTheme = theme || useAppStore.getState().theme || (isDark ? 'oled' : 'light');
   return {
-    backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7',
+    backgroundColor: getThemedModalSurfaceColor(activeTheme),
     borderTopLeftRadius: radius,
     borderTopRightRadius: radius,
     borderCurve: 'continuous',
-    borderWidth: 0,
-    borderTopWidth: 0,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 0,
+    borderColor: getThemedModalBorderColor(activeTheme),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: isDark ? 0.5 : 0.16,
@@ -225,13 +232,13 @@ export function getAppleSheetSurfaceStyle(isDark: boolean, radius = 28): ViewSty
 }
 
 export function getAppleSheetCardStyle(isDark: boolean, radius = 16, theme?: string): ViewStyle {
-  const themedCard = usesFrontendCardSurface(theme) ? Colors[theme].card : undefined;
-  if (Platform.OS !== 'ios') return themedCard ? { backgroundColor: themedCard } : {};
+  const activeTheme = theme || useAppStore.getState().theme || (isDark ? 'oled' : 'light');
   return {
-    backgroundColor: themedCard ?? (isDark ? '#2C2C2E' : '#FFFFFF'),
+    backgroundColor: getThemedModalCardColor(activeTheme),
     borderRadius: radius,
     borderCurve: 'continuous',
-    borderWidth: 0,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: getThemedModalBorderColor(activeTheme),
   };
 }
 
@@ -269,13 +276,9 @@ export function SwipeableBottomSheet({
   children,
 }: SwipeableBottomSheetProps) {
   const insets = useSafeAreaInsets();
-  const isIOS = Platform.OS === 'ios';
-  const theme = useAppStore(state => state.theme);
-  const resolvedBg = isIOS
-    ? isDark
-      ? '#1C1C1E'
-      : '#F2F2F7'
-    : backgroundColor || (isDark ? '#141418' : '#FFFFFF');
+  const theme = useAppStore(state => state.theme) || (isDark ? 'oled' : 'light');
+  const resolvedBg = getThemeBaseBackground(theme);
+  const resolvedBorder = getThemedModalBorderColor(theme);
 
   return (
     <SwipeableSheetModal
@@ -283,7 +286,7 @@ export function SwipeableBottomSheet({
       onClose={onClose}
       backdropColor="rgba(0, 0, 0, 0.68)"
       statusBarTranslucent
-      navigationBarTranslucent={edgeToEdge}
+      navigationBarTranslucent
       avoidKeyboard={avoidKeyboard}
       dismissible={dismissible}
       dragAreaHeight={scrollable ? HEADER_DRAG_HEIGHT : undefined}
@@ -294,18 +297,15 @@ export function SwipeableBottomSheet({
           maxHeight,
           height,
           paddingBottom: edgeToEdge ? 0 : Math.max(insets.bottom, 16),
-          borderWidth: isIOS ? 0 : 1,
-          borderBottomWidth: edgeToEdge ? 0 : undefined,
-          borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-        },
-        isIOS && getAppleSheetSurfaceStyle(isDark, 28),
-        usesFrontendCardSurface(theme) && {
-          backgroundColor: getThemeBaseBackground(theme),
-          borderColor: Colors[theme].border,
+          borderWidth: 1,
+          borderBottomWidth: 0,
+          borderColor: resolvedBorder,
         },
         sheetStyle,
+        { backgroundColor: resolvedBg },
       ]}
     >
+      <ModalThemeBackground theme={theme} />
       {showGrabber && (
         <View pointerEvents="none" style={styles.grabberArea}>
           <View
@@ -320,7 +320,7 @@ export function SwipeableBottomSheet({
           />
         </View>
       )}
-      <View style={[{ flexShrink: 1 }, height ? { flex: 1 } : undefined, contentContainerStyle]}>
+      <View style={[{ flexShrink: 1, minHeight: 0 }, height ? { flex: 1 } : undefined, contentContainerStyle]}>
         {children}
       </View>
     </SwipeableSheetModal>
@@ -328,6 +328,9 @@ export function SwipeableBottomSheet({
 }
 
 const styles = StyleSheet.create({
+  rootFlex: {
+    flex: 1,
+  },
   keyboardContainer: {
     flex: 1,
   },

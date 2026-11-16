@@ -21,6 +21,7 @@ import { GlassView } from 'expo-glass-effect';
 import { isAtmosphericTheme } from '@/constants/theme';
 import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
+import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 import { BlurView } from 'expo-blur';
 import { UserRoleAvatarRing } from '@/components/social/SocialUserAvatar';
 import { selectHasUnseenStory } from '@/store/storySlice';
@@ -745,13 +746,14 @@ function ChangePasswordModal({ visible, onClose, hasPassword }: ChangePasswordMo
       sheetStyle={[
         styles.modalCard,
         {
-          backgroundColor: isDark ? '#141418' : '#ffffff',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+          backgroundColor: getThemedModalSurfaceColor(theme),
+          borderColor: getThemedModalBorderColor(theme),
           paddingBottom: Math.max(insets.bottom + 16, 24),
+          overflow: 'hidden',
         },
       ]}
     >
-      <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 31, borderTopRightRadius: 31 }]} />
+      <ModalThemeBackground theme={theme} />
 
       {/* Manija superior iOS */}
       <View pointerEvents="none" style={[styles.sheetHandle, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />

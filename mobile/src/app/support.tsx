@@ -28,6 +28,7 @@ import {
   Dumbbell,
   HelpCircle,
   Users,
+  Sparkles,
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -236,6 +237,7 @@ export default function SupportScreen() {
   const glassBorder = isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)';
 
   const [appVersion, setAppVersion] = useState<string>(APP_VERSION);
+  const [remoteVersion, setRemoteVersion] = useState<string | null>(null);
   const [apkDownloadUrl, setApkDownloadUrl] = useState<string | null>(null);
   const [isUpToDate, setIsUpToDate] = useState<boolean>(true);
   const [showBugModal, setShowBugModal] = useState<boolean>(false);
@@ -255,9 +257,10 @@ export default function SupportScreen() {
               setApkDownloadUrl(data.downloadUrl);
             }
             if (data.version) {
+              setRemoteVersion(data.version);
               if (isRemoteNewer(APP_VERSION, data.version)) {
                 setIsUpToDate(false);
-                setAppVersion(data.version);
+                setAppVersion(APP_VERSION);
               } else {
                 setIsUpToDate(true);
                 setAppVersion(APP_VERSION);
@@ -547,10 +550,34 @@ export default function SupportScreen() {
             >
               <CheckCircle2 size={12} color={isUpToDate ? '#10b981' : '#f59e0b'} />
               <Text style={[styles.statusBadgeText, { color: isUpToDate ? '#10b981' : '#f59e0b' }]}>
-                {isUpToDate ? 'Actualizada' : 'Nueva versión'}
+                {isUpToDate ? 'Actualizada' : `v${remoteVersion || 'Nueva'} disp.`}
               </Text>
             </View>
           </View>
+
+          <View
+            style={{
+              height: StyleSheet.hairlineWidth,
+              marginLeft: 62,
+              backgroundColor: isDark ? 'rgba(84, 84, 88, 0.45)' : 'rgba(60, 60, 67, 0.16)',
+            }}
+          />
+
+          <SupportItem
+            icon={Sparkles}
+            title="Novedades de la versión"
+            subtitle={`Ver qué incluye la versión v${appVersion}`}
+            onPress={() => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch {}
+              useAppStore.setState({ showWelcomeModal: true } as any);
+            }}
+            isDark={isDark}
+            colors={colors}
+            iconColor={colors.tint}
+            isLast
+          />
         </GlassSurface>
 
         {/* ================= 3. CALCULADORAS, FAQ Y GUÍAS PÚBLICAS ================= */}

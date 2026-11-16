@@ -61,7 +61,7 @@ export const PRListModal: React.FC<PRListModalProps> = ({
         </View>
 
         {/* Lista de récords */}
-        <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.list} contentContainerStyle={{ paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
           {records.map((record, index) => {
             const name = record.exercise_name || record.exerciseName || 'Ejercicio';
             const weight = record.weight_kg || record.weight || 0;
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   list: {
-    maxHeight: 400,
+    flexShrink: 1,
   },
   recordRow: {
     flexDirection: 'row',

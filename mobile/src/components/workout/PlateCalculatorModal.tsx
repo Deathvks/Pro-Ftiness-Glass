@@ -11,10 +11,10 @@ import {
   Pressable,
 } from 'react-native';
 import { Calculator, X, Disc } from 'lucide-react-native';
-import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
+import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 
 interface PlateCalculatorModalProps {
   visible: boolean;
@@ -106,23 +106,19 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
   if (!visible) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent statusBarTranslucent navigationBarTranslucent animationType="fade" onRequestClose={onClose}>
       <Pressable style={[styles.overlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.35)' }]} onPress={onClose}>
         <Pressable
           onPress={e => e.stopPropagation()}
           style={[
             styles.card,
             {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
+              backgroundColor: getThemedModalSurfaceColor(theme),
+              borderColor: getThemedModalBorderColor(theme),
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
+          <ModalThemeBackground theme={theme} />
 
           {/* Close button */}
           <TouchableOpacity

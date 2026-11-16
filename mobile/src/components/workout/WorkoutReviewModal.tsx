@@ -17,8 +17,9 @@ import {
   Clock,
   Flame,
 } from 'lucide-react-native';
-import { GlassView } from 'expo-glass-effect';
 import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
+import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -40,6 +41,7 @@ export const WorkoutReviewModal: React.FC<WorkoutReviewModalProps> = ({
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const insets = useSafeAreaInsets();
 
   const activeWorkout = useAppStore(state => state.activeWorkout);
   const updateActiveWorkoutSet = useAppStore(state => state.updateActiveWorkoutSet);
@@ -83,13 +85,16 @@ export const WorkoutReviewModal: React.FC<WorkoutReviewModalProps> = ({
       backdropColor={isDark ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.4)'}
       dismissOnBackdrop={false}
       dragAreaHeight={84}
-      sheetStyle={[styles.sheet, { backgroundColor: colors.card, borderColor: colors.border }]}
+      sheetStyle={[
+        styles.sheet,
+        {
+          backgroundColor: getThemedModalSurfaceColor(theme),
+          borderColor: getThemedModalBorderColor(theme),
+          paddingBottom: Math.max(insets.bottom, 12),
+        },
+      ]}
     >
-      <GlassView
-        glassEffectStyle="regular"
-        colorScheme={isDark ? 'dark' : 'light'}
-        style={StyleSheet.absoluteFill}
-      />
+      <ModalThemeBackground theme={theme} />
 
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]}>

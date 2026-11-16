@@ -12,6 +12,7 @@ import {
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
+import { ModalThemeBackground, getThemedModalBorderColor } from '@/components/ui/ModalThemeBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   GraduationCap,
@@ -88,11 +89,13 @@ export default function TrainerProfileModal({
         styles.modalContainer,
         {
           backgroundColor: surfaceColor,
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+          borderColor: getThemedModalBorderColor(theme),
           paddingBottom: Math.max(insets.bottom, 16),
+          overflow: 'hidden',
         },
       ]}
     >
+      <ModalThemeBackground theme={theme} />
       {/* Keep the full-width drag area outside the ScrollView so it can receive downward swipes. */}
       <View style={styles.header}>
         <View

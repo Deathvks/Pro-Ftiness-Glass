@@ -1,7 +1,7 @@
 import '@/utils/localStoragePolyfill';
 import * as authService from '../services/authService';
 import * as userService from '../services/userService';
-import { APP_VERSION } from '../config/version';
+import { APP_VERSION, CURRENT_WELCOME_TITLE, hasSeenCurrentWelcome } from '../config/version';
 
 // Esta función se encarga de limpiar el almacenamiento local relacionado con la sesión.
 const clearAuthStorage = () => {
@@ -21,6 +21,8 @@ export const createAuthSlice = (set, get) => ({
     userProfile: null,
     isLoading: true,
     showWelcomeModal: false,
+    welcomeRemoteData: null,
+    welcomeRemoteVersion: null,
     tourActive: false,
     sessionExpired: false, // <-- NUEVO: Estado para el modal instantáneo de caducidad
 
@@ -331,7 +333,8 @@ export const createAuthSlice = (set, get) => ({
     // Comprueba si se debe mostrar el modal de bienvenida
     checkWelcomeModal: () => {
         const lastSeenVersion = localStorage.getItem('lastSeenVersion');
-        if (lastSeenVersion !== APP_VERSION) {
+        const lastSeenTitle = localStorage.getItem('lastSeenWelcomeTitle');
+        if (lastSeenVersion !== APP_VERSION || !hasSeenCurrentWelcome(lastSeenTitle, CURRENT_WELCOME_TITLE)) {
             set({ showWelcomeModal: true });
         }
     },
@@ -339,6 +342,7 @@ export const createAuthSlice = (set, get) => ({
     // Cierra el modal de bienvenida
     closeWelcomeModal: () => {
         localStorage.setItem('lastSeenVersion', APP_VERSION);
+        localStorage.setItem('lastSeenWelcomeTitle', CURRENT_WELCOME_TITLE);
         set({ showWelcomeModal: false });
     },
 

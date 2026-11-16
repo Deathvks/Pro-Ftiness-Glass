@@ -23,6 +23,8 @@ import { RestTimerModal } from '@/components/workout/RestTimerModal';
 import { OfflineDownloadFloatingBar } from '@/components/OfflineDownloadFloatingBar';
 import { StoryHost } from '@/components/social/StoryHost';
 import { TourOverlay } from '@/components/tutorials/TourOverlay';
+import { WelcomeModal } from '@/components/modals/WelcomeModal';
+import { VersionUpdater } from '@/components/VersionUpdater';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -332,6 +334,8 @@ export default function RootLayout() {
         <RestTimerModal />
         <OfflineDownloadFloatingBar />
         <StoryHost />
+        <VersionUpdater />
+        <WelcomeModal />
         <TourOverlay />
         <ToastContainer />
       </ThemeProvider>

@@ -4,6 +4,7 @@ import { AlertTriangle, Trash2, LogOut } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 
 interface ConfirmationModalProps {
   visible: boolean;
@@ -33,36 +34,31 @@ export function ConfirmationModal({
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
+    <Modal visible={visible} transparent statusBarTranslucent navigationBarTranslucent animationType="fade" onRequestClose={onCancel}>
+      <Pressable
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 24,
+            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.7)' : 'rgba(0, 0, 0, 0.45)',
+          },
+        ]}
+        onPress={onCancel}
+      >
         <Pressable
+          onPress={e => e.stopPropagation()}
           style={[
-            StyleSheet.absoluteFill,
+            styles.cardWrapper,
             {
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: 24,
-              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.2)',
+              backgroundColor: getThemedModalSurfaceColor(theme),
+              borderColor: getThemedModalBorderColor(theme),
+              borderWidth: 1,
             },
           ]}
-          onPress={onCancel}
         >
-          <Pressable
-            onPress={e => e.stopPropagation()}
-            style={[
-              styles.cardWrapper,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                borderWidth: 1,
-              },
-            ]}
-          >
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFill}
-            />
+          <ModalThemeBackground theme={theme} />
             <View style={[styles.card, { borderWidth: 0, backgroundColor: 'transparent' }]}>
             <View
               style={[
@@ -128,19 +124,14 @@ export function ConfirmationModal({
                 style={[
                   styles.cancelBtn,
                   {
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.1)',
                     borderWidth: 1,
                     borderRadius: 20,
                     overflow: 'hidden',
-                    backgroundColor: 'transparent',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
                   },
                 ]}
               >
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                />
                 <Text style={[styles.cancelText, { color: colors.textSecondary }]}>
                   {cancelText}
                 </Text>
@@ -149,7 +140,6 @@ export function ConfirmationModal({
           </View>
         </Pressable>
       </Pressable>
-    </GlassView>
   </Modal>
   );
 }
