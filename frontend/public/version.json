@@ -1,6 +1,6 @@
 {
-  "version": "7.16.34",
-  "releaseNotes": "Actualización v7.16.34: mapa GPS con aspecto callejero clásico tipo Google Maps, controles superiores protegidos del notch y barra inferior compacta.",
+  "version": "7.16.35",
+  "releaseNotes": "Actualización v7.16.35: mapa GPS con estilo Google Maps real y fondo sólido/legible en el panel inferior de controles.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",

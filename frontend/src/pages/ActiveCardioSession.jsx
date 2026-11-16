@@ -82,14 +82,15 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
   // Icono de usuario dinámico basado en el color de acento resuelto
   const userIcon = useMemo(() => createUserIcon(accentColor), [accentColor]);
 
-  // Mapa estilo callejero clásico (aspecto tipo Google Maps, gratuito y sin API Key)
+  // Mapa estilo Google Maps clásico (gratuito y sin API Key)
   const mapConfig = useMemo(() => ({
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-    attribution: '&copy; Esri, OpenStreetMap contributors',
+    url: 'https://mt{s}.google.com/vt/lyrs=m&hl=es&x={x}&y={y}&z={z}',
+    subdomains: ['0', '1', '2', '3'],
+    attribution: '&copy; Google Maps',
+    maxZoom: 20,
     opacity: 1,
-    bgColor: '#e5e3df',
-    className: '',
-    gradientFrom: 'from-black/45'
+    bgColor: '#f8f9fa',
+    className: ''
   }), []);
 
   // --- LÓGICA DE INICIALIZACIÓN Y RECUPERACIÓN ---
@@ -480,8 +481,9 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
           >
             <TileLayer
               url={mapConfig.url}
+              subdomains={mapConfig.subdomains}
               attribution={mapConfig.attribution}
-              maxZoom={19}
+              maxZoom={mapConfig.maxZoom}
               opacity={mapConfig.opacity}
               className={mapConfig.className}
             />
@@ -498,8 +500,11 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
       </div>
 
       <div
-        className={`absolute top-0 left-0 right-0 bg-gradient-to-b ${mapConfig.gradientFrom} to-transparent z-10 pointer-events-none`}
-        style={{ height: 'calc(5.5rem + var(--safe-top, env(safe-area-inset-top, 0px)))' }}
+        className="absolute top-0 left-0 right-0 z-10 pointer-events-none"
+        style={{
+          height: 'calc(5.5rem + var(--safe-top, env(safe-area-inset-top, 0px)))',
+          background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 100%)'
+        }}
       />
 
       <div
@@ -509,20 +514,20 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
         <div className="h-14 px-4 flex justify-between items-center">
           <button
             onClick={handleBackClick}
-            className="pointer-events-auto p-2.5 bg-black/50 backdrop-blur-md rounded-full text-white hover:bg-black/70 border border-white/15 transition active:scale-95"
+            className="pointer-events-auto p-2.5 bg-black/65 backdrop-blur-md rounded-full text-white hover:bg-black/80 border border-white/20 transition active:scale-95 shadow-lg"
           >
             <ChevronLeft size={22} />
           </button>
-          <div className="pointer-events-auto bg-black/50 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 flex items-center gap-2">
+          <div className="pointer-events-auto bg-black/65 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 flex items-center gap-2 shadow-lg">
             <activity.icon size={15} className={activity.color} />
             <span className="font-bold text-white text-xs sm:text-sm">{activity.name}</span>
           </div>
           <button
             onClick={() => setFollowUser(!followUser)}
-            className={`pointer-events-auto p-2.5 backdrop-blur-md rounded-full border transition active:scale-95 ${
+            className={`pointer-events-auto p-2.5 backdrop-blur-md rounded-full border transition active:scale-95 shadow-lg ${
               followUser
                 ? 'bg-accent text-accent-contrast border-transparent'
-                : 'bg-black/50 text-white border-white/15 hover:bg-black/70'
+                : 'bg-black/65 text-white border-white/20 hover:bg-black/80'
             }`}
           >
             <Navigation size={20} fill={followUser ? "currentColor" : "none"} />
@@ -531,8 +536,11 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
       </div>
 
       <div
-        className="absolute bottom-0 left-0 right-0 z-20 bg-bg-primary/90 backdrop-blur-xl rounded-t-3xl border-t border-text-primary/10 px-5 pt-3.5 shadow-[0_-10px_40px_rgba(0,0,0,0.45)] animate-slide-up"
-        style={{ paddingBottom: 'calc(1rem + var(--safe-bottom, env(safe-area-inset-bottom, 0px)))' }}
+        className="absolute bottom-0 left-0 right-0 z-20 bg-bg-primary backdrop-blur-xl rounded-t-3xl border-t border-glass-border px-5 pt-3.5 shadow-[0_-10px_40px_rgba(0,0,0,0.45)] animate-slide-up"
+        style={{
+          backgroundColor: 'color-mix(in srgb, var(--bg-primary) 94%, transparent)',
+          paddingBottom: 'calc(1rem + var(--safe-bottom, env(safe-area-inset-bottom, 0px)))'
+        }}
       >
         <div className="max-w-lg mx-auto">
           <div className="flex items-baseline justify-center gap-2 mb-2.5">
@@ -546,21 +554,21 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
             <div className="flex flex-col items-center">
               <div className="flex items-end gap-1">
                 <span className="text-lg sm:text-xl font-bold text-text-primary leading-tight">{formatDistance(distance).split(' ')[0]}</span>
-                <span className="text-[11px] text-text-tertiary mb-0.5">{formatDistance(distance).split(' ')[1]}</span>
+                <span className="text-[11px] text-text-muted mb-0.5">{formatDistance(distance).split(' ')[1]}</span>
               </div>
               <div className="flex items-center gap-1 text-[11px] text-text-secondary"><Footprints size={11} /> Distancia</div>
             </div>
-            <div className="flex flex-col items-center border-x border-text-primary/10">
+            <div className="flex flex-col items-center border-x border-glass-border">
               <div className="flex items-end gap-1">
                 <span className="text-lg sm:text-xl font-bold text-text-primary leading-tight">{calculatePace(seconds, distance).split(' ')[0]}</span>
-                <span className="text-[11px] text-text-tertiary mb-0.5">/km</span>
+                <span className="text-[11px] text-text-muted mb-0.5">/km</span>
               </div>
               <div className="flex items-center gap-1 text-[11px] text-text-secondary"><Clock size={11} /> Ritmo</div>
             </div>
             <div className="flex flex-col items-center">
               <div className="flex items-end gap-1">
                 <span className="text-lg sm:text-xl font-bold text-text-primary leading-tight">{Math.round(activity.mets * currentWeight * (seconds / 3600))}</span>
-                <span className="text-[11px] text-text-tertiary mb-0.5">kcal</span>
+                <span className="text-[11px] text-text-muted mb-0.5">kcal</span>
               </div>
               <div className="flex items-center gap-1 text-[11px] text-text-secondary"><Flame size={11} /> Energía</div>
             </div>
