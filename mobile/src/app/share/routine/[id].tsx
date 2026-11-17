@@ -13,6 +13,7 @@ import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import {
   AlertTriangle,
@@ -34,6 +35,8 @@ import {
 } from '@/constants/theme';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { buildSharedRoutineUrl } from '@/utils/deepLinking';
+import { getDisplayImageUrl, resolveRoutineCoverPreset } from '@/utils/routineHelpers';
+import { getThemedModalCardColor } from '@/components/ui/ModalThemeBackground';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 import { forkRoutine, getPublicRoutine } from '@/services/routineService';
 import GlobalHeader from '@/components/GlobalHeader';
@@ -260,13 +263,35 @@ export default function SharedRoutinePreviewScreen() {
                 />
               )}
 
-              {routine.cover_image_url ? (
-                <Image
-                  source={{ uri: getMediaUrl(routine.cover_image_url) || undefined }}
-                  style={styles.coverImage}
-                  contentFit="cover"
-                />
-              ) : null}
+              {(() => {
+                const preset = resolveRoutineCoverPreset(routine.cover_image_url, {
+                  tint: colors.tint,
+                  baseBg: getThemeBaseBackground(theme),
+                  secondaryBg: theme === 'light' ? '#f1f5f9' : getThemedModalCardColor(theme),
+                  isDark,
+                });
+                if (preset) {
+                  return (
+                    <View style={[styles.coverImage, { backgroundColor: getThemeBaseBackground(theme) }]}>
+                      <LinearGradient
+                        colors={preset.colors}
+                        start={preset.start}
+                        end={preset.end}
+                        style={StyleSheet.absoluteFill}
+                      />
+                    </View>
+                  );
+                }
+                const resolvedCover = getDisplayImageUrl(routine.cover_image_url) || getMediaUrl(routine.cover_image_url);
+                if (!resolvedCover) return null;
+                return (
+                  <Image
+                    source={{ uri: resolvedCover }}
+                    style={styles.coverImage}
+                    contentFit="cover"
+                  />
+                );
+              })()}
 
               <View style={styles.heroBody}>
                 {/* Creator row */}

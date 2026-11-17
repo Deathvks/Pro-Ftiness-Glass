@@ -51,6 +51,12 @@ import { SelectModal, SelectOption } from '@/components/ui/SelectModal';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
 import { SETS_OPTIONS, REPS_OPTIONS, REST_OPTIONS, MUSCLE_OPTIONS } from '@/constants/exerciseOptions';
 import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview';
+import {
+  getDisplayImageUrl as getRoutineDisplayImageUrl,
+  getRoutineCoverPresets,
+  resolveRoutineCoverPreset,
+} from '@/utils/routineHelpers';
+import { getThemedModalCardColor } from '@/components/ui/ModalThemeBackground';
 
 export default function RoutineEditorScreen() {
   const router = useRouter();
@@ -264,18 +270,16 @@ export default function RoutineEditorScreen() {
     ]);
   };
 
-  const PREDEFINED_GRADIENTS: {
-    colors: readonly [string, string];
-    start: { x: number; y: number };
-    end: { x: number; y: number };
-    name: string;
-  }[] = [
-    { colors: [colors.tint, isDark ? '#09090b' : '#f1f5f9'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 }, name: 'grad-1' },
-    { colors: [isDark ? '#18181b' : '#ffffff', colors.tint], start: { x: 0, y: 0 }, end: { x: 1, y: 1 }, name: 'grad-2' },
-    { colors: ['#000000', colors.tint], start: { x: 0, y: 1 }, end: { x: 1, y: 0 }, name: 'grad-3' },
-    { colors: [colors.tint + '88', colors.tint + '22'], start: { x: 0, y: 0 }, end: { x: 1, y: 0 }, name: 'grad-4' },
-    { colors: [colors.tint, colors.tint], start: { x: 0, y: 0 }, end: { x: 1, y: 1 }, name: 'grad-5' },
-  ];
+  const secondarySurface = theme === 'light' ? '#f1f5f9' : getThemedModalCardColor(theme);
+  const coverOpts = {
+    tint: colors.tint,
+    baseBg: baseBackground,
+    secondaryBg: secondarySurface,
+    isDark,
+  };
+  const PREDEFINED_GRADIENTS = getRoutineCoverPresets(coverOpts);
+  const activeCoverPreset = resolveRoutineCoverPreset(imageUrl, coverOpts);
+  const resolvedPreviewPhotoUrl = getRoutineDisplayImageUrl(imageUrl);
 
   const scrollY = React.useRef(new Animated.Value(0)).current;
   const saveContrastText = isIOS ? colors.tint : getContrastTextColor(colors.tint);
@@ -343,37 +347,35 @@ export default function RoutineEditorScreen() {
                   styles.imagePreviewContainer,
                   {
                     ...controlSurface,
-                    ...(imageUrl && { borderColor: colors.tint, borderWidth: 2 }),
+                    ...(imageUrl && {
+                      borderColor: activeCoverPreset
+                        ? isDark
+                          ? 'rgba(255,255,255,0.22)'
+                          : 'rgba(0,0,0,0.16)'
+                        : colors.tint,
+                      borderWidth: 1.5,
+                    }),
                   },
                 ]}
               >
                 {imageUrl ? (
                   <>
-                    {imageUrl.startsWith('grad-') ? (
-                      <LinearGradient
-                        colors={
-                          PREDEFINED_GRADIENTS.find(g => g.name === imageUrl)?.colors || [
-                            colors.card,
-                            colors.tint,
-                          ]
-                        }
-                        start={
-                          PREDEFINED_GRADIENTS.find(g => g.name === imageUrl)?.start || {
-                            x: 0,
-                            y: 0,
-                          }
-                        }
-                        end={
-                          PREDEFINED_GRADIENTS.find(g => g.name === imageUrl)?.end || {
-                            x: 1,
-                            y: 1,
-                          }
-                        }
+                    {activeCoverPreset ? (
+                      <View style={[StyleSheet.absoluteFill, { backgroundColor: baseBackground }]}>
+                        <LinearGradient
+                          colors={activeCoverPreset.colors}
+                          start={activeCoverPreset.start}
+                          end={activeCoverPreset.end}
+                          style={StyleSheet.absoluteFill}
+                        />
+                      </View>
+                    ) : resolvedPreviewPhotoUrl ? (
+                      <Image
+                        source={{ uri: resolvedPreviewPhotoUrl }}
                         style={StyleSheet.absoluteFill}
+                        resizeMode="cover"
                       />
-                    ) : (
-                      <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} />
-                    )}
+                    ) : null}
                     <TouchableOpacity
                       onPress={() => setImageUrl(null)}
                       style={styles.removeCoverBtn}
@@ -435,24 +437,49 @@ export default function RoutineEditorScreen() {
                 O ELIGE UN ESTILO DE COLOR
               </Text>
               <View style={styles.swatchesRow}>
-                {PREDEFINED_GRADIENTS.map((grad, index) => {
-                  const selected = imageUrl === grad.name;
+                {PREDEFINED_GRADIENTS.map(grad => {
+                  const selected = imageUrl === grad.value || imageUrl === grad.legacyId;
                   return (
                     <TouchableOpacity
-                      key={index}
-                      onPress={() => setImageUrl(grad.name)}
-                      activeOpacity={0.8}
+                      key={grad.id}
+                      onPress={() => {
+                        try {
+                          Haptics.selectionAsync();
+                        } catch {}
+                        setImageUrl(grad.value);
+                      }}
+                      activeOpacity={0.85}
                       style={[
-                        styles.colorSwatch,
-                        selected && { borderWidth: 2.5, borderColor: colors.tint },
+                        styles.colorSwatchFrame,
+                        {
+                          borderColor: selected ? colors.tint : 'transparent',
+                          transform: [{ scale: selected ? 1.06 : 1 }],
+                          opacity: selected ? 1 : 0.72,
+                        },
                       ]}
                     >
-                      <LinearGradient
-                        colors={grad.colors}
-                        start={grad.start}
-                        end={grad.end}
-                        style={[StyleSheet.absoluteFill, { borderRadius: 10 }]}
-                      />
+                      <View
+                        style={[
+                          styles.colorSwatch,
+                          {
+                            backgroundColor: baseBackground,
+                            borderColor: isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.12)',
+                            borderWidth: StyleSheet.hairlineWidth,
+                          },
+                        ]}
+                      >
+                        <LinearGradient
+                          colors={grad.colors}
+                          start={grad.start}
+                          end={grad.end}
+                          style={StyleSheet.absoluteFill}
+                        />
+                        {selected && (
+                          <View style={[styles.swatchCheckDot, { backgroundColor: colors.tint }]}>
+                            <Check size={10} color={getContrastTextColor(colors.tint)} strokeWidth={3} />
+                          </View>
+                        )}
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -1179,11 +1206,27 @@ const styles = StyleSheet.create({
     gap: 10,
     width: '100%',
   },
+  colorSwatchFrame: {
+    padding: 2.5,
+    borderRadius: 15,
+    borderWidth: 2,
+  },
   colorSwatch: {
-    width: 52,
-    height: 36,
-    borderRadius: 12,
+    width: 56,
+    height: 40,
+    borderRadius: 11,
     overflow: 'hidden',
+    position: 'relative',
+  },
+  swatchCheckDot: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   inputLabel: {
     fontSize: 12,

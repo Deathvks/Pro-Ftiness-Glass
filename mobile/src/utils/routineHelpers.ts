@@ -101,10 +101,117 @@ export const groupExercises = (exercises: any[]): any[][] => {
 };
 
 /**
+ * Verifica si un valor de portada corresponde a un degradado/color predefinido (CSS o legado móvil).
+ */
+export const isCssRoutineCover = (value: string | null | undefined): boolean => {
+  if (!value || typeof value !== 'string') return false;
+  return (
+    value.startsWith('grad-') ||
+    value.startsWith('linear-gradient') ||
+    value.startsWith('var(--')
+  );
+};
+
+const toRgba = (color: string, alpha: number): string => {
+  const safe = color?.trim() || '#22c55e';
+  if (safe.startsWith('#')) {
+    let hex = safe.slice(1);
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    if (hex.length >= 6) {
+      const r = parseInt(hex.slice(0, 2), 16) || 0;
+      const g = parseInt(hex.slice(2, 4), 16) || 0;
+      const b = parseInt(hex.slice(4, 6), 16) || 0;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+  }
+  const rgbMatch = safe.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+  if (rgbMatch) {
+    return `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${alpha})`;
+  }
+  return safe;
+};
+
+export interface RoutineCoverPreset {
+  id: string;
+  legacyId: string;
+  value: string;
+  colors: readonly [string, string];
+  start: { x: number; y: number };
+  end: { x: number; y: number };
+}
+
+export const getRoutineCoverPresets = ({
+  tint,
+  baseBg,
+  secondaryBg,
+  isDark,
+}: {
+  tint: string;
+  baseBg: string;
+  secondaryBg: string;
+  isDark: boolean;
+}): RoutineCoverPreset[] => [
+  {
+    id: 'accent-to-bg',
+    legacyId: 'grad-1',
+    value: 'linear-gradient(135deg, var(--color-accent) 0%, var(--bg-primary) 100%)',
+    colors: [tint, baseBg],
+    start: { x: 0, y: 0 },
+    end: { x: 1, y: 1 },
+  },
+  {
+    id: 'surface-to-accent',
+    legacyId: 'grad-2',
+    value: 'linear-gradient(to bottom right, var(--bg-secondary), var(--color-accent))',
+    colors: [secondaryBg, tint],
+    start: { x: 0, y: 0 },
+    end: { x: 1, y: 1 },
+  },
+  {
+    id: 'black-to-accent',
+    legacyId: 'grad-3',
+    value: 'linear-gradient(45deg, #000000 0%, var(--color-accent) 100%)',
+    colors: ['#000000', tint],
+    start: { x: 0, y: 1 },
+    end: { x: 1, y: 0 },
+  },
+  {
+    id: 'glass-to-accent',
+    legacyId: 'grad-4',
+    value: 'linear-gradient(to right, var(--glass-highlight), var(--color-accent-transparent))',
+    colors: [
+      isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.72)',
+      toRgba(tint, 0.34),
+    ],
+    start: { x: 0, y: 0 },
+    end: { x: 1, y: 0 },
+  },
+  {
+    id: 'solid-accent',
+    legacyId: 'grad-5',
+    value: 'var(--color-accent)',
+    colors: [tint, tint],
+    start: { x: 0, y: 0 },
+    end: { x: 1, y: 1 },
+  },
+];
+
+export const resolveRoutineCoverPreset = (
+  coverValue: string | null | undefined,
+  opts: { tint: string; baseBg: string; secondaryBg: string; isDark: boolean },
+): RoutineCoverPreset | null => {
+  if (!isCssRoutineCover(coverValue)) return null;
+  const presets = getRoutineCoverPresets(opts);
+  const found = presets.find(p => p.value === coverValue || p.legacyId === coverValue);
+  if (found) return found;
+  return presets[0];
+};
+
+/**
  * Normaliza la URL de imagen de rutina para que cargue correctamente.
  */
 export const getDisplayImageUrl = (path: string | null | undefined): string | null => {
-  if (!path) return null;
+  if (!path || isCssRoutineCover(path)) return null;
   if (path.startsWith('blob:') || path.startsWith('file:')) return path;
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
 

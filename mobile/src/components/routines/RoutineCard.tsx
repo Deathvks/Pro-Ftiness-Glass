@@ -10,12 +10,16 @@ import {
   CheckCircle, Edit, Copy, Trash2, Share2, Folder, Link2, Activity
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { getThemeBaseBackground } from '@/constants/theme';
+import { getThemedModalCardColor } from '@/components/ui/ModalThemeBackground';
 import {
   getContrastTextColor,
   calculateRoutineEstimatedTime,
   groupExercises,
-  getDisplayImageUrl
+  getDisplayImageUrl,
+  resolveRoutineCoverPreset,
 } from '@/utils/routineHelpers';
 
 interface RoutineCardProps {
@@ -68,7 +72,14 @@ export function RoutineCard({
   }, [exercises]);
 
   const rawImage = routine.image_url || routine.imageUrl;
-  const imageSrc = getDisplayImageUrl(rawImage);
+  const coverPreset = resolveRoutineCoverPreset(rawImage, {
+    tint: colors.tint,
+    baseBg: getThemeBaseBackground(theme),
+    secondaryBg: theme === 'light' ? '#f1f5f9' : getThemedModalCardColor(theme),
+    isDark,
+  });
+  const imageSrc = coverPreset ? null : getDisplayImageUrl(rawImage);
+  const hasCover = Boolean(coverPreset || imageSrc);
 
   const lastUsedFormatted = useMemo(() => {
     if (!lastUsedDate) return null;
@@ -117,15 +128,24 @@ export function RoutineCard({
         />
       )}
 
-      {/* 1. IMAGEN DE CABECERA (SI TIENE) */}
-      {imageSrc && (
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: imageSrc }}
-            style={styles.imageCover}
-            contentFit="cover"
-            transition={200}
-          />
+      {/* 1. IMAGEN O DEGRADADO DE CABECERA (SI TIENE) */}
+      {hasCover && (
+        <View style={[styles.imageContainer, { backgroundColor: getThemeBaseBackground(theme) }]}>
+          {coverPreset ? (
+            <LinearGradient
+              colors={coverPreset.colors}
+              start={coverPreset.start}
+              end={coverPreset.end}
+              style={styles.imageCover}
+            />
+          ) : imageSrc ? (
+            <Image
+              source={{ uri: imageSrc }}
+              style={styles.imageCover}
+              contentFit="cover"
+              transition={200}
+            />
+          ) : null}
           <View style={styles.imageOverlay} />
           {routine.folder ? (
             <View style={styles.floatingFolderTag}>
@@ -137,8 +157,8 @@ export function RoutineCard({
       )}
 
       <View style={styles.cardBody}>
-        {/* CARPETA (SI NO TIENE IMAGEN) */}
-        {!imageSrc && routine.folder ? (
+        {/* CARPETA (SI NO TIENE PORTADA) */}
+        {!hasCover && routine.folder ? (
           <View style={[styles.folderBadgeNoImg, { backgroundColor: colors.tint + '15' }]}>
             <Folder size={11} color={colors.tint} style={{ marginRight: 4 }} />
             <Text style={[styles.folderTextNoImg, { color: colors.tint }]} numberOfLines={1}>

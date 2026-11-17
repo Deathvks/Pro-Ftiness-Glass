@@ -26,8 +26,9 @@ import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { formatWorkoutTime } from '@/utils/workoutHelpers';
+import { getDisplayImageUrl, resolveRoutineCoverPreset } from '@/utils/routineHelpers';
+import { getThemedModalCardColor } from '@/components/ui/ModalThemeBackground';
 import { getContrastTextColor } from '@/utils/colorUtils';
-import { BACKEND_BASE_URL } from '@/services/apiClient';
 
 interface WorkoutHeaderProps {
   routineName: string;
@@ -67,13 +68,13 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
       ? ['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.92)']
       : ['rgba(255,255,255,0.6)', 'rgba(255,255,255,0.25)', 'rgba(255,255,255,0.35)', 'rgba(255,255,255,0.95)'];
 
-  const getFullImageUrl = (url?: string | null) => {
-    if (!url) return null;
-    if (url.startsWith('http') || url.startsWith('blob:')) return url;
-    return `${BACKEND_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
-  };
-
-  const imgUri = getFullImageUrl(routineImage);
+  const coverPreset = resolveRoutineCoverPreset(routineImage, {
+    tint: colors.tint,
+    baseBg: baseBackground,
+    secondaryBg: theme === 'light' ? '#f1f5f9' : getThemedModalCardColor(theme),
+    isDark,
+  });
+  const imgUri = coverPreset ? null : getDisplayImageUrl(routineImage);
   const playBtnTextColor = getContrastTextColor(colors.tint);
 
   const handlePlayPause = () => {
@@ -111,13 +112,27 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
         <ContentCardBackdrop colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
       )}
 
-      {/* Imagen de fondo si la rutina tiene portada */}
+      {/* Imagen o degradado de fondo si la rutina tiene portada */}
       {imgUri ? (
         <View style={StyleSheet.absoluteFill}>
           <Image
             source={{ uri: imgUri }}
             style={[styles.bgImage, { opacity: useFrontendSurface || isDark ? 0.6 : 0.45 }]}
             resizeMode="cover"
+          />
+          <LinearGradient
+            colors={coverGradient}
+            locations={[0, 0.3, 0.6, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
+      ) : coverPreset ? (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: baseBackground }]}>
+          <LinearGradient
+            colors={coverPreset.colors}
+            start={coverPreset.start}
+            end={coverPreset.end}
+            style={[StyleSheet.absoluteFill, { opacity: 0.72 }]}
           />
           <LinearGradient
             colors={coverGradient}
