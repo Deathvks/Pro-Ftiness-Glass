@@ -5,6 +5,7 @@ import { Cog8ToothIcon as SettingsIcon, UserIcon } from '@heroicons/react/24/out
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import { FaBrain, FaBell, FaChevronLeft, FaDumbbell } from 'react-icons/fa6';
 import useAppStore from '../store/useAppStore';
+import { COOKIE_CONSENT_KEY, COOKIE_CONSENT_VERSION, COOKIE_CONSENT_VERSION_KEY } from '../store/authSlice';
 import { useShallow } from 'zustand/react/shallow';
 import { APP_VERSION } from '../config/version';
 import { useToast } from '../hooks/useToast';
@@ -424,6 +425,7 @@ export default function MainAppLayout({
     cookieConsent,
     handleAcceptCookies,
     handleDeclineCookies,
+    handleSaveCookiePreferences,
     activeWorkout,
     workoutStartTime,
     notifications,
@@ -447,6 +449,7 @@ export default function MainAppLayout({
     cookieConsent: state.cookieConsent,
     handleAcceptCookies: state.handleAcceptCookies,
     handleDeclineCookies: state.handleDeclineCookies,
+    handleSaveCookiePreferences: state.handleSaveCookiePreferences,
     activeWorkout: state.activeWorkout,
     workoutStartTime: state.workoutStartTime,
     notifications: state.notifications || [],
@@ -1334,7 +1337,11 @@ export default function MainAppLayout({
 
   useEffect(() => {
     const handleStorageChange = () => {
-      if (localStorage.getItem('cookie_consent') === 'accepted' && cookieConsent !== 'accepted') {
+      if (
+        localStorage.getItem(COOKIE_CONSENT_KEY) === 'accepted' &&
+        localStorage.getItem(COOKIE_CONSENT_VERSION_KEY) === COOKIE_CONSENT_VERSION &&
+        cookieConsent !== 'accepted'
+      ) {
         handleAcceptCookies();
       }
     };
@@ -1698,6 +1705,7 @@ export default function MainAppLayout({
           <CookieConsentBanner 
             onAccept={handleAcceptCookies} 
             onDecline={handleDeclineCookies} 
+            onSavePreferences={handleSaveCookiePreferences}
             onShowPolicy={handleShowPolicy} 
           />
         )}

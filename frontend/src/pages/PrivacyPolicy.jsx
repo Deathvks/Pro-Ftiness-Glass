@@ -390,14 +390,14 @@ const PrivacyPolicy = ({ onBack }) => {
                         <tr className="hover:bg-accent/5 transition-colors">
                           <td className="p-3.5 sm:p-4 font-mono font-bold text-accent text-xs">theme / accent</td>
                           <td className="p-3.5 sm:p-4 text-text-primary font-bold">Pro Fitness Glass (Propia)</td>
-                          <td className="p-3.5 sm:p-4">Recuerda la apariencia elegida (modo oscuro/claro y color de acento) en este navegador.</td>
-                          <td className="p-3.5 sm:p-4"><span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold text-[11px]">Personalización</span></td>
+                          <td className="p-3.5 sm:p-4">Recuerda la apariencia elegida expresamente por el usuario (modo oscuro/claro y color de acento) en este navegador.</td>
+                          <td className="p-3.5 sm:p-4"><span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 font-bold text-[11px]">Funcional (Exenta)</span></td>
                           <td className="p-3.5 sm:p-4">Persistente (LocalStorage)</td>
                         </tr>
                         <tr className="hover:bg-accent/5 transition-colors">
-                          <td className="p-3.5 sm:p-4 font-mono font-bold text-accent text-xs">cookie_consent</td>
+                          <td className="p-3.5 sm:p-4 font-mono font-bold text-accent text-xs">cookie_consent / cookie_consent_version</td>
                           <td className="p-3.5 sm:p-4 text-text-primary font-bold">Pro Fitness Glass (Propia)</td>
-                          <td className="p-3.5 sm:p-4">Registra la elección del usuario (Aceptado o Rechazado) para no mostrar el banner en cada visita.</td>
+                          <td className="p-3.5 sm:p-4">Registra la elección del usuario (Aceptado o Rechazado) y la versión vigente del aviso para no mostrar el banner en cada visita salvo actualización.</td>
                           <td className="p-3.5 sm:p-4"><span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">Técnica / Legal</span></td>
                           <td className="p-3.5 sm:p-4">1 año o hasta borrado</td>
                         </tr>

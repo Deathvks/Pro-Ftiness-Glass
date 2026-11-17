@@ -1,6 +1,6 @@
 {
-  "version": "7.16.37",
-  "releaseNotes": "Actualización v7.16.37: aviso actualizado de privacidad y cookies con opción de habilitar notificaciones opcionales por correo al aceptar.",
+  "version": "7.16.38",
+  "releaseNotes": "Actualización v7.16.38: modal de privacidad granular con panel Configurar, botones simétricos y conservación de tema/acento aunque rechaces los opcionales.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",
