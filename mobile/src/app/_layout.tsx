@@ -40,7 +40,6 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
-  const [hasRestoredPath, setHasRestoredPath] = useState(false);
   const hasCheckedCardio = useRef(false);
   
   const isAuthenticated = useAppStore(state => state.isAuthenticated);
@@ -66,6 +65,9 @@ export default function RootLayout() {
       
       const token = localStorage.getItem('pro_fitness_token');
       if (token) useAppStore.setState({ isAuthenticated: true, token });
+      try {
+        localStorage.removeItem('last_path');
+      } catch {}
 
       useAppStore.getState().loadRoutineEditorState();
 
@@ -82,18 +84,6 @@ export default function RootLayout() {
     });
     return () => sub.remove();
   }, []);
-
-  // Save last path for reload persistence - only save stable tab paths
-  useEffect(() => {
-    if (isReady && isAuthenticated && pathname && pathname !== '/') {
-      const isStablePath = pathname.startsWith('/(tabs)') || pathname === '/routines' || pathname === '/nutrition' || pathname === '/hub' || pathname === '/social' || pathname === '/profile';
-      // Also save if it's the index tab
-      const isIndex = pathname === '/' || pathname === '/index';
-      if ((isStablePath || isIndex) && typeof localStorage !== 'undefined') {
-        localStorage.setItem('last_path', pathname);
-      }
-    }
-  }, [pathname, isReady, isAuthenticated]);
 
   // Proteccion de Rutas
   useEffect(() => {
@@ -136,21 +126,8 @@ export default function RootLayout() {
           router.replace('/(tabs)');
         }
       }
-    } else if (isAuthenticated && !hasRestoredPath) {
-      setHasRestoredPath(true);
-      // Only restore if we're currently at the root/index - don't redirect if already navigated
-      const atRoot = segments.length <= 1 || (segments[0] === '(tabs)' && (!segments[1] || (segments[1] as string) === 'index'));
-      if (atRoot && !needsOnboarding && !inNews && !inShare) {
-        const lastPath = typeof localStorage !== 'undefined' ? localStorage.getItem('last_path') : null;
-        if (lastPath && lastPath !== '/' && lastPath !== '/index' && !lastPath.includes('login') && !lastPath.includes('register') && !lastPath.includes('onboarding')) {
-          setTimeout(() => {
-            const user = useAppStore.getState().userProfile;
-            if (!loadCardioSession(user?.id)) router.replace(lastPath as any);
-          }, 100);
-        }
-      }
     }
-  }, [isAuthenticated, isReady, segments, hasRestoredPath, userProfile]);
+  }, [isAuthenticated, isReady, segments, userProfile]);
 
   useEffect(() => {
     if (!isAuthenticated) hasCheckedCardio.current = false;
