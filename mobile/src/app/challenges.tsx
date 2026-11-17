@@ -235,6 +235,10 @@ export default function ChallengesScreen() {
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const tabContrastTextColor = getContrastTextColor(colors.tint);
+  const isLightAccent = tabContrastTextColor === '#000000';
+  const referralChipBg = isLightAccent ? 'rgba(0, 0, 0, 0.10)' : 'rgba(255, 255, 255, 0.18)';
+  const referralChipBorder = isLightAccent ? 'rgba(0, 0, 0, 0.16)' : 'rgba(255, 255, 255, 0.3)';
+  const referralSubtleInk = isLightAccent ? 'rgba(0, 0, 0, 0.78)' : 'rgba(255, 255, 255, 0.88)';
   const glassBorder = isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)';
 
   const [challenges, setChallenges] = useState<Challenge[]>([]);
@@ -356,7 +360,7 @@ export default function ChallengesScreen() {
             styles.referralBanner,
             {
               backgroundColor: colors.tint,
-              borderColor: 'rgba(255, 255, 255, 0.3)',
+              borderColor: referralChipBorder,
               shadowColor: colors.tint,
             },
           ]}
@@ -365,32 +369,32 @@ export default function ChallengesScreen() {
           <View pointerEvents="none" style={styles.referralBannerGlow} />
 
           <View style={styles.referralTopRow}>
-            <View style={styles.referralIconBox}>
-              <Users size={28} color="#ffffff" strokeWidth={2.4} />
+            <View style={[styles.referralIconBox, { backgroundColor: referralChipBg }]}>
+              <Users size={28} color={tabContrastTextColor} strokeWidth={2.4} />
             </View>
 
-            <View style={{ flex: 1 }}>
-              <Text style={styles.referralTitle}>Invitar a un amigo</Text>
-              <Text style={styles.referralDesc}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={[styles.referralTitle, { color: tabContrastTextColor }]}>Invitar a un amigo</Text>
+              <Text style={[styles.referralDesc, { color: referralSubtleInk }]}>
                 Infinito • Pide a un amigo que se registre con tu enlace y obtén 1.000 XP cada vez
                 que alguien nuevo lo haga.
               </Text>
             </View>
 
-            <View style={styles.referralXpBadge}>
-              <Text style={styles.referralXpVal}>+1k</Text>
-              <Text style={styles.referralXpUnit}>XP</Text>
+            <View style={[styles.referralXpBadge, { backgroundColor: referralChipBg, borderColor: referralChipBorder }]}>
+              <Text style={[styles.referralXpVal, { color: tabContrastTextColor }]}>+1k</Text>
+              <Text style={[styles.referralXpUnit, { color: referralSubtleInk }]}>XP</Text>
             </View>
           </View>
 
           {/* Código de referido y acciones */}
           <View style={styles.referralActionsRow}>
-            <View style={styles.codePill}>
-              <Text style={styles.codePillText}>
+            <View style={[styles.codePill, { backgroundColor: referralChipBg, borderColor: referralChipBorder }]}>
+              <Text style={[styles.codePillText, { color: tabContrastTextColor }]}>
                 {userProfile?.referral_code || 'Cargando...'}
               </Text>
-              <Copy size={13} color="rgba(255, 255, 255, 0.7)" style={{ marginLeft: 4 }} />
-              <Text style={styles.codePillHint}>Toca para copiar</Text>
+              <Copy size={13} color={referralSubtleInk} style={{ marginLeft: 4 }} />
+              <Text style={[styles.codePillHint, { color: referralSubtleInk }]}>Toca para copiar</Text>
             </View>
 
             <TouchableOpacity
@@ -398,10 +402,10 @@ export default function ChallengesScreen() {
                 e.stopPropagation();
                 handleShareReferral();
               }}
-              style={styles.shareButton}
+              style={[styles.shareButton, { backgroundColor: referralChipBg }]}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Share2 size={16} color="#ffffff" />
+              <Share2 size={16} color={tabContrastTextColor} />
             </TouchableOpacity>
           </View>
 
@@ -415,10 +419,10 @@ export default function ChallengesScreen() {
               setShowRewardsModal(true);
             }}
             activeOpacity={0.8}
-            style={styles.rewardsButton}
+            style={[styles.rewardsButton, { backgroundColor: referralChipBg, borderColor: referralChipBorder }]}
           >
-            <Gift size={16} color="#ffffff" />
-            <Text style={styles.rewardsButtonText}>
+            <Gift size={16} color={tabContrastTextColor} />
+            <Text style={[styles.rewardsButtonText, { color: tabContrastTextColor }]}>
               Ver Recompensas (Llevas {userProfile?.referralCount || 0})
             </Text>
           </TouchableOpacity>

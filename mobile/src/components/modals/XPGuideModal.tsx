@@ -40,7 +40,7 @@ import { getUnselectedControlColors } from '@/constants/theme';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getXPHistory } from '@/services/gamificationService';
 import useAppStore from '@/store/useAppStore';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 
 interface XPGuideModalProps {
   visible: boolean;
@@ -202,7 +202,7 @@ export function XPGuideModal({
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const accentText = getContrastColor(colors.tint, theme);
+  const accentText = getContrastTextColor(colors.tint);
 
   const [activeTab, setActiveTab] = useState<'guide' | 'history'>('guide');
   const [xpHistory, setXpHistory] = useState<XPHistoryItem[]>([]);
