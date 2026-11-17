@@ -162,6 +162,10 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
         grams: num,
         log_date: selectedDate,
       });
+      const events = response?.gamification || response?.gamificationEvents;
+      if (Array.isArray(events) && events.length > 0) {
+        useAppStore.getState().addGamificationEvents?.(events);
+      }
 
       setGrams(String(creatineTarget || '5'));
       await loadCreatineData();

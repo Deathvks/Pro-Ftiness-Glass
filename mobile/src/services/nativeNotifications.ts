@@ -63,7 +63,46 @@ const safeRemoveStorage = (key: string) => {
 
 const pushEnabledKey = (userId?: string | number | null) => `pfg_push_enabled_${userId ?? 'anon'}`;
 const pushEndpointKey = (userId?: string | number | null) => `pfg_push_endpoint_${userId ?? 'anon'}`;
+const trainingPushKey = (userId?: string | number | null) => `pfg_training_push_${userId ?? 'anon'}`;
 const reminderSyncKey = (userId?: string | number | null) => `pfg_local_reminder_sync_${userId ?? 'anon'}`;
+const LAST_PUSH_USER_KEY = 'pfg_last_push_user_id';
+
+let activePushUserId: string | number | null = null;
+
+const resolvePushUserId = (userId?: string | number | null): string | number | null => {
+  if (userId !== undefined && userId !== null) {
+    activePushUserId = userId;
+    safeSetStorage(LAST_PUSH_USER_KEY, String(userId));
+    return userId;
+  }
+  if (activePushUserId !== null) return activePushUserId;
+  return safeGetStorage(LAST_PUSH_USER_KEY);
+};
+
+export const isDevicePushEnabled = (userId?: string | number | null): boolean => {
+  const uid = resolvePushUserId(userId);
+  return safeGetStorage(pushEnabledKey(uid)) !== 'false';
+};
+
+export const isTrainingReminderEnabled = (userId?: string | number | null): boolean => {
+  const uid = resolvePushUserId(userId);
+  return safeGetStorage(trainingPushKey(uid)) !== 'false';
+};
+
+export const syncTrainingPushPreference = async (
+  userId?: string | number | null,
+  enabled?: boolean
+) => {
+  if (enabled === undefined) return;
+  const uid = resolvePushUserId(userId);
+  safeSetStorage(trainingPushKey(uid), enabled ? 'true' : 'false');
+  if (!enabled) {
+    await cancelLocalReminders();
+  } else if (isDevicePushEnabled(uid)) {
+    safeRemoveStorage(reminderSyncKey(uid));
+    await scheduleLocalReminders(uid);
+  }
+};
 
 export const ensureAndroidNotificationChannels = async () => {
   if (Platform.OS !== 'android') return;
@@ -151,6 +190,11 @@ export const cancelLocalReminders = async () => {
 
 export const scheduleLocalReminders = async (userId?: string | number | null) => {
   if (isWeb) return;
+  const uid = resolvePushUserId(userId);
+  if (!isDevicePushEnabled(uid) || !isTrainingReminderEnabled(uid)) {
+    await cancelLocalReminders();
+    return;
+  }
   const perm = await getNotificationPermissionStatus();
   if (perm !== 'granted') return;
 
@@ -228,6 +272,7 @@ export const cancelRestTimerNotification = async () => {
 
 export const scheduleRestTimerNotification = async (secondsFromNow: number, routineName?: string) => {
   if (isWeb || !secondsFromNow || secondsFromNow <= 1) return;
+  if (!isDevicePushEnabled()) return;
   try {
     const perm = await getNotificationPermissionStatus();
     if (perm !== 'granted') return;
@@ -265,7 +310,7 @@ export const presentInstantNotification = async ({
   body: string;
   data?: Record<string, any>;
 }) => {
-  if (isWeb) return;
+  if (isWeb || !isDevicePushEnabled()) return;
   try {
     const perm = await getNotificationPermissionStatus();
     if (perm !== 'granted') return;
@@ -404,10 +449,17 @@ export const getDevicePushState = async (userId?: string | number | null) => {
 
 export const syncPushOnAppStart = async (userId?: string | number | null) => {
   if (!userId) return;
+  const uid = resolvePushUserId(userId);
   await ensureAndroidNotificationChannels();
-  const storedEnabled = safeGetStorage(pushEnabledKey(userId));
+  try {
+    const prefs = await notificationService.getPushPreferences();
+    if (prefs && typeof prefs === 'object' && 'training' in prefs) {
+      safeSetStorage(trainingPushKey(uid), prefs.training !== false ? 'true' : 'false');
+    }
+  } catch {}
+  const storedEnabled = safeGetStorage(pushEnabledKey(uid));
   const perm = await getNotificationPermissionStatus();
   if (perm === 'granted' && storedEnabled !== 'false') {
-    await registerDeviceForPushNotifications(userId);
+    await registerDeviceForPushNotifications(uid);
   }
 };

@@ -12,6 +12,9 @@ import { installHapticsInterceptor } from '@/utils/haptics';
 import { loadCardioSession, syncPendingCardio } from '@/utils/cardio';
 import { resolveDeepLink } from '@/utils/deepLinking';
 import { syncPushOnAppStart } from '@/services/nativeNotifications';
+import { initSocket } from '@/services/socket';
+import * as userService from '@/services/userService';
+import { useToastStore } from '@/store/toastStore';
 import useAppStore, { applyNativeColorScheme } from '@/store/useAppStore';
 import type { QueuedRequest } from '@/store/syncSlice';
 import ThemeBackground from '@/components/ThemeBackground';
@@ -43,6 +46,8 @@ export default function RootLayout() {
   const isAuthenticated = useAppStore(state => state.isAuthenticated);
   const userProfile = useAppStore(state => state.userProfile);
   const gamificationLevel = useAppStore(state => state.gamification?.level || state.userProfile?.level || 1);
+  const gamificationEvents = useAppStore(state => (state.gamification as any)?.gamificationEvents);
+  const clearGamificationEvents = useAppStore(state => (state as any).clearGamificationEvents);
   const [show2FAPromo, setShow2FAPromo] = useState(false);
   const [milestoneLevel, setMilestoneLevel] = useState<number | null>(null);
   const [dismissedEmailVerify, setDismissedEmailVerify] = useState(false);
@@ -185,6 +190,106 @@ export default function RootLayout() {
         void syncPushOnAppStart(userProfile.id);
       }
     }
+  }, [isReady, isAuthenticated, userProfile?.id]);
+
+  // Consumir gamificationEvents en cola y mostrar toasts de XP / Retos / Insignias / Subida de Nivel
+  useEffect(() => {
+    if (!gamificationEvents || gamificationEvents.length === 0) return;
+    const showToast = useToastStore.getState().showToast;
+
+    gamificationEvents.forEach((event: any) => {
+      if (event.type === 'xp' && Number(event.amount) > 0) {
+        showToast(`+${event.amount} XP: ${event.reason || 'Actividad completada'}`, 'success');
+      } else if (event.type === 'badge') {
+        showToast(`¡Insignia Desbloqueada! ${event.badge?.name || 'Nueva insignia'}`, 'success');
+      } else if (event.type === 'level_up') {
+        let extraStr = '';
+        if (event.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
+        if (event.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
+        if (event.newLevel === 15) extraStr = ' (¡Nuevos degradados desbloqueados!)';
+        if (event.newLevel === 20) extraStr = ' (¡Nuevos acentos animados desbloqueados!)';
+        showToast(`¡Felicidades! Has subido al Nivel ${event.newLevel}!${extraStr}`, 'success', 5500);
+      } else if (event.type === 'challenge_completed') {
+        showToast(`¡Reto completado! ${event.message} (+${event.xpAdded} XP)`, 'success');
+        if (event.leveledUp && event.newLevel) {
+          showToast(`¡Felicidades! Has subido al Nivel ${event.newLevel}!`, 'success', 5500);
+        }
+      } else if (event.type === 'info' && event.message) {
+        showToast(event.message, 'info');
+      }
+    });
+
+    clearGamificationEvents?.();
+  }, [gamificationEvents, clearGamificationEvents]);
+
+  // Socket global para retos completados en tiempo real y notificaciones entrantes
+  useEffect(() => {
+    if (!isReady || !isAuthenticated || !userProfile?.id) return;
+
+    let activeSocket: any = null;
+    const handleGamificationSocket = async (data: any) => {
+      if (!data) return;
+      const showToast = useToastStore.getState().showToast;
+      const state: any = useAppStore.getState();
+
+      if (data.type === 'referral_success') {
+        showToast(
+          `¡Reto completado! ${data.message || 'Nuevo referido'} (+${data.xpAdded || 1000} XP)`,
+          'success',
+          5000
+        );
+      } else if (data.type === 'level_up') {
+        let extraStr = '';
+        if (data.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
+        if (data.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
+        if (data.newLevel === 15) extraStr = ' (¡Nuevos degradados desbloqueados!)';
+        if (data.newLevel === 20) extraStr = ' (¡Nuevos acentos animados desbloqueados!)';
+        showToast(`¡Felicidades! Has subido al Nivel ${data.newLevel}!${extraStr}`, 'success', 5500);
+      } else if (data.type === 'challenge_completed') {
+        showToast(`¡Reto completado! ${data.message} (+${data.xpAdded} XP)`, 'success');
+        if (data.leveledUp && data.newLevel) {
+          showToast(`¡Felicidades! Has subido al Nivel ${data.newLevel}!`, 'success', 5500);
+        }
+      }
+
+      if (data.type === 'challenge_completed' || data.type === 'referral_success' || data.type === 'level_up') {
+        try {
+          const profileData = await userService.getMyProfile();
+          if (profileData && state.setGamificationData) {
+            state.setGamificationData({
+              xp: profileData.xp,
+              level: profileData.level,
+              streak: profileData.streak,
+              last_activity_date: profileData.last_activity_date,
+              unlocked_badges: profileData.unlocked_badges,
+            });
+          }
+        } catch {}
+      }
+    };
+
+    const handleNewNotification = () => {
+      const store: any = useAppStore.getState();
+      if (store.isAuthenticated) {
+        store.incrementUnreadCount?.();
+        void store.fetchNotifications?.(1);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      activeSocket = initSocket();
+      if (!activeSocket) return;
+      activeSocket.on('GAMIFICATION_EVENT', handleGamificationSocket);
+      activeSocket.on('new_notification', handleNewNotification);
+    }, 450);
+
+    return () => {
+      clearTimeout(timer);
+      if (activeSocket) {
+        activeSocket.off('GAMIFICATION_EVENT', handleGamificationSocket);
+        activeSocket.off('new_notification', handleNewNotification);
+      }
+    };
   }, [isReady, isAuthenticated, userProfile?.id]);
 
   // Listeners nativos de notificaciones recibidas y pulsadas

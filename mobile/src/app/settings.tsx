@@ -86,6 +86,7 @@ import {
   registerDeviceForPushNotifications,
   unregisterDevicePushNotifications,
   presentInstantNotification,
+  syncTrainingPushPreference,
 } from '@/services/nativeNotifications';
 import { logoutUser, disable2FA } from '@/services/authService';
 import { getExerciseList } from '@/services/exerciseService';
@@ -323,6 +324,9 @@ export default function SettingsScreen() {
         .then(prefs => {
           if (prefs && typeof prefs === 'object') {
             setPushPreferences(prev => ({ ...prev, ...prefs }));
+            if ('training' in prefs) {
+              void syncTrainingPushPreference(userProfile?.id, prefs.training !== false);
+            }
           }
         })
         .catch(() => {});
@@ -541,6 +545,9 @@ export default function SettingsScreen() {
 
     try {
       await notificationService.updatePushPreferences(purpose, nextVal, PUSH_CONSENT_VERSION);
+      if (purpose === 'training') {
+        await syncTrainingPushPreference(userProfile?.id, nextVal);
+      }
       useAppStore.getState().showToast?.(`Preferencia push ${nextVal ? 'activada' : 'desactivada'}`);
     } catch {
       setPushPreferences(prev => ({ ...prev, [purpose]: current }));

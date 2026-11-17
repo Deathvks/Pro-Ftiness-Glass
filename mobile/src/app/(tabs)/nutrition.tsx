@@ -77,6 +77,7 @@ export default function NutritionScreen() {
   const addFavoriteMeal = useAppStore(state => state.addFavoriteMeal);
   const fetchNotifications = useAppStore(state => state.fetchNotifications);
   const fetchInitialData = useAppStore(state => state.fetchInitialData);
+  const addGamificationEvents = useAppStore(state => state.addGamificationEvents);
 
   // Modal States
   const [modal, setModal] = useState<{
@@ -275,12 +276,16 @@ export default function NutritionScreen() {
               }).catch(console.warn);
             }
           }
-          await nutritionService.addFoodLog({
+          const addedRes = await nutritionService.addFoodLog({
             ...item,
             description: item.description || item.name,
             log_date: selectedDate,
             meal_type: modal.data?.mealType || item.meal_type,
           });
+          const events = addedRes?.gamification || addedRes?.gamificationEvents;
+          if (Array.isArray(events) && events.length > 0 && addGamificationEvents) {
+            addGamificationEvents(events);
+          }
         }
       } else {
         // Background favorite saving if enabled
@@ -304,19 +309,27 @@ export default function NutritionScreen() {
 
         if (modal.data?.id) {
           // Update existing food
-          await nutritionService.updateFoodLog(modal.data.id, {
+          const updatedRes = await nutritionService.updateFoodLog(modal.data.id, {
             ...foodData,
             description: foodData.description || foodData.name,
             meal_type: modal.data.mealType || foodData.meal_type,
           });
+          const events = updatedRes?.gamification || updatedRes?.gamificationEvents;
+          if (Array.isArray(events) && events.length > 0 && addGamificationEvents) {
+            addGamificationEvents(events);
+          }
         } else {
           // Add new food
-          await nutritionService.addFoodLog({
+          const addedRes = await nutritionService.addFoodLog({
             ...foodData,
             description: foodData.description || foodData.name,
             log_date: selectedDate,
             meal_type: modal.data?.mealType || foodData.meal_type,
           });
+          const events = addedRes?.gamification || addedRes?.gamificationEvents;
+          if (Array.isArray(events) && events.length > 0 && addGamificationEvents) {
+            addGamificationEvents(events);
+          }
         }
       }
 

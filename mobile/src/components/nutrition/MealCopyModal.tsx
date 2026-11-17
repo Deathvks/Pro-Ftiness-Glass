@@ -273,6 +273,17 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
       );
 
       const copiedCount = responses.filter(r => r.status === 'fulfilled').length;
+      const addGamificationEvents = useAppStore.getState().addGamificationEvents;
+      if (addGamificationEvents) {
+        for (const r of responses) {
+          if (r.status === 'fulfilled') {
+            const events = r.value?.gamification || r.value?.gamificationEvents;
+            if (Array.isArray(events) && events.length > 0) {
+              addGamificationEvents(events);
+            }
+          }
+        }
+      }
 
       if (copiedCount > 0) {
         try {
