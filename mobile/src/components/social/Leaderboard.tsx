@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, useWindowDimensions } from 'react-native';
 import { Trophy, Medal, Flame } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
@@ -14,6 +14,8 @@ interface LeaderboardProps {
 }
 
 export function Leaderboard({ onNavigateProfile }: LeaderboardProps) {
+  const { width: windowWidth } = useWindowDimensions();
+  const isCompact = windowWidth < 390;
   const theme = useAppStore((state: any) => state.theme) || 'oled';
   const colors = useAppColors();
   const userProfile = useAppStore((state: any) => state.userProfile);
@@ -92,13 +94,13 @@ export function Leaderboard({ onNavigateProfile }: LeaderboardProps) {
         <View style={styles.athleteColHeader}>
           <Text style={styles.colHeaderLeft}>Atleta</Text>
         </View>
-        <View style={styles.levelCol}>
+        <View style={[styles.levelCol, isCompact && styles.levelColCompact]}>
           <Text style={styles.colHeaderRight}>Nivel</Text>
         </View>
-        <View style={styles.streakCol}>
+        <View style={[styles.streakCol, isCompact && styles.streakColCompact]}>
           <Text style={styles.colHeaderRight}>Racha</Text>
         </View>
-        <View style={styles.xpCol}>
+        <View style={[styles.xpCol, isCompact && styles.xpColCompact]}>
           <Text style={styles.colHeaderRight}>XP</Text>
         </View>
       </View>
@@ -164,17 +166,29 @@ export function Leaderboard({ onNavigateProfile }: LeaderboardProps) {
           </Text>
         </View>
 
-        <View style={styles.levelCol}>
+        <View style={[styles.levelCol, isCompact && styles.levelColCompact]}>
           <LevelBadge level={Number(user.level) || 1} size="sm" />
         </View>
 
-        <View style={styles.streakCol}>
+        <View style={[styles.streakCol, isCompact && styles.streakColCompact]}>
           <Flame size={13} color="#f97316" fill="#f97316" />
-          <Text style={styles.streakText}>{user.streak || 0}</Text>
+          <Text
+            style={styles.streakText}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+          >
+            {user.streak || 0}
+          </Text>
         </View>
 
-        <View style={styles.xpCol}>
-          <Text style={[styles.xpText, { color: colors.text }]}>
+        <View style={[styles.xpCol, isCompact && styles.xpColCompact]}>
+          <Text
+            style={[styles.xpText, { color: colors.text }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.68}
+          >
             {Number(user.xp || 0).toLocaleString('es-ES')}
           </Text>
         </View>
@@ -324,11 +338,13 @@ const styles = StyleSheet.create({
   },
   athleteColHeader: {
     flex: 1,
+    minWidth: 0,
     paddingLeft: 6,
     justifyContent: 'center',
   },
   athleteCol: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -341,15 +357,23 @@ const styles = StyleSheet.create({
   },
   levelCol: {
     width: 40,
+    flexShrink: 0,
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
+  levelColCompact: {
+    width: 34,
+  },
   streakCol: {
-    width: 44,
+    width: 46,
+    flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: 3,
+  },
+  streakColCompact: {
+    width: 40,
   },
   streakText: {
     fontSize: 12,
@@ -357,9 +381,16 @@ const styles = StyleSheet.create({
     color: '#f97316',
   },
   xpCol: {
-    width: 60,
+    minWidth: 74,
+    maxWidth: 96,
+    flexShrink: 0,
+    paddingLeft: 4,
     alignItems: 'flex-end',
     justifyContent: 'center',
+  },
+  xpColCompact: {
+    minWidth: 66,
+    maxWidth: 84,
   },
   xpText: {
     fontSize: 12,

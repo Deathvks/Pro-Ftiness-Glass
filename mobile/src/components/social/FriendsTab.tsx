@@ -164,8 +164,13 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
                     <Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>
                       {displayName}
                     </Text>
-                    <Text style={[styles.userLevel, { color: colors.textSecondary }]}>
-                      Nivel {friend.level || 1} • {friend.xp?.toLocaleString() || 0} XP
+                    <Text
+                      style={[styles.userLevel, { color: colors.textSecondary }]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.82}
+                    >
+                      Nivel {friend.level || 1} • {Number(friend.xp || 0).toLocaleString('es-ES')} XP
                     </Text>
                   </View>
 
@@ -290,7 +295,9 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     flex: 1,
+    minWidth: 0,
     marginLeft: 12,
+    marginRight: 8,
   },
   userName: {
     fontSize: 15,

@@ -169,15 +169,20 @@ export function SearchTab({
                 >
                   <TouchableOpacity
                     onPress={() => onNavigateProfile && onNavigateProfile(user.id)}
-                    style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
+                    style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, marginRight: 8 }}
                   >
                     <SocialUserAvatar user={user} size={44} />
-                    <View style={{ marginLeft: 12, flex: 1 }}>
+                    <View style={{ marginLeft: 12, flex: 1, minWidth: 0 }}>
                       <Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>
                         {displayName}
                       </Text>
-                      <Text style={[styles.userLevel, { color: colors.textSecondary }]}>
-                        Nivel {user.level || 1} • {user.xp?.toLocaleString() || 0} XP
+                      <Text
+                        style={[styles.userLevel, { color: colors.textSecondary }]}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.82}
+                      >
+                        Nivel {user.level || 1} • {Number(user.xp || 0).toLocaleString('es-ES')} XP
                       </Text>
                     </View>
                   </TouchableOpacity>

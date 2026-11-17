@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  useWindowDimensions,
   Image,
   Animated,
   Platform,
@@ -155,6 +156,8 @@ const getStreakCountdown = (lastActivityDate?: string, now = new Date()) => {
 export default function Dashboard() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  const isCompactScreen = windowWidth < 395;
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
@@ -623,18 +626,44 @@ export default function Dashboard() {
             style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 32 }]}
           />
           )}
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <LevelBadge level={levelData.level} bgTheme={isDark ? '#111111' : '#FFFFFF'} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: isCompactScreen ? 10 : 14 }}>
+          <View style={{ flexShrink: 0 }}>
+            <LevelBadge level={levelData.level} bgTheme={isDark ? '#111111' : '#FFFFFF'} />
+          </View>
 
-          <View style={{ marginLeft: 16, flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Text style={{ fontSize: 18, fontWeight: '900', color: colors.text }}>Nivel {levelData.level}</Text>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 6,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                <Text style={{ fontSize: isCompactScreen ? 16 : 18, fontWeight: '900', color: colors.text }}>
+                  Nivel {levelData.level}
+                </Text>
                 <Info size={12} color={colors.textSecondary} />
               </View>
-              <View style={[styles.xpCapsuleSm, { backgroundColor: colors.tint + '15' }]}>
-                <Text style={[styles.xpCapsuleSmText, { color: colors.tint }]}>
-                  {levelData.currentXp} / {levelData.nextLevelXp} XP
+              <View
+                style={[
+                  styles.xpCapsuleSm,
+                  { backgroundColor: colors.tint + '15', maxWidth: '100%', flexShrink: 1 },
+                ]}
+              >
+                <Text
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.72}
+                  style={[
+                    styles.xpCapsuleSmText,
+                    { color: colors.tint, fontVariant: ['tabular-nums'] },
+                  ]}
+                >
+                  {Number(levelData.currentXp || 0).toLocaleString('es-ES')} /{' '}
+                  {Number(levelData.nextLevelXp || 0).toLocaleString('es-ES')} XP
                 </Text>
               </View>
             </View>
@@ -652,7 +681,10 @@ export default function Dashboard() {
             }}
             style={[
               styles.streakSection,
-              { borderLeftColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
+              {
+                paddingLeft: isCompactScreen ? 10 : 14,
+                borderLeftColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+              },
             ]}
           >
             <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
@@ -1663,7 +1695,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingLeft: 14,
     borderLeftWidth: 1,
-    marginLeft: 14,
+    flexShrink: 0,
   },
   shieldFloatingBadge: {
     position: 'absolute',

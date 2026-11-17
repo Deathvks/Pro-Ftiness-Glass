@@ -147,9 +147,9 @@ function ChallengeCard({ challenge, isDark, colors }: ChallengeCardProps) {
 
       <View style={styles.cardInnerContent}>
         <View style={styles.cardHeaderRow}>
-          <View style={{ flex: 1, marginRight: 10 }}>
+          <View style={{ flex: 1, minWidth: 0, marginRight: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+              <Text style={[styles.cardTitle, { color: colors.text, flexShrink: 1 }]} numberOfLines={1}>
                 {challenge.title}
               </Text>
               {isCompleted && <CheckCircle2 size={16} color={colors.tint} />}
@@ -163,13 +163,19 @@ function ChallengeCard({ challenge, isDark, colors }: ChallengeCardProps) {
             style={[
               styles.xpBadge,
               {
+                flexShrink: 0,
                 backgroundColor: colors.tint + '1E',
                 borderColor: colors.tint + '33',
               },
             ]}
           >
-            <Text style={[styles.xpBadgeText, { color: colors.tint }]}>
-              +{challenge.xp || 25} XP
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              style={[styles.xpBadgeText, { color: colors.tint }]}
+            >
+              +{Number(challenge.xp || 25).toLocaleString('es-ES')} XP
             </Text>
           </View>
         </View>

@@ -89,6 +89,9 @@ export default function LevelBadge({
             }}
           >
             <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.68}
               style={{
                 fontSize: config.text,
                 fontWeight: '900',
