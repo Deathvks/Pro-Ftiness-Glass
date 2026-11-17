@@ -324,7 +324,37 @@ export default function RootLayout() {
   const theme = useAppStore(state => state.theme);
   const themePreference = useAppStore(state => state.themePreference);
   const previewTheme = useAppStore(state => state.themeTest?.name);
+  const showWelcomeModal = useAppStore(state => Boolean((state as any).showWelcomeModal));
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+
+  const forceResetVisible = Boolean(
+    isReady && isAuthenticated && (userProfile as any)?.force_password_reset
+  );
+  const emailVerifyVisible = Boolean(
+    isReady &&
+      isAuthenticated &&
+      userProfile &&
+      !forceResetVisible &&
+      userProfile.email_verified === false &&
+      !dismissedEmailVerify
+  );
+  const welcomeVisible = Boolean(showWelcomeModal && !forceResetVisible && !emailVerifyVisible);
+  const twoFactorVisible = Boolean(
+    show2FAPromo && !forceResetVisible && !emailVerifyVisible && !welcomeVisible
+  );
+  const milestoneVisible = Boolean(
+    milestoneLevel !== null &&
+      !forceResetVisible &&
+      !emailVerifyVisible &&
+      !welcomeVisible &&
+      !twoFactorVisible
+  );
+  const isGlobalModalOpen =
+    forceResetVisible || emailVerifyVisible || welcomeVisible || twoFactorVisible || milestoneVisible;
+
+  useEffect(() => {
+    useAppStore.setState({ isGlobalModalOpen } as any);
+  }, [isGlobalModalOpen]);
 
   useEffect(() => {
     if (!isReady) return;
@@ -392,21 +422,12 @@ export default function RootLayout() {
         <OfflineDownloadFloatingBar />
         <StoryHost />
         <VersionUpdater />
-        <WelcomeModal />
+        <WelcomeModal visible={welcomeVisible} />
         <DomainMigrationModal />
         <CookieConsentBanner />
-        <ForcePasswordResetModal
-          visible={Boolean(isReady && isAuthenticated && (userProfile as any)?.force_password_reset)}
-        />
+        <ForcePasswordResetModal visible={forceResetVisible} />
         <EmailVerificationModal
-          visible={Boolean(
-            isReady &&
-              isAuthenticated &&
-              userProfile &&
-              !(userProfile as any)?.force_password_reset &&
-              userProfile.email_verified === false &&
-              !dismissedEmailVerify
-          )}
+          visible={emailVerifyVisible}
           currentEmail={userProfile?.email}
           onEmailUpdated={() => {
             void useAppStore.getState().fetchInitialData?.();
@@ -417,7 +438,7 @@ export default function RootLayout() {
           onClose={() => setDismissedEmailVerify(true)}
         />
         <TwoFactorPromoModal
-          visible={show2FAPromo}
+          visible={twoFactorVisible}
           onConfigure={() => {
             if (userProfile?.id) {
               AsyncStorage.setItem(`two_factor_promo_dismissed_${userProfile.id}`, 'true').catch(() => {});
@@ -433,7 +454,7 @@ export default function RootLayout() {
           }}
         />
         <MilestoneLevelUpModal
-          visible={milestoneLevel !== null}
+          visible={milestoneVisible}
           level={milestoneLevel || 10}
           onClose={() => {
             if (userProfile?.id && milestoneLevel) {

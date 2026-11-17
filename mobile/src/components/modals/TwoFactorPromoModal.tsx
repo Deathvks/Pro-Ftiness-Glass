@@ -19,8 +19,6 @@ export function TwoFactorPromoModal({ visible, onConfigure, onClose }: TwoFactor
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const contrastText = getContrastTextColor(colors.tint);
 
-  if (!visible) return null;
-
   return (
     <SwipeableBottomSheet visible={visible} onClose={onClose} isDark={isDark} maxHeight="75%">
       <View style={styles.content}>

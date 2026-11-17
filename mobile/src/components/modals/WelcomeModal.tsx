@@ -87,8 +87,6 @@ export function WelcomeModal({ visible: propVisible, onClose }: WelcomeModalProp
     else closeWelcomeModal?.();
   };
 
-  if (!visible) return null;
-
   return (
     <SwipeableBottomSheet
       visible={visible}

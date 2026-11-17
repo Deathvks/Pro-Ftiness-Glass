@@ -80,15 +80,14 @@ export function MilestoneLevelUpModal({ visible, level, onClose }: MilestoneLeve
     return () => loop.stop();
   }, [visible, scaleAnim, opacityAnim, spinAnim]);
 
-  if (!visible) return null;
-
   const rotate = spinAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
 
   return (
-    <Modal visible={visible} transparent statusBarTranslucent navigationBarTranslucent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent statusBarTranslucent navigationBarTranslucent animationType="none" onRequestClose={onClose}>
+      {visible ? (
       <View style={styles.backdrop}>
         <Animated.View style={[styles.haloWrap, { transform: [{ rotate }] }]} pointerEvents="none">
           <LinearGradient
@@ -151,6 +150,7 @@ export function MilestoneLevelUpModal({ visible, level, onClose }: MilestoneLeve
           </TouchableOpacity>
         </Animated.View>
       </View>
+      ) : null}
     </Modal>
   );
 }

@@ -29,8 +29,6 @@ export function GoogleTermsModal({
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const contrastText = getContrastTextColor(colors.tint);
 
-  if (!visible) return null;
-
   const handleContinue = () => {
     if (!previouslyDeclined) {
       AsyncStorage.setItem('cookie_consent', 'accepted').catch(() => {});

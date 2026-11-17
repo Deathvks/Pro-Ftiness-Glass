@@ -18,8 +18,6 @@ export function CoachingPromoModal({ visible, onClose }: CoachingPromoModalProps
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const contrastText = getContrastTextColor(colors.tint);
 
-  if (!visible) return null;
-
   const features = [
     {
       icon: ClipboardList,

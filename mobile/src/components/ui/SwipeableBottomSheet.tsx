@@ -64,7 +64,11 @@ export function SwipeableSheetModal({
   const translateY = useAnimatedValue(screenHeight);
   const backdropOpacity = useAnimatedValue(0);
   const touchStartY = useRef(0);
+  const draggingRef = useRef(false);
   const closingRef = useRef(false);
+  const visibleRef = useRef(visible);
+  const openCycleRef = useRef(0);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onCloseRef = useRef(onClose);
 
   useEffect(() => {
@@ -72,9 +76,29 @@ export function SwipeableSheetModal({
   }, [onClose]);
 
   useEffect(() => {
-    if (!visible) return;
+    visibleRef.current = visible;
+  }, [visible]);
 
+  useEffect(() => {
+    if (!visible) {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+      closingRef.current = false;
+      draggingRef.current = false;
+      translateY.stopAnimation();
+      backdropOpacity.stopAnimation();
+      return;
+    }
+
+    openCycleRef.current += 1;
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
     closingRef.current = false;
+    draggingRef.current = false;
     translateY.setValue(screenHeight * 0.65);
     backdropOpacity.setValue(0);
     Animated.parallel([
@@ -93,54 +117,17 @@ export function SwipeableSheetModal({
     ]).start();
 
     return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
       translateY.stopAnimation();
       backdropOpacity.stopAnimation();
     };
   }, [visible, translateY, backdropOpacity, screenHeight]);
 
-  const dismissAnimated = useCallback(() => {
-    if (!dismissible || closingRef.current) return;
-    closingRef.current = true;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-
-    Animated.parallel([
-      Animated.timing(backdropOpacity, {
-        toValue: 0,
-        duration: 180,
-        useNativeDriver: true,
-      }),
-      Animated.timing(translateY, {
-        toValue: screenHeight,
-        duration: 190,
-        useNativeDriver: true,
-      }),
-    ]).start(({ finished }) => {
-      if (finished) onCloseRef.current();
-    });
-  }, [dismissible, translateY, backdropOpacity, screenHeight]);
-
-  const onDragBegin = useCallback(({ absoluteY }: GestureStateChangeEvent<PanGestureHandlerEventPayload>) => {
-    // Native translation can reset when the pan activates. Keep the original touch position.
-    touchStartY.current = absoluteY;
-  }, []);
-
-  const onDragUpdate = useCallback(({ absoluteY }: GestureUpdateEvent<PanGestureHandlerEventPayload>) => {
-    if (closingRef.current) return;
-    const distance = Math.max(0, absoluteY - touchStartY.current);
-    translateY.setValue(distance);
-    backdropOpacity.setValue(Math.max(0.2, 1 - distance / (screenHeight * 0.55)));
-  }, [translateY, backdropOpacity, screenHeight]);
-
-  const onDragEnd = useCallback((
-    { absoluteY, velocityY }: GestureStateChangeEvent<PanGestureHandlerEventPayload>,
-    success: boolean,
-  ) => {
-    if (closingRef.current) return;
-    const distance = absoluteY - touchStartY.current;
-    if (success && (distance > 48 || (distance > 16 && velocityY > 300))) {
-      dismissAnimated();
-      return;
-    }
+  const snapBack = useCallback(() => {
+    if (closingRef.current || !visibleRef.current) return;
     Animated.parallel([
       Animated.timing(backdropOpacity, {
         toValue: 1,
@@ -155,11 +142,84 @@ export function SwipeableSheetModal({
         mass: 0.8,
       }),
     ]).start();
-  }, [translateY, backdropOpacity, dismissAnimated]);
+  }, [translateY, backdropOpacity]);
+
+  const dismissAnimated = useCallback(() => {
+    if (!dismissible || closingRef.current || !visibleRef.current) return;
+    closingRef.current = true;
+    draggingRef.current = false;
+    const cycle = openCycleRef.current;
+    let closeSent = false;
+
+    const finalizeClose = () => {
+      if (closeSent || openCycleRef.current !== cycle) return;
+      closeSent = true;
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+      onCloseRef.current();
+    };
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    // Seguro por si una interrupción nativa/RN cancela el callback de Animated antes de llamar a onClose
+    closeTimerRef.current = setTimeout(finalizeClose, 260);
+
+    Animated.parallel([
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: screenHeight,
+        duration: 190,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      finalizeClose();
+    });
+  }, [dismissible, translateY, backdropOpacity, screenHeight]);
+
+  const onDragBegin = useCallback(({ absoluteY }: GestureStateChangeEvent<PanGestureHandlerEventPayload>) => {
+    if (closingRef.current || !visibleRef.current) return;
+    // Native translation can reset when the pan activates. Keep the original touch position.
+    touchStartY.current = absoluteY;
+    draggingRef.current = true;
+  }, []);
+
+  const onDragUpdate = useCallback(({ absoluteY }: GestureUpdateEvent<PanGestureHandlerEventPayload>) => {
+    if (closingRef.current || !visibleRef.current) return;
+    draggingRef.current = true;
+    const distance = Math.max(0, absoluteY - touchStartY.current);
+    translateY.setValue(distance);
+    backdropOpacity.setValue(Math.max(0.2, 1 - distance / (screenHeight * 0.55)));
+  }, [translateY, backdropOpacity, screenHeight]);
+
+  const onDragEnd = useCallback((
+    { absoluteY, velocityY }: GestureStateChangeEvent<PanGestureHandlerEventPayload>,
+    success: boolean,
+  ) => {
+    draggingRef.current = false;
+    if (closingRef.current || !visibleRef.current) return;
+    const distance = absoluteY - touchStartY.current;
+    if (success && (distance > 48 || (distance > 16 && velocityY > 300))) {
+      dismissAnimated();
+      return;
+    }
+    snapBack();
+  }, [dismissAnimated, snapBack]);
+
+  const onDragFinalize = useCallback(() => {
+    if (draggingRef.current && !closingRef.current && visibleRef.current) {
+      draggingRef.current = false;
+      snapBack();
+    }
+  }, [snapBack]);
 
   const dragGesture = useMemo(() => {
     const pan = Gesture.Pan()
-      .enabled(dismissible)
+      .enabled(dismissible && visible)
       .runOnJS(true)
       .maxPointers(1)
       .activeOffsetY(7)
@@ -168,12 +228,12 @@ export function SwipeableSheetModal({
       .shouldCancelWhenOutside(false);
 
     // eslint-disable-next-line react-hooks/refs -- Gesture Handler invokes these callbacks after touch events.
-    pan.onBegin(onDragBegin).onUpdate(onDragUpdate).onEnd(onDragEnd);
+    pan.onBegin(onDragBegin).onUpdate(onDragUpdate).onEnd(onDragEnd).onFinalize(onDragFinalize);
 
     // Restrict where the drag can start so scrollable content can handle its own gestures.
     if (dragAreaHeight !== undefined) pan.hitSlop({ top: 0, height: dragAreaHeight });
     return pan;
-  }, [dismissible, dragAreaHeight, onDragBegin, onDragUpdate, onDragEnd]);
+  }, [dismissible, visible, dragAreaHeight, onDragBegin, onDragUpdate, onDragEnd, onDragFinalize]);
 
   const overlay = (
     <View style={styles.overlay}>
@@ -202,14 +262,16 @@ export function SwipeableSheetModal({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
       statusBarTranslucent={statusBarTranslucent}
       navigationBarTranslucent={navigationBarTranslucent}
       onRequestClose={dismissAnimated}
     >
-      <GestureHandlerRootView style={styles.rootFlex}>
-        <SafeAreaProvider>{content}</SafeAreaProvider>
-      </GestureHandlerRootView>
+      {visible ? (
+        <GestureHandlerRootView style={styles.rootFlex}>
+          <SafeAreaProvider>{content}</SafeAreaProvider>
+        </GestureHandlerRootView>
+      ) : null}
     </Modal>
   );
 }

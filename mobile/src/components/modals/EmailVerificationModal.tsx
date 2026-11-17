@@ -87,8 +87,6 @@ export function EmailVerificationModal({
     }
   };
 
-  if (!visible) return null;
-
   return (
     <SwipeableBottomSheet
       visible={visible}

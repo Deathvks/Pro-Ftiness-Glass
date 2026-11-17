@@ -82,6 +82,7 @@ export function TourOverlay() {
   const userProfile = useAppStore((s: any) => s.userProfile);
   const activeTutorial = useAppStore((s: any) => s.activeTutorial);
   const showWelcomeModal = useAppStore((s: any) => s.showWelcomeModal);
+  const isGlobalModalOpen = useAppStore((s: any) => s.isGlobalModalOpen);
   const showTutorialsCenter = useAppStore((s: any) => s.showTutorialsCenter);
   const isRestTimerModalOpen = useAppStore((s: any) => s.isRestTimerModalOpen);
   const activeStoryGroup = useAppStore((s: any) => s.activeStoryGroup);
@@ -222,7 +223,7 @@ export function TourOverlay() {
     if (!isAuthenticated || !userProfile?.id) return;
     if (!userProfile.goal && userProfile.role !== 'trainee') return;
     if (activeTutorial?.tutorial || sessionRef.current) return;
-    if (showWelcomeModal || showTutorialsCenter || isRestTimerModalOpen || activeStoryGroup) {
+    if (showWelcomeModal || isGlobalModalOpen || showTutorialsCenter || isRestTimerModalOpen || activeStoryGroup) {
       return;
     }
 
@@ -246,6 +247,7 @@ export function TourOverlay() {
         latest[matchingAutoTour.flagKey] ||
         latest.activeTutorial ||
         latest.showWelcomeModal ||
+        latest.isGlobalModalOpen ||
         latest.showTutorialsCenter ||
         latest.isRestTimerModalOpen ||
         latest.activeStoryGroup
@@ -299,6 +301,7 @@ export function TourOverlay() {
     pathname,
     activeTutorial,
     showWelcomeModal,
+    isGlobalModalOpen,
     showTutorialsCenter,
     isRestTimerModalOpen,
     activeStoryGroup,

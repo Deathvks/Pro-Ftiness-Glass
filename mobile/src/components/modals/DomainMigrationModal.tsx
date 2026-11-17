@@ -67,8 +67,6 @@ export function DomainMigrationModal({ forceVisible = false }: { forceVisible?: 
     }
   };
 
-  if (!active) return null;
-
   return (
     <SwipeableBottomSheet
       visible={active}

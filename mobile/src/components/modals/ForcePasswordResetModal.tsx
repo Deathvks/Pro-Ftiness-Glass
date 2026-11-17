@@ -65,8 +65,6 @@ export function ForcePasswordResetModal({ visible }: { visible: boolean }) {
     }
   };
 
-  if (!visible) return null;
-
   return (
     <SwipeableBottomSheet
       visible={visible}
