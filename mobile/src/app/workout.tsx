@@ -11,7 +11,7 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
-import { usePreventRemove, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Activity, Maximize2 } from 'lucide-react-native';
@@ -91,10 +91,15 @@ export default function WorkoutScreen() {
     return () => clearInterval(interval);
   }, [isTimerRunning, workoutStartTime]);
 
-  const disableExitPrevention = usePreventRemove(Platform.OS !== 'web' && Boolean(activeWorkout) && timerSeconds === 0, ({ repeat }) => {
-    if (getWorkoutElapsedSeconds() === 0) stopWorkout();
-    repeat();
-  });
+  // Al salir hacia atrás sin iniciar el cronómetro, limpiamos al desmontar para no rebotar el gesto nativo
+  useEffect(() => {
+    return () => {
+      const state = useAppStore.getState();
+      if (state.activeWorkout && getWorkoutElapsedSeconds() === 0) {
+        state.stopWorkout?.();
+      }
+    };
+  }, []);
 
   // Estados locales para notas y modales
   const [notes, setNotes] = useState('');
@@ -190,8 +195,6 @@ export default function WorkoutScreen() {
   // Manejador del botón Atrás
   const handleBackClick = () => {
     if (getWorkoutElapsedSeconds() === 0) {
-      stopWorkout();
-      disableExitPrevention();
       leaveWorkout();
       return;
     }
