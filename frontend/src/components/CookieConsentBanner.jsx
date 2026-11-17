@@ -15,13 +15,14 @@ const CookieConsentBanner = ({ onAccept, onDecline, onShowPolicy }) => {
           </div>
           
           <div className="flex-grow text-center md:text-left space-y-2">
-            <h3 className="font-bold text-text-primary text-lg">Tu privacidad es nuestra prioridad</h3>
+            <h3 className="font-bold text-text-primary text-lg">Actualización de privacidad y consentimiento</h3>
             <p className="text-sm text-text-secondary leading-relaxed text-pretty">
-              Utilizamos almacenamiento local para tus preferencias y garantizamos la seguridad de tus datos. 
-              Si aceptas, también habilitas el inicio de sesión rápido con Google.
+              Utilizamos almacenamiento local para tus preferencias y garantizamos la seguridad de tus datos.{' '}
+              <strong>Si pulsas «Aceptar», también habilitarás el inicio de sesión rápido con Google y las notificaciones opcionales por correo electrónico</strong>{' '}
+              (avisos de actividad, recordatorios de entrenamiento y seguimiento de asesoría).
             </p>
             <p className="text-xs text-text-secondary mt-2">
-              Podrás cambiar esta configuración siempre desde <strong>Ajustes</strong>. Consulta nuestra{' '}
+              Mostramos este aviso de nuevo a todos los usuarios por la incorporación de estas opciones. Puedes rechazarlo o cambiarlo en cualquier momento desde <strong>Ajustes</strong>. Consulta nuestra{' '}
               <button 
                 type="button"
                 onClick={() => onShowPolicy('privacy')} 

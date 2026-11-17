@@ -3,9 +3,23 @@ import * as authService from '../services/authService';
 import * as userService from '../services/userService';
 import { clearDevicePush } from '../services/notificationService';
 import { APP_VERSION, CURRENT_WELCOME_TITLE, hasSeenCurrentWelcome, isNewerVersion } from '../config/version';
+import { EMAIL_CONSENT_VERSION } from '../config/emailConsent';
 
 const CACHE_VERSION_KEY = 'pfg_cache_version';
 const INITIAL_CACHE_KEY = 'pfg_cached_initial_state_v1';
+const COOKIE_CONSENT_KEY = 'cookie_consent';
+const COOKIE_CONSENT_VERSION_KEY = 'cookie_consent_version';
+// Incrementar esta versión invalida consentimientos previos para volver a mostrar el modal a todos los usuarios.
+const COOKIE_CONSENT_VERSION = '2026-11-17';
+
+const getStoredCookieConsent = () => {
+    const consent = localStorage.getItem(COOKIE_CONSENT_KEY);
+    const consentVersion = localStorage.getItem(COOKIE_CONSENT_VERSION_KEY);
+    if (!consent || consentVersion !== COOKIE_CONSENT_VERSION) {
+        return null;
+    }
+    return consent;
+};
 
 const getCachedUserProfile = () => {
     try {
@@ -54,8 +68,8 @@ export const createAuthSlice = (set, get) => {
     // --- FIN MODIFICACIÓN 2FA ---
 
     // Inicializamos leyendo directamente para evitar "flash" del banner.
-    // Usamos la clave global 'cookie_consent' para coincidir con GoogleTermsModal.
-    cookieConsent: localStorage.getItem('cookie_consent') || null,
+    // Requerimos coincidencia de versión para volver a mostrar el aviso cuando cambien las condiciones.
+    cookieConsent: getStoredCookieConsent(),
 
     // --- ACCIONES ---
 
@@ -403,24 +417,52 @@ export const createAuthSlice = (set, get) => {
 
     // --- GESTIÓN DE COOKIES ---
     checkCookieConsent: () => {
-        const consent = localStorage.getItem('cookie_consent');
-        set({ cookieConsent: consent });
+        set({ cookieConsent: getStoredCookieConsent() });
     },
 
-    handleAcceptCookies: () => {
-        localStorage.setItem('cookie_consent', 'accepted');
+    handleAcceptCookies: async () => {
+        localStorage.setItem(COOKIE_CONSENT_KEY, 'accepted');
+        localStorage.setItem(COOKIE_CONSENT_VERSION_KEY, COOKIE_CONSENT_VERSION);
         set({ cookieConsent: 'accepted' });
+
+        if (!get().isAuthenticated || !localStorage.getItem('pro_fitness_token')) {
+            return;
+        }
+
+        try {
+            const response = await userService.updateUserProfile({
+                email_activity_notifications: true,
+                email_marketing_consent: true,
+                email_coaching_consent: true,
+                emailConsentVersion: EMAIL_CONSENT_VERSION,
+            });
+            const updatedProfile = response?.user || response;
+            set((state) => ({
+                userProfile: updatedProfile && typeof updatedProfile === 'object' && updatedProfile.id
+                    ? { ...state.userProfile, ...updatedProfile }
+                    : {
+                        ...(state.userProfile || {}),
+                        email_activity_notifications: true,
+                        email_marketing_consent: true,
+                        email_coaching_consent: true,
+                    },
+            }));
+        } catch (error) {
+            console.warn('No se pudieron habilitar las notificaciones por correo al aceptar el consentimiento:', error);
+        }
     },
 
     handleDeclineCookies: () => {
-        localStorage.setItem('cookie_consent', 'declined');
+        localStorage.setItem(COOKIE_CONSENT_KEY, 'declined');
+        localStorage.setItem(COOKIE_CONSENT_VERSION_KEY, COOKIE_CONSENT_VERSION);
         set({ cookieConsent: 'declined' });
         localStorage.removeItem('theme');
         localStorage.removeItem('accent');
     },
 
     resetCookieConsent: () => {
-        localStorage.removeItem('cookie_consent');
+        localStorage.removeItem(COOKIE_CONSENT_KEY);
+        localStorage.removeItem(COOKIE_CONSENT_VERSION_KEY);
         set({ cookieConsent: null });
     },
     };
