@@ -1,6 +1,6 @@
 {
-  "version": "7.16.36",
-  "releaseNotes": "Actualización v7.16.36: visualización responsive de fecha/hora de inicio y fin en calendario y detalle, y opción para corregir o mover la fecha de entrenamientos guardados.",
+  "version": "7.16.37",
+  "releaseNotes": "Actualización v7.16.37: aviso actualizado de privacidad y cookies con opción de habilitar notificaciones opcionales por correo al aceptar.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",
