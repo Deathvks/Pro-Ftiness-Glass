@@ -17,6 +17,7 @@ import {
   Activity,
   Timer,
   Minimize2,
+  Sliders,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
@@ -42,6 +43,7 @@ interface WorkoutHeaderProps {
   onFinishClick: () => void;
   onShowCalculator: () => void;
   onShowHeatmap: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
@@ -56,6 +58,7 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
   onFinishClick,
   onShowCalculator,
   onShowHeatmap,
+  onOpenSettings,
 }) => {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
@@ -160,27 +163,51 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
             <Text style={[styles.backText, { color: colors.text }]}>Atrás</Text>
           </TouchableOpacity>
 
-          {hasWorkoutStarted && onMinimize ? (
-            <TouchableOpacity
-              onPress={() => {
-                try {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                } catch {}
-                onMinimize();
-              }}
-              activeOpacity={0.75}
-              style={[
-                styles.iconBtnPill,
-                {
-                  backgroundColor: useFrontendSurface ? colors.card + '99' : isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-            >
-              <Minimize2 size={16} color={colors.text} />
-              <Text style={[styles.backText, { color: colors.text }]}>Minimizar</Text>
-            </TouchableOpacity>
-          ) : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            {hasWorkoutStarted && onMinimize ? (
+              <TouchableOpacity
+                onPress={() => {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  } catch {}
+                  onMinimize();
+                }}
+                activeOpacity={0.75}
+                style={[
+                  styles.iconBtnPill,
+                  {
+                    backgroundColor: useFrontendSurface ? colors.card + '99' : isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
+                  },
+                ]}
+              >
+                <Minimize2 size={16} color={colors.text} />
+                <Text style={[styles.backText, { color: colors.text }]}>Minimizar</Text>
+              </TouchableOpacity>
+            ) : null}
+
+            {onOpenSettings ? (
+              <TouchableOpacity
+                onPress={() => {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  } catch {}
+                  onOpenSettings();
+                }}
+                activeOpacity={0.75}
+                style={[
+                  styles.iconBtnPill,
+                  {
+                    backgroundColor: useFrontendSurface ? colors.card + '99' : isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
+                  },
+                ]}
+              >
+                <Sliders size={16} color={colors.text} />
+                <Text style={[styles.backText, { color: colors.text }]}>Ajustes</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
 
         {/* Título de la rutina */}

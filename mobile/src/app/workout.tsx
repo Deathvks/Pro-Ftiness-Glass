@@ -2,21 +2,33 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
+  Text,
+  TouchableOpacity,
   FlatList,
   StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { usePreventRemove, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { Activity, Maximize2 } from 'lucide-react-native';
 
 import useAppStore from '@/store/useAppStore';
+import { useAppColors } from '@/hooks/useAppColors';
+import ThemeBackground from '@/components/ThemeBackground';
+import { getAppleCardSurfaceStyle, getThemeBaseBackground } from '@/constants/theme';
+import { getThemedModalCardColor } from '@/components/ui/ModalThemeBackground';
 import { calculateCalories, groupWorkoutExercises } from '@/utils/workoutHelpers';
 
 // Subcomponentes modularizados con paridad 1:1 frente al Frontend
 import { WorkoutHeader } from '@/components/workout/WorkoutHeader';
+import {
+  SessionMuscleHeatmap,
+  getWorkoutMuscleData,
+} from '@/components/workout/SessionMuscleHeatmap';
 import { WorkoutExerciseCard } from '@/components/workout/WorkoutExerciseCard';
 import { WorkoutSupersetCard } from '@/components/workout/WorkoutSupersetCard';
 import { WorkoutNotes } from '@/components/workout/WorkoutNotes';
@@ -41,6 +53,12 @@ function getWorkoutElapsedSeconds() {
 export default function WorkoutScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  const isWideWorkout = windowWidth >= 560;
+  const colors = useAppColors();
+  const theme = useAppStore(state => state.theme) || 'oled';
+  const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const baseBackground = getThemeBaseBackground(theme);
 
   // Zustand Store State
   const activeWorkout = useAppStore(state => state.activeWorkout);
@@ -132,6 +150,15 @@ export default function WorkoutScreen() {
   const exerciseGroups = useMemo(() => {
     return groupWorkoutExercises(activeWorkout?.exercises || []);
   }, [activeWorkout?.exercises]);
+
+  const workoutMuscleData = useMemo(
+    () => getWorkoutMuscleData(activeWorkout?.exercises || []),
+    [activeWorkout?.exercises]
+  );
+  const showInlineHeatmap =
+    Boolean(activeWorkout) &&
+    !activeWorkout?.isSimpleWorkout &&
+    Object.keys(workoutMuscleData).length > 0;
 
   // Si no hay entrenamiento activo (Pantalla exacta del frontend)
   if (!activeWorkout) {
@@ -302,7 +329,8 @@ export default function WorkoutScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: baseBackground }]}>
+      <ThemeBackground />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
@@ -335,7 +363,90 @@ export default function WorkoutScreen() {
                 onFinishClick={handleFinishClick}
                 onShowCalculator={() => setShowCalculator(true)}
                 onShowHeatmap={() => setShowHeatmap(true)}
+                onOpenSettings={() =>
+                  router.push({ pathname: '/settings', params: { section: 'workout' } } as any)
+                }
               />
+
+              {/* Mapa muscular previsto de la sesión (paridad con frontend Workout.jsx) */}
+              {showInlineHeatmap ? (
+                <View
+                  style={[
+                    styles.inlineHeatmapCard,
+                    getAppleCardSurfaceStyle(theme, 26),
+                    {
+                      backgroundColor:
+                        theme === 'light' ? '#FFFFFF' : getThemedModalCardColor(theme),
+                      borderColor: colors.tint + '36',
+                    },
+                  ]}
+                >
+                  <View style={styles.inlineHeatmapHeader}>
+                    <View style={styles.inlineHeatmapTitleRow}>
+                      <View
+                        style={[
+                          styles.inlineHeatmapIconBox,
+                          { backgroundColor: colors.tint + '1F' },
+                        ]}
+                      >
+                        <Activity size={20} color={colors.tint} />
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={[styles.inlineHeatmapTitle, { color: colors.text }]}>
+                          Mapa muscular
+                        </Text>
+                        <Text
+                          style={[styles.inlineHeatmapSubtitle, { color: colors.textSecondary }]}
+                        >
+                          Volumen previsto para esta sesión
+                        </Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        try {
+                          Haptics.selectionAsync();
+                        } catch {}
+                        setShowHeatmap(true);
+                      }}
+                      style={[
+                        styles.expandHeatmapBtn,
+                        {
+                          backgroundColor: colors.tint + '14',
+                          borderColor: colors.tint + '38',
+                        },
+                      ]}
+                    >
+                      <Maximize2 size={14} color={colors.tint} />
+                      <Text style={[styles.expandHeatmapBtnText, { color: colors.tint }]}>
+                        Ver ampliado
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.inlineHeatmapBody,
+                      isWideWorkout && styles.inlineHeatmapBodyWide,
+                    ]}
+                  >
+                    <View style={[styles.inlineHeatmapSvgWrap, isWideWorkout && { width: 220 }]}>
+                      <SessionMuscleHeatmap muscleData={workoutMuscleData} compact />
+                    </View>
+                    <Text
+                      style={[
+                        styles.inlineHeatmapDesc,
+                        { color: colors.textSecondary },
+                        isWideWorkout && { flex: 1 },
+                      ]}
+                    >
+                      La intensidad del color muestra qué músculos acumulan más series. Toca el mapa para alternar entre frente y espalda.
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
 
               {/* 2. Banner de Nota de la Sesión Previa */}
               {previousWorkoutNote && !dismissedPreviousNote ? (
@@ -457,13 +568,11 @@ export default function WorkoutScreen() {
       />
 
       {/* 8. Modal Mapa Muscular */}
-      {showHeatmap && (
-        <WorkoutHeatmapModal
-          visible
-          exercises={activeWorkout.exercises || []}
-          onClose={() => setShowHeatmap(false)}
-        />
-      )}
+      <WorkoutHeatmapModal
+        visible={showHeatmap}
+        exercises={activeWorkout.exercises || []}
+        onClose={() => setShowHeatmap(false)}
+      />
 
       {/* 9. Modal Smart Progression Coach */}
       <SmartExerciseCoachModal
@@ -504,5 +613,76 @@ const styles = StyleSheet.create({
     maxWidth: 640,
     width: '100%',
     alignSelf: 'center',
+  },
+  inlineHeatmapCard: {
+    borderRadius: 26,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 18,
+    gap: 14,
+    overflow: 'hidden',
+  },
+  inlineHeatmapHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  inlineHeatmapTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
+  },
+  inlineHeatmapIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  inlineHeatmapTitle: {
+    fontSize: 15.5,
+    fontWeight: '800',
+  },
+  inlineHeatmapSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  expandHeatmapBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexShrink: 0,
+  },
+  expandHeatmapBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  inlineHeatmapBody: {
+    gap: 12,
+    alignItems: 'center',
+  },
+  inlineHeatmapBodyWide: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 16,
+  },
+  inlineHeatmapSvgWrap: {
+    width: '100%',
+    maxWidth: 230,
+    alignSelf: 'center',
+  },
+  inlineHeatmapDesc: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '500',
   },
 });

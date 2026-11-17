@@ -1,18 +1,25 @@
 /* mobile/src/components/workout/WorkoutHeatmapModal.tsx */
 import React, { useMemo } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
   ScrollView,
-  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Activity, X, Dumbbell } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Activity, X } from 'lucide-react-native';
+
+import {
+  HEATMAP_INTENSITY_LEVELS,
+  SessionMuscleHeatmap,
+  getWorkoutMuscleData,
+} from '@/components/workout/SessionMuscleHeatmap';
+import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
+import { getUnselectedControlColors } from '@/constants/theme';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
-import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
+import { MUSCLE_NAMES_ES } from '@/utils/muscleUtils';
 
 interface WorkoutHeatmapModalProps {
   visible: boolean;
@@ -28,21 +35,26 @@ export const WorkoutHeatmapModal: React.FC<WorkoutHeatmapModalProps> = ({
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const borderTone = colors.border || (isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)');
+  const subtleBg = getUnselectedControlColors(theme).backgroundColor;
+  const themedCardStyle = getAppleSheetCardStyle(isDark, 16, theme);
 
-  const muscleVolumes = useMemo(() => {
-    const scores: { [key: string]: number } = {};
+  const muscleData = useMemo(() => getWorkoutMuscleData(exercises), [exercises]);
 
+  const muscleBreakdown = useMemo(() => {
+    const scores: Record<string, number> = {};
     exercises.forEach((ex: any) => {
-      const rawMuscle = ex.muscle_group || ex.exercise_details?.muscle_group || 'General';
-      const muscles = rawMuscle.split(',').map((m: string) => m.trim());
-      const setsCount = Array.isArray(ex.setsDone)
-        ? ex.setsDone.length
-        : parseInt(ex.sets, 10) || 3;
+      const rawMuscle = ex?.muscle_group || ex?.exercise_details?.muscle_group || '';
+      const muscles = String(rawMuscle)
+        .split(',')
+        .map(m => m.trim())
+        .filter(Boolean);
+      const setsCount = Array.isArray(ex?.setsDone)
+        ? Math.max(1, ex.setsDone.length)
+        : parseInt(String(ex?.sets), 10) || 3;
 
-      muscles.forEach((m: string) => {
-        if (m) {
-          scores[m] = (scores[m] || 0) + setsCount;
-        }
+      muscles.forEach(m => {
+        scores[m] = (scores[m] || 0) + setsCount;
       });
     });
 
@@ -50,183 +62,251 @@ export const WorkoutHeatmapModal: React.FC<WorkoutHeatmapModalProps> = ({
   }, [exercises]);
 
   const getIntensityInfo = (sets: number) => {
-    if (sets >= 12) return { label: 'Máximo', color: '#ef4444' };
-    if (sets >= 8) return { label: 'Alto', color: '#f59e0b' };
-    if (sets >= 4) return { label: 'Medio', color: '#22c55e' };
-    return { label: 'Bajo', color: '#06b6d4' };
+    if (sets >= 12) return HEATMAP_INTENSITY_LEVELS[3];
+    if (sets >= 8) return HEATMAP_INTENSITY_LEVELS[2];
+    if (sets >= 4) return HEATMAP_INTENSITY_LEVELS[1];
+    return HEATMAP_INTENSITY_LEVELS[0];
   };
 
-  if (!visible) return null;
-
   return (
-    <Modal visible={visible} transparent statusBarTranslucent navigationBarTranslucent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={[styles.overlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.35)' }]} onPress={onClose}>
-        <Pressable
-          onPress={e => e.stopPropagation()}
-          style={[
-            styles.card,
-            {
-              backgroundColor: getThemedModalSurfaceColor(theme),
-              borderColor: getThemedModalBorderColor(theme),
-            },
-          ]}
-        >
-          <ModalThemeBackground theme={theme} />
-
-          {/* Close button */}
-          <TouchableOpacity
-            onPress={onClose}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={[
-              styles.closeBtn,
-              {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-              },
-            ]}
-          >
-            <X size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-          <View style={styles.header}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.tint + '18' }]}>
-              <Activity size={22} color={colors.tint} />
-            </View>
-            <Text style={[styles.title, { color: colors.text }]}>Volumen por Grupo Muscular</Text>
+    <SwipeableBottomSheet
+      scrollable
+      edgeToEdge
+      visible={visible}
+      onClose={onClose}
+      isDark={isDark}
+      backgroundColor={colors.card}
+      height="88%"
+      maxHeight="88%"
+    >
+      <View style={[styles.headerRow, { borderBottomColor: borderTone }]}>
+        <View style={styles.headerTitleWrap}>
+          <View style={[styles.iconCircle, { backgroundColor: colors.tint + '1A' }]}>
+            <Activity size={20} color={colors.tint} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={[styles.title, { color: colors.text }]}>Músculos Trabajados</Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Impacto y series acumuladas en esta sesión
+              Volumen e intensidad de esta sesión
             </Text>
           </View>
+        </View>
 
-          <ScrollView style={styles.list} contentContainerStyle={{ gap: 10 }}>
-            {muscleVolumes.length === 0 ? (
-              <Text style={{ textAlign: 'center', color: colors.textSecondary, paddingVertical: 20 }}>
-                No hay ejercicios en esta rutina
-              </Text>
-            ) : (
-              muscleVolumes.map(([muscle, count]) => {
-                const intensity = getIntensityInfo(count);
-                return (
-                  <View
-                    key={muscle}
-                    style={[
-                      styles.muscleRow,
-                      {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                      },
-                    ]}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.muscleName, { color: colors.text }]}>
-                        {muscle}
-                      </Text>
-                      <Text style={[styles.setsCount, { color: colors.textSecondary }]}>
-                        {count} series estimadas
-                      </Text>
-                    </View>
+        <TouchableOpacity
+          onPress={onClose}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={[styles.closeBtn, { backgroundColor: subtleBg }]}
+        >
+          <X size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
 
-                    <View style={[styles.intensityPill, { backgroundColor: intensity.color + '22', borderColor: intensity.color + '55' }]}>
-                      <Text style={[styles.intensityText, { color: intensity.color }]}>
-                        {intensity.label}
-                      </Text>
-                    </View>
+      <View style={{ flex: 1, minHeight: 0 }}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {Object.keys(muscleData).length > 0 ? (
+            <>
+              <SessionMuscleHeatmap muscleData={muscleData} />
+
+              <View style={styles.legendRow}>
+                {HEATMAP_INTENSITY_LEVELS.map(level => (
+                  <View key={level.label} style={styles.legendItem}>
+                    <View
+                      style={[
+                        styles.legendDot,
+                        {
+                          backgroundColor: level.color,
+                          shadowColor: level.color,
+                        },
+                      ]}
+                    />
+                    <Text style={[styles.legendText, { color: colors.textSecondary }]}>
+                      {level.label}
+                    </Text>
                   </View>
-                );
-              })
-            )}
-          </ScrollView>
-        </Pressable>
-      </Pressable>
-    </Modal>
+                ))}
+              </View>
+
+              {muscleBreakdown.length > 0 && (
+                <View style={styles.breakdownList}>
+                  {muscleBreakdown.map(([muscle, count]) => {
+                    const intensity = getIntensityInfo(count);
+                    const normalized = muscle.trim().toLowerCase();
+                    const label = MUSCLE_NAMES_ES[normalized] || muscle;
+                    return (
+                      <View key={muscle} style={[styles.muscleRow, themedCardStyle]}>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text style={[styles.muscleName, { color: colors.text }]} numberOfLines={1}>
+                            {label}
+                          </Text>
+                          <Text style={[styles.setsCount, { color: colors.textSecondary }]}>
+                            {count} {count === 1 ? 'serie estimada' : 'series estimadas'}
+                          </Text>
+                        </View>
+
+                        <View
+                          style={[
+                            styles.intensityPill,
+                            {
+                              backgroundColor: intensity.color + '20',
+                              borderColor: intensity.color + '55',
+                            },
+                          ]}
+                        >
+                          <Text style={[styles.intensityText, { color: intensity.color }]}>
+                            {intensity.label}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </>
+          ) : (
+            <View style={styles.emptyWrap}>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                No se han detectado grupos musculares.
+              </Text>
+              <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
+                Asegúrate de que tus ejercicios tengan asignado un grupo muscular específico.
+              </Text>
+            </View>
+          )}
+
+          <Text style={[styles.footerNote, { color: colors.textSecondary }]}>
+            La intensidad del color indica el volumen de series en esta sesión.
+          </Text>
+          <SafeAreaView edges={['bottom']} />
+        </ScrollView>
+      </View>
+    </SwipeableBottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 6,
+    paddingBottom: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  headerTitleWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 360,
-    maxHeight: '75%',
-    borderRadius: 32,
-    borderWidth: 1,
-    padding: 24,
-    overflow: 'hidden',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 18,
-    elevation: 8,
-  },
-  closeBtn: {
-    position: 'absolute',
-    top: 18,
-    right: 18,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 16,
+    minWidth: 0,
+    marginRight: 10,
   },
   iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    flexShrink: 0,
   },
   title: {
     fontSize: 18,
     fontWeight: '800',
-    marginBottom: 4,
-    textAlign: 'center',
+    letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 12,
-    textAlign: 'center',
+    fontWeight: '500',
+    marginTop: 1,
   },
-  list: {
-    maxHeight: 280,
+  closeBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  scrollContent: {
+    padding: 20,
+    gap: 16,
+  },
+  legendRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendDot: {
+    width: 11,
+    height: 11,
+    borderRadius: 5.5,
+    shadowOpacity: 0.75,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  legendText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  breakdownList: {
+    gap: 8,
   },
   muscleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 10,
   },
   muscleName: {
-    fontSize: 14,
-    fontWeight: '800',
-    textTransform: 'capitalize',
-    marginBottom: 2,
+    fontSize: 14.5,
+    fontWeight: '700',
   },
   setsCount: {
     fontSize: 12,
-    fontWeight: '600',
+    marginTop: 2,
   },
   intensityPill: {
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
+    paddingVertical: 4,
+    borderRadius: 10,
     borderWidth: 1,
+    flexShrink: 0,
   },
   intensityText: {
     fontSize: 11,
     fontWeight: '800',
+  },
+  emptyWrap: {
+    paddingVertical: 40,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    gap: 8,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  emptyDesc: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 19,
+  },
+  footerNote: {
+    fontSize: 11.5,
+    textAlign: 'center',
+    opacity: 0.8,
   },
 });
