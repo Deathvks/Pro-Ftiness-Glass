@@ -23,9 +23,9 @@ export const getTier = (level: number) => {
   if (level < 60) return { name: 'Maestro', colors: ['#9370DB', '#4B0082'] as const, icon: Zap };
   if (level < 70) return { name: 'Gran Maestro', colors: ['#FF69B4', '#C71585'] as const, icon: Flame };
   if (level < 80) return { name: 'Épico', colors: ['#FF4500', '#8B0000'] as const, icon: Crown };
-  if (level < 90) return { name: 'Leyenda', colors: ['#FFD700', '#8B0000'] as const, icon: Sparkles };
-  if (level < 100) return { name: 'Mítico', colors: ['#00FFFF', '#FF1493'] as const, icon: Crown };
-  return { name: 'Inmortal', colors: ['#FDE047', '#9333EA'] as const, icon: Crown };
+  if (level < 90) return { name: 'Leyenda', colors: ['#FFD700', '#FF4500', '#8B0000'] as const, icon: Sparkles };
+  if (level < 100) return { name: 'Mítico', colors: ['#00FFFF', '#9370DB', '#FF1493'] as const, icon: Crown };
+  return { name: 'Inmortal', colors: ['#FDE047', '#EF4444', '#9333EA'] as const, icon: Crown };
 };
 
 const SIZES = {
