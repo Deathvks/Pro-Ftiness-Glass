@@ -19,7 +19,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import {
@@ -66,12 +65,18 @@ import * as Sharing from 'expo-sharing';
 import GlobalHeader from '@/components/GlobalHeader';
 import ThemeBackground from '@/components/ThemeBackground';
 import { LiquidGlassSwitch } from '@/components/ui/LiquidGlassSwitch';
+import { getThemedModalCardColor } from '@/components/ui/ModalThemeBackground';
 import { WorkoutDataTransferModal } from '@/components/modals/WorkoutDataTransferModal';
 import { TourTarget } from '@/components/tutorials/TourTarget';
 import { useRegisterTourScroll } from '@/components/tutorials/tourRegistry';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getThemeBaseBackground, getAppleCardSurfaceStyle, getUnselectedControlColors, shouldUseContentGlass, usesFrontendCardSurface } from '@/constants/theme';
+import {
+  getThemeBaseBackground,
+  getAppleCardSurfaceStyle,
+  getUnselectedControlColors,
+} from '@/constants/theme';
+import { APP_VERSION } from '@/config/version';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import * as userService from '@/services/userService';
 import * as sessionService from '@/services/sessionService';
@@ -104,7 +109,7 @@ import {
 
 function GlassSurface({
   radius = 24,
-  isDark,
+  isDark: _isDark,
   borderColor,
   style,
   children,
@@ -117,26 +122,24 @@ function GlassSurface({
 }) {
   const theme = useAppStore(state => state.theme) || 'oled';
   const isIOS = Platform.OS === 'ios';
-  const useGlass = shouldUseContentGlass(theme);
   const effectiveRadius = isIOS ? 20 : radius;
-  const innerRadius = Math.max(0, effectiveRadius - 1);
+  const themedSurfaceBg = theme === 'light' ? '#FFFFFF' : getThemedModalCardColor(theme);
 
   return (
     <View
       style={[
-        getAppleCardSurfaceStyle(theme, radius),
-        { overflow: 'hidden' },
-        !isIOS && { borderWidth: 1, borderColor },
+        getAppleCardSurfaceStyle(theme, effectiveRadius),
+        {
+          backgroundColor: themedSurfaceBg,
+          borderRadius: effectiveRadius,
+          borderCurve: 'continuous',
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor,
+          overflow: 'hidden',
+        },
         style,
       ]}
     >
-      {useGlass && (
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={[StyleSheet.absoluteFill, { borderRadius: innerRadius }]}
-        />
-      )}
       {children}
     </View>
   );
@@ -186,12 +189,8 @@ export default function SettingsScreen() {
   const setRestSoundEnabled = useAppStore(state => state.setRestSoundEnabled);
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const glassBorder = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
-  const subtleItemBg = usesFrontendCardSurface(theme)
-    ? getUnselectedControlColors(theme).backgroundColor
-    : Platform.OS === 'ios'
-      ? (isDark ? '#2C2C2E' : '#F2F2F7')
-      : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)');
+  const glassBorder = colors.border || (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)');
+  const subtleItemBg = getUnselectedControlColors(theme).backgroundColor;
   const activeTintContrast = getContrastTextColor(colors.tint);
 
   const params = useLocalSearchParams<{ section?: string }>();
@@ -788,8 +787,8 @@ export default function SettingsScreen() {
                       style={[
                         styles.menuRow,
                         !isLast && {
-                          borderBottomWidth: Platform.OS === 'ios' ? StyleSheet.hairlineWidth : 1,
-                          borderBottomColor: Platform.OS === 'ios' ? (isDark ? 'rgba(84, 84, 88, 0.45)' : 'rgba(60, 60, 67, 0.16)') : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'),
+                          borderBottomWidth: StyleSheet.hairlineWidth,
+                          borderBottomColor: glassBorder,
                         },
                       ]}
                     >
@@ -826,7 +825,7 @@ export default function SettingsScreen() {
             {/* Versión de la App y Atajos */}
             <View style={styles.footerInfoBox}>
               <Text style={[styles.footerInfoText, { color: colors.textSecondary }]}>
-                Pro Fitness Glass • v7.16.27
+                Pro Fitness Glass • v{APP_VERSION}
               </Text>
               <Text style={[styles.footerSubText, { color: colors.textSecondary }]}>
                 Diseño Liquid Glass y Alto Rendimiento
@@ -1105,7 +1104,7 @@ export default function SettingsScreen() {
                           styles.metricItem,
                           {
                             width: isMobile ? '48.5%' : '23.5%',
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                            backgroundColor: subtleItemBg,
                           },
                         ]}
                       >
@@ -1123,7 +1122,7 @@ export default function SettingsScreen() {
                           styles.metricItem,
                           {
                             width: isMobile ? '48.5%' : '23.5%',
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                            backgroundColor: subtleItemBg,
                           },
                         ]}
                       >
@@ -1141,7 +1140,7 @@ export default function SettingsScreen() {
                           styles.metricItem,
                           {
                             width: isMobile ? '48.5%' : '23.5%',
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                            backgroundColor: subtleItemBg,
                           },
                         ]}
                       >
@@ -1159,7 +1158,7 @@ export default function SettingsScreen() {
                           styles.metricItem,
                           {
                             width: isMobile ? '48.5%' : '23.5%',
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                            backgroundColor: subtleItemBg,
                           },
                         ]}
                       >
@@ -1402,19 +1401,19 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.metricsGrid}>
-                      <View style={[styles.metricItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }]}>
+                      <View style={[styles.metricItem, { backgroundColor: subtleItemBg }]}>
                         <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>PESO</Text>
                         <Text style={[styles.metricValue, { color: colors.text }]}>
                           {userProfile?.weight ? `${userProfile.weight} kg` : '--'}
                         </Text>
                       </View>
-                      <View style={[styles.metricItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }]}>
+                      <View style={[styles.metricItem, { backgroundColor: subtleItemBg }]}>
                         <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>ALTURA</Text>
                         <Text style={[styles.metricValue, { color: colors.text }]}>
                           {userProfile?.height ? `${userProfile.height} cm` : '--'}
                         </Text>
                       </View>
-                      <View style={[styles.metricItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }]}>
+                      <View style={[styles.metricItem, { backgroundColor: subtleItemBg }]}>
                         <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>OBJETIVO</Text>
                         <Text style={[styles.metricValue, { color: colors.tint, fontSize: 11 }]} numberOfLines={1}>
                           {userProfile?.goal ? userProfile.goal.toUpperCase() : 'SALUD'}
@@ -2045,7 +2044,7 @@ export default function SettingsScreen() {
                               style={[
                                 styles.scopeOptionIcon,
                                 {
-                                  backgroundColor: isSelected ? colors.tint : 'rgba(255, 255, 255, 0.08)',
+                                  backgroundColor: isSelected ? colors.tint : subtleItemBg,
                                 },
                               ]}
                             >
