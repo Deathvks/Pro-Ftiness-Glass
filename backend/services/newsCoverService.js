@@ -15,7 +15,16 @@ const CATEGORY_IMAGE_POOLS = {
     'https://images.unsplash.com/photo-1534367507873-d2d7e24c797f?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1554284126-aa88f22d8b74?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1593079831268-3381b0db4a77?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1704223523449-ca3925f89dcc?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1674834727149-00812f907676?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1788003759210-ba0f61bc74ac?auto=format&fit=crop&w=1200&q=80'
   ],
   'Nutrición': [
     'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1200&q=80',
@@ -27,7 +36,8 @@ const CATEGORY_IMAGE_POOLS = {
     'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1693996045300-521e9d08cabc?auto=format&fit=crop&w=1200&q=80'
   ],
   'Suplementación': [
     'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80',
@@ -37,7 +47,8 @@ const CATEGORY_IMAGE_POOLS = {
     'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=80'
   ],
   'Salud': [
     'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80',
@@ -45,34 +56,40 @@ const CATEGORY_IMAGE_POOLS = {
     'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1447452001602-7090c7ab2db3?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1447452001602-7090c7ab2db3?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1775199603078-e1d964929e10?auto=format&fit=crop&w=1200&q=80'
   ],
   'Novedades': [
     'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=1200&q=80'
   ],
   'Descanso y Sueño': [
     'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1520206183501-b80df61043c2?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1511295742362-92c96b124e52?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1519052537078-e6302a4968d4?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1455642305367-68834a1da7ab?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1455642305367-68834a1da7ab?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1758512867312-70bd41431cd6?auto=format&fit=crop&w=1200&q=80'
   ],
   'Biohacking': [
     'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1775199603078-e1d964929e10?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=80'
   ],
   'Biomecánica': [
     'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1598971639058-fab3c3109a00?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1704223523449-ca3925f89dcc?auto=format&fit=crop&w=1200&q=80'
   ],
   'Longevidad': [
     'https://images.unsplash.com/photo-1447452001602-7090c7ab2db3?auto=format&fit=crop&w=1200&q=80',
@@ -90,8 +107,24 @@ const CATEGORY_IMAGE_POOLS = {
     'https://images.unsplash.com/photo-1486218119243-13883505764c?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=1200&q=80'
   ]
+};
+
+const RELATED_CATEGORIES = {
+  'Entrenamiento': ['Biomecánica', 'Cardio y Resistencia', 'Novedades', 'Salud'],
+  'Biomecánica': ['Entrenamiento', 'Salud', 'Biohacking'],
+  'Biohacking': ['Salud', 'Longevidad', 'Descanso y Sueño', 'Suplementación'],
+  'Nutrición': ['Suplementación', 'Salud', 'Longevidad', 'Biohacking'],
+  'Suplementación': ['Nutrición', 'Biohacking', 'Salud'],
+  'Salud': ['Longevidad', 'Nutrición', 'Descanso y Sueño', 'Biohacking'],
+  'Salud Digestiva': ['Nutrición', 'Salud', 'Suplementación'],
+  'Descanso y Sueño': ['Salud', 'Biohacking', 'Longevidad', 'Psicología Deportiva'],
+  'Longevidad': ['Salud', 'Biohacking', 'Nutrición', 'Descanso y Sueño'],
+  'Psicología Deportiva': ['Descanso y Sueño', 'Entrenamiento', 'Salud'],
+  'Cardio y Resistencia': ['Entrenamiento', 'Salud', 'Biomecánica'],
+  'Novedades': ['Entrenamiento', 'Biohacking', 'Salud', 'Nutrición']
 };
 
 const DEFAULT_POOL = [
@@ -172,34 +205,99 @@ export function createCoverInspector(fetchImage = fetch) {
   };
 }
 
-export async function selectNewsCover({ category, slug, used, inspect = createCoverInspector() }) {
-  const topic = String(category ?? '').trim().toLowerCase();
-  const pool = Object.entries(CATEGORY_IMAGE_POOLS).find(([name]) => name.toLowerCase() === topic)?.[1] ?? DEFAULT_POOL;
-  const available = pool.filter(image => !used.has(coverIdentity(image)));
+const getUsageCount = (used, identity) => {
+  if (!used || !identity) return 0;
+  if (used instanceof Map) return used.get(identity) || 0;
+  return used.has(identity) ? 1 : 0;
+};
 
-  while (available.length) {
+const addUsageCount = (used, image) => {
+  const identity = coverIdentity(image);
+  if (!used || !identity) return;
+  if (used instanceof Map) {
+    used.set(identity, (used.get(identity) || 0) + 1);
+  } else if (typeof used.add === 'function') {
+    used.add(identity);
+  }
+};
+
+const resolvePoolKey = (category) => {
+  const topic = String(category ?? '').trim().toLowerCase();
+  return Object.keys(CATEGORY_IMAGE_POOLS).find(name => name.toLowerCase() === topic) || null;
+};
+
+const getAllCuratedImages = () => Array.from(
+  new Map(
+    [...Object.values(CATEGORY_IMAGE_POOLS).flat(), ...DEFAULT_POOL]
+      .map(image => [coverIdentity(image), image])
+  ).values()
+);
+
+async function pickFirstUsable(candidates, used, inspect, allowReuse = false) {
+  const deduped = Array.from(
+    new Map(candidates.map(img => [coverIdentity(img), img])).values()
+  );
+  const pool = allowReuse
+    ? (() => {
+        const minCount = deduped.reduce((min, img) => Math.min(min, getUsageCount(used, coverIdentity(img))), Infinity);
+        return deduped.filter(img => getUsageCount(used, coverIdentity(img)) === minCount);
+      })()
+    : deduped.filter(img => getUsageCount(used, coverIdentity(img)) === 0);
+
+  while (pool.length) {
     const batch = [];
-    while (batch.length < 3 && available.length) {
-      const index = Math.floor(Math.random() * available.length);
-      batch.push(available.splice(index, 1)[0]);
+    while (batch.length < 3 && pool.length) {
+      const index = Math.floor(Math.random() * pool.length);
+      batch.push(pool.splice(index, 1)[0]);
     }
     const status = await Promise.all(batch.map(inspect));
     const usable = batch[status.indexOf('ok')];
     if (usable) return usable;
   }
+  return null;
+}
+
+export async function selectNewsCover({ category, slug, used, inspect = createCoverInspector() }) {
+  const poolKey = resolvePoolKey(category);
+  const primaryPool = poolKey ? CATEGORY_IMAGE_POOLS[poolKey] : DEFAULT_POOL;
+
+  // 1. Fotos sin usar dentro de la categoría exacta
+  const fromPrimary = await pickFirstUsable(primaryPool, used, inspect, false);
+  if (fromPrimary) return fromPrimary;
+
+  // 2. Fotos sin usar en categorías afines y luego en el resto del catálogo curado
+  const relatedKeys = poolKey ? (RELATED_CATEGORIES[poolKey] || []) : [];
+  const relatedPool = relatedKeys.flatMap(key => CATEGORY_IMAGE_POOLS[key] || []);
+  const fromRelated = await pickFirstUsable([...relatedPool, ...DEFAULT_POOL], used, inspect, false);
+  if (fromRelated) return fromRelated;
+
+  const fromCatalog = await pickFirstUsable(getAllCuratedImages(), used, inspect, false);
+  if (fromCatalog) return fromCatalog;
+
+  // 3. Si todas las fotos únicas ya están en uso, rotar por la foto verificada menos usada de su categoría
+  const reusedPrimary = await pickFirstUsable([...primaryPool, ...DEFAULT_POOL], used, inspect, true);
+  if (reusedPrimary) return reusedPrimary;
+
   return slug ? editorialCoverPath(slug) : null;
 }
 
 export async function getUsedNewsCoverIdentities(News, where) {
   const images = await News.findAll({ attributes: ['image_url'], where, raw: true });
-  return new Set(images.map(article => coverIdentity(article.image_url)).filter(Boolean));
+  const counts = new Map();
+  for (const article of images) {
+    const identity = coverIdentity(article.image_url);
+    if (identity && !isEditorialCover(article.image_url)) {
+      counts.set(identity, (counts.get(identity) || 0) + 1);
+    }
+  }
+  return counts;
 }
 
 export async function coverForPublication({ requested, category, slug, used }) {
   if (isEditorialCover(requested, slug)) return editorialCoverPath(slug);
   const inspect = createCoverInspector();
   const identity = coverIdentity(requested);
-  if (identity && !used.has(identity) && !isEditorialCover(requested)) {
+  if (identity && !used?.has?.(identity) && !isEditorialCover(requested)) {
     const status = await inspect(requested);
     if (status === 'ok' || (status === 'unchecked' && !unsplashId(coverUrl(requested)))) return requested.trim();
   }
@@ -207,7 +305,13 @@ export async function coverForPublication({ requested, category, slug, used }) {
 }
 
 export async function planNewsCoverRepairs(articles, inspect = createCoverInspector()) {
-  const used = new Set(articles.map(article => coverIdentity(article.image_url)).filter(Boolean));
+  const allCurated = getAllCuratedImages();
+  const used = new Map();
+  for (const article of articles) {
+    if (!isEditorialCover(article.image_url)) {
+      addUsageCount(used, article.image_url);
+    }
+  }
   const seen = new Set();
   const repairs = [];
 
@@ -217,13 +321,22 @@ export async function planNewsCoverRepairs(articles, inspect = createCoverInspec
     const status = await Promise.all(batch.map(article => inspect(article.image_url)));
     for (const [index, article] of batch.entries()) {
       const identity = coverIdentity(article.image_url);
-      const wrongEditorialCover = isEditorialCover(article.image_url) && !isEditorialCover(article.image_url, article.slug);
-      if (identity && status[index] !== 'broken' && !wrongEditorialCover && !seen.has(identity)) {
+      const editorialFallback = isEditorialCover(article.image_url);
+      const hasUnusedCatalog = allCurated.some(img => getUsageCount(used, coverIdentity(img)) === 0);
+      const duplicateWithUnusedAvailable = Boolean(identity && seen.has(identity) && hasUnusedCatalog);
+
+      if (identity && status[index] !== 'broken' && !editorialFallback && !duplicateWithUnusedAvailable) {
         seen.add(identity);
         continue;
       }
+
       const newImage = await selectNewsCover({ category: article.category, slug: article.slug, used, inspect });
-      used.add(coverIdentity(newImage));
+      if (!newImage || newImage === article.image_url) {
+        if (identity) seen.add(identity);
+        continue;
+      }
+
+      addUsageCount(used, newImage);
       seen.add(coverIdentity(newImage));
       repairs.push({ article, newImage });
     }
