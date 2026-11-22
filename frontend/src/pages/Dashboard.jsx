@@ -925,7 +925,7 @@ const Dashboard = ({ setView }) => {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2.5 w-full">
               {routines.length > 0 ? (
                 <button
                   type="button"
@@ -933,17 +933,17 @@ const Dashboard = ({ setView }) => {
                     await startWorkout(routines[0]);
                     setView('workout');
                   }}
-                  className="flex-1 sm:flex-none px-5 py-3 rounded-2xl bg-accent text-accent-contrast font-black text-sm shadow-md shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-accent text-accent-contrast font-black text-sm shadow-md shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <FaPlay size={13} />
-                  <span>{t('Empezar primer entreno', { defaultValue: 'Empezar primer entreno' })}</span>
+                  <span className="truncate">{t('Empezar primer entreno', { defaultValue: 'Empezar primer entreno' })}</span>
                 </button>
               ) : (
                 <>
                   <button
                     type="button"
                     onClick={() => setView('routines', { openCreate: true, actionTs: Date.now() })}
-                    className="flex-1 sm:flex-none px-5 py-3 rounded-2xl bg-accent text-accent-contrast font-black text-sm shadow-md shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-accent text-accent-contrast font-black text-sm shadow-md shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Plus size={16} strokeWidth={2.5} />
                     <span>{t('Crear primera rutina', { defaultValue: 'Crear primera rutina' })}</span>
@@ -951,7 +951,7 @@ const Dashboard = ({ setView }) => {
                   <button
                     type="button"
                     onClick={() => setView('routines', { openImport: true, actionTs: Date.now() })}
-                    className="px-4 py-3 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto px-4 py-3 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <FileSpreadsheet size={15} className="text-accent" />
                     <span>{t('Importar Hevy / Strong', { defaultValue: 'Importar Hevy / Strong' })}</span>
@@ -962,7 +962,7 @@ const Dashboard = ({ setView }) => {
               <button
                 type="button"
                 onClick={() => setView('nutrition')}
-                className="px-4 py-3 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full sm:w-auto px-4 py-3 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <FaUtensils size={13} className="text-accent" />
                 <span>
@@ -1224,11 +1224,11 @@ const Dashboard = ({ setView }) => {
                   </GlassCard>
                 );
               }) : (
-                <div className="glass p-8 rounded-[28px] text-center flex flex-col items-center gap-3">
+                <div className="glass p-6 sm:p-8 rounded-[28px] text-center flex flex-col items-center gap-3">
                   <p className="text-sm text-text-muted">{t('Sin rutinas creadas.', { defaultValue: 'Sin rutinas creadas.' })}</p>
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    <button onClick={() => setView('routines', { openCreate: true, actionTs: Date.now() })} className="text-xs font-bold text-accent bg-accent/10 px-4 py-2 rounded-[20px] hover:bg-accent/20 transition-colors cursor-pointer">{t('Crear primera rutina', { defaultValue: 'Crear primera rutina' })}</button>
-                    <button onClick={() => setView('routines', { openImport: true, actionTs: Date.now() })} className="text-xs font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-4 py-2 rounded-[20px] hover:text-text-primary transition-colors cursor-pointer">{t('Importar CSV', { defaultValue: 'Importar CSV' })}</button>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 w-full">
+                    <button onClick={() => setView('routines', { openCreate: true, actionTs: Date.now() })} className="w-full sm:w-auto text-xs font-bold text-accent bg-accent/10 px-4 py-2.5 rounded-[20px] hover:bg-accent/20 transition-colors cursor-pointer">{t('Crear primera rutina', { defaultValue: 'Crear primera rutina' })}</button>
+                    <button onClick={() => setView('routines', { openImport: true, actionTs: Date.now() })} className="w-full sm:w-auto text-xs font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-4 py-2.5 rounded-[20px] hover:text-text-primary transition-colors cursor-pointer">{t('Importar CSV', { defaultValue: 'Importar CSV' })}</button>
                   </div>
                 </div>
               )}

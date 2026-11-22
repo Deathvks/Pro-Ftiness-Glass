@@ -423,6 +423,7 @@ export default function MainAppLayout({
     welcomeRemoteVersion,
     closeWelcomeModal,
     cookieConsent,
+    cookieBannerForceConfig,
     handleAcceptCookies,
     handleDeclineCookies,
     handleSaveCookiePreferences,
@@ -447,6 +448,7 @@ export default function MainAppLayout({
     welcomeRemoteVersion: state.welcomeRemoteVersion,
     closeWelcomeModal: state.closeWelcomeModal,
     cookieConsent: state.cookieConsent,
+    cookieBannerForceConfig: state.cookieBannerForceConfig,
     handleAcceptCookies: state.handleAcceptCookies,
     handleDeclineCookies: state.handleDeclineCookies,
     handleSaveCookiePreferences: state.handleSaveCookiePreferences,
@@ -1706,7 +1708,10 @@ export default function MainAppLayout({
             onAccept={handleAcceptCookies} 
             onDecline={handleDeclineCookies} 
             onSavePreferences={handleSaveCookiePreferences}
-            onShowPolicy={handleShowPolicy} 
+            onShowPolicy={handleShowPolicy}
+            userProfile={userProfile}
+            isAuthenticated={isAuthenticated}
+            forceConfig={cookieBannerForceConfig}
           />
         )}
 

@@ -1002,8 +1002,8 @@ export default function SettingsScreen({
               <SettingsItem
                 icon={Cookie}
                 title="Cookies"
-                subtitle="Gestionar consentimiento"
-                onClick={resetCookieConsent}
+                subtitle="Gestionar consentimiento de cookies, email y notificaciones push"
+                onClick={() => resetCookieConsent(true)}
               />
 
               <SettingsItem

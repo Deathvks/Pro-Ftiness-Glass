@@ -1,6 +1,6 @@
 {
-  "version": "7.16.40",
-  "releaseNotes": "Actualización v7.16.40: hora personalizada de recordatorio de entreno, aviso de PWA en iPhone vs Play Store en Android, toque amable a las 24h y resumen semanal por correo.",
+  "version": "7.16.41",
+  "releaseNotes": "Actualización v7.16.41: panel de cookies y ajustes con permisos Push/Email sincronizados, conteo de consentimientos en Admin y botones responsive en móvil.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",

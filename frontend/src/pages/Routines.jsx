@@ -1434,11 +1434,11 @@ const Routines = ({ setView, mainContentRef, navParams }) => {
                       <p className="text-text-secondary text-sm mt-2 max-w-md mx-auto">
                         Crea una desde cero, deja que la IA te monte una en segundos o importa tus entrenamientos de Hevy/Strong en CSV.
                       </p>
-                      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                      <div className="mt-6 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-center gap-3 w-full">
                         <button
                           type="button"
                           onClick={() => setEditingRoutine({ name: '', description: '', exercises: [], folder: '' })}
-                          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-accent text-accent-contrast font-extrabold text-sm shadow-lg shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-accent text-accent-contrast font-extrabold text-sm shadow-lg shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
                         >
                           <Plus size={17} strokeWidth={2.5} />
                           <span>Crear Rutina</span>
@@ -1446,7 +1446,7 @@ const Routines = ({ setView, mainContentRef, navParams }) => {
                         <button
                           type="button"
                           onClick={() => setShowAIGenerator(true)}
-                          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-accent via-purple-500 to-pink-500 text-white font-extrabold text-sm shadow-md hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-accent via-purple-500 to-pink-500 text-white font-extrabold text-sm shadow-md hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
                         >
                           <FaBrain size={15} />
                           <span>Generar con IA</span>
@@ -1454,7 +1454,7 @@ const Routines = ({ setView, mainContentRef, navParams }) => {
                         <button
                           type="button"
                           onClick={() => setShowDataTransferModal(true)}
-                          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary font-bold text-sm transition-all cursor-pointer"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary font-bold text-sm transition-all cursor-pointer"
                         >
                           <FileSpreadsheet size={16} className="text-accent" />
                           <span>Importar CSV (Hevy / Strong)</span>

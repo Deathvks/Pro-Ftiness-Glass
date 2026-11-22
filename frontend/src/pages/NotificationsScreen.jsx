@@ -172,8 +172,8 @@ const NotificationSettingsModal = ({ onClose, userId }) => {
             label="Recordatorios Rutinarios" 
             description="Avisos para registrar comidas y login diario."
           />
-          <div className="flex items-center justify-between py-4">
-            <div className="mr-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 py-4">
+            <div className="sm:mr-3">
               <p className="text-sm font-bold text-text-primary">Hora de entreno</p>
               <p className="text-[10px] sm:text-xs text-text-secondary mt-0.5">
                 Hora preferida para tu aviso diario de entrenamiento.
@@ -183,7 +183,7 @@ const NotificationSettingsModal = ({ onClose, userId }) => {
               aria-label="Hora de recordatorio de entrenamiento"
               value={reminderHour}
               onChange={handleHourChange}
-              className="rounded-xl bg-bg-primary border border-glass-border px-3 py-1.5 text-xs font-bold text-text-primary focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
+              className="w-full sm:w-auto rounded-xl bg-bg-primary border border-glass-border px-3 py-2 text-xs font-bold text-text-primary focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
             >
               {REMINDER_HOURS.map(h => (
                 <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>

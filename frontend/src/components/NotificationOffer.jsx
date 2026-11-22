@@ -267,7 +267,7 @@ function OfferCard({ purpose, userId, initialHour, storageKey, shownKey, offerPu
         </div>
         <div id={detailsId} hidden={!showEmailDetails && !showPushDetails} className="space-y-2.5 pb-2">
           {isTraining && (
-            <div className="flex items-center justify-between gap-2 rounded-xl bg-black/5 dark:bg-white/5 px-3 py-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl bg-black/5 dark:bg-white/5 px-3 py-2.5">
               <span className="flex items-center gap-1.5 text-xs font-semibold text-text-primary">
                 <Clock size={13} className="text-accent shrink-0" />
                 <span>¿A qué hora sueles entrenar?</span>
@@ -277,7 +277,7 @@ function OfferCard({ purpose, userId, initialHour, storageKey, shownKey, offerPu
                 value={preferredHour}
                 onChange={(e) => setPreferredHour(Number(e.target.value))}
                 disabled={isBusy}
-                className="rounded-lg bg-bg-secondary border border-glass-border px-2 py-1 text-xs font-bold text-text-primary focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
+                className="w-full sm:w-auto rounded-lg bg-bg-secondary border border-glass-border px-2.5 py-1.5 text-xs font-bold text-text-primary focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
               >
                 {TRAINING_HOUR_OPTIONS.map((h) => (
                   <option key={h} value={h}>
