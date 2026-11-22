@@ -1,6 +1,6 @@
 {
-  "version": "7.16.42",
-  "releaseNotes": "Actualización v7.16.42: ganchos de retención Día 2 y Semana 2 (objetivo concreto desde tu 1er entreno, repetir nutrición de ayer en 1 toque, nuevos retos semanales y micro-reto activo en portada).",
+  "version": "7.16.43",
+  "releaseNotes": "Actualización v7.16.43: corregido orden de inicialización en Dashboard para los ganchos de retención Día 2 y Semana 2.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",

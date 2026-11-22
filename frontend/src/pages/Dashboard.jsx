@@ -249,6 +249,8 @@ const Dashboard = ({ setView }) => {
     }
   }, [fetchTodaysCompletedRoutines]);
 
+  const [microChallenges, setMicroChallenges] = useState([]);
+
   useEffect(() => {
     if (!userProfile?.id) return undefined;
     let isMounted = true;
@@ -311,7 +313,6 @@ const Dashboard = ({ setView }) => {
   const [isSharing, setIsSharing] = useState(false);
   const [showGymModal, setShowGymModal] = useState(false);
   const [showDiscardWorkoutModal, setShowDiscardWorkoutModal] = useState(false);
-  const [microChallenges, setMicroChallenges] = useState([]);
   const [currentGym, setCurrentGym] = useState(() => {
     try {
       const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
