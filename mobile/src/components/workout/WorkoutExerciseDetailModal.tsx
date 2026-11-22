@@ -5,9 +5,10 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   Dimensions,
+  Platform,
 } from 'react-native';
 import {
   X,
@@ -20,14 +21,11 @@ import {
   FileText,
   AlertCircle,
 } from 'lucide-react-native';
-import {
-  getAppleCardSurfaceStyle,
-  getThemeBaseBackground,
-  shouldUseContentGlass,
-} from '@/constants/theme';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
+import { getThemeBaseBackground } from '@/constants/theme';
 import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
 import { ModalThemeBackground, getThemedModalBorderColor } from '@/components/ui/ModalThemeBackground';
-import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,6 +34,45 @@ import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview';
 import { askTrainerAI } from '@/services/aiService';
+import { getExerciseDetails } from '@/services/exerciseService';
+
+interface ModalGlassBackdropProps {
+  isDark: boolean;
+  borderRadius: number;
+  interactive?: boolean;
+}
+
+function ModalGlassBackdrop({ isDark, borderRadius, interactive = false }: ModalGlassBackdropProps) {
+  const supportsNativeGlass = useMemo(() => {
+    if (Platform.OS !== 'ios') return false;
+    try {
+      return isLiquidGlassAvailable();
+    } catch {
+      return false;
+    }
+  }, []);
+
+  if (supportsNativeGlass) {
+    return (
+      <GlassView
+        pointerEvents="none"
+        glassEffectStyle="regular"
+        isInteractive={interactive}
+        colorScheme={isDark ? 'dark' : 'light'}
+        style={[StyleSheet.absoluteFill, { borderRadius, borderCurve: 'continuous' }]}
+      />
+    );
+  }
+
+  return (
+    <BlurView
+      pointerEvents="none"
+      intensity={Platform.OS === 'android' ? 45 : 35}
+      tint={isDark ? 'dark' : 'light'}
+      style={[StyleSheet.absoluteFill, { borderRadius, overflow: 'hidden' }]}
+    />
+  );
+}
 
 interface WorkoutExerciseDetailModalProps {
   exercise: any;
@@ -49,8 +86,7 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const useGlass = shouldUseContentGlass(theme);
-  const cardSurface = getAppleCardSurfaceStyle(theme, 18);
+  const glassBorder = isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)';
   const contrastText = getContrastTextColor(colors.tint);
   const insets = useSafeAreaInsets();
 
@@ -97,15 +133,73 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
   // Buscar coincidencia en el catálogo completo de ejercicios
   const matchedFromStore = useMemo(() => {
     if (!exercise) return null;
-    const targetId = exercise.exercise_list_id || exercise.exercise_id || exercise.id;
-    const targetName = (exercise.name || '').trim().toLowerCase();
+    const rawSub = exercise.exercise_details || exercise.exercise || {};
+    const catalogId =
+      exercise.exercise_list_id ||
+      exercise.exercise_id ||
+      rawSub.exercise_list_id ||
+      rawSub.id ||
+      (!exercise.routine_id ? exercise.id : null);
+    const targetName = (exercise.name || exercise.exercise_name || rawSub.name || '')
+      .trim()
+      .toLowerCase();
 
     return allExercises.find((ex: any) => {
-      if (targetId && (ex.id === targetId || ex.exercise_list_id === targetId)) return true;
+      if (!ex) return false;
+      if (
+        catalogId !== undefined &&
+        catalogId !== null &&
+        (String(ex.id) === String(catalogId) ||
+          (ex.exercise_list_id && String(ex.exercise_list_id) === String(catalogId)))
+      ) {
+        return true;
+      }
       if (targetName && ex.name?.trim().toLowerCase() === targetName) return true;
       return false;
     });
   }, [exercise, allExercises]);
+
+  // Completar detalles si faltan imágenes o vídeo en el payload del entrenamiento
+  useEffect(() => {
+    if (!exercise) return;
+    const catalogId =
+      exercise.exercise_list_id ||
+      exercise.exercise_id ||
+      exercise.exercise_details?.id ||
+      matchedFromStore?.id ||
+      (!exercise.routine_id ? exercise.id : null);
+    const hasInlineMedia = Boolean(
+      exercise.video_url ||
+        exercise.youtube_id ||
+        matchedFromStore?.video_url ||
+        matchedFromStore?.youtube_id
+    ) && Boolean(
+      exercise.images ||
+        exercise.image_url ||
+        exercise.image ||
+        matchedFromStore?.images ||
+        matchedFromStore?.image_url ||
+        matchedFromStore?.image_url_start ||
+        matchedFromStore?.image
+    );
+    if (!catalogId || hasInlineMedia) return;
+
+    let cancelled = false;
+    setIsLoadingDetails(true);
+    getExerciseDetails(catalogId)
+      .then((fetched: any) => {
+        if (!cancelled && fetched) {
+          setLocalDetails((prev: any) => ({ ...fetched, ...prev }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setIsLoadingDetails(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [exercise, matchedFromStore]);
 
   const mergedDetails = useMemo(() => {
     const rawEx = exercise || {};
@@ -166,15 +260,23 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
           rawEx.image_url_start,
           rawEx.image_url_end,
           rawEx.image_url,
+          rawEx.image,
           rawSubEx.image_url_start,
           rawSubEx.image_url_end,
           rawSubEx.image_url,
+          rawSubEx.image,
+          rawLoc.image_url_start,
+          rawLoc.image_url_end,
+          rawLoc.image_url,
+          rawLoc.image,
           rawMatch.image_url_start,
           rawMatch.image_url_end,
           rawMatch.image_url,
+          rawMatch.image,
           rawSubMatch.image_url_start,
           rawSubMatch.image_url_end,
           rawSubMatch.image_url,
+          rawSubMatch.image,
         ].filter((u): u is string => typeof u === 'string' && u.trim() !== '' && u !== 'null' && !u.includes('/muscle_groups/')),
       ])
     );
@@ -233,16 +335,18 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
     mergedDetails.image_url
   );
 
-  // Modo multimedia activo: 'video' prioritario si existe vídeo, o 'images' como alternativa
-  const [mediaMode, setMediaMode] = useState<'video' | 'images'>('video');
-
-  useEffect(() => {
-    if (hasVideo) {
-      setMediaMode('video');
-    } else {
-      setMediaMode('images');
-    }
-  }, [hasVideo, exercise?.id, exercise?.name]);
+  // Modo multimedia activo: deriva de la selección del usuario para el ejercicio actual o prioriza vídeo si existe
+  const exerciseMediaKey = `${exercise?.id ?? ''}-${exercise?.name ?? ''}`;
+  const [manualMediaSelection, setManualMediaSelection] = useState<{
+    key: string;
+    mode: 'video' | 'images';
+  } | null>(null);
+  const mediaMode: 'video' | 'images' =
+    manualMediaSelection?.key === exerciseMediaKey
+      ? manualMediaSelection.mode
+      : hasVideo
+      ? 'video'
+      : 'images';
 
   // Limpieza y formateo de descripción (remueve tags html residuales como <p>, </p>, <br>)
   const rawDescription =
@@ -332,30 +436,19 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
               </Text>
             </View>
 
-            <TouchableOpacity
+            <GlassButton
               onPress={() => {
                 try {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 } catch {}
                 onClose();
               }}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              style={[
-                styles.closeButton,
-                {
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(0, 0, 0, 0.10)',
-                  backgroundColor: useGlass ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.05)'),
-                },
-              ]}
+              theme={theme}
+              style={styles.closeButton}
+              accessibilityLabel="Cerrar detalle del ejercicio"
             >
-              {useGlass && (
-                <ContentCardBackdrop
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
-                />
-              )}
               <X size={18} color={colors.text} strokeWidth={2.5} />
-            </TouchableOpacity>
+            </GlassButton>
           </View>
 
           {/* Contenido en Scroll */}
@@ -377,24 +470,19 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   style={[
                     styles.mediaModeSelector,
                     {
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.09)',
-                      backgroundColor: useGlass ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)'),
+                      borderColor: glassBorder,
+                      backgroundColor: 'transparent',
                     },
                   ]}
                 >
-                  {useGlass && (
-                    <ContentCardBackdrop
-                      colorScheme={isDark ? 'dark' : 'light'}
-                      style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-                    />
-                  )}
-                  <TouchableOpacity
-                    activeOpacity={0.75}
+                  <ModalGlassBackdrop isDark={isDark} borderRadius={24} interactive />
+                  <Pressable
+                    hitSlop={6}
                     onPress={() => {
                       try {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       } catch {}
-                      setMediaMode('video');
+                      setManualMediaSelection({ key: exerciseMediaKey, mode: 'video' });
                     }}
                     style={[
                       styles.mediaModeTab,
@@ -414,15 +502,15 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                     >
                       Vídeo
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
 
-                  <TouchableOpacity
-                    activeOpacity={0.75}
+                  <Pressable
+                    hitSlop={6}
                     onPress={() => {
                       try {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       } catch {}
-                      setMediaMode('images');
+                      setManualMediaSelection({ key: exerciseMediaKey, mode: 'images' });
                     }}
                     style={[
                       styles.mediaModeTab,
@@ -441,7 +529,7 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                     >
                       Animación
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               )}
 
@@ -466,11 +554,6 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                     fitMode="contain"
                     playYouTube={mediaMode === 'video'}
                     forceImageMode={mediaMode === 'images'}
-                    onPress={() => {
-                      if (hasVideo && mediaMode !== 'video') {
-                        setMediaMode('video');
-                      }
-                    }}
                   />
                 )}
               </View>
@@ -488,19 +571,13 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   key={key}
                   style={[
                     styles.metricCard,
-                    cardSurface,
                     {
-                      backgroundColor: useGlass ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.03)'),
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.07)',
+                      backgroundColor: 'transparent',
+                      borderColor: glassBorder,
                     },
                   ]}
                 >
-                  {useGlass && (
-                    <ContentCardBackdrop
-                      colorScheme={isDark ? 'dark' : 'light'}
-                      style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
-                    />
-                  )}
+                  <ModalGlassBackdrop isDark={isDark} borderRadius={18} />
                   <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '1F' }]}>
                     <Icon size={18} color={colors.tint} strokeWidth={2.5} />
                   </View>
@@ -521,17 +598,12 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   style={[
                     styles.equipmentPill,
                     {
-                      backgroundColor: useGlass ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.04)'),
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.07)',
+                      backgroundColor: 'transparent',
+                      borderColor: glassBorder,
                     },
                   ]}
                 >
-                  {useGlass && (
-                    <ContentCardBackdrop
-                      colorScheme={isDark ? 'dark' : 'light'}
-                      style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
-                    />
-                  )}
+                  <ModalGlassBackdrop isDark={isDark} borderRadius={12} />
                   <Dumbbell size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
                   <Text style={[styles.equipmentText, { color: colors.textSecondary }]}>
                     Equipamiento: {mergedDetails.equipment}
@@ -554,19 +626,13 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
               <View
                 style={[
                   styles.descBox,
-                  cardSurface,
                   {
-                    backgroundColor: useGlass ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)'),
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.07)',
+                    backgroundColor: 'transparent',
+                    borderColor: glassBorder,
                   },
                 ]}
               >
-                {useGlass && (
-                  <ContentCardBackdrop
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                  />
-                )}
+                <ModalGlassBackdrop isDark={isDark} borderRadius={20} />
                 <Text style={[styles.descBody, { color: colors.text }]}>
                   {cleanDescription}
                 </Text>
@@ -592,16 +658,12 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                       {
                         overflow: 'hidden',
                         borderWidth: 1,
-                        borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
+                        borderColor: glassBorder,
+                        backgroundColor: 'transparent',
                       },
                     ]}
                   >
-                    {useGlass && (
-                      <ContentCardBackdrop
-                        colorScheme={isDark ? 'dark' : 'light'}
-                        style={[StyleSheet.absoluteFill, { borderRadius: 8 }]}
-                      />
-                    )}
+                    <ModalGlassBackdrop isDark={isDark} borderRadius={8} />
                     <Text style={[styles.aiQuotaText, { color: colors.tint }]}>
                       Usos: {remainingUses}/5
                     </Text>
@@ -617,7 +679,10 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   style={styles.aiAskButton}
                 >
                   <Sparkles size={18} color={isDark ? '#ffffff' : colors.text} strokeWidth={2.5} style={{ marginRight: 8 }} />
-                  <Text style={[styles.aiAskButtonText, { color: isDark ? '#ffffff' : colors.text }]}>
+                  <Text
+                    numberOfLines={1}
+                    style={[styles.aiAskButtonText, { color: isDark ? '#ffffff' : colors.text }]}
+                  >
                     Pedir explicación experta
                   </Text>
                 </GlassButton>
@@ -628,17 +693,12 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   style={[
                     styles.aiLoadingBox,
                     {
-                      backgroundColor: useGlass ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)'),
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.07)',
+                      backgroundColor: 'transparent',
+                      borderColor: glassBorder,
                     },
                   ]}
                 >
-                  {useGlass && (
-                    <ContentCardBackdrop
-                      colorScheme={isDark ? 'dark' : 'light'}
-                      style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
-                    />
-                  )}
+                  <ModalGlassBackdrop isDark={isDark} borderRadius={18} />
                   <ActivityIndicator size="small" color={colors.tint} />
                   <Text style={[styles.aiLoadingText, { color: colors.textSecondary }]}>
                     Analizando biomecánica del ejercicio...
@@ -657,19 +717,13 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                 <View
                   style={[
                     styles.aiResponseCard,
-                    cardSurface,
                     {
-                      backgroundColor: useGlass ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)'),
+                      backgroundColor: 'transparent',
                       borderColor: colors.tint + '40',
                     },
                   ]}
                 >
-                  {useGlass && (
-                    <ContentCardBackdrop
-                      colorScheme={isDark ? 'dark' : 'light'}
-                      style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                    />
-                  )}
+                  <ModalGlassBackdrop isDark={isDark} borderRadius={20} />
                   <Text style={[styles.aiResponseText, { color: colors.text }]}>
                     {aiExplanation}
                   </Text>
@@ -746,15 +800,18 @@ const styles = StyleSheet.create({
     padding: 3,
     borderRadius: 24,
     borderWidth: 1,
+    overflow: 'hidden',
     marginBottom: 12,
+    zIndex: 10,
   },
   mediaModeTab: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingVertical: 5,
-    paddingHorizontal: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
     borderRadius: 20,
+    zIndex: 2,
   },
   mediaModeTabActive: {
     shadowColor: '#000',
@@ -912,7 +969,9 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   aiAskButton: {
+    width: '100%',
     height: 50,
+    paddingHorizontal: 18,
     borderRadius: 18,
     flexDirection: 'row',
     alignItems: 'center',

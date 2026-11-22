@@ -96,12 +96,16 @@ export function TourOverlay() {
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
   const [cardHeight, setCardHeight] = useState(215);
+  const [overlaySize, setOverlaySize] = useState<{ width: number; height: number } | null>(null);
   const cardHeightRef = useRef(215);
   const overlayRef = useRef<React.ComponentRef<typeof View>>(null);
   const overlayOriginRef = useRef({ x: 0, y: 0 });
   const sessionRef = useRef<ActiveSession | null>(null);
   sessionRef.current = session;
   const startedAutoIdsRef = useRef<Set<string>>(new Set());
+
+  const overlayW = overlaySize?.width ? Math.max(winW, overlaySize.width) : winW;
+  const overlayH = overlaySize?.height ? Math.max(winH, overlaySize.height) : winH;
 
   const normalizedPath = useMemo(() => normalizeRouteKey(pathname), [pathname]);
 
@@ -359,8 +363,8 @@ export function TourOverlay() {
         Math.max(cardHeightRef.current + insets.bottom + 36, 260),
         {
           originY: preOrigin.y,
-          winWidth: winW,
-          winHeight: winH,
+          winWidth: overlayW,
+          winHeight: overlayH,
         },
       );
       if (cancelled) return;
@@ -382,8 +386,8 @@ export function TourOverlay() {
 
       const clippedLeft = Math.max(4, rawLeft);
       const clippedTop = Math.max(4, rawTop);
-      const clippedRight = Math.min(winW - 4, rawRight);
-      const clippedBottom = Math.min(winH - 4, rawBottom);
+      const clippedRight = Math.min(overlayW - 4, rawRight);
+      const clippedBottom = Math.min(overlayH - 4, rawBottom);
 
       const clippedW = clippedRight - clippedLeft;
       const clippedH = clippedBottom - clippedTop;
@@ -405,7 +409,7 @@ export function TourOverlay() {
     return () => {
       cancelled = true;
     };
-  }, [session, stepIndex, insets.top, insets.bottom, winW, winH, measureOverlayOrigin]);
+  }, [session, stepIndex, insets.top, insets.bottom, overlayW, overlayH, measureOverlayOrigin]);
 
   if (!session) return null;
 
@@ -449,16 +453,16 @@ export function TourOverlay() {
 
   const pad = 6;
   const horizontalMargin = 16;
-  const maxCardWidth = Math.min(winW - horizontalMargin * 2, 430);
+  const maxCardWidth = Math.min(overlayW - horizontalMargin * 2, 430);
   const topSafe = insets.top + 16;
-  const bottomSafe = winH - insets.bottom - 18;
+  const bottomSafe = overlayH - insets.bottom - 18;
 
   let cardTop: number;
   if (!targetRect) {
-    cardTop = Math.max(topSafe, (winH - cardHeight) / 2);
+    cardTop = Math.max(topSafe, (overlayH - cardHeight) / 2);
   } else {
     const spotTop = Math.max(4, targetRect.y - pad);
-    const spotBottom = Math.min(winH - 4, targetRect.y + targetRect.height + pad);
+    const spotBottom = Math.min(overlayH - 4, targetRect.y + targetRect.height + pad);
     const spaceBelow = bottomSafe - spotBottom;
     const spaceAbove = spotTop - topSafe;
 
@@ -476,26 +480,47 @@ export function TourOverlay() {
   const spotlightX = targetRect ? Math.max(4, targetRect.x - pad) : 0;
   const spotlightY = targetRect ? Math.max(4, targetRect.y - pad) : 0;
   const spotlightW = targetRect
-    ? Math.max(24, Math.min(winW - spotlightX - 4, targetRect.width + pad * 2))
+    ? Math.max(24, Math.min(overlayW - spotlightX - 4, targetRect.width + pad * 2))
     : 0;
   const spotlightH = targetRect
-    ? Math.max(24, Math.min(winH - spotlightY - 4, targetRect.height + pad * 2))
+    ? Math.max(24, Math.min(overlayH - spotlightY - 4, targetRect.height + pad * 2))
     : 0;
 
   return (
     <View
       ref={overlayRef}
-      onLayout={() => void measureOverlayOrigin()}
+      onLayout={e => {
+        const { width, height } = e.nativeEvent.layout;
+        if (width > 0 && height > 0) {
+          setOverlaySize(prev =>
+            prev && Math.abs(prev.width - width) < 1 && Math.abs(prev.height - height) < 1
+              ? prev
+              : { width, height },
+          );
+        }
+        void measureOverlayOrigin();
+      }}
       pointerEvents="auto"
       style={styles.root}
     >
-      {/* Dimmed SVG Spotlight Backdrop — captures stray taps without closing accidentally */}
-      <View pointerEvents="auto" style={StyleSheet.absoluteFill}>
-        <Svg width={winW} height={winH} style={StyleSheet.absoluteFill}>
+      {/* Dimmed SVG Spotlight Backdrop — sized to measured root container so tablets reach the bottom edge */}
+      <View
+        pointerEvents="auto"
+        style={[
+          StyleSheet.absoluteFill,
+          !targetRect ? { backgroundColor: 'rgba(0, 0, 0, 0.72)' } : null,
+        ]}
+      >
+        <Svg
+          width={overlayW}
+          height={overlayH}
+          viewBox={`0 0 ${overlayW} ${overlayH}`}
+          style={StyleSheet.absoluteFill}
+        >
           {targetRect ? (
             <>
               <Path
-                d={buildSpotlightPath(winW, winH, targetRect, pad, 18)}
+                d={buildSpotlightPath(overlayW, overlayH, targetRect, pad, 18)}
                 fill="rgba(0, 0, 0, 0.72)"
                 fillRule="evenodd"
               />
@@ -511,9 +536,7 @@ export function TourOverlay() {
                 strokeWidth={2.5}
               />
             </>
-          ) : (
-            <Rect x={0} y={0} width={winW} height={winH} fill="rgba(0, 0, 0, 0.72)" />
-          )}
+          ) : null}
         </Svg>
       </View>
 

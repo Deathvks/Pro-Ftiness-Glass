@@ -550,7 +550,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
         </View>
       )}
 
-      {!staticOnly && (rawVideo || yid) && !isPlaying && (
+      {!staticOnly && !forceImageMode && (rawVideo || yid) && !isPlaying && (
         <View style={styles.playOverlay}>
           <View style={styles.playPill}>
             <Play size={15} color="#ffffff" fill="#ffffff" />
