@@ -41,6 +41,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import TemplateRoutines from './TemplateRoutines';
 import PromoBanner from '../components/PromoBanner';
+import NotificationOffer from '../components/NotificationOffer';
 const ManualExercisesManager = lazy(() => import('../components/ManualExercisesManager'));
 import WeeklyMuscleVolumeCard, {
   RoutineVolumeFilterModal,
@@ -1107,6 +1108,12 @@ const Routines = ({ setView, mainContentRef, navParams }) => {
               </div>
             )}
           </div>
+
+          {routines && routines.length > 0 && (!workoutLog || workoutLog.length === 0) && (
+            <div className="mb-6">
+              <NotificationOffer purpose="training" />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
             {filteredSorted && filteredSorted.length > 0 ? (

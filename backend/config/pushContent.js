@@ -185,6 +185,8 @@ export function getPushContent({ id, type, title, message, data, purpose }) {
 
   if (purpose === 'news' && type !== 'notification_test') {
     preview = [compactText(title, 70), compactText(message, 160)];
+  } else if (!preview && (type === 'training_reminder' || type === 'early_nudge_24h')) {
+    preview = [compactText(title, 70), compactText(message, 160), '/routines'];
   } else if (!preview && purpose === 'coaching') {
     preview = [...(reminderContent[data?.reminderLevel] ?? reminderContent[1]), '/asesoria'];
   } else if (!preview && purpose === 'training') {

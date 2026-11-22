@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { BellRing, Mail } from 'lucide-react';
+import { BellRing, Clock, Mail } from 'lucide-react';
 import { EMAIL_CONSENT_TEXT, EMAIL_CONSENT_VERSION } from '../config/emailConsent';
 import { PUSH_OPTIONS, PUSH_CONSENT_VERSION } from '../config/pushConsent';
 import { usePushNotifications } from '../hooks/usePushNotifications';
@@ -10,6 +10,7 @@ import useAppStore from '../store/useAppStore';
 
 const COOLDOWN_DAYS = 21; // 3 semanas de cortesía entre avisos para no saturar al usuario
 const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+const TRAINING_HOUR_OPTIONS = [7, 8, 9, 10, 12, 14, 17, 18, 19, 20, 21];
 
 const offers = {
   training: {
@@ -86,6 +87,7 @@ export default function NotificationOffer({ purpose, offerPush = true, offerEmai
       key={storageKey}
       purpose={purpose}
       userId={profile.id}
+      initialHour={Number.isInteger(profile.training_reminder_hour) ? profile.training_reminder_hour : 18}
       storageKey={storageKey}
       shownKey={shownKey}
       offerPush={offerPush}
@@ -94,10 +96,11 @@ export default function NotificationOffer({ purpose, offerPush = true, offerEmai
   );
 }
 
-function OfferCard({ purpose, userId, storageKey, shownKey, offerPush, emailAvailable }) {
+function OfferCard({ purpose, userId, initialHour, storageKey, shownKey, offerPush, emailAvailable }) {
   const isTraining = purpose === 'training';
   const [hidden, setHidden] = useState(false);
   const [channel, setChannel] = useState(null);
+  const [preferredHour, setPreferredHour] = useState(initialHour ?? 18);
   const [saving, setSaving] = useState(null);
   const [waitingForDevice, setWaitingForDevice] = useState(false);
   const [purposePushEnabled, setPurposePushEnabled] = useState(null);
@@ -144,14 +147,24 @@ function OfferCard({ purpose, userId, storageKey, shownKey, offerPush, emailAvai
     setSaving('email');
     setError('');
     try {
-      const updated = await updateUserProfile({ [field]: true, emailConsentVersion: EMAIL_CONSENT_VERSION }, {
+      const payload = { [field]: true, emailConsentVersion: EMAIL_CONSENT_VERSION };
+      if (isTraining && Number.isInteger(preferredHour)) {
+        payload.training_reminder_hour = preferredHour;
+      }
+      const updated = await updateUserProfile(payload, {
         queueWhenOffline: false
       });
       if (updated?.[field] !== true) throw new Error('El servidor no confirmó el cambio.');
       if (useAppStore.getState().userProfile?.id !== userId) return;
 
       hideOffer();
-      useAppStore.setState(state => ({ userProfile: { ...state.userProfile, [field]: true } }));
+      useAppStore.setState(state => ({
+        userProfile: {
+          ...state.userProfile,
+          [field]: true,
+          ...(isTraining ? { training_reminder_hour: preferredHour } : {})
+        }
+      }));
       addToast(
         isTraining
           ? 'Recordatorios de entrenamiento por correo activados.'
@@ -179,14 +192,22 @@ function OfferCard({ purpose, userId, storageKey, shownKey, offerPush, emailAvai
   useEffect(() => {
     if (saving !== 'push' || useAppStore.getState().userProfile?.id !== userId) return;
     let active = true;
-    updatePushPreferences(purpose, true, PUSH_CONSENT_VERSION).then(preferences => {
+    updatePushPreferences(purpose, true, PUSH_CONSENT_VERSION).then(async preferences => {
       if (preferences?.[purpose] !== true) throw new Error('El servidor no confirmó el cambio.');
       if (!active || useAppStore.getState().userProfile?.id !== userId) return;
+      if (isTraining && Number.isInteger(preferredHour)) {
+        try {
+          await updateUserProfile({ training_reminder_hour: preferredHour }, { queueWhenOffline: false });
+          useAppStore.setState(state => ({
+            userProfile: state.userProfile ? { ...state.userProfile, training_reminder_hour: preferredHour } : state.userProfile
+          }));
+        } catch { /* Se conserva la suscripción push aunque falle guardar la hora */ }
+      }
       setPurposePushEnabled(true);
       hideOffer();
       addToast(
         isTraining
-          ? 'Recordatorios de entrenamiento por push activados.'
+          ? `Recordatorios de entrenamiento por push activados (${String(preferredHour).padStart(2, '0')}:00).`
           : 'Seguimiento de asesoría por push activado.',
         'success'
       );
@@ -196,7 +217,7 @@ function OfferCard({ purpose, userId, storageKey, shownKey, offerPush, emailAvai
       if (active) setSaving(null);
     });
     return () => { active = false; };
-  }, [saving, userId, addToast, purpose, isTraining]);
+  }, [saving, userId, addToast, purpose, isTraining, preferredHour]);
 
   const activatePush = () => {
     if (saving || waitingForDevice || isLoading || !pushAvailable || useAppStore.getState().userProfile?.id !== userId) return;
@@ -244,7 +265,28 @@ function OfferCard({ purpose, userId, storageKey, shownKey, offerPush, emailAvai
           {emailAvailable && <button type="button" disabled={isBusy} aria-expanded={showEmailDetails} aria-controls={detailsId} onClick={() => toggleChannel('email')} className={choiceClass}>{!isTraining ? 'Seguimiento por correo' : 'Correo electrónico'}</button>}
           <button type="button" disabled={isBusy} onClick={hideOffer} className="min-h-11 rounded-lg px-2 text-xs font-semibold text-text-secondary hover:text-text-primary disabled:opacity-50">Ahora no</button>
         </div>
-        <div id={detailsId} hidden={!showEmailDetails && !showPushDetails} className="space-y-2 pb-2">
+        <div id={detailsId} hidden={!showEmailDetails && !showPushDetails} className="space-y-2.5 pb-2">
+          {isTraining && (
+            <div className="flex items-center justify-between gap-2 rounded-xl bg-black/5 dark:bg-white/5 px-3 py-2">
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-text-primary">
+                <Clock size={13} className="text-accent shrink-0" />
+                <span>¿A qué hora sueles entrenar?</span>
+              </span>
+              <select
+                aria-label="Hora habitual de entrenamiento"
+                value={preferredHour}
+                onChange={(e) => setPreferredHour(Number(e.target.value))}
+                disabled={isBusy}
+                className="rounded-lg bg-bg-secondary border border-glass-border px-2 py-1 text-xs font-bold text-text-primary focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
+              >
+                {TRAINING_HOUR_OPTIONS.map((h) => (
+                  <option key={h} value={h}>
+                    {String(h).padStart(2, '0')}:00
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <p className="text-xs leading-relaxed text-text-secondary">
             {showPushDetails ? `${pushDetails} Puedes retirarlos en Ajustes.${isSubscribed ? '' : ' También se activarán los avisos de servicio de este dispositivo.'}` : EMAIL_CONSENT_TEXT[purpose]}
           </p>

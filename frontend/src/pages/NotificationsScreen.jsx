@@ -14,6 +14,7 @@ import {
 import { Capacitor } from '@capacitor/core';
 import GlassCard from '../components/GlassCard';
 import { getNotification, markAsRead } from '../services/notificationService';
+import * as userService from '../services/userService';
 
 // --- Imports de Modales Separados ---
 import DeleteNotificationModal from '../components/DeleteNotificationModal';
@@ -101,12 +102,33 @@ const ToggleSwitch = ({ checked, onChange, label, description }) => (
   </div>
 );
 
+const REMINDER_HOURS = [7, 8, 9, 10, 12, 14, 17, 18, 19, 20, 21];
+
 // --- Sub-componente: Modal de Configuración ---
 const NotificationSettingsModal = ({ onClose, userId }) => {
   const { requestPermissions, scheduleEngagementNotifications, scheduleDailyReminders } = useLocalNotifications();
   const { addToast } = useToast();
+  const userProfile = useAppStore(state => state.userProfile);
+  const setUserProfile = useAppStore(state => state.setUserProfile);
   const [engagement, setEngagement] = useState(() => localStorage.getItem(localReminderKey(userId, 'engagement')) === 'true');
   const [daily, setDaily] = useState(() => localStorage.getItem(localReminderKey(userId, 'daily')) === 'true');
+  const [reminderHour, setReminderHour] = useState(() =>
+    Number.isInteger(userProfile?.training_reminder_hour) ? userProfile.training_reminder_hour : 10
+  );
+
+  const handleHourChange = async (e) => {
+    const nextHour = Number(e.target.value);
+    const prevHour = reminderHour;
+    setReminderHour(nextHour);
+    try {
+      await userService.updateUserProfile({ training_reminder_hour: nextHour });
+      if (userProfile) setUserProfile({ ...userProfile, training_reminder_hour: nextHour });
+      addToast(`Recordatorio de entreno a las ${String(nextHour).padStart(2, '0')}:00`, 'success');
+    } catch {
+      setReminderHour(prevHour);
+      addToast('No se pudo actualizar la hora de recordatorio.', 'error');
+    }
+  };
 
   const changeReminder = async (category, enabled) => {
     if (enabled && !(await requestPermissions())) {
@@ -150,6 +172,24 @@ const NotificationSettingsModal = ({ onClose, userId }) => {
             label="Recordatorios Rutinarios" 
             description="Avisos para registrar comidas y login diario."
           />
+          <div className="flex items-center justify-between py-4">
+            <div className="mr-3">
+              <p className="text-sm font-bold text-text-primary">Hora de entreno</p>
+              <p className="text-[10px] sm:text-xs text-text-secondary mt-0.5">
+                Hora preferida para tu aviso diario de entrenamiento.
+              </p>
+            </div>
+            <select
+              aria-label="Hora de recordatorio de entrenamiento"
+              value={reminderHour}
+              onChange={handleHourChange}
+              className="rounded-xl bg-bg-primary border border-glass-border px-3 py-1.5 text-xs font-bold text-text-primary focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
+            >
+              {REMINDER_HOURS.map(h => (
+                <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <button

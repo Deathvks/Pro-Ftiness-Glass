@@ -31,6 +31,7 @@ import DomainMigrationModal from './components/DomainMigrationModal';
 import VersionUpdater from './components/VersionUpdater';
 import APKUpdater from './components/APKUpdater';
 import AndroidDownloadPrompt from './components/AndroidDownloadPrompt';
+import IosPwaInstallModal from './components/IosPwaInstallModal';
 import OfflineDownloadFloatingBar from './components/OfflineDownloadFloatingBar';
 import SEOHead from './components/SEOHead';
 import PermissionModal from './components/PermissionModal'; 
@@ -464,6 +465,15 @@ export default function App() {
       }
     }
   }, [isAuthenticated, userProfile, isLoading, cookieConsent, workoutLogCount, view, setShow2FAPromo]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !userProfile || isLoading || cookieConsent === null || show2FAPromo) return;
+    if (workoutLogCount < 1 || view === 'workout' || view === 'active-cardio') return;
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('pfg-offer-pwa-install'));
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, userProfile, isLoading, cookieConsent, show2FAPromo, workoutLogCount, view]);
 
   const handleLogoutClick = useCallback(() => setShowLogoutConfirm(true), []);
 
@@ -937,6 +947,7 @@ export default function App() {
       <VersionUpdater />
       <APKUpdater />
       <AndroidDownloadPrompt />
+      <IosPwaInstallModal />
       <OfflineDownloadFloatingBar navigate={navigateInternal} />
 
       {((isInitialLoad && !isPublicRoute) || isCheckingLaunchUrl) ? (

@@ -1,6 +1,6 @@
 {
-  "version": "7.16.39",
-  "releaseNotes": "Actualización v7.16.39: plan de 3 días automático al terminar el onboarding, modo Primer Día en Dashboard, aplazamiento de aviso 2FA tras primera sesión y mejoras de inicio rápido en Rutinas.",
+  "version": "7.16.40",
+  "releaseNotes": "Actualización v7.16.40: hora personalizada de recordatorio de entreno, aviso de PWA en iPhone vs Play Store en Android, toque amable a las 24h y resumen semanal por correo.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",

@@ -5,8 +5,9 @@ import axios from 'axios';
 import db from '../models/index.js';
 import { createNotification } from './notificationService.js';
 import { cleanOrphanedImages, deleteFile } from './imageService.js';
-import { sendBotReminderEmail } from './emailService.js';
+import { sendBotReminderEmail, sendWeeklyRecapEmail } from './emailService.js';
 import { getUnprotectedWeekdays } from './gamificationService.js';
+import { getWeeklyTrainingTarget } from '../utils/weeklyTraining.js';
 import { newsAutomationService } from './newsAutomationService.js';
 import { runRetentionRescueBatch } from './retentionRescueService.js';
 import { supportContact } from '../config/mailContacts.js';
@@ -41,7 +42,7 @@ const getLocalTime = (timezone) => {
 const notifyUser = async (userId, payload) => {
   try {
     await createNotification(userId, {
-      type: 'info',
+      type: payload.type || 'info',
       title: payload.title,
       message: payload.body,
       data: { url: payload.url },
@@ -215,14 +216,14 @@ const checkCreatineReminder = () => {
 };
 
 /**
- * TAREA 2: Recordatorio de Entrenamiento
+ * TAREA 2: Recordatorio de Entrenamiento (hora personalizada por usuario, defecto 10:00)
  * (Minuto 5)
  */
 const checkTrainingReminder = () => {
   cron.schedule('5 * * * *', async () => {
     try {
       const users = await db.User.findAll({
-        attributes: ['id', 'timezone'],
+        attributes: ['id', 'timezone', 'training_reminder_hour'],
         include: [{
           model: db.PushSubscription,
           as: 'PushSubscriptions',
@@ -231,19 +232,76 @@ const checkTrainingReminder = () => {
         }]
       });
 
-      const targetUsers = users.filter(user => getLocalTime(user.timezone).hour === 10);
-      const uniqueUserIds = [...new Set(targetUsers.map(u => u.id))];
+      const targetUsers = [];
+      const seenUserIds = new Set();
 
-      if (uniqueUserIds.length > 0) {
-        console.log(`[Cron] Entrenamiento: Notificando a ${uniqueUserIds.length} usuarios.`);
-        await Promise.all(uniqueUserIds.map(userId =>
-          notifyUser(userId, {
-            title: '¡Es hora de moverse!',
-            body: '¿Listo para tu entrenamiento de hoy? ¡Vamos a por ello!',
-            url: '/routines',
-            pushPurpose: 'training'
+      for (const user of users) {
+        if (seenUserIds.has(user.id)) continue;
+        const preferredHour = Number.isInteger(user.training_reminder_hour) ? user.training_reminder_hour : 10;
+        const local = getLocalTime(user.timezone);
+        if (local.hour === preferredHour) {
+          seenUserIds.add(user.id);
+          targetUsers.push({ user, localDate: local.date, preferredHour });
+        }
+      }
+
+      if (targetUsers.length === 0) return;
+
+      const twentyHoursAgo = new Date(Date.now() - 20 * 60 * 60 * 1000);
+      let sentCount = 0;
+
+      await Promise.all(targetUsers.map(async ({ user, localDate }) => {
+        const [latestWorkout, alreadyNotifiedToday, latestRoutine] = await Promise.all([
+          db.WorkoutLog.findOne({
+            where: { user_id: user.id, workout_date: { [Op.gte]: twentyHoursAgo } },
+            attributes: ['workout_date'],
+            order: [['workout_date', 'DESC']],
+            raw: true
+          }),
+          db.Notification.findOne({
+            where: {
+              user_id: user.id,
+              type: 'training_reminder',
+              created_at: { [Op.gte]: twentyHoursAgo }
+            },
+            attributes: ['id'],
+            raw: true
+          }),
+          db.Routine.findOne({
+            where: { user_id: user.id },
+            attributes: ['name'],
+            order: [['updated_at', 'DESC'], ['id', 'DESC']],
+            raw: true
           })
-        ));
+        ]);
+
+        if (alreadyNotifiedToday) return;
+        if (latestWorkout?.workout_date) {
+          const tz = user.timezone || 'Europe/Madrid';
+          let workoutLocalDate;
+          try {
+            workoutLocalDate = new Date(latestWorkout.workout_date).toLocaleDateString('sv-SE', { timeZone: tz });
+          } catch {
+            workoutLocalDate = new Date(latestWorkout.workout_date).toISOString().split('T')[0];
+          }
+          if (workoutLocalDate === localDate) return;
+        }
+
+        const routineName = latestRoutine?.name;
+        sentCount += 1;
+        await notifyUser(user.id, {
+          type: 'training_reminder',
+          title: routineName ? `Hoy toca: ${routineName}` : '¡Es hora de moverse!',
+          body: routineName
+            ? `Tu rutina "${routineName}" está lista para registrar series hoy. 💪`
+            : '¿Listo para tu entrenamiento de hoy? ¡Vamos a por ello!',
+          url: '/routines',
+          pushPurpose: 'training'
+        });
+      }));
+
+      if (sentCount > 0) {
+        console.log(`[Cron] Entrenamiento: Notificando a ${sentCount} usuarios en su horario.`);
       }
     } catch (error) {
       console.error('[Cron] Error tarea entrenamiento:', error.message);
@@ -764,6 +822,8 @@ export const startCronJobs = () => {
   checkStreakWars();
   resetInactiveStreaks();
   checkChatBotReminders(); // <-- Añadido el nuevo vigilante
+  checkEarly24hNudge(); // <-- Toque amable a las 24h si aún no empezó
+  checkWeeklySummaryEmail(); // <-- Resumen semanal por correo los domingos
   checkInactivityRescue(); // <-- Detector de abandono temprano y rescate +72h
   scheduleDailyNewsAutomation();
   syncStaleLocalFoods();
@@ -798,6 +858,166 @@ const checkInactivityRescue = () => {
       }
     } catch (error) {
       console.error('[Cron] Error en detector de rescate 72h:', error.message);
+    }
+  });
+};
+
+/**
+ * TAREA 8B: Toque amable a las 24h (minuto 35) para recién registrados que aún no registraron ni entreno ni comida.
+ */
+const checkEarly24hNudge = () => {
+  cron.schedule('35 * * * *', async () => {
+    try {
+      const now = Date.now();
+      const windowEnd = new Date(now - 24 * 60 * 60 * 1000);
+      const windowStart = new Date(now - 36 * 60 * 60 * 1000);
+
+      const candidates = await db.User.findAll({
+        where: {
+          role: { [Op.ne]: 'admin' },
+          created_at: { [Op.between]: [windowStart, windowEnd] }
+        },
+        attributes: ['id', 'timezone']
+      });
+
+      const daytimeCandidates = candidates.filter(u => {
+        const { hour } = getLocalTime(u.timezone);
+        return hour >= 11 && hour <= 20;
+      });
+      if (!daytimeCandidates.length) return;
+
+      let sent = 0;
+      for (const user of daytimeCandidates.slice(0, 25)) {
+        const [workoutCount, nutritionCount, alreadyNudged, routine] = await Promise.all([
+          db.WorkoutLog.count({ where: { user_id: user.id } }),
+          db.NutritionLog.count({ where: { user_id: user.id } }),
+          db.Notification.findOne({
+            where: { user_id: user.id, type: 'early_nudge_24h' },
+            attributes: ['id'],
+            raw: true
+          }),
+          db.Routine.findOne({
+            where: { user_id: user.id },
+            attributes: ['name'],
+            order: [['created_at', 'DESC'], ['id', 'DESC']],
+            raw: true
+          })
+        ]);
+
+        if (workoutCount > 0 || nutritionCount > 0 || alreadyNudged) continue;
+
+        const rName = routine?.name;
+        await notifyUser(user.id, {
+          type: 'early_nudge_24h',
+          title: rName ? `¿Estrenamos "${rName}" hoy?` : 'Tu primer entreno en 1 minuto',
+          body: rName
+            ? `Ya tienes "${rName}" lista desde ayer. Completa tu primera sesión para fijar marcas base.`
+            : 'Crea una rutina rápida o importa tu historial en Rutinas para arrancar tu semana.',
+          url: '/routines',
+          pushPurpose: 'training'
+        });
+        sent += 1;
+      }
+
+      if (sent > 0) {
+        console.log(`[Cron] Nudge 24h: Enviados ${sent} recordatorios tempranos.`);
+      }
+    } catch (error) {
+      console.error('[Cron] Error en nudge temprano 24h:', error.message);
+    }
+  });
+};
+
+/**
+ * TAREA 8C: Resumen semanal por correo los domingos a las 19:00 hora local (solo con consentimiento training + email verificado).
+ */
+const checkWeeklySummaryEmail = () => {
+  cron.schedule('45 * * * *', async () => {
+    try {
+      const candidates = await db.User.findAll({
+        where: {
+          role: { [Op.ne]: 'admin' },
+          is_verified: true,
+          email_marketing_consent: true
+        },
+        attributes: ['id', 'email', 'username', 'name', 'timezone', 'activity_level', 'created_at']
+      });
+
+      const sundayEveningUsers = candidates.filter(u => {
+        const { hour, dayOfWeek } = getLocalTime(u.timezone);
+        return dayOfWeek === 0 && hour === 19;
+      });
+      if (!sundayEveningUsers.length) return;
+
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+      const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+      const sevenDaysDateOnly = sevenDaysAgo.toISOString().split('T')[0];
+
+      let sent = 0;
+      for (const user of sundayEveningUsers.slice(0, 20)) {
+        const alreadySent = await db.Notification.findOne({
+          where: {
+            user_id: user.id,
+            type: 'weekly_email_recap',
+            created_at: { [Op.gte]: fiveDaysAgo }
+          },
+          attributes: ['id'],
+          raw: true
+        });
+        if (alreadySent) continue;
+
+        const [workouts, nutritionLogs, prsCount] = await Promise.all([
+          db.WorkoutLog.findAll({
+            where: { user_id: user.id, workout_date: { [Op.gte]: sevenDaysAgo } },
+            attributes: ['duration_seconds'],
+            raw: true
+          }),
+          db.NutritionLog.findAll({
+            where: { user_id: user.id, log_date: { [Op.gte]: sevenDaysDateOnly } },
+            attributes: ['log_date'],
+            raw: true
+          }),
+          db.PersonalRecord.count({
+            where: { user_id: user.id, date: { [Op.gte]: sevenDaysAgo } }
+          })
+        ]);
+
+        const nutritionDaysCount = new Set(nutritionLogs.map(n => n.log_date)).size;
+        const isEarlyUser = user.created_at && new Date(user.created_at) >= fourteenDaysAgo;
+        if (workouts.length === 0 && nutritionDaysCount === 0 && !isEarlyUser) continue;
+
+        const totalDurationSeconds = workouts.reduce((sum, w) => sum + (Number(w.duration_seconds) || 0), 0);
+        const result = await sendWeeklyRecapEmail({
+          userId: user.id,
+          email: user.email,
+          userName: user.username || user.name || 'Atleta',
+          stats: {
+            workoutsCount: workouts.length,
+            nutritionDaysCount,
+            prsCount,
+            totalDurationSeconds,
+            weeklyTargetDays: getWeeklyTrainingTarget(user.activity_level)
+          }
+        });
+
+        if (!result?.skipped) {
+          await createNotification(user.id, {
+            type: 'weekly_email_recap',
+            title: 'Resumen semanal enviado',
+            message: `Hemos enviado tu resumen semanal por correo (${workouts.length} entrenos).`,
+            data: { url: '/progress' },
+            pushPurpose: null
+          });
+          sent += 1;
+        }
+      }
+
+      if (sent > 0) {
+        console.log(`[Cron] Resumen semanal correo: Enviados ${sent} correos.`);
+      }
+    } catch (error) {
+      console.error('[Cron] Error en resumen semanal correo:', error.message);
     }
   });
 };

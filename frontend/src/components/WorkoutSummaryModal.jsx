@@ -846,7 +846,14 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false, showRe
 
               <button
                 type="button"
-                onClick={onClose}
+                onClick={() => {
+                  onClose();
+                  if (showReminderOffer) {
+                    setTimeout(() => {
+                      window.dispatchEvent(new CustomEvent('pfg-offer-pwa-install'));
+                    }, 350);
+                  }
+                }}
                 className="w-full py-3 rounded-xl bg-bg-secondary border border-glass-border text-text-secondary font-bold text-sm transition hover:bg-bg-primary"
               >
                 Cerrar

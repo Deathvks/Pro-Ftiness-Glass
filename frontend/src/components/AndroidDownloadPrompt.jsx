@@ -2,17 +2,32 @@
 import React, { useState, useEffect } from 'react';
 import { Smartphone, X, Download } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
+import GlassCard from './GlassCard';
+
+const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es';
 
 const AndroidDownloadPrompt = () => {
     const [isVisible, setIsVisible] = useState(false);
-    
+
     // Iniciamos en null para depender estrictamente del version.json
     // Si no carga el JSON, no mostramos nada (evitamos enlaces rotos o viejos)
-    const [downloadUrl, setDownloadUrl] = useState(null);
+    const [downloadUrl, setDownloadUrl] = useState(PLAY_STORE_URL);
 
     // Configuración: Días de espera antes de volver a mostrar
     const DAYS_TO_WAIT = 5;
     const STORAGE_KEY = 'android_prompt_last_seen';
+
+    useEffect(() => {
+        const handleForceOpen = () => {
+            if (Capacitor.isNativePlatform()) return;
+            const ua = navigator.userAgent.toLowerCase();
+            if (!ua.includes('android')) return;
+            setDownloadUrl((prev) => prev || PLAY_STORE_URL);
+            setIsVisible(true);
+        };
+        window.addEventListener('pfg-open-android-download', handleForceOpen);
+        return () => window.removeEventListener('pfg-open-android-download', handleForceOpen);
+    }, []);
 
     useEffect(() => {
         const initPrompt = async () => {
@@ -83,29 +98,30 @@ const AndroidDownloadPrompt = () => {
     if (!isVisible || !downloadUrl) return null;
 
     return (
-        <div className="fixed top-4 left-4 right-4 z-[10000] animate-[slide-in-down_0.5s_ease-out] flex justify-center">
-            {/* CORRECCIÓN: Borde actualizado para modo OLED/Dark */}
-            <div className="bg-bg-secondary border border-transparent dark:border dark:border-white/10 shadow-xl rounded-2xl p-4 w-full max-w-md relative overflow-hidden">
+        <div className="fixed top-4 left-4 right-4 z-[10000] animate-[slide-in-down_0.5s_ease-out] flex justify-center pointer-events-none">
+            <GlassCard className="glass pointer-events-auto border border-glass-border shadow-2xl rounded-[28px] p-5 w-full max-w-md relative overflow-hidden">
 
                 <button
+                    type="button"
                     onClick={handleDismiss}
-                    className="absolute top-2 right-2 p-1 rounded-full text-text-secondary hover:bg-white/5 transition-colors"
+                    aria-label="Cerrar"
+                    className="absolute top-3 right-3 p-1.5 rounded-full text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
                 >
                     <X size={18} />
                 </button>
 
-                <div className="flex gap-4 items-start pr-6 mb-4">
-                    <div className="p-3 bg-accent/10 rounded-xl flex-shrink-0 text-accent">
-                        <Smartphone size={28} />
+                <div className="flex gap-4 items-start pr-7 mb-4">
+                    <div className="w-12 h-12 bg-accent/15 rounded-[16px] flex items-center justify-center shrink-0 text-accent">
+                        <Smartphone size={24} />
                     </div>
 
-                    <div className="flex-1">
-                        <h4 className="font-bold text-text-primary text-base mb-1">
+                    <div className="flex-1 min-w-0">
+                        <h4 className="font-extrabold text-text-primary text-base mb-1">
                             ¿Usas Android?
                         </h4>
                         <p className="text-sm text-text-secondary leading-relaxed">
-                            Descarga nuestra App nativa para una mejor experiencia.
-                            <span className="block mt-1 text-xs opacity-70 italic">
+                            Descarga nuestra App en <strong className="text-text-primary">Google Play Store</strong> para una mejor experiencia.
+                            <span className="block mt-1 text-xs opacity-75">
                                 (Siempre puedes descargarla más tarde desde Ajustes)
                             </span>
                         </p>
@@ -116,18 +132,19 @@ const AndroidDownloadPrompt = () => {
                     <a
                         href={downloadUrl}
                         onClick={handleDownload}
-                        className="flex-auto min-w-[140px] flex items-center justify-center gap-1.5 py-2.5 px-3 sm:px-4 bg-accent text-accent-contrast dark:text-bg-primary rounded-xl font-bold text-sm hover:scale-[1.02] transition-transform shadow-md no-underline"
+                        className="flex-auto min-w-[140px] flex items-center justify-center gap-1.5 py-2.5 px-4 bg-accent text-accent-contrast rounded-2xl font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-md shadow-accent/20 no-underline"
                     >
-                        <Download size={16} className="shrink-0" /> Descargar App
+                        <Download size={16} className="shrink-0" /> Play Store
                     </a>
                     <button
+                        type="button"
                         onClick={handleDismiss}
-                        className="flex-auto min-w-[100px] px-4 py-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary font-bold text-sm hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                        className="flex-auto min-w-[100px] px-4 py-2.5 bg-black/5 dark:bg-white/5 rounded-2xl text-text-secondary font-bold text-sm hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer"
                     >
                         Ahora no
                     </button>
                 </div>
-            </div>
+            </GlassCard>
         </div>
     );
 };

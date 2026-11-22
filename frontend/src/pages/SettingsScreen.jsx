@@ -31,6 +31,7 @@ import GlassCard from '../components/GlassCard';
 import MobileSectionList from '../components/MobileSectionList';
 import WorkoutDataTransferModal from '../components/WorkoutDataTransferModal';
 import { useAppTheme } from '../hooks/useAppTheme';
+import { isIosBrowserNonStandalone } from '../utils/platformUtils';
 
 // --- Constantes ---// --- TIMEZONES COMUNES ---
 const TIMEZONES = [
@@ -44,6 +45,11 @@ const TIMEZONES = [
   { value: 'America/Santiago', label: 'Chile (Santiago)' },
   { value: 'UTC', label: 'UTC (Universal)' },
 ];
+
+const REMINDER_HOUR_OPTIONS = Array.from({ length: 17 }, (_, i) => {
+  const hour = i + 6; // 06:00 a 22:00
+  return { value: String(hour), label: `${String(hour).padStart(2, '0')}:00` };
+});
 
 // Detección simple de iOS
 const isIOS = () => {
@@ -436,6 +442,20 @@ export default function SettingsScreen({
       console.error(error);
     } finally {
       setIsUpdatingEmailPref(false);
+    }
+  };
+
+  const handleChangeReminderHour = async (hourStr) => {
+    const newHour = Number(hourStr);
+    if (!Number.isInteger(newHour) || newHour < 0 || newHour > 23) return;
+    const prevHour = userProfile?.training_reminder_hour ?? null;
+    try {
+      setUserProfile({ ...userProfile, training_reminder_hour: newHour });
+      await userService.updateUserProfile({ training_reminder_hour: newHour });
+      addToast(`Recordatorio de entreno fijado a las ${String(newHour).padStart(2, '0')}:00`, 'success');
+    } catch (error) {
+      setUserProfile({ ...userProfile, training_reminder_hour: prevHour });
+      addToast('Error al guardar la hora de recordatorio', 'error');
     }
   };
 
@@ -872,6 +892,27 @@ export default function SettingsScreen({
                   />
                 ))}
                 {pushPreferencesError && <p role="alert" className="px-4 text-xs text-text-secondary">No se pudieron cargar las preferencias push. Vuelve a abrir Notificaciones para reintentar.</p>}
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-black/5 dark:bg-white/5">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2.5 rounded-xl bg-accent/10 text-accent shrink-0 mt-0.5">
+                      <Clock size={18} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-text-primary">Hora habitual de entrenamiento</p>
+                      <p className="text-xs text-text-secondary mt-0.5">
+                        Solo te avisaremos a esta hora si todavía no has entrenado ese día.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-full sm:w-32 shrink-0">
+                    <CustomSelect
+                      options={REMINDER_HOUR_OPTIONS}
+                      value={String(Number.isInteger(userProfile?.training_reminder_hour) ? userProfile.training_reminder_hour : 10)}
+                      onChange={handleChangeReminderHour}
+                    />
+                  </div>
+                </div>
               </div>
             </GlassCard>
 
@@ -998,6 +1039,26 @@ export default function SettingsScreen({
                   setView('hub');
                 }}
               />
+
+              {isIosBrowserNonStandalone() && (
+                <SettingsItem
+                  icon={Smartphone}
+                  title="Instalar App en iPhone (PWA)"
+                  subtitle="Añádela a la pantalla de inicio para pantalla completa y avisos push"
+                  onClick={() => window.dispatchEvent(new CustomEvent('pfg-open-ios-pwa-modal'))}
+                  action={<ChevronRight size={18} className="text-text-muted" />}
+                />
+              )}
+
+              {!Capacitor.isNativePlatform() && typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent || '') && !(window.matchMedia?.('(display-mode: standalone)')?.matches) && (
+                <SettingsItem
+                  icon={Smartphone}
+                  title="Descargar App en Play Store"
+                  subtitle="Consigue la app nativa de Android"
+                  onClick={() => window.dispatchEvent(new CustomEvent('pfg-open-android-download'))}
+                  action={<ChevronRight size={18} className="text-text-muted" />}
+                />
+              )}
 
 
             </div>
