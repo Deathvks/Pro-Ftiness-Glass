@@ -20,9 +20,16 @@ import {
   FileText,
   AlertCircle,
 } from 'lucide-react-native';
-import { getThemeBaseBackground } from '@/constants/theme';
+import {
+  getAppleCardSurfaceStyle,
+  getThemeBaseBackground,
+  shouldUseContentGlass,
+} from '@/constants/theme';
 import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
 import { ModalThemeBackground, getThemedModalBorderColor } from '@/components/ui/ModalThemeBackground';
+import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
+import { GlassButton } from '@/components/ui/GlassButton';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -42,6 +49,9 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const useGlass = shouldUseContentGlass(theme);
+  const cardSurface = getAppleCardSurfaceStyle(theme, 18);
+  const contrastText = getContrastTextColor(colors.tint);
   const insets = useSafeAreaInsets();
 
   const allExercises = useAppStore(state => state.allExercises) || [];
@@ -120,26 +130,59 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
       rawSubMatch.youtube_id ||
       null;
 
-    const images =
-      (rawEx.images && rawEx.images.length > 0)
-        ? rawEx.images
-        : (rawSubEx.images && rawSubEx.images.length > 0)
-          ? rawSubEx.images
-          : (rawLoc.images && rawLoc.images.length > 0)
-            ? rawLoc.images
-            : (rawMatch.images && rawMatch.images.length > 0)
-              ? rawMatch.images
-              : (rawSubMatch.images && rawSubMatch.images.length > 0)
-                ? rawSubMatch.images
-                : [];
+    const parseImagesArray = (raw: any): string[] => {
+      if (!raw) return [];
+      if (Array.isArray(raw)) {
+        return raw
+          .map(item => (typeof item === 'string' ? item : item?.image))
+          .filter((u): u is string => typeof u === 'string' && u.trim() !== '' && !u.includes('/muscle_groups/'));
+      }
+      if (typeof raw === 'string') {
+        const trimmed = raw.trim();
+        if (!trimmed || trimmed === '[]') return [];
+        if (trimmed.startsWith('[')) {
+          try {
+            return parseImagesArray(JSON.parse(trimmed));
+          } catch {
+            return [];
+          }
+        }
+        return trimmed
+          .split(',')
+          .map(s => s.trim())
+          .filter(u => u && !u.includes('/muscle_groups/'));
+      }
+      return [];
+    };
+
+    const collectedImages = Array.from(
+      new Set([
+        ...parseImagesArray(rawEx.images),
+        ...parseImagesArray(rawSubEx.images),
+        ...parseImagesArray(rawLoc.images),
+        ...parseImagesArray(rawMatch.images),
+        ...parseImagesArray(rawSubMatch.images),
+        ...[
+          rawEx.image_url_start,
+          rawEx.image_url_end,
+          rawEx.image_url,
+          rawSubEx.image_url_start,
+          rawSubEx.image_url_end,
+          rawSubEx.image_url,
+          rawMatch.image_url_start,
+          rawMatch.image_url_end,
+          rawMatch.image_url,
+          rawSubMatch.image_url_start,
+          rawSubMatch.image_url_end,
+          rawSubMatch.image_url,
+        ].filter((u): u is string => typeof u === 'string' && u.trim() !== '' && u !== 'null' && !u.includes('/muscle_groups/')),
+      ])
+    );
+
+    const images = collectedImages;
 
     const image_url =
-      rawEx.image_url ||
-      rawSubEx.image_url ||
-      rawLoc.image_url ||
-      rawMatch.image_url ||
-      rawMatch.image_url_start ||
-      rawSubMatch.image_url ||
+      collectedImages[0] ||
       null;
 
     const description =
@@ -186,11 +229,8 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
   );
 
   const hasImages = Boolean(
-    (mergedDetails.images && mergedDetails.images.length > 0) ||
-    mergedDetails.image_url ||
-    mergedDetails.image_url_start ||
-    mergedDetails.exercise_details?.images?.length ||
-    mergedDetails.exercise_details?.image_url
+    (Array.isArray(mergedDetails.images) && mergedDetails.images.length > 0) ||
+    mergedDetails.image_url
   );
 
   // Modo multimedia activo: 'video' prioritario si existe vídeo, o 'images' como alternativa
@@ -259,13 +299,12 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
       visible={Boolean(exercise)}
       onClose={onClose}
       backdropColor={isDark ? 'rgba(0, 0, 0, 0.55)' : 'rgba(0, 0, 0, 0.28)'}
-      dragAreaHeight={120}
+      dragAreaHeight={84}
       sheetStyle={[
         styles.modalSheet,
         {
           backgroundColor: getThemeBaseBackground(theme),
           borderColor: getThemedModalBorderColor(theme),
-          paddingBottom: Math.max(insets.bottom, 12),
         },
       ]}
     >
@@ -304,18 +343,28 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
               style={[
                 styles.closeButton,
                 {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.05)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(0, 0, 0, 0.10)',
+                  backgroundColor: useGlass ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.05)'),
                 },
               ]}
             >
+              {useGlass && (
+                <ContentCardBackdrop
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
+                />
+              )}
               <X size={18} color={colors.text} strokeWidth={2.5} />
             </TouchableOpacity>
           </View>
 
           {/* Contenido en Scroll */}
           <ScrollView
-            contentContainerStyle={styles.scrollBody}
+            style={{ flexShrink: 1 }}
+            contentContainerStyle={[
+              styles.scrollBody,
+              { paddingBottom: Math.max(insets.bottom + 24, 36) },
+            ]}
             showsVerticalScrollIndicator={false}
             nestedScrollEnabled={true}
             keyboardShouldPersistTaps="handled"
@@ -328,11 +377,17 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   style={[
                     styles.mediaModeSelector,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.09)',
+                      backgroundColor: useGlass ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)'),
                     },
                   ]}
                 >
+                  {useGlass && (
+                    <ContentCardBackdrop
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+                    />
+                  )}
                   <TouchableOpacity
                     activeOpacity={0.75}
                     onPress={() => {
@@ -348,13 +403,13 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   >
                     <Play
                       size={11}
-                      color={mediaMode === 'video' ? '#ffffff' : colors.textSecondary}
-                      fill={mediaMode === 'video' ? '#ffffff' : 'transparent'}
+                      color={mediaMode === 'video' ? contrastText : colors.textSecondary}
+                      fill={mediaMode === 'video' ? contrastText : 'transparent'}
                     />
                     <Text
                       style={[
                         styles.mediaModeTabText,
-                        { color: mediaMode === 'video' ? '#ffffff' : colors.textSecondary },
+                        { color: mediaMode === 'video' ? contrastText : colors.textSecondary },
                       ]}
                     >
                       Vídeo
@@ -376,12 +431,12 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   >
                     <Repeat
                       size={11}
-                      color={mediaMode === 'images' ? '#ffffff' : colors.textSecondary}
+                      color={mediaMode === 'images' ? contrastText : colors.textSecondary}
                     />
                     <Text
                       style={[
                         styles.mediaModeTabText,
-                        { color: mediaMode === 'images' ? '#ffffff' : colors.textSecondary },
+                        { color: mediaMode === 'images' ? contrastText : colors.textSecondary },
                       ]}
                     >
                       Animación
@@ -405,10 +460,12 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   </View>
                 ) : (
                   <ExerciseMediaPreview
+                    key={`detail-media-${exercise?.id || exercise?.name}-${mediaMode}`}
                     item={mergedDetails}
                     details={mergedDetails}
                     fitMode="contain"
                     playYouTube={mediaMode === 'video'}
+                    forceImageMode={mediaMode === 'images'}
                     onPress={() => {
                       if (hasVideo && mediaMode !== 'video') {
                         setMediaMode('video');
@@ -419,91 +476,42 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
               </View>
             </View>
 
-            {/* 2. Grid de 4 Métricas Clave */}
+            {/* 2. Grid de 4 Métricas Clave (Liquid Glass real) */}
             <View style={styles.metricsGrid}>
-              {/* Músculo */}
-              <View
-                style={[
-                  styles.metricCard,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.03)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
-                  },
-                ]}
-              >
-                <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
-                  <Target size={18} color={colors.tint} strokeWidth={2.5} />
+              {[
+                { key: 'muscle', label: 'MÚSCULO', value: muscleLabel, Icon: Target },
+                { key: 'sets', label: 'SERIES', value: `${setsCount} series`, Icon: Dumbbell },
+                { key: 'reps', label: 'REPS', value: `${repsCount} reps`, Icon: Repeat },
+                { key: 'rest', label: 'DESCANSO', value: `${restTime}s`, Icon: Clock },
+              ].map(({ key, label, value, Icon }) => (
+                <View
+                  key={key}
+                  style={[
+                    styles.metricCard,
+                    cardSurface,
+                    {
+                      backgroundColor: useGlass ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.03)'),
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.07)',
+                    },
+                  ]}
+                >
+                  {useGlass && (
+                    <ContentCardBackdrop
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
+                    />
+                  )}
+                  <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '1F' }]}>
+                    <Icon size={18} color={colors.tint} strokeWidth={2.5} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.metricLabel}>{label}</Text>
+                    <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
+                      {value}
+                    </Text>
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.metricLabel}>MÚSCULO</Text>
-                  <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
-                    {muscleLabel}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Series */}
-              <View
-                style={[
-                  styles.metricCard,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.03)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
-                  },
-                ]}
-              >
-                <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
-                  <Dumbbell size={18} color={colors.tint} strokeWidth={2.5} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.metricLabel}>SERIES</Text>
-                  <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
-                    {setsCount} series
-                  </Text>
-                </View>
-              </View>
-
-              {/* Reps */}
-              <View
-                style={[
-                  styles.metricCard,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.03)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
-                  },
-                ]}
-              >
-                <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
-                  <Repeat size={18} color={colors.tint} strokeWidth={2.5} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.metricLabel}>REPS</Text>
-                  <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
-                    {repsCount} reps
-                  </Text>
-                </View>
-              </View>
-
-              {/* Descanso */}
-              <View
-                style={[
-                  styles.metricCard,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.03)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
-                  },
-                ]}
-              >
-                <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
-                  <Clock size={18} color={colors.tint} strokeWidth={2.5} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.metricLabel}>DESCANSO</Text>
-                  <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
-                    {restTime}s
-                  </Text>
-                </View>
-              </View>
+              ))}
             </View>
 
             {/* Píldora de Equipamiento */}
@@ -513,11 +521,17 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   style={[
                     styles.equipmentPill,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.04)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.06)',
+                      backgroundColor: useGlass ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.04)'),
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.07)',
                     },
                   ]}
                 >
+                  {useGlass && (
+                    <ContentCardBackdrop
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
+                    />
+                  )}
                   <Dumbbell size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
                   <Text style={[styles.equipmentText, { color: colors.textSecondary }]}>
                     Equipamiento: {mergedDetails.equipment}
@@ -540,12 +554,19 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
               <View
                 style={[
                   styles.descBox,
+                  cardSurface,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                    backgroundColor: useGlass ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)'),
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.07)',
                   },
                 ]}
               >
+                {useGlass && (
+                  <ContentCardBackdrop
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                  />
+                )}
                 <Text style={[styles.descBody, { color: colors.text }]}>
                   {cleanDescription}
                 </Text>
@@ -565,7 +586,22 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                 </View>
 
                 {remainingUses !== null ? (
-                  <View style={styles.aiQuotaTag}>
+                  <View
+                    style={[
+                      styles.aiQuotaTag,
+                      {
+                        overflow: 'hidden',
+                        borderWidth: 1,
+                        borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
+                      },
+                    ]}
+                  >
+                    {useGlass && (
+                      <ContentCardBackdrop
+                        colorScheme={isDark ? 'dark' : 'light'}
+                        style={[StyleSheet.absoluteFill, { borderRadius: 8 }]}
+                      />
+                    )}
                     <Text style={[styles.aiQuotaText, { color: colors.tint }]}>
                       Usos: {remainingUses}/5
                     </Text>
@@ -574,25 +610,17 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
               </View>
 
               {!aiExplanation && !isAiLoading && (
-                <TouchableOpacity
+                <GlassButton
                   onPress={handleAskAI}
-                  activeOpacity={0.82}
-                  style={[
-                    styles.aiAskButton,
-                    {
-                      backgroundColor: colors.tint,
-                      borderColor: 'rgba(255, 255, 255, 0.35)',
-                      shadowColor: colors.tint,
-                      shadowOffset: { width: 0, height: 6 },
-                      shadowOpacity: 0.45,
-                      shadowRadius: 14,
-                      elevation: 6,
-                    },
-                  ]}
+                  theme={theme}
+                  color={colors.tint}
+                  style={styles.aiAskButton}
                 >
-                  <Sparkles size={18} color="#ffffff" strokeWidth={2.5} style={{ marginRight: 8 }} />
-                  <Text style={styles.aiAskButtonText}>Pedir explicación experta</Text>
-                </TouchableOpacity>
+                  <Sparkles size={18} color={isDark ? '#ffffff' : colors.text} strokeWidth={2.5} style={{ marginRight: 8 }} />
+                  <Text style={[styles.aiAskButtonText, { color: isDark ? '#ffffff' : colors.text }]}>
+                    Pedir explicación experta
+                  </Text>
+                </GlassButton>
               )}
 
               {isAiLoading && (
@@ -600,11 +628,17 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   style={[
                     styles.aiLoadingBox,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.05)',
+                      backgroundColor: useGlass ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)'),
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.07)',
                     },
                   ]}
                 >
+                  {useGlass && (
+                    <ContentCardBackdrop
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
+                    />
+                  )}
                   <ActivityIndicator size="small" color={colors.tint} />
                   <Text style={[styles.aiLoadingText, { color: colors.textSecondary }]}>
                     Analizando biomecánica del ejercicio...
@@ -623,12 +657,19 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                 <View
                   style={[
                     styles.aiResponseCard,
+                    cardSurface,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)',
+                      backgroundColor: useGlass ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)'),
                       borderColor: colors.tint + '40',
                     },
                   ]}
                 >
+                  {useGlass && (
+                    <ContentCardBackdrop
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                    />
+                  )}
                   <Text style={[styles.aiResponseText, { color: colors.text }]}>
                     {aiExplanation}
                   </Text>

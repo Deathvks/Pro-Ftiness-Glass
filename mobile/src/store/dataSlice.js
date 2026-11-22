@@ -167,12 +167,49 @@ export const createDataSlice = (set, get) => ({
           personalRecords: safePRs
         });
 
+        try {
+          if (typeof localStorage !== 'undefined' && profileData?.id) {
+            localStorage.setItem(
+              `pfg_offline_snapshot_${profileData.id}`,
+              JSON.stringify({
+                userProfile: profileData,
+                routines: routines || [],
+                workoutLog: (workouts || []).slice(0, 50),
+                bodyWeightLog: (bodyweight || []).slice(0, 60),
+                personalRecords: safePRs,
+              })
+            );
+          }
+        } catch {}
+
         // Precargar catálogo de ejercicios en segundo plano para miniaturas YouTube y GIFs
         get().getOrFetchAllExercises().catch(() => {});
       }
     } catch (error) {
       console.error("Error de autenticación o carga de datos:", error);
-      get().handleLogout();
+      const status = error?.status || error?.response?.status;
+      if (status === 401 || status === 403) {
+        get().handleLogout();
+      } else {
+        // Modo offline o caída temporal de red: mantenemos sesión y restauramos snapshot local si existe
+        try {
+          const cachedUid = get().userProfile?.id;
+          const rawSnap = cachedUid && typeof localStorage !== 'undefined'
+            ? localStorage.getItem(`pfg_offline_snapshot_${cachedUid}`)
+            : null;
+          if (rawSnap) {
+            const snap = JSON.parse(rawSnap);
+            set({
+              userProfile: snap.userProfile || get().userProfile,
+              routines: get().routines?.length ? get().routines : (snap.routines || []),
+              workoutLog: get().workoutLog?.length ? get().workoutLog : (snap.workoutLog || []),
+              bodyWeightLog: get().bodyWeightLog?.length ? get().bodyWeightLog : (snap.bodyWeightLog || []),
+              personalRecords: get().personalRecords?.length ? get().personalRecords : (snap.personalRecords || []),
+            });
+          }
+        } catch {}
+        get().getOrFetchAllExercises().catch(() => {});
+      }
     } finally {
       set({ isLoading: false });
     }

@@ -14,6 +14,7 @@ import YoutubePlayer from 'react-native-youtube-iframe';
 import { Play, Dumbbell, ExternalLink } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BACKEND_BASE_URL, API_BASE_URL } from '@/services/apiClient';
+import { getLocalOfflineMediaUri } from '@/services/offlineExerciseService';
 import useAppStore from '@/store/useAppStore';
 
 interface ExerciseMediaPreviewProps {
@@ -23,6 +24,7 @@ interface ExerciseMediaPreviewProps {
   staticOnly?: boolean;
   fitMode?: 'cover' | 'contain';
   playYouTube?: boolean;
+  forceImageMode?: boolean;
   showImageCounter?: boolean;
   previewColors?: { background: string; placeholder: string };
   onPress?: () => void;
@@ -112,6 +114,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   staticOnly = false,
   fitMode = 'contain',
   playYouTube = false,
+  forceImageMode = false,
   showImageCounter = true,
   previewColors,
   onPress,
@@ -253,6 +256,15 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       return null;
     }
 
+    if (clean.startsWith('file://')) {
+      return clean;
+    }
+
+    const localFirst = getLocalOfflineMediaUri(clean);
+    if (localFirst) {
+      return localFirst;
+    }
+
     if (clean.startsWith('http://') || clean.startsWith('https://')) {
       return clean;
     }
@@ -264,12 +276,12 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(
         filename
       );
-    if (isWgerUuid || path.includes('exercise-images')) {
-      return `https://wger.de/media/exercise-images/${filename}`;
-    }
+    const resolved =
+      isWgerUuid || path.includes('exercise-images')
+        ? `https://wger.de/media/exercise-images/${filename}`
+        : `${BACKEND_BASE_URL || API_BASE_URL.replace('/api', '')}/${path}`;
 
-    const base = BACKEND_BASE_URL || API_BASE_URL.replace('/api', '');
-    return `${base}/${path}`;
+    return getLocalOfflineMediaUri(resolved) || resolved;
   };
 
   // 3. Extracción de lista completa de imágenes reales (para efecto GIF)
@@ -382,7 +394,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   }, [images.length, isPlaying]);
 
   // 5. Reproductor de Vídeo interactivo (YouTube o directo)
-  if ((rawVideo || yid) && isPlaying && !staticOnly) {
+  if ((rawVideo || yid) && isPlaying && !staticOnly && !forceImageMode) {
     if (yid) {
       return (
         <View

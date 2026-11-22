@@ -1,5 +1,6 @@
 /* mobile/src/store/syncSlice.js */
 import * as Crypto from 'expo-crypto';
+import apiClient from '../services/apiClient';
 
 const STORAGE_KEY = 'offline_sync_queue';
 
@@ -70,5 +71,38 @@ export const createSyncSlice = (set, get) => ({
     clearSyncQueue: () => {
         saveQueue([]);
         set({ syncQueue: [] });
+    },
+
+    // Sincronizar toda la cola pendiente al recuperar conexión
+    flushSyncQueue: async () => {
+        const { isSyncing, syncQueue, token, setSyncing, removeFromSyncQueue, fetchInitialData } = get();
+        if (isSyncing || !token || !Array.isArray(syncQueue) || syncQueue.length === 0) return false;
+
+        setSyncing(true);
+        let syncedAny = false;
+        try {
+            for (const item of syncQueue) {
+                if (get().token !== token) break;
+                try {
+                    await apiClient(item.endpoint, { ...(item.options || {}), queueWhenOffline: false });
+                    removeFromSyncQueue(item.id);
+                    syncedAny = true;
+                } catch (err) {
+                    const status = err?.status;
+                    // Descartamos errores permanentes 4xx (excepto 401/408/429) para no bloquear el resto de la cola
+                    if (status && status >= 400 && status < 500 && status !== 401 && status !== 408 && status !== 429) {
+                        removeFromSyncQueue(item.id);
+                        continue;
+                    }
+                    break;
+                }
+            }
+            if (syncedAny && get().token === token && fetchInitialData) {
+                await fetchInitialData().catch(() => {});
+            }
+        } finally {
+            setSyncing(false);
+        }
+        return syncedAny;
     },
 });

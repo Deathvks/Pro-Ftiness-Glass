@@ -1,5 +1,103 @@
 /* mobile/src/services/offlineExerciseService.ts */
+import { Directory, File as ExpoFile, Paths } from 'expo-file-system';
+import { BACKEND_BASE_URL, API_BASE_URL } from './apiClient';
 import { getExerciseList } from './exerciseService';
+
+const OFFLINE_DIR_NAME = 'offline_exercises';
+const OFFLINE_CATALOG_FILE = 'exercises_catalog.json';
+const MEDIA_MAP_STORAGE_KEY = 'pfg_offline_media_map_v1';
+
+let memoryMediaMap: Record<string, string> | null = null;
+
+const getOfflineDir = () => new Directory(Paths.document, OFFLINE_DIR_NAME);
+
+const loadMediaMap = (): Record<string, string> => {
+  if (memoryMediaMap) return memoryMediaMap;
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(MEDIA_MAP_STORAGE_KEY) : null;
+    const parsed = raw ? JSON.parse(raw) : {};
+    memoryMediaMap = parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    memoryMediaMap = {};
+  }
+  return memoryMediaMap!;
+};
+
+const saveMediaMap = (map: Record<string, string>) => {
+  memoryMediaMap = map;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(MEDIA_MAP_STORAGE_KEY, JSON.stringify(map));
+    }
+  } catch {}
+};
+
+const hashString = (input: string): string => {
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16);
+};
+
+const getExtensionFromUrl = (url: string): string => {
+  const clean = url.split('?')[0].split('#')[0];
+  const extMatch = clean.match(/\.([a-zA-Z0-9]{2,5})$/);
+  return extMatch ? extMatch[1].toLowerCase() : 'jpg';
+};
+
+const resolveRemoteMediaUrl = (rawUrl: string): string => {
+  const clean = rawUrl.trim();
+  if (clean.startsWith('http://') || clean.startsWith('https://')) {
+    return clean;
+  }
+  const path = clean.startsWith('/') ? clean.substring(1) : clean;
+  const filename = path.split('/').pop() || '';
+  const isWgerUuid =
+    /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(filename);
+  if (isWgerUuid || path.includes('exercise-images')) {
+    return `https://wger.de/media/exercise-images/${filename}`;
+  }
+  const base = BACKEND_BASE_URL || API_BASE_URL.replace('/api', '');
+  return `${base}/${path}`;
+};
+
+export const getLocalOfflineMediaUri = (url?: string | null): string | null => {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  const map = loadMediaMap();
+  const mapped = map[trimmed] || map[resolveRemoteMediaUrl(trimmed)];
+  if (!mapped) return null;
+  try {
+    const file = new ExpoFile(mapped);
+    return file.exists ? file.uri : null;
+  } catch {
+    return mapped;
+  }
+};
+
+export const getOfflineExerciseCatalog = async (): Promise<any[]> => {
+  try {
+    const catalogFile = new ExpoFile(getOfflineDir(), OFFLINE_CATALOG_FILE);
+    if (catalogFile.exists) {
+      const content = await catalogFile.text();
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem('pfg_offline_exercises_cache');
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+
+  return [];
+};
 
 export interface OfflineDownloadProgress {
   current: number;
@@ -203,7 +301,15 @@ export const getOfflineStorageStats = async (): Promise<OfflineStorageStats> => 
 
 export const deleteOfflineExercises = async (): Promise<{ success: boolean }> => {
   try {
+    try {
+      const dir = getOfflineDir();
+      if (dir.exists) {
+        dir.delete();
+      }
+    } catch {}
+    memoryMediaMap = {};
     if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(MEDIA_MAP_STORAGE_KEY);
       localStorage.removeItem('pfg_offline_exercises_cache');
       localStorage.removeItem('pfg_offline_exercises_count');
       localStorage.removeItem('pfg_offline_images_count');
@@ -235,6 +341,9 @@ export const startOfflineDownloadSession = async () => {
   const signal = activeAbortController.signal;
 
   try {
+    const offlineDir = getOfflineDir();
+    offlineDir.create({ idempotent: true, intermediates: true });
+
     // 1. Descargar catálogo de ejercicios
     const exercises = await getExerciseList();
     if (signal.aborted) throw new Error('Descarga cancelada');
@@ -265,7 +374,7 @@ export const startOfflineDownloadSession = async () => {
 
       for (const cand of candidates) {
         const norm = normalizeMediaUrl(cand);
-        if (norm && !norm.match(/\.(mp4|mov|webm|mkv)(?:$|\?)/i)) {
+        if (norm && !norm.match(/\.(mp4|mov|webm|mkv)(?:$|\?)/i) && !norm.includes('/muscle_groups/')) {
           rawUrlsSet.add(norm);
         }
       }
@@ -284,6 +393,7 @@ export const startOfflineDownloadSession = async () => {
     const total = urlsToDownload.length > 0 ? urlsToDownload.length : cleanExercises.length;
     let completed = 0;
     let totalBytes = 0;
+    const nextMediaMap: Record<string, string> = { ...loadMediaMap() };
 
     activeDownloadState.progress = {
       current: 0,
@@ -293,7 +403,7 @@ export const startOfflineDownloadSession = async () => {
     };
     notifyDownloadListeners();
 
-    // 3. Descarga concurrente con pool de trabajadores (concurrencia = 4)
+    // 3. Descarga real a disco nativo con ExpoFile.downloadFileAsync (concurrencia = 4)
     const CONCURRENCY = 4;
     let queueIndex = 0;
 
@@ -302,29 +412,28 @@ export const startOfflineDownloadSession = async () => {
         if (signal.aborted) throw new Error('Descarga cancelada');
 
         const currentIndex = queueIndex++;
-        const url = urlsToDownload[currentIndex];
-
-        // Pausa ligera para dar respiro al loop de eventos y mantener la app a 60 FPS
-        await new Promise(r => setTimeout(r, 16));
+        const rawUrl = urlsToDownload[currentIndex];
+        const fullUrl = resolveRemoteMediaUrl(rawUrl);
 
         try {
-          // Si es URL remota, intentamos descargar para cachear
-          if (url.startsWith('http://') || url.startsWith('https://')) {
-            const resp = await fetch(url, { signal });
-            if (resp.ok) {
-              const blob = await resp.blob();
-              totalBytes += blob.size || 45000;
-            } else {
-              totalBytes += 45000;
-            }
+          const ext = getExtensionFromUrl(fullUrl);
+          const fileName = `${hashString(fullUrl)}.${ext}`;
+          const targetFile = new ExpoFile(offlineDir, fileName);
+
+          if (targetFile.exists && (targetFile.size || 0) > 0) {
+            totalBytes += targetFile.size || 35000;
+            nextMediaMap[rawUrl] = targetFile.uri;
+            nextMediaMap[fullUrl] = targetFile.uri;
           } else {
-            totalBytes += 35000;
+            const downloaded = await ExpoFile.downloadFileAsync(fullUrl, targetFile, { idempotent: true });
+            totalBytes += downloaded.size || 35000;
+            nextMediaMap[rawUrl] = downloaded.uri;
+            nextMediaMap[fullUrl] = downloaded.uri;
           }
         } catch (err: any) {
           if (signal.aborted || err?.name === 'AbortError') {
             throw new Error('Descarga cancelada');
           }
-          totalBytes += 35000;
         } finally {
           if (signal.aborted) return;
           completed++;
@@ -334,7 +443,7 @@ export const startOfflineDownloadSession = async () => {
             total,
             percent,
             bytesDownloaded: totalBytes,
-            currentUrl: url,
+            currentUrl: fullUrl,
           };
           notifyDownloadListeners();
         }
@@ -347,29 +456,17 @@ export const startOfflineDownloadSession = async () => {
         () => downloadWorker()
       );
       await Promise.all(workers);
-    } else {
-      // Simular progreso suave si no hubieran URLs individuales
-      for (let i = 1; i <= 10; i++) {
-        if (signal.aborted) throw new Error('Descarga cancelada');
-        await new Promise(r => setTimeout(r, 150));
-        completed = Math.round((i / 10) * cleanExercises.length);
-        totalBytes += 4500000;
-        activeDownloadState.progress = {
-          current: completed,
-          total: cleanExercises.length,
-          percent: i * 10,
-          bytesDownloaded: totalBytes,
-        };
-        notifyDownloadListeners();
-      }
     }
 
     if (signal.aborted) throw new Error('Descarga cancelada');
 
-    // 4. Guardar catálogo y metadatos persistentes
-    const mbTotal = Math.max(38, Math.round(totalBytes / (1024 * 1024)));
+    // 4. Guardar catálogo en archivo nativo (evita límite de 6MB en AsyncStorage Android) + metadatos
+    const catalogFile = new ExpoFile(offlineDir, OFFLINE_CATALOG_FILE);
+    catalogFile.write(JSON.stringify(cleanExercises));
+    saveMediaMap(nextMediaMap);
+
+    const mbTotal = Math.max(1, Math.round(totalBytes / (1024 * 1024)));
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('pfg_offline_exercises_cache', JSON.stringify(cleanExercises));
       localStorage.setItem('pfg_offline_exercises_count', String(cleanExercises.length));
       localStorage.setItem('pfg_offline_images_count', String(completed));
       localStorage.setItem('pfg_offline_exercises_bytes', String(totalBytes || mbTotal * 1024 * 1024));

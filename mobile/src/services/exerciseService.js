@@ -1,11 +1,12 @@
-/* frontend/src/services/exerciseService.js */
+/* mobile/src/services/exerciseService.js */
 import apiClient from "./apiClient";
+import { getOfflineExerciseCatalog } from "./offlineExerciseService";
 
 // Mantenemos la caché en una variable local.
 let cachedExerciseList = null;
 
 /**
- * Obtiene la lista completa de ejercicios (con caché).
+ * Obtiene la lista completa de ejercicios (con fallback a caché offline).
  */
 export const getExerciseList = async () => {
     // Si la caché existe, la devolvemos.
@@ -22,6 +23,11 @@ export const getExerciseList = async () => {
 
         return cachedExerciseList;
     } catch (error) {
+        const offlineCatalog = await getOfflineExerciseCatalog().catch(() => []);
+        if (offlineCatalog.length > 0) {
+            cachedExerciseList = offlineCatalog.filter(Boolean);
+            return cachedExerciseList;
+        }
         console.error("Failed to fetch exercise list:", error);
         // Si falla, reseteamos la caché para que pueda reintentar.
         cachedExerciseList = null; 

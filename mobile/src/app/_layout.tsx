@@ -52,6 +52,7 @@ export default function RootLayout() {
   const [milestoneLevel, setMilestoneLevel] = useState<number | null>(null);
   const [dismissedEmailVerify, setDismissedEmailVerify] = useState(false);
   const cardioUserId = userProfile?.id;
+  const syncQueueLength = useAppStore(state => state.syncQueue.length);
   const hasPendingCardio = useAppStore(state => state.syncQueue.some((item: QueuedRequest) => item.cardioUserId === cardioUserId));
   const router = useRouter();
   const segments = useSegments();
@@ -144,20 +145,23 @@ export default function RootLayout() {
   }, [isReady, isAuthenticated, userProfile, segments, pathname, router]);
 
   useEffect(() => {
-    if (!isReady || !isAuthenticated || cardioUserId == null || !hasPendingCardio) return;
-    const sync = () => {
+    if (!isReady || !isAuthenticated || syncQueueLength === 0) return;
+    const syncAll = () => {
       if (AppState.currentState === 'active' || AppState.currentState == null) {
-        void syncPendingCardio(cardioUserId).catch(() => {});
+        if (cardioUserId != null && hasPendingCardio) {
+          void syncPendingCardio(cardioUserId).catch(() => {});
+        }
+        void (useAppStore.getState() as any).flushSyncQueue?.().catch(() => {});
       }
     };
-    sync();
-    const foreground = AppState.addEventListener('change', sync);
-    const interval = setInterval(sync, 15_000);
+    syncAll();
+    const foreground = AppState.addEventListener('change', syncAll);
+    const interval = setInterval(syncAll, 15_000);
     return () => {
       foreground.remove();
       clearInterval(interval);
     };
-  }, [cardioUserId, hasPendingCardio, isAuthenticated, isReady]);
+  }, [cardioUserId, hasPendingCardio, syncQueueLength, isAuthenticated, isReady]);
 
   // Cargar datos iniciales y sincronizar notificaciones push del dispositivo
   useEffect(() => {
