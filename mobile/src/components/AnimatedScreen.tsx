@@ -7,7 +7,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { getThemeBaseBackground } from '@/constants/theme';
 import ThemeBackground from '@/components/ThemeBackground';
 import { AndroidHeaderBlurTarget, type HeaderBlurRef } from '@/components/AndroidHeaderBlur';
-import { useRegisterTourScroll } from '@/components/tutorials/tourRegistry';
+import { useRegisterTourScroll, normalizeRouteKey } from '@/components/tutorials/tourRegistry';
 
 interface AnimatedScreenProps extends Pick<ScrollViewProps, 'onScroll' | 'onLayout' | 'onContentSizeChange'> {
     header: React.ReactNode;
@@ -18,6 +18,7 @@ interface AnimatedScreenProps extends Pick<ScrollViewProps, 'onScroll' | 'onLayo
     paddingHorizontal?: number;
     keyboardShouldPersistTaps?: 'always' | 'never' | 'handled';
     scrollRef?: React.Ref<ScrollViewInstance>;
+    tourRoute?: string;
 }
 
 export default function AnimatedScreen({ 
@@ -29,12 +30,15 @@ export default function AnimatedScreen({
     paddingHorizontal = 16,
     keyboardShouldPersistTaps,
     scrollRef,
+    tourRoute,
     onScroll,
     onLayout,
     onContentSizeChange,
 }: AnimatedScreenProps) {
     const [scrollY] = useState(() => new Animated.Value(0));
     const pathname = usePathname();
+    const mountRouteRef = useRef(normalizeRouteKey(tourRoute || pathname || '/'));
+    const resolvedTourRoute = tourRoute ? normalizeRouteKey(tourRoute) : mountRouteRef.current;
     const internalScrollRef = useRef<ScrollViewInstance>(null);
     const scrollOffsetRef = useRef(0);
     const androidBlurTarget = useRef<React.ComponentRef<typeof View>>(null);
@@ -52,7 +56,7 @@ export default function AnimatedScreen({
         }
     }, [scrollRef]);
 
-    useRegisterTourScroll(pathname || '/', internalScrollRef, useCallback(() => scrollOffsetRef.current, []));
+    useRegisterTourScroll(resolvedTourRoute, internalScrollRef, useCallback(() => scrollOffsetRef.current, []));
 
     const handleScrollListener = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
         scrollOffsetRef.current = event.nativeEvent.contentOffset.y || 0;

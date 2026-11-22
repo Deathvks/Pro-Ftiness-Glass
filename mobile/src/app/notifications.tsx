@@ -291,7 +291,7 @@ export default function NotificationsScreen() {
   const headerContent = <GlobalHeader title="Notificaciones" showBackButton hideRightButtons />;
 
   return (
-    <AnimatedScreen header={headerContent}>
+    <AnimatedScreen tourRoute="/notifications" header={headerContent}>
       <TourTarget id="#tutorial-notifications-main">
       {/* ================= HEADER SECCIÓN NOVEDADES / ACCIONES ================= */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20, marginTop: 8 }}>

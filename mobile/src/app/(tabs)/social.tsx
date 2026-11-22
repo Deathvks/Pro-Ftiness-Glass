@@ -67,6 +67,13 @@ export default function SocialScreen() {
   const unselectedTab = getUnselectedControlColors(theme);
 
   const [activeTab, setActiveTab] = useState<TabKey>('feed');
+  const activeTutorialId = useAppStore((state: any) => state.activeTutorial?.tutorial?.id);
+
+  useEffect(() => {
+    if (activeTutorialId === 'social' && activeTab !== 'feed') {
+      setActiveTab('feed');
+    }
+  }, [activeTutorialId, activeTab]);
 
   // Zustand Store
   const userProfile = useAppStore(state => state.userProfile);

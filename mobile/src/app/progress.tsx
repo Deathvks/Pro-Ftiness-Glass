@@ -88,6 +88,7 @@ export default function ProgressScreen() {
   return (
     <AnimatedScreen
       key={activeSection || 'main-list'}
+      tourRoute="/progress"
       paddingHorizontal={0}
       paddingBottom={40}
       header={

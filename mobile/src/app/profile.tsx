@@ -374,7 +374,7 @@ export default function ProfileScreen() {
   const cardBgColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)';
 
   return (
-    <AnimatedScreen header={<GlobalHeader title="Editar Perfil" showBackButton onBackPress={handleBack} />} paddingHorizontal={16} paddingBottom={insets.bottom + 100}>
+    <AnimatedScreen tourRoute="/profile" header={<GlobalHeader title="Editar Perfil" showBackButton onBackPress={handleBack} />} paddingHorizontal={16} paddingBottom={insets.bottom + 100}>
       <View style={styles.container}>
         {/* 1. SECCIÓN DE IDENTIDAD & AVATAR ESTILO FRONTEND */}
         <TourTarget id="#tutorial-profile-header">

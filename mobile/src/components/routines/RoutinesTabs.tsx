@@ -1,5 +1,5 @@
 /* mobile/src/components/routines/RoutinesTabs.tsx */
-import React, { useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { ScrollView, Text, StyleSheet, Platform, type ScrollViewInstance } from 'react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -7,6 +7,7 @@ import { BookCopy, Compass, Dumbbell, Flame } from 'lucide-react-native';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { getContrastTextColor } from '@/utils/routineHelpers';
 import { TourTarget } from '@/components/tutorials/TourTarget';
+import { useRegisterTourHorizontalScroll } from '@/components/tutorials/tourRegistry';
 
 export type TabKey = 'myRoutines' | 'explore' | 'manualExercises' | 'quickCardio';
 
@@ -24,6 +25,12 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
   const isAdmin = userProfile?.role === 'admin';
   const isIOS = Platform.OS === 'ios';
   const scrollRef = useRef<ScrollViewInstance>(null);
+  const scrollOffsetRef = useRef(0);
+  useRegisterTourHorizontalScroll(
+    '#tutorial-routines-manual-exercises-tab',
+    scrollRef,
+    useCallback(() => scrollOffsetRef.current, []),
+  );
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
@@ -37,6 +44,10 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
     <ScrollView
       ref={scrollRef}
       horizontal
+      onScroll={e => {
+        scrollOffsetRef.current = e?.nativeEvent?.contentOffset?.x || 0;
+      }}
+      scrollEventThrottle={16}
       onContentSizeChange={activeTab === 'quickCardio' ? () => scrollRef.current?.scrollToEnd({ animated: false }) : undefined}
       showsHorizontalScrollIndicator={false}
       style={styles.scrollView}

@@ -605,7 +605,7 @@ export default function Dashboard() {
   const dayLetters = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
   return (
-    <AnimatedScreen header={<GlobalHeader />}>
+    <AnimatedScreen tourRoute="/" header={<GlobalHeader />}>
       {/* 1. HEADER & GYM LOCATOR */}
       <View style={styles.topHeader}>
         <View style={{ flex: 1 }}>

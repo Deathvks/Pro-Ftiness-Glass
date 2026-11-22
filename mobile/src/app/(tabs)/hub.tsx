@@ -281,13 +281,13 @@ export default function Hub() {
     const store: any = useAppStore.getState();
     const completionAction = TUTORIAL_COMPLETION_ACTIONS[tutorial.id];
     if (completionAction && store[completionAction]) store[completionAction]();
-    if (tutorial.id === 'routines' && typeof localStorage !== 'undefined') {
-      localStorage.setItem('routinesForceTab', 'myRoutines');
-      localStorage.setItem('routinesSelectedFolder', 'all');
-    }
     setShowTutorialsCenter(false);
     startPageTutorial(tutorial, true);
-    router.push(tutorial.route as any);
+    if (tutorial.id === 'routines') {
+      router.push({ pathname: '/(tabs)/routines', params: { tab: 'myRoutines' } } as any);
+    } else {
+      router.push(tutorial.route as any);
+    }
   };
 
   const scrollY = React.useRef(new Animated.Value(0)).current;

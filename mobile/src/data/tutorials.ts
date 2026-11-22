@@ -297,6 +297,12 @@ export const APP_TUTORIALS: AppTutorial[] = [
         description: 'Los cambios visuales se aplican a toda la interfaz.',
       },
       {
+        title: 'Temas exclusivos',
+        element: '#tutorial-appearance-my-themes',
+        description:
+          'Consulta y aplica temas especiales que se desbloquean con el progreso.',
+      },
+      {
         title: 'Tema principal',
         element: '#tutorial-appearance-base-themes',
         description: 'Elige el modo del sistema, claro, oscuro u OLED.',
@@ -306,12 +312,6 @@ export const APP_TUTORIALS: AppTutorial[] = [
         element: '#tutorial-appearance-accents',
         description:
           'El color de acento destaca botones, indicadores y elementos activos. Algunos estilos se desbloquean al subir de nivel.',
-      },
-      {
-        title: 'Temas exclusivos',
-        element: '#tutorial-appearance-my-themes',
-        description:
-          'Consulta y aplica temas especiales que se desbloquean con el progreso.',
       },
       {
         title: 'Vibración háptica',

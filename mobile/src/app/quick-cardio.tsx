@@ -197,6 +197,7 @@ export default function QuickCardioScreen() {
 
   return (
     <AnimatedScreen
+      tourRoute="/quick-cardio"
       keyboardShouldPersistTaps="handled"
       paddingBottom={48}
       header={<GlobalHeader title="Cardio Rápido" showBackButton onBackPress={goBack} hideRightButtons />}

@@ -172,12 +172,13 @@ export function TourOverlay() {
     let cancelled = false;
     let attempts = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let rafId: number | null = null;
 
     const tryStart = () => {
       if (cancelled) return;
       const currentNormalized = normalizeRouteKey(pathname);
       if (currentNormalized !== expectedRoute) {
-        if (attempts < 20) {
+        if (attempts < 24) {
           attempts += 1;
           timer = setTimeout(tryStart, 180);
         }
@@ -189,7 +190,7 @@ export function TourOverlay() {
       );
       const elementMatches = resolvedSteps.filter((s: TutorialStep) => Boolean(s.element)).length;
 
-      if (elementMatches === 0 && attempts < 10) {
+      if (elementMatches === 0 && attempts < 12) {
         attempts += 1;
         timer = setTimeout(tryStart, 220);
         return;
@@ -197,24 +198,32 @@ export function TourOverlay() {
 
       const finalSteps = resolvedSteps.length > 0 ? resolvedSteps : tutorial.steps;
 
-      useAppStore.getState().setTourActive?.(true);
-      setStepIndex(0);
-      setTargetRect(null);
-      setSession({
-        mode: 'tutorial',
-        id: tutorial.id,
-        route: tutorial.route,
-        steps: finalSteps,
-        doneBtnText: 'Terminar tutorial',
-        progressFormat: 'de',
-        returnToHub: Boolean(activeTutorial.returnToHub),
-      });
+      // Allow Stack/modal transition frames to finish before measuring Step 0
+      timer = setTimeout(() => {
+        if (cancelled) return;
+        rafId = requestAnimationFrame(() => {
+          if (cancelled) return;
+          useAppStore.getState().setTourActive?.(true);
+          setStepIndex(0);
+          setTargetRect(null);
+          setSession({
+            mode: 'tutorial',
+            id: tutorial.id,
+            route: tutorial.route,
+            steps: finalSteps,
+            doneBtnText: 'Terminar tutorial',
+            progressFormat: 'de',
+            returnToHub: Boolean(activeTutorial.returnToHub),
+          });
+        });
+      }, 220);
     };
 
-    timer = setTimeout(tryStart, 160);
+    timer = setTimeout(tryStart, 260);
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
+      if (rafId != null) cancelAnimationFrame(rafId);
     };
   }, [activeTutorial, pathname]);
 
@@ -334,12 +343,25 @@ export function TourOverlay() {
         return;
       }
 
-      const origin = await measureOverlayOrigin();
+      // Clear previous step's ring while scrolling to the new step so old highlights don't linger
+      setTargetRect(null);
+
+      await new Promise<void>(resolve => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+      if (cancelled) return;
+
+      const preOrigin = await measureOverlayOrigin();
       const rawRect = await scrollTourTargetIntoView(
         step.element,
         session.route,
-        insets.top + 80,
-        Math.max(cardHeightRef.current + insets.bottom + 36, 250),
+        insets.top + 76,
+        Math.max(cardHeightRef.current + insets.bottom + 36, 260),
+        {
+          originY: preOrigin.y,
+          winWidth: winW,
+          winHeight: winH,
+        },
       );
       if (cancelled) return;
 
@@ -348,15 +370,34 @@ export function TourOverlay() {
         return;
       }
 
-      // Clamp rect into visible overlay coordinate space so spotlight stays exact on target
-      const relX = Math.max(4, rawRect.x - origin.x);
-      const relY = Math.max(4, rawRect.y - origin.y);
-      const clampedH = Math.min(rawRect.height, winH - relY - 12);
+      // Re-measure overlay origin right after scroll/transition so both rects share the exact same frame
+      const origin = await measureOverlayOrigin();
+      if (cancelled) return;
+
+      // Exact 2D viewport intersection so negative top/left offsets adjust width/height accurately
+      const rawLeft = rawRect.x - origin.x;
+      const rawTop = rawRect.y - origin.y;
+      const rawRight = rawLeft + rawRect.width;
+      const rawBottom = rawTop + rawRect.height;
+
+      const clippedLeft = Math.max(4, rawLeft);
+      const clippedTop = Math.max(4, rawTop);
+      const clippedRight = Math.min(winW - 4, rawRight);
+      const clippedBottom = Math.min(winH - 4, rawBottom);
+
+      const clippedW = clippedRight - clippedLeft;
+      const clippedH = clippedBottom - clippedTop;
+
+      if (clippedW < 16 || clippedH < 16) {
+        setTargetRect(null);
+        return;
+      }
+
       setTargetRect({
-        x: relX,
-        y: relY,
-        width: Math.min(rawRect.width, winW - relX - 8),
-        height: Math.max(32, clampedH),
+        x: clippedLeft,
+        y: clippedTop,
+        width: clippedW,
+        height: clippedH,
       });
     };
 

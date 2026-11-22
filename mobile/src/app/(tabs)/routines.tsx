@@ -438,7 +438,7 @@ export default function RoutinesScreen() {
   const createBtnForeground = isIOS ? colors.tint : getContrastTextColor(colors.tint);
 
   return (
-    <AnimatedScreen header={<GlobalHeader />}>
+    <AnimatedScreen tourRoute="/(tabs)/routines" header={<GlobalHeader />}>
       {/* 1. TÍTULO Y SUBTÍTULO */}
       <View style={styles.headerTitleContainer}>
         <Text style={[styles.mainTitle, { color: colors.text }, isIOS && { fontWeight: '700' }]}>Rutinas</Text>
