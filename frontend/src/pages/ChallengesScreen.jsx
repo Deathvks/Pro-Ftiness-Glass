@@ -57,15 +57,22 @@ const ChallengesScreen = ({ setView }) => {
                     style={{ width: `${percentage}%` }}
                 />
                 
-                <div className="relative z-10 flex justify-between items-start mb-3">
-                    <div>
-                        <h3 className="text-lg font-bold text-text-primary flex items-center">
-                            {challenge.title}
-                            {isCompleted && <span className="ml-2 text-accent text-sm">✓</span>}
-                        </h3>
+                <div className="relative z-10 flex justify-between items-start gap-3 mb-3">
+                    <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-lg font-bold text-text-primary flex items-center">
+                                {challenge.title}
+                                {isCompleted && <span className="ml-2 text-accent text-sm">✓</span>}
+                            </h3>
+                            {challenge.type === 'weekly' && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/25">
+                                    Semanal
+                                </span>
+                            )}
+                        </div>
                         <p className="text-text-secondary text-sm mt-1">{challenge.desc}</p>
                     </div>
-                    <div className="bg-accent/10 text-accent px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap">
+                    <div className="bg-accent/10 text-accent px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shrink-0">
                         +{challenge.xp} XP
                     </div>
                 </div>

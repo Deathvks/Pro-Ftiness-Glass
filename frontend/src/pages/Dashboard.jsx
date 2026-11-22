@@ -51,6 +51,7 @@ import ExerciseSearch from '../components/RoutineEditor/ExerciseSearch';
 import LevelBadge from '../components/LevelBadge';
 import * as nutritionService from '../services/nutritionService';
 import * as userService from '../services/userService';
+import apiClient from '../services/apiClient';
 import { useToast } from '../hooks/useToast';
 import { useLocalNotifications } from '../hooks/useLocalNotifications';
 import SEOHead from '../components/SEOHead';
@@ -248,6 +249,54 @@ const Dashboard = ({ setView }) => {
     }
   }, [fetchTodaysCompletedRoutines]);
 
+  useEffect(() => {
+    if (!userProfile?.id) return undefined;
+    let isMounted = true;
+    const loadMicroChallenges = async () => {
+      try {
+        const data = await apiClient('/gamification/challenges');
+        if (isMounted && Array.isArray(data)) {
+          setMicroChallenges(data);
+        }
+      } catch {
+        // Silencioso en portada si aún no hay conexión o sesión lista
+      }
+    };
+    loadMicroChallenges();
+    return () => {
+      isMounted = false;
+    };
+  }, [userProfile?.id, workoutLog?.length, nutritionLog?.length]);
+
+  const activeMicroChallenge = useMemo(() => {
+    const list = Array.isArray(microChallenges) ? microChallenges : [];
+    const pending = list.filter((c) => c && !c.completed);
+    if (pending.length === 0) return null;
+
+    const priorityIds = [
+      'train_2_workouts_week',
+      'nutri_3_days_week',
+      'daily_workout',
+      'daily_5_meals',
+      'daily_protein',
+      'daily_calories',
+      'train_3_workouts_week',
+      'daily_water',
+      'social_share_workout',
+      'nutri_save_favorite'
+    ];
+
+    const scoreChallenge = (c) => {
+      const hasProgress = (Number(c.progress) || 0) > 0 ? 0 : 100;
+      const idx = priorityIds.indexOf(c.id);
+      const priorityScore = idx === -1 ? 50 : idx;
+      const typeScore = c.type === 'weekly' ? 0 : c.type === 'daily' ? 10 : 20;
+      return hasProgress + priorityScore + typeScore;
+    };
+
+    return [...pending].sort((a, b) => scoreChallenge(a) - scoreChallenge(b))[0] || null;
+  }, [microChallenges]);
+
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showXPModal, setShowXPModal] = useState(false);
   const [showSugarModal, setShowSugarModal] = useState(false);
@@ -262,6 +311,7 @@ const Dashboard = ({ setView }) => {
   const [isSharing, setIsSharing] = useState(false);
   const [showGymModal, setShowGymModal] = useState(false);
   const [showDiscardWorkoutModal, setShowDiscardWorkoutModal] = useState(false);
+  const [microChallenges, setMicroChallenges] = useState([]);
   const [currentGym, setCurrentGym] = useState(() => {
     try {
       const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
@@ -1034,6 +1084,87 @@ const Dashboard = ({ setView }) => {
       </div>
       )}
 
+
+      {activeMicroChallenge && (
+        <GlassCard className="glass p-4 sm:p-5 rounded-[26px] mb-6 border-none ring-1 ring-accent/25 bg-accent/5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-2xl bg-accent/15 text-accent flex items-center justify-center shrink-0 mt-0.5">
+                <TrophyLucide size={18} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent">
+                    {activeMicroChallenge.type === 'weekly'
+                      ? t('Reto Semanal', { defaultValue: 'Reto Semanal' })
+                      : activeMicroChallenge.type === 'daily'
+                      ? t('Micro-reto de hoy', { defaultValue: 'Micro-reto de hoy' })
+                      : t('Reto Activo', { defaultValue: 'Reto Activo' })}
+                  </span>
+                  <span className="text-[11px] font-extrabold text-accent">
+                    +{activeMicroChallenge.xp} XP
+                  </span>
+                  <span className="text-[11px] font-bold text-text-muted ml-auto sm:ml-0">
+                    {activeMicroChallenge.progress}/{activeMicroChallenge.target}
+                  </span>
+                </div>
+                <h3 className="text-sm sm:text-base font-extrabold text-text-primary leading-snug">
+                  {activeMicroChallenge.title}
+                </h3>
+                <p className="text-xs text-text-secondary mt-0.5 leading-relaxed">
+                  {activeMicroChallenge.desc}
+                </p>
+                <div className="mt-2.5 h-1.5 w-full bg-black/15 dark:bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-accent rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(100, Math.round(((Number(activeMicroChallenge.progress) || 0) / Math.max(1, Number(activeMicroChallenge.target) || 1)) * 100))}%`
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  const id = activeMicroChallenge.id || '';
+                  if (id.startsWith('nutri_') || ['daily_5_meals', 'daily_calories', 'daily_protein', 'daily_water'].includes(id)) {
+                    setView('nutrition');
+                  } else if (id.startsWith('social_')) {
+                    setView('social');
+                  } else {
+                    setView('routines', { forceTab: 'myRoutines' });
+                  }
+                }}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-accent text-accent-contrast font-extrabold text-xs hover:brightness-110 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <span>
+                  {(() => {
+                    const id = activeMicroChallenge.id || '';
+                    if (id.startsWith('nutri_') || ['daily_5_meals', 'daily_calories', 'daily_protein', 'daily_water'].includes(id)) {
+                      return t('Ir a nutrición', { defaultValue: 'Ir a nutrición' });
+                    }
+                    if (id.startsWith('social_')) {
+                      return t('Ir al muro', { defaultValue: 'Ir al muro' });
+                    }
+                    return t('Ir a entrenar', { defaultValue: 'Ir a entrenar' });
+                  })()}
+                </span>
+                <ChevronRight size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('challenges')}
+                className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-text-primary font-bold text-xs transition-all flex items-center justify-center cursor-pointer"
+              >
+                {t('Ver retos', { defaultValue: 'Ver retos' })}
+              </button>
+            </div>
+          </div>
+        </GlassCard>
+      )}
 
       <div className="mb-10">
         <DashboardInsights setView={setView} />

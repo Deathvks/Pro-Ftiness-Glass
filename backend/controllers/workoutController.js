@@ -368,6 +368,18 @@ export const logWorkoutSession = async (req, res, next) => {
         });
       }
 
+      const twoWorkoutsWeekRes = await trackChallenge(userId, 'train_2_workouts_week', 1);
+      if (twoWorkoutsWeekRes.completedNow && twoWorkoutsWeekRes.xpResult) {
+        xpAdded += twoWorkoutsWeekRes.xpResult.xpAdded;
+        gamificationEvents.push({
+          type: 'challenge_completed',
+          message: 'Segundo Paso',
+          xpAdded: twoWorkoutsWeekRes.xpResult.xpAdded,
+          leveledUp: twoWorkoutsWeekRes.xpResult.leveledUp,
+          newLevel: twoWorkoutsWeekRes.xpResult.level
+        });
+      }
+
       const weeklyWorkoutRes = await trackChallenge(userId, 'train_3_workouts_week', 1);
       if (weeklyWorkoutRes.completedNow && weeklyWorkoutRes.xpResult) {
         xpAdded += weeklyWorkoutRes.xpResult.xpAdded;
