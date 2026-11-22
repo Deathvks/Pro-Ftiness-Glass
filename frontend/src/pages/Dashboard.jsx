@@ -8,7 +8,7 @@ import {
   Droplet, Beef, Zap, CheckCircle, XCircle,
   ArrowUp, ArrowDown, Minus, ChevronRight, Trophy as TrophyLucide, Check, Crown,
   LayoutGrid, IceCream, TriangleAlert, Info, Share2, X, Loader2, Lock, List, Copy, ListFilter,
-  MapPin, Trash2, ShieldCheck
+  MapPin, Trash2, ShieldCheck, Sparkles, FileSpreadsheet
 } from 'lucide-react';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { FaChartPie, FaTrophy, FaInstagram } from 'react-icons/fa';
@@ -51,6 +51,7 @@ import ExerciseSearch from '../components/RoutineEditor/ExerciseSearch';
 import LevelBadge from '../components/LevelBadge';
 import * as nutritionService from '../services/nutritionService';
 import * as userService from '../services/userService';
+import apiClient from '../services/apiClient';
 import { useToast } from '../hooks/useToast';
 import { useLocalNotifications } from '../hooks/useLocalNotifications';
 import SEOHead from '../components/SEOHead';
@@ -247,6 +248,56 @@ const Dashboard = ({ setView }) => {
       fetchTodaysCompletedRoutines();
     }
   }, [fetchTodaysCompletedRoutines]);
+
+  const [microChallenges, setMicroChallenges] = useState([]);
+
+  useEffect(() => {
+    if (!userProfile?.id) return undefined;
+    let isMounted = true;
+    const loadMicroChallenges = async () => {
+      try {
+        const data = await apiClient('/gamification/challenges');
+        if (isMounted && Array.isArray(data)) {
+          setMicroChallenges(data);
+        }
+      } catch {
+        // Silencioso en portada si aún no hay conexión o sesión lista
+      }
+    };
+    loadMicroChallenges();
+    return () => {
+      isMounted = false;
+    };
+  }, [userProfile?.id, workoutLog?.length, nutritionLog?.length]);
+
+  const activeMicroChallenge = useMemo(() => {
+    const list = Array.isArray(microChallenges) ? microChallenges : [];
+    const pending = list.filter((c) => c && !c.completed);
+    if (pending.length === 0) return null;
+
+    const priorityIds = [
+      'train_2_workouts_week',
+      'nutri_3_days_week',
+      'daily_workout',
+      'daily_5_meals',
+      'daily_protein',
+      'daily_calories',
+      'train_3_workouts_week',
+      'daily_water',
+      'social_share_workout',
+      'nutri_save_favorite'
+    ];
+
+    const scoreChallenge = (c) => {
+      const hasProgress = (Number(c.progress) || 0) > 0 ? 0 : 100;
+      const idx = priorityIds.indexOf(c.id);
+      const priorityScore = idx === -1 ? 50 : idx;
+      const typeScore = c.type === 'weekly' ? 0 : c.type === 'daily' ? 10 : 20;
+      return hasProgress + priorityScore + typeScore;
+    };
+
+    return [...pending].sort((a, b) => scoreChallenge(a) - scoreChallenge(b))[0] || null;
+  }, [microChallenges]);
 
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showXPModal, setShowXPModal] = useState(false);
@@ -901,6 +952,80 @@ const Dashboard = ({ setView }) => {
         </div>
       )}
 
+      {(!workoutLog || workoutLog.length === 0) && !activeWorkout ? (
+        <GlassCard className="glass relative p-5 sm:p-7 rounded-[28px] overflow-hidden border border-accent/25 bg-gradient-to-br from-accent/15 via-accent/5 to-transparent shadow-lg mb-8">
+          <div className="flex flex-col gap-5">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-[20px] bg-accent text-accent-contrast flex items-center justify-center shrink-0 shadow-lg shadow-accent/25">
+                <Sparkles size={24} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/20 text-accent mb-1.5">
+                  {t('Tu primer paso hoy', { defaultValue: 'Tu primer paso hoy' })}
+                </span>
+                <h2 className="text-lg sm:text-xl font-black text-text-primary leading-snug">
+                  {routines.length > 0
+                    ? t('Tu plan está listo: {{name}}', { name: routines[0].name, defaultValue: `Tu plan está listo: ${routines[0].name}` })
+                    : t('Empieza en menos de 1 minuto', { defaultValue: 'Empieza en menos de 1 minuto' })}
+                </h2>
+                <p className="text-xs sm:text-sm text-text-secondary font-medium mt-1 leading-relaxed">
+                  {routines.length > 0
+                    ? t('Completa tu primera sesión para fijar tus marcas base y desbloquear tu analítica semanal.', { defaultValue: 'Completa tu primera sesión para fijar tus marcas base y desbloquear tu analítica semanal.' })
+                    : t('Crea tu primera rutina, importa tu historial desde Hevy o Strong o registra tu primera comida.', { defaultValue: 'Crea tu primera rutina, importa tu historial desde Hevy o Strong o registra tu primera comida.' })}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2.5 w-full">
+              {routines.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await startWorkout(routines[0]);
+                    setView('workout');
+                  }}
+                  className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-accent text-accent-contrast font-black text-sm shadow-md shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <FaPlay size={13} />
+                  <span className="truncate">{t('Empezar primer entreno', { defaultValue: 'Empezar primer entreno' })}</span>
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setView('routines', { openCreate: true, actionTs: Date.now() })}
+                    className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-accent text-accent-contrast font-black text-sm shadow-md shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Plus size={16} strokeWidth={2.5} />
+                    <span>{t('Crear primera rutina', { defaultValue: 'Crear primera rutina' })}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setView('routines', { openImport: true, actionTs: Date.now() })}
+                    className="w-full sm:w-auto px-4 py-3 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <FileSpreadsheet size={15} className="text-accent" />
+                    <span>{t('Importar Hevy / Strong', { defaultValue: 'Importar Hevy / Strong' })}</span>
+                  </button>
+                </>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setView('nutrition')}
+                className="w-full sm:w-auto px-4 py-3 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <FaUtensils size={13} className="text-accent" />
+                <span>
+                  {nutritionLog && nutritionLog.length > 0
+                    ? t('Ver nutrición de hoy', { defaultValue: 'Ver nutrición de hoy' })
+                    : t('Registrar primera comida', { defaultValue: 'Registrar primera comida' })}
+                </span>
+              </button>
+            </div>
+          </div>
+        </GlassCard>
+      ) : (
       <div className="grid grid-cols-2 gap-4 mb-8">
         <GlassCard
           onClick={() => canOpenWeeklyRecap && setShowWeeklyRecap(true)}
@@ -958,7 +1083,89 @@ const Dashboard = ({ setView }) => {
           </div>
         </GlassCard>
       </div>
+      )}
 
+
+      {activeMicroChallenge && (
+        <GlassCard className="glass p-4 sm:p-5 rounded-[26px] mb-6 border-none ring-1 ring-accent/25 bg-accent/5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-2xl bg-accent/15 text-accent flex items-center justify-center shrink-0 mt-0.5">
+                <TrophyLucide size={18} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent">
+                    {activeMicroChallenge.type === 'weekly'
+                      ? t('Reto Semanal', { defaultValue: 'Reto Semanal' })
+                      : activeMicroChallenge.type === 'daily'
+                      ? t('Micro-reto de hoy', { defaultValue: 'Micro-reto de hoy' })
+                      : t('Reto Activo', { defaultValue: 'Reto Activo' })}
+                  </span>
+                  <span className="text-[11px] font-extrabold text-accent">
+                    +{activeMicroChallenge.xp} XP
+                  </span>
+                  <span className="text-[11px] font-bold text-text-muted ml-auto sm:ml-0">
+                    {activeMicroChallenge.progress}/{activeMicroChallenge.target}
+                  </span>
+                </div>
+                <h3 className="text-sm sm:text-base font-extrabold text-text-primary leading-snug">
+                  {activeMicroChallenge.title}
+                </h3>
+                <p className="text-xs text-text-secondary mt-0.5 leading-relaxed">
+                  {activeMicroChallenge.desc}
+                </p>
+                <div className="mt-2.5 h-1.5 w-full bg-black/15 dark:bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-accent rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(100, Math.round(((Number(activeMicroChallenge.progress) || 0) / Math.max(1, Number(activeMicroChallenge.target) || 1)) * 100))}%`
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  const id = activeMicroChallenge.id || '';
+                  if (id.startsWith('nutri_') || ['daily_5_meals', 'daily_calories', 'daily_protein', 'daily_water'].includes(id)) {
+                    setView('nutrition');
+                  } else if (id.startsWith('social_')) {
+                    setView('social');
+                  } else {
+                    setView('routines', { forceTab: 'myRoutines' });
+                  }
+                }}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-accent text-accent-contrast font-extrabold text-xs hover:brightness-110 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <span>
+                  {(() => {
+                    const id = activeMicroChallenge.id || '';
+                    if (id.startsWith('nutri_') || ['daily_5_meals', 'daily_calories', 'daily_protein', 'daily_water'].includes(id)) {
+                      return t('Ir a nutrición', { defaultValue: 'Ir a nutrición' });
+                    }
+                    if (id.startsWith('social_')) {
+                      return t('Ir al muro', { defaultValue: 'Ir al muro' });
+                    }
+                    return t('Ir a entrenar', { defaultValue: 'Ir a entrenar' });
+                  })()}
+                </span>
+                <ChevronRight size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('challenges')}
+                className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-text-primary font-bold text-xs transition-all flex items-center justify-center cursor-pointer"
+              >
+                {t('Ver retos', { defaultValue: 'Ver retos' })}
+              </button>
+            </div>
+          </div>
+        </GlassCard>
+      )}
 
       <div className="mb-10">
         <DashboardInsights setView={setView} />
@@ -1149,9 +1356,12 @@ const Dashboard = ({ setView }) => {
                   </GlassCard>
                 );
               }) : (
-                <div className="glass p-8 rounded-[28px] text-center flex flex-col items-center gap-3">
+                <div className="glass p-6 sm:p-8 rounded-[28px] text-center flex flex-col items-center gap-3">
                   <p className="text-sm text-text-muted">{t('Sin rutinas creadas.', { defaultValue: 'Sin rutinas creadas.' })}</p>
-                  <button onClick={() => setView('routines')} className="text-xs font-bold text-accent bg-accent/10 px-4 py-2 rounded-[20px] hover:bg-accent/20 transition-colors">{t('Crear primera rutina', { defaultValue: 'Crear primera rutina' })}</button>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 w-full">
+                    <button onClick={() => setView('routines', { openCreate: true, actionTs: Date.now() })} className="w-full sm:w-auto text-xs font-bold text-accent bg-accent/10 px-4 py-2.5 rounded-[20px] hover:bg-accent/20 transition-colors cursor-pointer">{t('Crear primera rutina', { defaultValue: 'Crear primera rutina' })}</button>
+                    <button onClick={() => setView('routines', { openImport: true, actionTs: Date.now() })} className="w-full sm:w-auto text-xs font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-4 py-2.5 rounded-[20px] hover:text-text-primary transition-colors cursor-pointer">{t('Importar CSV', { defaultValue: 'Importar CSV' })}</button>
+                  </div>
                 </div>
               )}
             </div>

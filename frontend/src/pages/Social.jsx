@@ -1501,9 +1501,6 @@ export default function Social({ setView }) {
                             <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
                                 Comunidad
                             </h1>
-                            <span className="px-3 py-1 rounded-[10px] bg-accent/10 text-accent text-xs font-black tracking-widest uppercase mt-1">
-                                BETA
-                            </span>
                         </div>
                         <p className="text-text-secondary text-sm sm:text-base font-medium mt-2">Conecta y compite con otros atletas</p>
                     </div>

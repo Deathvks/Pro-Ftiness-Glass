@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle, Check, Camera,
-  Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw
+  Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw,
+  BellRing, Mail, Lock
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import MobileSectionList from '../components/MobileSectionList';
@@ -237,6 +238,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
   const [levelFilter, setLevelFilter] = useState('ALL');
   const [funnelRange, setFunnelRange] = useState('30d'); // '7d' | '30d' | 'all'
   const [funnelStageFilter, setFunnelStageFilter] = useState('ALL'); // 'ALL' | 'STUCK_PROFILE' | 'STUCK_ROUTINE' | 'STUCK_WORKOUT1' | 'STUCK_WORKOUT2' | 'STUCK_NUTRITION'
+  const [consentFilter, setConsentFilter] = useState('ALL'); // 'ALL' | 'ANY_VOLUNTARY' | 'VOLUNTARY_PUSH' | 'VOLUNTARY_EMAIL' | 'ONLY_MANDATORY'
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState(() => localStorage.getItem('admin_users_sort') || 'default');
 
@@ -598,6 +600,19 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
         return true;
       });
     }
+
+    if (consentFilter !== 'ALL') {
+      filtered = filtered.filter(u => {
+        if (u.role === 'admin' || u.role === 'trainer' || u.role === 'entrenador') return false;
+        const hasPush = Boolean(u.hasVoluntaryPush);
+        const hasEmail = Boolean(u.hasVoluntaryEmail);
+        if (consentFilter === 'ANY_VOLUNTARY') return hasPush || hasEmail;
+        if (consentFilter === 'VOLUNTARY_PUSH') return hasPush;
+        if (consentFilter === 'VOLUNTARY_EMAIL') return hasEmail;
+        if (consentFilter === 'ONLY_MANDATORY') return !hasPush && !hasEmail;
+        return true;
+      });
+    }
     
     switch (sortBy) {
       case 'date':
@@ -609,7 +624,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
       default:
         return filtered.sort((a, b) => getTime(b.lastSeen) - getTime(a.lastSeen));
     }
-  }, [users, sortBy, searchQuery, roleFilter, platformFilter, levelFilter, funnelStageFilter, funnelRange]);
+  }, [users, sortBy, searchQuery, roleFilter, platformFilter, levelFilter, funnelStageFilter, funnelRange, consentFilter]);
 
   const totalPages = Math.ceil(reports.length / REPORTS_PER_PAGE);
   const currentReports = useMemo(() => {
@@ -719,6 +734,32 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
 
     return { total, steps, biggestDrop };
   }, [users, funnelRange]);
+
+  const notificationConsentStats = useMemo(() => {
+    const regularUsers = users.filter(u => u.role !== 'admin' && u.role !== 'trainer' && u.role !== 'entrenador');
+    const total = regularUsers.length;
+    const voluntaryPush = regularUsers.filter(u => Boolean(u.hasVoluntaryPush)).length;
+    const voluntaryPushWithDevice = regularUsers.filter(u => Boolean(u.hasVoluntaryPush) && Number(u.pushSubCount || 0) > 0).length;
+    const voluntaryEmail = regularUsers.filter(u => Boolean(u.hasVoluntaryEmail)).length;
+    const voluntaryEmailVerified = regularUsers.filter(u => Boolean(u.hasVoluntaryEmail) && Boolean(u.is_verified)).length;
+    const voluntaryAny = regularUsers.filter(u => Boolean(u.hasVoluntaryPush) || Boolean(u.hasVoluntaryEmail)).length;
+    const onlyMandatory = regularUsers.filter(u => !u.hasVoluntaryPush && !u.hasVoluntaryEmail).length;
+    const pct = (n) => (total > 0 ? Math.round((n / total) * 100) : 0);
+
+    return {
+      total,
+      voluntaryAny,
+      voluntaryAnyPct: pct(voluntaryAny),
+      voluntaryPush,
+      voluntaryPushPct: pct(voluntaryPush),
+      voluntaryPushWithDevice,
+      voluntaryEmail,
+      voluntaryEmailPct: pct(voluntaryEmail),
+      voluntaryEmailVerified,
+      onlyMandatory,
+      onlyMandatoryPct: pct(onlyMandatory),
+    };
+  }, [users]);
 
   return (
     <div id="tutorial-admin-panel" className="w-full max-w-6xl mx-auto px-4 py-2 md:p-6 lg:p-8 animate-[fade-in_0.5s_ease-out]">
@@ -945,6 +986,118 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                     <span>Quitar filtro de embudo ({filteredAndSortedUsers.length} mostrados)</span>
                   </button>
                 )}
+              </div>
+            </div>
+
+            {/* Permisos de Notificaciones: Voluntarias vs Obligatorias */}
+            <div className="mb-8 p-4 sm:p-5 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <BellRing size={18} className="text-accent shrink-0" />
+                    <h3 className="text-base sm:text-lg font-extrabold text-text-primary">
+                      Notificaciones: Voluntarias vs Obligatorias
+                    </h3>
+                  </div>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Resumen sobre {notificationConsentStats.total} usuarios ({consentFilter === 'ALL' ? 'pulsa una tarjeta para filtrar el directorio' : `filtro activo: ${filteredAndSortedUsers.length} mostrados`}).
+                  </p>
+                </div>
+
+                {consentFilter !== 'ALL' && (
+                  <button
+                    type="button"
+                    onClick={() => setConsentFilter('ALL')}
+                    className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent/15 text-accent font-extrabold text-xs hover:bg-accent/25 transition-all cursor-pointer shrink-0"
+                  >
+                    <X size={13} />
+                    <span>Ver todos</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setConsentFilter(prev => prev === 'ANY_VOLUNTARY' ? 'ALL' : 'ANY_VOLUNTARY')}
+                  className={`text-left p-3.5 rounded-2xl transition-all border cursor-pointer ${
+                    consentFilter === 'ANY_VOLUNTARY'
+                      ? 'bg-emerald-500/10 border-emerald-500/50 ring-2 ring-emerald-500/25 shadow-md'
+                      : 'bg-bg-primary/60 border-black/5 dark:border-white/10 hover:border-accent/40'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-text-muted">Con voluntarias</span>
+                    <span className="text-xs font-black text-emerald-500">{notificationConsentStats.voluntaryAnyPct}%</span>
+                  </div>
+                  <div className="text-2xl font-black text-text-primary">{notificationConsentStats.voluntaryAny}</div>
+                  <p className="text-[11px] text-text-secondary mt-1">
+                    Tienen Push o Email voluntario activado
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setConsentFilter(prev => prev === 'VOLUNTARY_PUSH' ? 'ALL' : 'VOLUNTARY_PUSH')}
+                  className={`text-left p-3.5 rounded-2xl transition-all border cursor-pointer ${
+                    consentFilter === 'VOLUNTARY_PUSH'
+                      ? 'bg-accent/10 border-accent/50 ring-2 ring-accent/25 shadow-md'
+                      : 'bg-bg-primary/60 border-black/5 dark:border-white/10 hover:border-accent/40'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-text-muted flex items-center gap-1">
+                      <BellRing size={11} className="text-accent" /> Push voluntarias
+                    </span>
+                    <span className="text-xs font-black text-accent">{notificationConsentStats.voluntaryPushPct}%</span>
+                  </div>
+                  <div className="text-2xl font-black text-text-primary">{notificationConsentStats.voluntaryPush}</div>
+                  <p className="text-[11px] text-text-secondary mt-1">
+                    {notificationConsentStats.voluntaryPushWithDevice} con dispositivo push activo
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setConsentFilter(prev => prev === 'VOLUNTARY_EMAIL' ? 'ALL' : 'VOLUNTARY_EMAIL')}
+                  className={`text-left p-3.5 rounded-2xl transition-all border cursor-pointer ${
+                    consentFilter === 'VOLUNTARY_EMAIL'
+                      ? 'bg-sky-500/10 border-sky-500/50 ring-2 ring-sky-500/25 shadow-md'
+                      : 'bg-bg-primary/60 border-black/5 dark:border-white/10 hover:border-accent/40'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-text-muted flex items-center gap-1">
+                      <Mail size={11} className="text-sky-500" /> Email voluntarias
+                    </span>
+                    <span className="text-xs font-black text-sky-500">{notificationConsentStats.voluntaryEmailPct}%</span>
+                  </div>
+                  <div className="text-2xl font-black text-text-primary">{notificationConsentStats.voluntaryEmail}</div>
+                  <p className="text-[11px] text-text-secondary mt-1">
+                    {notificationConsentStats.voluntaryEmailVerified} con correo verificado
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setConsentFilter(prev => prev === 'ONLY_MANDATORY' ? 'ALL' : 'ONLY_MANDATORY')}
+                  className={`text-left p-3.5 rounded-2xl transition-all border cursor-pointer ${
+                    consentFilter === 'ONLY_MANDATORY'
+                      ? 'bg-amber-500/10 border-amber-500/50 ring-2 ring-amber-500/25 shadow-md'
+                      : 'bg-bg-primary/60 border-black/5 dark:border-white/10 hover:border-accent/40'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-text-muted flex items-center gap-1">
+                      <Lock size={11} className="text-amber-500" /> Solo obligatorias
+                    </span>
+                    <span className="text-xs font-black text-amber-500">{notificationConsentStats.onlyMandatoryPct}%</span>
+                  </div>
+                  <div className="text-2xl font-black text-text-primary">{notificationConsentStats.onlyMandatory}</div>
+                  <p className="text-[11px] text-text-secondary mt-1">
+                    Sin avisos voluntarios Push ni Email
+                  </p>
+                </button>
               </div>
             </div>
 
@@ -1228,6 +1381,30 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                                 >
                                   Rut: {Number(user.routineCount || 0)}
                                 </span>
+                                {user.hasVoluntaryPush && (
+                                  <span
+                                    className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-accent/15 text-accent"
+                                    title="Push voluntario activado"
+                                  >
+                                    Push ✓
+                                  </span>
+                                )}
+                                {user.hasVoluntaryEmail && (
+                                  <span
+                                    className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-sky-500/15 text-sky-500"
+                                    title="Email voluntario activado"
+                                  >
+                                    Email ✓
+                                  </span>
+                                )}
+                                {user.onlyMandatoryNotifications && (
+                                  <span
+                                    className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-black/5 dark:bg-white/5 text-text-muted"
+                                    title="Solo notificaciones obligatorias"
+                                  >
+                                    Solo oblig.
+                                  </span>
+                                )}
                                 <span
                                   className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
                                     Number(user.workoutCount || 0) >= 1
@@ -1375,6 +1552,24 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                                </span>
                              )}
                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                          {user.hasVoluntaryPush && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent">
+                              Push voluntario ✓
+                            </span>
+                          )}
+                          {user.hasVoluntaryEmail && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-sky-500/15 text-sky-500">
+                              Email voluntario ✓
+                            </span>
+                          )}
+                          {user.onlyMandatoryNotifications && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-black/5 dark:bg-white/5 text-text-muted">
+                              Solo obligatorias
+                            </span>
+                          )}
                         </div>
 
                         <div className="flex items-center justify-between border-t border-black/5 dark:border-white/5 pt-3">

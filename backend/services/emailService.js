@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import db from '../models/index.js';
 import { createEmailUnsubscribeToken } from '../utils/emailUnsubscribeToken.js';
-import { canSendPromotionalEmail } from './emailConsentService.js';
+import { getPromotionalEmailConsentStatuses } from './emailConsentService.js';
 import { domainMailboxes, isDomainSmtpConfigured, privacyContact, publicApiOrigin, smtpHost, smtpPort, supportContact } from '../config/mailContacts.js';
 
 const promotionalSender = 'Dylan Jesús Suárez Falcón';
@@ -68,9 +68,41 @@ const findOptionalEmailRecipient = (email, userId) => db.User.findOne({
   attributes: ['id', 'email', 'is_verified', 'email_activity_notifications', 'email_marketing_consent', 'email_coaching_consent']
 });
 
+export const getOptionalEmailEligibility = async (users, category) => {
+  const results = new Map();
+  const recipients = (Array.isArray(users) ? users : []).filter(user => {
+    const id = Number(user?.id);
+    const validAddress = Boolean(user?.is_verified)
+      && Boolean(user?.email)
+      && !/@(?:x-auth\.local|profitnessglass\.internal)$/i.test(user.email);
+    if (!validAddress) results.set(id, { allowed: false, reason: 'email_unverified_or_invalid' });
+    return validAddress;
+  });
+
+  if (category === 'activity') {
+    for (const user of recipients) {
+      const allowed = Boolean(user.email_activity_notifications);
+      results.set(Number(user.id), {
+        allowed,
+        reason: allowed ? null : 'email_preference_disabled',
+      });
+    }
+    return results;
+  }
+
+  const consentStatuses = await getPromotionalEmailConsentStatuses(recipients, category);
+  for (const user of recipients) {
+    results.set(Number(user.id), consentStatuses.get(Number(user.id)) || {
+      allowed: false,
+      reason: 'consent_missing_or_invalid',
+    });
+  }
+  return results;
+};
+
 export const canSendOptionalEmail = async (user, category) => {
-  if (!user?.is_verified || !user.email || /@(?:x-auth\.local|profitnessglass\.internal)$/i.test(user.email)) return false;
-  return category === 'activity' ? !!user.email_activity_notifications : canSendPromotionalEmail(user, category);
+  const eligibility = await getOptionalEmailEligibility([user], category);
+  return eligibility.get(Number(user?.id))?.allowed === true;
 };
 
 const sendOptionalMailAndLog = async (mailOptions, purpose, userId) => {
@@ -402,8 +434,10 @@ export const sendBugReportResolvedEmail = async (email, userName, reportSubject)
 
 export const sendRetentionRescueEmail = async ({ userId, email, userName, loadPayload }) => {
   const recipient = await findOptionalEmailRecipient(email, userId);
-  if (!(await canSendOptionalEmail(recipient, 'training'))) {
-    return { success: true, skipped: true };
+  const eligibility = await getOptionalEmailEligibility([recipient], 'training');
+  const emailStatus = eligibility.get(Number(recipient?.id));
+  if (!emailStatus?.allowed) {
+    return { success: true, skipped: true, skipReason: emailStatus?.reason || 'consent_missing_or_invalid' };
   }
 
   const {
@@ -452,4 +486,73 @@ export const sendRetentionRescueEmail = async ({ userId, email, userName, loadPa
 
   // La autorización puede cambiar mientras se consulta la actividad.
   return sendOptionalMailAndLog(mailOptions, 'training', recipient.id);
+};
+
+export const sendWeeklyRecapEmail = async ({ userId, email, userName, stats = {} }) => {
+  const recipient = await findOptionalEmailRecipient(email, userId);
+  const eligibility = await getOptionalEmailEligibility([recipient], 'training');
+  const emailStatus = eligibility.get(Number(recipient?.id));
+  if (!emailStatus?.allowed) {
+    return { success: true, skipped: true, skipReason: emailStatus?.reason || 'consent_missing_or_invalid' };
+  }
+
+  const baseUrl = (process.env.FRONTEND_URL || 'https://profitnessglass.es').replace(/\/+$/, '');
+  const safeName = userName || 'Atleta';
+  const workouts = Number(stats.workoutsCount) || 0;
+  const nutritionDays = Number(stats.nutritionDaysCount) || 0;
+  const prsCount = Number(stats.prsCount) || 0;
+  const totalMinutes = Math.round((Number(stats.totalDurationSeconds) || 0) / 60);
+  const targetDays = Number(stats.weeklyTargetDays) || 3;
+
+  const headline = workouts > 0
+    ? `Esta semana sumaste ${workouts} ${workouts === 1 ? 'entrenamiento' : 'entrenamientos'}`
+    : 'Nueva semana para retomar tu progreso';
+
+  const ctaText = workouts > 0 ? 'Planificar mi próxima semana' : 'Empezar hoy en 1 clic';
+  const ctaUrl = workouts > 0 ? `${baseUrl}/progress` : `${baseUrl}/routines`;
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0f172a; color: #f8fafc; border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+      <div style="padding: 32px 28px;">
+        <div style="display: inline-block; padding: 6px 14px; border-radius: 999px; background-color: rgba(34, 197, 94, 0.15); color: #22c55e; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 16px;">
+          PRO FITNESS GLASS · RESUMEN SEMANAL
+        </div>
+        <h2 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0 0 12px; line-height: 1.3;">
+          ${headline}
+        </h2>
+        <p style="color: #cbd5e1; font-size: 15px; line-height: 1.6; margin: 0 0 22px;">
+          Hola <strong>${safeName}</strong>, aquí tienes tu resumen de los últimos 7 días:
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px;">
+          <div style="background: rgba(255,255,255,0.06); padding: 14px 16px; border-radius: 16px;">
+            <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Entrenamientos</div>
+            <div style="font-size: 22px; color: #ffffff; font-weight: 900; margin-top: 4px;">${workouts} <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">/ ${targetDays} meta</span></div>
+          </div>
+          <div style="background: rgba(255,255,255,0.06); padding: 14px 16px; border-radius: 16px;">
+            <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Tiempo activo</div>
+            <div style="font-size: 22px; color: #ffffff; font-weight: 900; margin-top: 4px;">${totalMinutes} min</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.06); padding: 14px 16px; border-radius: 16px;">
+            <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Días con nutrición</div>
+            <div style="font-size: 22px; color: #ffffff; font-weight: 900; margin-top: 4px;">${nutritionDays} días</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.06); padding: 14px 16px; border-radius: 16px;">
+            <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Nuevos Récords (PR)</div>
+            <div style="font-size: 22px; color: #22c55e; font-weight: 900; margin-top: 4px;">${prsCount}</div>
+          </div>
+        </div>
+        <div style="text-align: center; margin: 24px 0 8px;">
+          <a href="${ctaUrl}" style="background-color: #22c55e; color: #0f172a; padding: 14px 28px; text-decoration: none; border-radius: 999px; font-weight: 800; font-size: 15px; display: inline-block;">
+            ${ctaText}
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+
+  return sendOptionalMailAndLog({
+    to: email,
+    subject: `Tu resumen semanal en Pro Fitness Glass`,
+    html
+  }, 'training', recipient.id);
 };

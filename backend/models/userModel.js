@@ -72,6 +72,12 @@ User.init({
     allowNull: false,
     defaultValue: 'Europe/Madrid'
   },
+  training_reminder_hour: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: null,
+    validate: { min: 0, max: 23 }
+  },
 
   // --- Datos físicos y demográficos ---
   goal: {

@@ -28,6 +28,16 @@ const MEAL_TYPE_LABELS = {
     snack: 'Snacks'
 };
 
+const getPreviousDateStr = (dateStr) => {
+    const parsed = new Date(`${dateStr}T12:00:00`);
+    if (Number.isNaN(parsed.getTime())) return null;
+    parsed.setDate(parsed.getDate() - 1);
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+};
+
 const DateNavigator = ({ selectedDate, onDateChange }) => {
     const today = new Date();
     const date = new Date(selectedDate);
@@ -153,6 +163,8 @@ const Nutrition = ({ setView, navParams }) => {
     const [mealCopySourceLogs, setMealCopySourceLogs] = useState([]);
     const [isLoadingMealCopySource, setIsLoadingMealCopySource] = useState(false);
     const [isCopyingMeal, setIsCopyingMeal] = useState(false);
+    const [yesterdayLogs, setYesterdayLogs] = useState([]);
+    const [isRepeatingYesterday, setIsRepeatingYesterday] = useState(false);
     const [showCreatinaTracker, setShowCreatinaTracker] = useState(false);
     const [showNutritionCoachModal, setShowNutritionCoachModal] = useState(false);
 
@@ -187,6 +199,37 @@ const Nutrition = ({ setView, navParams }) => {
 
         return () => { cancelled = true; };
     }, [mealCopy?.sourceDate, mealCopy?.sourceMealType, selectedDate, nutritionLog, addToast]);
+
+    const previousDateStr = useMemo(() => getPreviousDateStr(selectedDate), [selectedDate]);
+
+    useEffect(() => {
+        if (!previousDateStr) {
+            setYesterdayLogs([]);
+            return undefined;
+        }
+        let cancelled = false;
+        nutritionService.getNutritionLogsByDate(previousDateStr)
+            .then((data) => {
+                if (cancelled) return;
+                setYesterdayLogs(Array.isArray(data?.nutrition) ? data.nutrition : []);
+            })
+            .catch(() => {
+                if (!cancelled) setYesterdayLogs([]);
+            });
+        return () => { cancelled = true; };
+    }, [previousDateStr]);
+
+    const yesterdaySummary = useMemo(() => {
+        const byMeal = { breakfast: [], lunch: [], dinner: [], snack: [] };
+        let calories = 0;
+        let protein = 0;
+        yesterdayLogs.forEach((log) => {
+            if (byMeal[log.meal_type]) byMeal[log.meal_type].push(log);
+            calories += Number(log.calories) || 0;
+            protein += Number(log.protein_g) || 0;
+        });
+        return { byMeal, calories, protein };
+    }, [yesterdayLogs]);
  
     // --- Restaurar modal de Smart Nutrition Coach si volvemos de Asesoría ---
     useEffect(() => {
@@ -496,39 +539,49 @@ const Nutrition = ({ setView, navParams }) => {
         });
     };
 
+    const cloneFoodLogsToSelectedDate = async (logsToCopy, overrideMealType = null) => {
+        const responses = await Promise.allSettled(
+            logsToCopy.map((log) =>
+                nutritionService.addFoodLog({
+                    description: log.description,
+                    calories: log.calories,
+                    protein_g: log.protein_g,
+                    carbs_g: log.carbs_g,
+                    fats_g: log.fats_g,
+                    sugars_g: log.sugars_g ?? log.sugar_g,
+                    weight_g: log.weight_g,
+                    image_url: log.image_url,
+                    micronutrients: log.micronutrients,
+                    calories_per_100g: log.calories_per_100g,
+                    protein_per_100g: log.protein_per_100g,
+                    carbs_per_100g: log.carbs_per_100g,
+                    fat_per_100g: log.fat_per_100g,
+                    sugars_per_100g: log.sugars_per_100g,
+                    log_date: selectedDate,
+                    meal_type: overrideMealType || log.meal_type
+                })
+            )
+        );
+        responses.forEach((result) => {
+            if (result.status === 'fulfilled' && result.value?.gamification) {
+                processGamificationEvents(result.value.gamification);
+            }
+        });
+        const copiedCount = responses.filter((result) => result.status === 'fulfilled').length;
+        if (copiedCount > 0) {
+            await fetchDataForDate(selectedDate);
+        }
+        return copiedCount;
+    };
+
     const handleCopyMeal = async () => {
         if (!mealCopy || mealCopySourceLogs.length === 0 || isCopyingMeal) return;
         setIsCopyingMeal(true);
 
         try {
-            const responses = await Promise.allSettled(mealCopySourceLogs.map(log => nutritionService.addFoodLog({
-                description: log.description,
-                calories: log.calories,
-                protein_g: log.protein_g,
-                carbs_g: log.carbs_g,
-                fats_g: log.fats_g,
-                sugars_g: log.sugars_g ?? log.sugar_g,
-                weight_g: log.weight_g,
-                image_url: log.image_url,
-                micronutrients: log.micronutrients,
-                calories_per_100g: log.calories_per_100g,
-                protein_per_100g: log.protein_per_100g,
-                carbs_per_100g: log.carbs_per_100g,
-                fat_per_100g: log.fat_per_100g,
-                sugars_per_100g: log.sugars_per_100g,
-                log_date: selectedDate,
-                meal_type: mealCopy.destinationMealType
-            })));
-
-            const copiedCount = responses.filter(result => result.status === 'fulfilled').length;
-            responses.forEach(result => {
-                if (result.status === 'fulfilled' && result.value?.gamification) {
-                    processGamificationEvents(result.value.gamification);
-                }
-            });
+            const copiedCount = await cloneFoodLogsToSelectedDate(mealCopySourceLogs, mealCopy.destinationMealType);
 
             if (copiedCount > 0) {
-                await fetchDataForDate(selectedDate);
                 const destinationName = { breakfast: 'desayuno', lunch: 'almuerzo', dinner: 'cena', snack: 'snack' }[mealCopy.destinationMealType];
                 addToast(copiedCount === mealCopySourceLogs.length
                     ? `Se copiaron ${copiedCount} alimentos al ${destinationName}.`
@@ -542,6 +595,27 @@ const Nutrition = ({ setView, navParams }) => {
             addToast(error.message || 'No se pudieron copiar los alimentos.', 'error');
         } finally {
             setIsCopyingMeal(false);
+        }
+    };
+
+    const handleQuickRepeatYesterday = async (mealType = null) => {
+        const sourceLogs = mealType ? (yesterdaySummary.byMeal[mealType] || []) : yesterdayLogs;
+        if (sourceLogs.length === 0 || isRepeatingYesterday || isCopyingMeal) return;
+        setIsRepeatingYesterday(true);
+        try {
+            const copiedCount = await cloneFoodLogsToSelectedDate(sourceLogs, mealType);
+            if (copiedCount > 0) {
+                const label = mealType
+                    ? (MEAL_TYPE_LABELS[mealType]?.toLowerCase() || mealType)
+                    : 'el día completo';
+                addToast(`Listo: ${copiedCount} alimentos copiados de ayer a ${label}.`, 'success');
+            } else {
+                addToast('No se pudieron copiar los alimentos de ayer.', 'error');
+            }
+        } catch (error) {
+            addToast(error.message || 'Error al repetir la comida de ayer.', 'error');
+        } finally {
+            setIsRepeatingYesterday(false);
         }
     };
 
@@ -1065,6 +1139,38 @@ const Nutrition = ({ setView, navParams }) => {
                         </div>
                     </div>
 
+                    {(!nutritionLog || nutritionLog.length === 0) && yesterdayLogs.length > 0 && (
+                        <GlassCard className="glass mb-6 p-4 sm:p-5 rounded-[26px] ring-1 ring-accent/25 bg-accent/5 border-none">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+                                <div className="flex items-start gap-3 min-w-0">
+                                    <div className="p-2.5 rounded-[16px] bg-accent/15 text-accent shrink-0 mt-0.5">
+                                        <Copy size={18} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="inline-block text-[10px] font-black uppercase tracking-wider text-accent mb-0.5">
+                                            Registro rápido en 1 toque
+                                        </span>
+                                        <h3 className="text-sm sm:text-base font-extrabold text-text-primary leading-snug">
+                                            Repite tus {yesterdayLogs.length} comidas del día anterior
+                                        </h3>
+                                        <p className="text-xs text-text-secondary mt-0.5">
+                                            {Math.round(yesterdaySummary.calories).toLocaleString('es-ES')} kcal · {Math.round(yesterdaySummary.protein)}g de proteína listos para clonar en segundos.
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => handleQuickRepeatYesterday(null)}
+                                    disabled={isRepeatingYesterday || isCopyingMeal}
+                                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-accent text-accent-contrast font-extrabold text-xs hover:brightness-110 transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer shadow-sm"
+                                >
+                                    {isRepeatingYesterday ? <Spinner size={14} /> : <Copy size={14} />}
+                                    <span>Repetir día de ayer</span>
+                                </button>
+                            </div>
+                        </GlassCard>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                         {Object.entries(meals).map(([mealType, logs]) => (
                             <GlassCard key={mealType} className="glass p-5 sm:p-6 flex flex-col rounded-[28px] hover:shadow-xl transition-all duration-300 group ring-1 ring-black/5 dark:ring-white/10 border-none">
@@ -1188,14 +1294,27 @@ const Nutrition = ({ setView, navParams }) => {
                                             </div>
                                         );
                                     }) : (
-                                        <div className="flex flex-col items-center justify-center py-8 text-text-muted/50 rounded-[20px] bg-glass-bg border border-dashed border-black/10 dark:border-white/10">
+                                        <div className="flex flex-col items-center justify-center py-8 px-4 text-text-muted/50 rounded-[20px] bg-glass-bg border border-dashed border-black/10 dark:border-white/10">
                                             <p className="text-xs font-medium">Sin registros</p>
-                                            <button
-                                                onClick={() => setModal({ type: 'food', data: { mealType } })}
-                                                className="mt-2 text-xs font-bold text-accent bg-accent/10 px-4 py-2 rounded-xl hover:bg-accent/20 flex items-center gap-1 transition-colors"
-                                            >
-                                                <Plus size={14} /> Añadir Comida
-                                            </button>
+                                            <div className="mt-2.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 w-full sm:w-auto">
+                                                {yesterdaySummary.byMeal[mealType]?.length > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleQuickRepeatYesterday(mealType)}
+                                                        disabled={isRepeatingYesterday || isCopyingMeal}
+                                                        className="w-full sm:w-auto text-xs font-bold text-text-primary bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 px-4 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+                                                    >
+                                                        {isRepeatingYesterday ? <Spinner size={13} /> : <Copy size={13} className="text-accent" />}
+                                                        <span>Repetir ayer ({yesterdaySummary.byMeal[mealType].length})</span>
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => setModal({ type: 'food', data: { mealType } })}
+                                                    className="w-full sm:w-auto text-xs font-bold text-accent bg-accent/10 px-4 py-2 rounded-xl hover:bg-accent/20 flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                                                >
+                                                    <Plus size={14} /> Añadir Comida
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
                                 </div>

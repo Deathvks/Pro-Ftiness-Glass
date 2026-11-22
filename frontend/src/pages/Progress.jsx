@@ -378,6 +378,7 @@ const Progress = ({ darkMode, setView, scrollRef }) => {
                     sections={PROGRESS_SECTIONS}
                     onSelect={setViewType}
                     tutorialPrefix="progress-tab"
+                    disableShadow
                 />
             )}
 

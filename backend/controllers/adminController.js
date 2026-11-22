@@ -9,7 +9,7 @@ import { processUploadedFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/imageService.js';
 import { canSendOptionalEmail, sendDomainMailboxTest, sendEmailPreferenceTest } from '../services/emailService.js';
 import { isDomainSmtpConfigured } from '../config/mailContacts.js';
-import { PUSH_PURPOSES } from '../config/pushConsent.js';
+import { hasPushConsent, PUSH_PURPOSES } from '../config/pushConsent.js';
 import { isSupportedPushEndpoint } from '../services/pushService.js';
 import {
   getRetentionRescueOverview,
@@ -29,6 +29,7 @@ export const getAllUsers = async (req, res, next) => {
       routineCounts,
       workoutCounts,
       nutritionCounts,
+      pushCounts,
     ] = await Promise.all([
       User.findAll({
         attributes: [
@@ -51,6 +52,10 @@ export const getAllUsers = async (req, res, next) => {
           'github_id',
           'spotify_id',
           'facebook_id',
+          'email_activity_notifications',
+          'email_marketing_consent',
+          'email_coaching_consent',
+          'push_consents',
           ['created_at', 'createdAt'],
         ],
         order: [['created_at', 'DESC']],
@@ -83,6 +88,11 @@ export const getAllUsers = async (req, res, next) => {
           type: db.sequelize.QueryTypes.SELECT,
         })
         .catch(() => []),
+      db.sequelize
+        .query('SELECT user_id, COUNT(*) AS cnt FROM push_subscriptions GROUP BY user_id', {
+          type: db.sequelize.QueryTypes.SELECT,
+        })
+        .catch(() => []),
     ]);
 
     const refMap = new Map(referralCounts.map(r => [Number(r.user_id), parseInt(r.cnt, 10) || 0]));
@@ -94,16 +104,32 @@ export const getAllUsers = async (req, res, next) => {
     const rMap = new Map(routineCounts.map(r => [Number(r.user_id), parseInt(r.cnt, 10) || 0]));
     const wMap = new Map(workoutCounts.map(w => [Number(w.user_id), parseInt(w.cnt, 10) || 0]));
     const nMap = new Map(nutritionCounts.map(n => [Number(n.user_id), parseInt(n.cnt, 10) || 0]));
+    const pMap = new Map(pushCounts.map(p => [Number(p.user_id), parseInt(p.cnt, 10) || 0]));
 
     const enrichedUsers = users.map(u => {
       const uid = Number(u.id);
+      let parsedPush = u.push_consents;
+      if (typeof parsedPush === 'string') {
+        try { parsedPush = JSON.parse(parsedPush); } catch { parsedPush = null; }
+      }
+      const hasVoluntaryPush = PUSH_PURPOSES.some(p => hasPushConsent(parsedPush, p));
+      const hasVoluntaryEmail = Boolean(u.email_marketing_consent || u.email_coaching_consent);
+      const hasEmailActivity = Boolean(u.email_activity_notifications);
+      const pushSubCount = pMap.get(uid) || 0;
+
       return {
         ...u,
+        push_consents: parsedPush || null,
         referralCount: refMap.get(uid) || 0,
         latest_device: devMap.get(uid) || null,
         routineCount: rMap.get(uid) || 0,
         workoutCount: wMap.get(uid) || 0,
         nutritionCount: nMap.get(uid) || 0,
+        pushSubCount,
+        hasVoluntaryPush,
+        hasVoluntaryEmail,
+        hasEmailActivity,
+        onlyMandatoryNotifications: !hasVoluntaryPush && !hasVoluntaryEmail,
       };
     });
 
@@ -1056,6 +1082,10 @@ export const triggerRetentionRescue = async (req, res, next) => {
       success: true,
       processedCount: batchResult.processedCount,
       remainingEligibleCount: batchResult.remainingEligibleCount,
+      emailSentCount: batchResult.emailSentCount,
+      emailSkippedCount: batchResult.emailSkippedCount,
+      emailErrorCount: batchResult.emailErrorCount,
+      pushSentCount: batchResult.pushSentCount,
       overview: updatedOverview,
     });
   } catch (error) {

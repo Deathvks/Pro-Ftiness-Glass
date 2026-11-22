@@ -1,6 +1,7 @@
 /* frontend/src/components/News/ArticleSEO.jsx */
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { getNewsCoverUrls } from '../../utils/newsCover.js';
 
 const BASE_URL = 'https://profitnessglass.es';
 
@@ -10,10 +11,7 @@ export default function ArticleSEO({ article }) {
   const canonicalUrl = `${BASE_URL}/noticias/${article.slug}`;
   const title = `${article.seo_title || article.title} | Pro Fitness Glass`;
   const description = article.seo_description || article.summary;
-  let image = article.image_url || `${BASE_URL}/entrenamiento.png`;
-  if (image && image.includes('photo-1510519138197-06b8628cbf4f')) {
-    image = 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80';
-  }
+  let image = getNewsCoverUrls(article, BASE_URL + '/api').src;
   if (image && !image.startsWith('http')) {
     image = `${BASE_URL}${image.startsWith('/') ? '' : '/'}${image}`;
   }

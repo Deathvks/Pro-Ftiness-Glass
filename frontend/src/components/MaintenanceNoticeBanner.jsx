@@ -41,7 +41,7 @@ const MaintenanceNoticeBanner = ({
   };
 
   const computedStyle = {
-    ...(needsSafeArea ? { paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 0.25rem)' } : {}),
+    ...(needsSafeArea ? { paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' } : {}),
     ...style
   };
 
@@ -49,7 +49,7 @@ const MaintenanceNoticeBanner = ({
     <aside
       aria-label="Aviso de migración completada"
       style={computedStyle}
-      className={`relative w-full bg-emerald-500/15 dark:bg-emerald-400/15 text-emerald-950 dark:text-emerald-100 py-1 sm:py-1 px-2.5 sm:px-4 md:backdrop-blur-xl transition-all shrink-0 ${
+      className={`relative w-full bg-emerald-500/15 dark:bg-emerald-400/15 text-emerald-950 dark:text-emerald-100 py-0.5 sm:py-1 px-2 sm:px-4 md:backdrop-blur-xl transition-all shrink-0 ${
         borderBottom && !isRounded ? 'border-b border-emerald-500/30' : ''
       } ${rounded ? 'rounded-2xl border border-emerald-500/30 shadow-sm' : ''} ${className}`}
     >

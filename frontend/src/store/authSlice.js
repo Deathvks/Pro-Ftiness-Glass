@@ -1,11 +1,26 @@
 /* frontend/src/store/authSlice.js */
 import * as authService from '../services/authService';
 import * as userService from '../services/userService';
-import { clearDevicePush } from '../services/notificationService';
+import { clearDevicePush, updatePushPreferences } from '../services/notificationService';
 import { APP_VERSION, CURRENT_WELCOME_TITLE, hasSeenCurrentWelcome, isNewerVersion } from '../config/version';
+import { EMAIL_CONSENT_VERSION } from '../config/emailConsent';
+import { PUSH_CONSENT_VERSION } from '../config/pushConsent';
 
 const CACHE_VERSION_KEY = 'pfg_cache_version';
 const INITIAL_CACHE_KEY = 'pfg_cached_initial_state_v1';
+export const COOKIE_CONSENT_KEY = 'cookie_consent';
+export const COOKIE_CONSENT_VERSION_KEY = 'cookie_consent_version';
+// Incrementar esta versión invalida consentimientos previos para volver a mostrar el modal a todos los usuarios.
+export const COOKIE_CONSENT_VERSION = '2026-11-17-v2';
+
+const getStoredCookieConsent = () => {
+    const consent = localStorage.getItem(COOKIE_CONSENT_KEY);
+    const consentVersion = localStorage.getItem(COOKIE_CONSENT_VERSION_KEY);
+    if (!consent || consentVersion !== COOKIE_CONSENT_VERSION) {
+        return null;
+    }
+    return consent;
+};
 
 const getCachedUserProfile = () => {
     try {
@@ -35,6 +50,72 @@ const clearAuthStorage = () => {
 // Definimos el "slice" o parte del store que gestiona la autenticación y el perfil.
 export const createAuthSlice = (set, get) => {
     const cachedProfile = getCachedUserProfile();
+    const syncConsentPreferences = async ({
+        googleSignIn,
+        emailActivity,
+        emailMarketing,
+        emailCoaching,
+        pushTraining,
+        pushCoaching,
+        pushNews,
+    }) => {
+        const consentValue = googleSignIn ? 'accepted' : 'declined';
+        localStorage.setItem(COOKIE_CONSENT_KEY, consentValue);
+        localStorage.setItem(COOKIE_CONSENT_VERSION_KEY, COOKIE_CONSENT_VERSION);
+        set({ cookieConsent: consentValue, cookieBannerForceConfig: false });
+
+        if (!get().isAuthenticated || !localStorage.getItem('pro_fitness_token')) {
+            return;
+        }
+
+        const payload = {
+            email_activity_notifications: Boolean(emailActivity),
+            email_marketing_consent: Boolean(emailMarketing),
+            email_coaching_consent: Boolean(emailCoaching),
+            ...(emailMarketing || emailCoaching ? { emailConsentVersion: EMAIL_CONSENT_VERSION } : {}),
+        };
+
+        const pushEntries = [
+            ['training', pushTraining],
+            ['coaching', pushCoaching],
+            ['news', pushNews],
+        ].filter(([, value]) => typeof value === 'boolean');
+
+        try {
+            const [response] = await Promise.all([
+                userService.updateUserProfile(payload),
+                ...pushEntries.map(([purpose, granted]) =>
+                    updatePushPreferences(purpose, Boolean(granted), PUSH_CONSENT_VERSION).catch(() => null)
+                ),
+            ]);
+            const updatedProfile = response?.user || response;
+            set((state) => {
+                const prevPush = state.userProfile?.push_consents || {};
+                const nextPush = { ...prevPush };
+                const nowIso = new Date().toISOString();
+                for (const [purpose, granted] of pushEntries) {
+                    nextPush[purpose] = granted
+                        ? { version: PUSH_CONSENT_VERSION, grantedAt: prevPush[purpose]?.grantedAt || nowIso }
+                        : { ...(prevPush[purpose] || {}), withdrawnAt: nowIso };
+                }
+
+                return {
+                    userProfile: updatedProfile && typeof updatedProfile === 'object' && updatedProfile.id
+                        ? { ...state.userProfile, ...updatedProfile, push_consents: nextPush }
+                        : {
+                            ...(state.userProfile || {}),
+                            email_activity_notifications: payload.email_activity_notifications,
+                            email_marketing_consent: payload.email_marketing_consent,
+                            email_coaching_consent: payload.email_coaching_consent,
+                            push_consents: nextPush,
+                        },
+                };
+            });
+        } catch (error) {
+            console.warn('No se pudieron sincronizar las preferencias de consentimiento:', error);
+        }
+    };
+
     return {
     // --- ESTADO INICIAL ---
     isAuthenticated: !!localStorage.getItem('pro_fitness_token'),
@@ -54,8 +135,9 @@ export const createAuthSlice = (set, get) => {
     // --- FIN MODIFICACIÓN 2FA ---
 
     // Inicializamos leyendo directamente para evitar "flash" del banner.
-    // Usamos la clave global 'cookie_consent' para coincidir con GoogleTermsModal.
-    cookieConsent: localStorage.getItem('cookie_consent') || null,
+    // Requerimos coincidencia de versión para volver a mostrar el aviso cuando cambien las condiciones.
+    cookieConsent: getStoredCookieConsent(),
+    cookieBannerForceConfig: false,
 
     // --- ACCIONES ---
 
@@ -403,25 +485,43 @@ export const createAuthSlice = (set, get) => {
 
     // --- GESTIÓN DE COOKIES ---
     checkCookieConsent: () => {
-        const consent = localStorage.getItem('cookie_consent');
-        set({ cookieConsent: consent });
+        set({ cookieConsent: getStoredCookieConsent() });
     },
 
-    handleAcceptCookies: () => {
-        localStorage.setItem('cookie_consent', 'accepted');
-        set({ cookieConsent: 'accepted' });
-    },
+    handleAcceptCookies: () => syncConsentPreferences({
+        googleSignIn: true,
+        emailActivity: true,
+        emailMarketing: true,
+        emailCoaching: true,
+        pushTraining: true,
+        pushCoaching: true,
+        pushNews: true,
+    }),
 
-    handleDeclineCookies: () => {
-        localStorage.setItem('cookie_consent', 'declined');
-        set({ cookieConsent: 'declined' });
-        localStorage.removeItem('theme');
-        localStorage.removeItem('accent');
-    },
+    handleDeclineCookies: () => syncConsentPreferences({
+        googleSignIn: false,
+        emailActivity: false,
+        emailMarketing: false,
+        emailCoaching: false,
+        pushTraining: false,
+        pushCoaching: false,
+        pushNews: false,
+    }),
 
-    resetCookieConsent: () => {
-        localStorage.removeItem('cookie_consent');
-        set({ cookieConsent: null });
+    handleSaveCookiePreferences: (preferences = {}) => syncConsentPreferences({
+        googleSignIn: Boolean(preferences.googleSignIn),
+        emailActivity: Boolean(preferences.emailActivity),
+        emailMarketing: Boolean(preferences.emailMarketing),
+        emailCoaching: Boolean(preferences.emailCoaching),
+        pushTraining: Boolean(preferences.pushTraining),
+        pushCoaching: Boolean(preferences.pushCoaching),
+        pushNews: Boolean(preferences.pushNews),
+    }),
+
+    resetCookieConsent: (openConfig = false) => {
+        localStorage.removeItem(COOKIE_CONSENT_KEY);
+        localStorage.removeItem(COOKIE_CONSENT_VERSION_KEY);
+        set({ cookieConsent: null, cookieBannerForceConfig: Boolean(openConfig) });
     },
     };
 };

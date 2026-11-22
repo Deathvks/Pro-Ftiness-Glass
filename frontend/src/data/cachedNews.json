@@ -770,5 +770,21 @@
     "likes_count": 0,
     "published_at": "2026-11-08T08:00:13.000Z",
     "updatedAt": "2026-11-08T08:00:13.000Z"
+  },
+  {
+    "id": 38,
+    "slug": "entrenamiento-basado-en-velocidad-vbt-autorregulacion",
+    "title": "Entrenamiento Basado en Velocidad (VBT): La Clave para Autorregular tu Fatiga",
+    "summary": "Descubre cómo medir la velocidad concéntrica de tus levantamientos para optimizar la carga diaria sin sobreentrenar. Aprende a aplicar el VBT en tu rutina para maximizar fuerza e hipertrofia de forma precisa.",
+    "image_url": "https://images.unsplash.com/photo-1486218119243-13883505764c?auto=format&fit=crop&w=1200&q=80",
+    "category": "Entrenamiento",
+    "tags": "vbt, entrenamiento basado en velocidad, autorregulacion, hipertrofia, fatiga muscular, fuerza",
+    "author_name": "Equipo Científico Pro Fitness Glass",
+    "author_avatar": null,
+    "reading_time": 2,
+    "views_count": 1,
+    "likes_count": 0,
+    "published_at": "2026-11-09T08:00:17.000Z",
+    "updatedAt": "2026-11-09T17:47:37.000Z"
   }
 ]

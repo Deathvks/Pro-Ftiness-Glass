@@ -1,6 +1,6 @@
 {
-  "version": "7.16.27",
-  "releaseNotes": "Actualización v7.16.27: Reajuste en tiempo real por fatiga previa entre ejercicios del mismo músculo según objetivo y particularidades del material.",
+  "version": "7.16.45",
+  "releaseNotes": "Actualización v7.16.45: scroll completo hasta arriba en escritorio y carrusel deslizable con flechas y arrastre en Atletas en tu zona.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",

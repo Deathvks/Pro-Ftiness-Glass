@@ -6,6 +6,7 @@ import useAppStore from '../store/useAppStore';
 import CustomSelect from '../components/CustomSelect';
 import ModalPortal from '../components/ModalPortal';
 import useModalLock from '../hooks/useModalLock';
+import { formatDateForQuery } from '../utils/dateUtils';
 
 export default function ExerciseHistoryModal({ exerciseName, onClose }) {
   const workoutLog = useAppStore((state) => state.workoutLog);
@@ -61,7 +62,7 @@ export default function ExerciseHistoryModal({ exerciseName, onClose }) {
       const date = new Date(log.workout_date);
       const year = date.getFullYear();
       const month = date.getMonth();
-      const dateKey = date.toISOString().split('T')[0];
+      const dateKey = formatDateForQuery(date);
 
       if (selectedYear !== 'all' && String(year) !== String(selectedYear)) continue;
       if (selectedMonth !== 'all' && String(month) !== String(selectedMonth)) continue;

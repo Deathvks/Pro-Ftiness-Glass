@@ -2,6 +2,7 @@
 import useAppStore from '../store/useAppStore';
 import { Capacitor } from '@capacitor/core';
 import cachedNewsList from '../data/cachedNews.json';
+import { getNewsCoverUrls } from '../utils/newsCover.js';
 
 // Caché en memoria para transiciones instantáneas a 0ms
 const articleMemoryCache = new Map();
@@ -82,6 +83,7 @@ export const getResolvedApiUrl = () => {
 };
 
 const API_URL = getResolvedApiUrl();
+export const getNewsCover = article => getNewsCoverUrls(article, API_URL);
 
 const getAuthHeaders = () => {
   const token = useAppStore.getState().token;

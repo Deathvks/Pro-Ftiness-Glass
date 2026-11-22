@@ -115,8 +115,6 @@ const ACCENT_MAP = {
 };
 
 export const useAppTheme = () => {
-  const cookieConsent = useAppStore(state => state.cookieConsent);
-
   const [theme, setThemeState] = useState(themeGlobal);
   const [accent, setAccentState] = useState(accentGlobal);
 
@@ -175,7 +173,7 @@ export const useAppTheme = () => {
     localStorage.removeItem('original_theme_before_test');
     localStorage.removeItem('pending_theme_test');
 
-    if (cookieConsent) localStorage.setItem('theme', newTheme);
+    localStorage.setItem('theme', newTheme);
     themeGlobal = newTheme;
     syncThemeDocumentClass(newTheme);
     setThemeState(newTheme);
@@ -187,7 +185,7 @@ export const useAppTheme = () => {
   };
 
   const setAccent = (newAccent) => {
-    if (cookieConsent) localStorage.setItem('accent', newAccent);
+    localStorage.setItem('accent', newAccent);
     accentGlobal = newAccent;
     setAccentState(newAccent);
     notifyAppThemeListeners();

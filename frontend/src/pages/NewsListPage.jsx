@@ -40,6 +40,7 @@ import AdSenseSlot from '../components/News/AdSenseSlot';
 import TrainerAdvisoryCard from '../components/News/TrainerAdvisoryCard';
 import PublicPageFooter from '../components/PublicPageFooter';
 import * as newsService from '../services/newsService';
+import NewsCoverImage from '../components/News/NewsCoverImage';
 import { trackCatalogVisit } from '../utils/newsTracker';
 import useAppStore from '../store/useAppStore';
 
@@ -575,17 +576,11 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
               
               {/* Portada en gran formato */}
               <div className="lg:col-span-7 relative overflow-hidden bg-black/15 min-h-[220px] sm:min-h-[300px] lg:min-h-[360px] aspect-[16/10] lg:aspect-auto">
-                <img
-                  src={featuredArticle.image_url?.includes('photo-1510519138197-06b8628cbf4f')
-                    ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
-                    : (featuredArticle.image_url || '/entrenamiento.png')}
+                <NewsCoverImage
+                  article={featuredArticle}
                   alt={featuredArticle.title}
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
                   loading="eager"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = '/entrenamiento.png';
-                  }}
                 />
 
                 {/* Gradiente cinemático de protección de lectura */}
@@ -702,17 +697,11 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                 className="rounded-2xl shadow-lg border backdrop-blur-glass bg-[--glass-bg] border-[--glass-border] p-0 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 sm:hover:ring-accent/40 cursor-pointer group flex flex-col justify-between sm:hover:shadow-lg sm:hover:-translate-y-1 transition-shadow sm:transition-all duration-200 w-[78vw] sm:w-auto min-w-[250px] sm:min-w-0 max-w-[300px] sm:max-w-none shrink-0 snap-start no-underline text-inherit block"
               >
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/10">
-                  <img
-                    src={popArt.image_url?.includes('photo-1510519138197-06b8628cbf4f')
-                      ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
-                      : (popArt.image_url || '/entrenamiento.png')}
+                  <NewsCoverImage
+                    article={popArt}
                     alt={popArt.title}
                     className="w-full h-full object-cover object-center sm:group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = '/entrenamiento.png';
-                    }}
                   />
                   <div className="absolute top-2 left-2 flex items-center gap-1.5">
                     <span className="w-5 h-5 rounded-full bg-accent text-accent-contrast font-black text-[10px] flex items-center justify-center shadow-md">
@@ -871,17 +860,11 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                 className="rounded-2xl shadow-lg border backdrop-blur-glass bg-[--glass-bg] border-[--glass-border] p-0 rounded-[28px] overflow-hidden ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/40 transition-all cursor-pointer group flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 duration-300 no-underline text-inherit block"
               >
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/10">
-                  <img
-                    src={art.image_url?.includes('photo-1510519138197-06b8628cbf4f')
-                      ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
-                      : (art.image_url || '/entrenamiento.png')}
+                  <NewsCoverImage
+                    article={art}
                     alt={art.title}
                     className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = '/entrenamiento.png';
-                    }}
                   />
                   <div className="absolute top-3 left-3 flex gap-1.5">
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-black/60 backdrop-blur-md text-white border border-white/15">

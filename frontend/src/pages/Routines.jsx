@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useLayoutEffect, lazy, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, useLayoutEffect, useRef, lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   Plus,
@@ -41,6 +41,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import TemplateRoutines from './TemplateRoutines';
 import PromoBanner from '../components/PromoBanner';
+import NotificationOffer from '../components/NotificationOffer';
 const ManualExercisesManager = lazy(() => import('../components/ManualExercisesManager'));
 import WeeklyMuscleVolumeCard, {
   RoutineVolumeFilterModal,
@@ -354,7 +355,7 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
   );
 };
 
-const Routines = ({ setView, mainContentRef }) => {
+const Routines = ({ setView, mainContentRef, navParams }) => {
   const { addToast } = useToast();
   const { t } = useTranslation('exercise_names');
 
@@ -462,6 +463,27 @@ const Routines = ({ setView, mainContentRef }) => {
   useEffect(() => {
     fetchTodaysCompletedRoutines();
   }, [fetchTodaysCompletedRoutines]);
+
+  const handledNavActionRef = useRef(null);
+  useEffect(() => {
+    if (!navParams) return;
+    const actionKey = navParams.actionTs || `${!!navParams.openImport}-${!!navParams.openCreate}`;
+    if (handledNavActionRef.current === actionKey) return;
+    if (navParams.openImport) {
+      handledNavActionRef.current = actionKey;
+      setActiveTab('myRoutines');
+      setShowDataTransferModal(true);
+    } else if (navParams.openCreate) {
+      handledNavActionRef.current = actionKey;
+      setActiveTab('myRoutines');
+      setEditingRoutine({
+        name: '',
+        description: '',
+        exercises: [],
+        folder: selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : ''
+      });
+    }
+  }, [navParams, selectedFolder]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1087,6 +1109,12 @@ const Routines = ({ setView, mainContentRef }) => {
             )}
           </div>
 
+          {routines && routines.length > 0 && (!workoutLog || workoutLog.length === 0) && (
+            <div className="mb-6">
+              <NotificationOffer purpose="training" />
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
             {filteredSorted && filteredSorted.length > 0 ? (
               filteredSorted.map((routine) => {
@@ -1391,19 +1419,53 @@ const Routines = ({ setView, mainContentRef }) => {
               })
             ) : (
               <div className="lg:col-span-3 md:col-span-2">
-                <GlassCard className="glass text-center p-10 sm:p-16 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px]">
+                <GlassCard className="glass text-center p-10 sm:p-14 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px]">
                   <div className="w-20 h-20 mx-auto bg-black/5 dark:bg-white/5 rounded-[24px] flex items-center justify-center mb-6 text-text-muted">
                     <Folder size={32} />
                   </div>
                   <p className="text-text-secondary font-medium">
                     {routines && routines.length > 0
                       ? `No hay rutinas en la carpeta "${selectedFolder === 'uncategorized' ? 'Otros' : selectedFolder}".`
-                      : 'Aún no has creado ninguna rutina.'
+                      : 'Aún no tienes ninguna rutina.'
                     }
                   </p>
-                  <p className="text-text-primary font-bold mt-2">
-                    ¡Haz clic en <span className="text-accent">“Crear Rutina”</span> para empezar!
-                  </p>
+                  {(!routines || routines.length === 0) ? (
+                    <>
+                      <p className="text-text-secondary text-sm mt-2 max-w-md mx-auto">
+                        Crea una desde cero, deja que la IA te monte una en segundos o importa tus entrenamientos de Hevy/Strong en CSV.
+                      </p>
+                      <div className="mt-6 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-center gap-3 w-full">
+                        <button
+                          type="button"
+                          onClick={() => setEditingRoutine({ name: '', description: '', exercises: [], folder: '' })}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-accent text-accent-contrast font-extrabold text-sm shadow-lg shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+                        >
+                          <Plus size={17} strokeWidth={2.5} />
+                          <span>Crear Rutina</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowAIGenerator(true)}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-accent via-purple-500 to-pink-500 text-white font-extrabold text-sm shadow-md hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+                        >
+                          <FaBrain size={15} />
+                          <span>Generar con IA</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowDataTransferModal(true)}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary font-bold text-sm transition-all cursor-pointer"
+                        >
+                          <FileSpreadsheet size={16} className="text-accent" />
+                          <span>Importar CSV (Hevy / Strong)</span>
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-text-primary font-bold mt-2">
+                      ¡Haz clic en <span className="text-accent">“Crear Rutina”</span> para empezar!
+                    </p>
+                  )}
                 </GlassCard>
               </div>
             )}

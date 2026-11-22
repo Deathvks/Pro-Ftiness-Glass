@@ -2,6 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getNewsCoverUrls } from '../src/utils/newsCover.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -380,10 +381,7 @@ async function main() {
     const articleDir = path.join(distDir, 'noticias', slug);
     if (!fs.existsSync(articleDir)) fs.mkdirSync(articleDir, { recursive: true });
 
-    let articleImage = article.image_url || `${BASE_URL}/entrenamiento.png`;
-    if (articleImage.includes('photo-1510519138197-06b8628cbf4f')) {
-      articleImage = 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80';
-    }
+    let articleImage = getNewsCoverUrls(article, BASE_URL + '/api').src;
     if (!articleImage.startsWith('http')) {
       articleImage = `${BASE_URL}${articleImage.startsWith('/') ? '' : '/'}${articleImage}`;
     }

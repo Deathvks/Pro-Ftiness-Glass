@@ -1,19 +1,20 @@
 import ModalPortal from './ModalPortal';
 import React from 'react';
-import { Settings, X, ExternalLink } from 'lucide-react';
+import { Settings, X, ExternalLink, RefreshCw } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { NativeSettings, AndroidSettings, IOSSettings } from 'capacitor-native-settings';
 import useModalLock from '../hooks/useModalLock';
 
-export default function PermissionModal({ isOpen, onClose, permissionName }) {
+export default function PermissionModal({ isOpen, onClose, permissionName, onRetry }) {
+  // --- Bloquear scroll del fondo y swipe entre páginas ---
+  useModalLock(isOpen);
+
   if (!isOpen) return null;
 
+  const isNative = Capacitor.isNativePlatform();
+
   const handleOpenSettings = async () => {
-
-    // --- Bloquear scroll del fondo y swipe entre páginas ---
-    useModalLock(isOpen);
-
-    if (Capacitor.isNativePlatform()) {
+    if (isNative) {
       try {
         if (Capacitor.getPlatform() === 'android') {
           await NativeSettings.openAndroid({
@@ -27,6 +28,10 @@ export default function PermissionModal({ isOpen, onClose, permissionName }) {
       } catch (error) {
         console.error('Error abriendo ajustes:', error);
       }
+    } else if (onRetry) {
+      await onRetry();
+    } else {
+      onClose();
     }
   };
 
@@ -47,22 +52,41 @@ export default function PermissionModal({ isOpen, onClose, permissionName }) {
           </div>
           <p className="mb-2 text-lg">Activa: <strong>{permissionName}</strong></p>
           <p className="text-sm text-text-secondary leading-relaxed">
-            Necesitamos este permiso para que la app funcione correctamente. Puedes activarlo directamente desde los ajustes de tu dispositivo.
+            {isNative
+              ? 'Necesitamos este permiso para que la app funcione correctamente. Puedes activarlo directamente desde los ajustes de tu dispositivo.'
+              : 'Necesitamos este permiso en tu navegador y en tu equipo. Si ya lo activaste (o quieres volver a solicitarlo), pulsa «Solicitar / Reintentar». Si está bloqueado, actívalo en el icono junto a la barra de direcciones.'}
           </p>
         </div>
 
         <div className="flex flex-col gap-3">
+            {isNative ? (
+              <>
+                <button
+                  onClick={handleOpenSettings}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent py-3 font-semibold text-accent-contrast transition-all hover:scale-105 active:scale-95 shadow-lg shadow-accent/20">
+                  <ExternalLink size={18} />
+                  Ir a Ajustes
+                </button>
+                {onRetry && (
+                  <button
+                    onClick={onRetry}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-bg-secondary border border-glass-border py-3 font-semibold text-text-primary transition-all hover:bg-white/5 active:scale-95">
+                    <RefreshCw size={18} />
+                    Ya lo activé, reintentar
+                  </button>
+                )}
+              </>
+            ) : (
+              <button
+                onClick={handleOpenSettings}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent py-3 font-semibold text-accent-contrast transition-all hover:scale-105 active:scale-95 shadow-lg shadow-accent/20">
+                <RefreshCw size={18} />
+                Solicitar / Reintentar
+              </button>
+            )}
             <button
-            onClick={handleOpenSettings}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent py-3 font-semibold text-accent-contrast transition-all hover:scale-105 active:scale-95 shadow-lg shadow-accent/20">
-            
-              <ExternalLink size={18} />
-              Ir a Ajustes
-            </button>
-            <button
-            onClick={onClose}
-            className="w-full rounded-xl bg-bg-secondary border border-glass-border py-3 font-semibold text-text-primary transition-all hover:bg-white/5 active:scale-95">
-            
+              onClick={onClose}
+              className="w-full rounded-xl bg-bg-secondary border border-glass-border py-3 font-semibold text-text-primary transition-all hover:bg-white/5 active:scale-95">
               Cancelar
             </button>
         </div>

@@ -2,14 +2,16 @@ import ModalPortal from '../ModalPortal';
 /* frontend/src/components/progress/DailyDetailView.jsx */
 import React, { useState, useMemo } from 'react';
 import {
-  X, Trash2, Link2, Flame, BarChartHorizontal, TrendingUp, Layers, Dumbbell, Link, MapPin, Maximize2, Share2 } from
+  X, Trash2, Link2, Flame, BarChartHorizontal, TrendingUp, Layers, Dumbbell, Link, MapPin, Maximize2, Share2, CalendarClock, ArrowLeft, Check } from
 'lucide-react';
 import { MapContainer, TileLayer, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTranslation } from 'react-i18next';
 import ConfirmationModal from '../ConfirmationModal';
 import WorkoutSummaryModal from '../WorkoutSummaryModal';
+import WorkoutTimeRange from './WorkoutTimeRange';
 import { calculateCalories } from '../../utils/helpers';
+import { formatDate, toLocalDateTimeInputValue, fromLocalDateTimeInputValue } from '../../utils/dateUtils';
 import useAppStore from '../../store/useAppStore';
 import { useToast } from '../../hooks/useToast';
 import { useAppTheme } from '../../hooks/useAppTheme';
@@ -19,16 +21,21 @@ const DailyDetailView = ({ logs, onClose, isTrainerMode = false }) => {
   const { accent } = useAppTheme();
 
   // AÑADIDO: Traemos 'routines' para buscar el nombre actualizado
-  const { userProfile, bodyWeightLog, deleteWorkoutLog, routines } = useAppStore((state) => ({
+  const { userProfile, bodyWeightLog, deleteWorkoutLog, updateWorkoutDate, routines } = useAppStore((state) => ({
     userProfile: state.userProfile,
     bodyWeightLog: state.bodyWeightLog,
     deleteWorkoutLog: state.deleteWorkoutLog,
+    updateWorkoutDate: state.updateWorkoutDate,
     routines: state.routines
   }));
   const { addToast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [logToDelete, setLogToDelete] = useState(null);
   const [deletedLogIds, setDeletedLogIds] = useState([]);
+  const [dateOverrides, setDateOverrides] = useState({});
+  const [editingLogId, setEditingLogId] = useState(null);
+  const [editingDateValue, setEditingDateValue] = useState('');
+  const [isSavingDate, setIsSavingDate] = useState(false);
 
   // Estado para compartir
   const [shareData, setShareData] = useState(null);
@@ -157,7 +164,55 @@ const DailyDetailView = ({ logs, onClose, isTrainerMode = false }) => {
     return parseFloat(sortedLog[0].weight_kg);
   }, [bodyWeightLog]);
 
-  const visibleLogs = logs.filter((log) => !deletedLogIds.includes(log.id));
+  const openedDayKey = useMemo(() => (logs[0]?.workout_date ? formatDate(logs[0].workout_date) : ''), [logs]);
+
+  const handleStartEditDate = (log) => {
+    setEditingLogId(log.id);
+    setEditingDateValue(toLocalDateTimeInputValue(log.workout_date));
+  };
+
+  const handleShiftDayBack = () => {
+    const base = editingDateValue ? new Date(editingDateValue) : new Date();
+    if (isNaN(base.getTime())) return;
+    base.setDate(base.getDate() - 1);
+    setEditingDateValue(toLocalDateTimeInputValue(base));
+  };
+
+  const handleSaveDate = async (log) => {
+    const iso = fromLocalDateTimeInputValue(editingDateValue, log.workout_date);
+    if (!iso) {
+      addToast('Fecha u hora inválida.', 'error');
+      return;
+    }
+
+    setIsSavingDate(true);
+    const result = await updateWorkoutDate(log.id, iso);
+    setIsSavingDate(false);
+
+    if (result.success) {
+      addToast(result.message, 'success');
+      const nextDate = result.workout_date || iso;
+      setDateOverrides((prev) => ({ ...prev, [log.id]: nextDate }));
+      setEditingLogId(null);
+
+      // Si el entrenamiento se movió a otro día distinto al modal abierto, cerrarlo o quitarlo de esta vista
+      const newDayKey = formatDate(nextDate);
+      if (openedDayKey && newDayKey && newDayKey !== openedDayKey) {
+        const nextDeleted = [...deletedLogIds, log.id];
+        setDeletedLogIds(nextDeleted);
+        const remaining = logs.filter((l) => !nextDeleted.includes(l.id));
+        if (remaining.length === 0) {
+          onClose();
+        }
+      }
+    } else {
+      addToast(result.message, 'error');
+    }
+  };
+
+  const visibleLogs = logs
+    .filter((log) => !deletedLogIds.includes(log.id))
+    .map((log) => (dateOverrides[log.id] ? { ...log, workout_date: dateOverrides[log.id] } : log));
 
   const totalDuration = visibleLogs.reduce((acc, log) => acc + log.duration_seconds, 0);
   const totalCalories = visibleLogs.reduce((acc, log) => {
@@ -305,19 +360,25 @@ const DailyDetailView = ({ logs, onClose, isTrainerMode = false }) => {
                     <h5 className="font-bold text-accent truncate pr-4 text-base">
                       {routines.find((r) => r.id === log.routine_id)?.name || log.routine_name}
                     </h5>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                       {!isTrainerMode &&
                         <>
                           <button
+                            onClick={() => (editingLogId === log.id ? setEditingLogId(null) : handleStartEditDate(log))}
+                            className={`p-2 -m-1 mr-1 rounded-full transition ${editingLogId === log.id ? 'text-accent bg-accent/15' : 'text-text-muted hover:text-accent hover:bg-white/5'}`}
+                            title="Cambiar fecha de inicio">
+                            <CalendarClock size={18} />
+                          </button>
+                          <button
                             onClick={() => handleShareClick(log)}
-                            className="p-2 -m-2 mr-2 rounded-full text-text-muted hover:text-accent hover:bg-white/5 transition"
+                            className="p-2 -m-1 mr-1 rounded-full text-text-muted hover:text-accent hover:bg-white/5 transition"
                             title="Compartir">
                             
                             <Share2 size={18} />
                           </button>
                           <button
                             onClick={() => handleDeleteClick(log)}
-                            className="p-2 -m-2 rounded-full text-text-muted hover:text-red-500 hover:bg-white/5 transition"
+                            className="p-2 -m-1 rounded-full text-text-muted hover:text-red-500 hover:bg-white/5 transition"
                             title="Eliminar">
                             
                             <Trash2 size={18} />
@@ -327,7 +388,67 @@ const DailyDetailView = ({ logs, onClose, isTrainerMode = false }) => {
                     </div>
                   </div>
 
-                  <div className="p-4 space-y-5">
+                  <div className="p-4 space-y-4">
+
+                    <WorkoutTimeRange
+                      startDate={log.workout_date}
+                      durationSeconds={log.duration_seconds}
+                      showYear
+                    />
+
+                    {editingLogId === log.id && (
+                      <div className={`p-3 rounded-xl bg-bg-primary border ${subtleBorderClass} space-y-2.5`}>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-xs font-bold text-text-primary flex items-center gap-1.5">
+                            <CalendarClock size={14} className="text-accent" />
+                            Ajustar fecha y hora de inicio
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleShiftDayBack}
+                            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-accent/15 text-accent hover:bg-accent/25 transition flex items-center gap-1"
+                          >
+                            <ArrowLeft size={12} />
+                            Mover al día anterior
+                          </button>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input
+                            type="datetime-local"
+                            value={editingDateValue}
+                            onChange={(e) => setEditingDateValue(e.target.value)}
+                            className="flex-1 px-3 py-2 rounded-xl bg-bg-secondary border border-glass-border text-xs font-mono text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
+                          />
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleSaveDate(log)}
+                              disabled={isSavingDate}
+                              className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-accent text-accent-contrast text-xs font-bold hover:opacity-90 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                            >
+                              <Check size={14} />
+                              {isSavingDate ? 'Guardando...' : 'Guardar'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingLogId(null)}
+                              className="px-3 py-2 rounded-xl bg-bg-secondary border border-glass-border text-xs font-semibold text-text-secondary hover:text-text-primary transition"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+
+                        {editingDateValue && (
+                          <WorkoutTimeRange
+                            startDate={fromLocalDateTimeInputValue(editingDateValue, log.workout_date)}
+                            durationSeconds={log.duration_seconds}
+                            showYear
+                          />
+                        )}
+                      </div>
+                    )}
 
                     {/* Mapa GPS si existe */}
                     {gpsData && gpsData.path && gpsData.path.length > 0 &&
@@ -346,7 +467,10 @@ const DailyDetailView = ({ logs, onClose, isTrainerMode = false }) => {
                           doubleClickZoom={false}>
                           
                           <TileLayer
-                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+                            url="https://mt{s}.google.com/vt/lyrs=m&hl=es&x={x}&y={y}&z={z}"
+                            subdomains={['0', '1', '2', '3']}
+                            maxZoom={20}
+                            attribution="&copy; Google Maps" />
                           
                           <Polyline
                             positions={gpsData.path}
@@ -453,7 +577,11 @@ const DailyDetailView = ({ logs, onClose, isTrainerMode = false }) => {
               zoom={15}
               style={{ height: '100%', width: '100%' }}>
               
-              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+              <TileLayer
+                url="https://mt{s}.google.com/vt/lyrs=m&hl=es&x={x}&y={y}&z={z}"
+                subdomains={['0', '1', '2', '3']}
+                maxZoom={20}
+                attribution="&copy; Google Maps" />
               <Polyline positions={expandedMapPath} pathOptions={{ color: '#22c55e', weight: 5, opacity: 0.9 }} />
             </MapContainer>
           </div>

@@ -34,7 +34,7 @@ const WorkoutExerciseCard = ({
   onShowHistory,
   onShowSmartCoach
 }) => {
-  const { addWarmupSets, setExerciseReminder, userProfile, workoutLog, activeWorkout } = useAppStore((state) => ({
+  const { addWarmupSets, setExerciseReminder, userProfile, workoutLog, activeWorkout, allExercises } = useAppStore((state) => ({
     addWarmupSets: state.addWarmupSets,
     setExerciseReminder: state.setExerciseReminder,
     userProfile: state.userProfile,

@@ -384,8 +384,31 @@ const addFoodLog = async (req, res, next) => {
 
     const gamificationEvents = [];
     try {
-      const { trackChallenge } = await import('../services/challengeService.js');
+      const { trackChallenge, getSpainWeekRange } = await import('../services/challengeService.js');
       
+      // Reto semanal: registrar comidas al menos 3 días distintos esta semana
+      const { mondayStr, sundayStr } = getSpainWeekRange();
+      const distinctDaysThisWeek = await NutritionLog.count({
+        where: {
+          user_id: userId,
+          log_date: { [Op.between]: [mondayStr, sundayStr] }
+        },
+        distinct: true,
+        col: 'log_date'
+      });
+      if (distinctDaysThisWeek > 0) {
+        const weeklyNutriRes = await trackChallenge(userId, 'nutri_3_days_week', 1, {
+          setProgress: distinctDaysThisWeek
+        });
+        if (weeklyNutriRes.completedNow && weeklyNutriRes.xpResult) {
+          gamificationEvents.push({
+            type: 'xp',
+            amount: weeklyNutriRes.xpResult.xpAdded,
+            reason: 'Reto semanal: Ritmo Nutricional'
+          });
+        }
+      }
+
       // Reto de registrar 5 comidas
       const mealRes = await trackChallenge(userId, 'daily_5_meals', 1);
       if (mealRes.completedNow && mealRes.xpResult) {

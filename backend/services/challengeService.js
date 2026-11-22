@@ -26,6 +26,7 @@ export const CHALLENGES = {
     nutri_scan_3_barcodes: { type: 'general', target: 3, xp: 150, title: 'Lector rápido', desc: 'Escanea tres códigos de barras' },
     nutri_save_favorite: { type: 'general', target: 1, xp: 50, title: 'Mi favorito', desc: 'Guarda una comida en favoritos' },
     nutri_search_meal: { type: 'general', target: 1, xp: 30, title: 'Explorador', desc: 'Busca una comida en la base de datos' },
+    nutri_3_days_week: { type: 'weekly', target: 3, xp: 150, title: 'Ritmo Nutricional', desc: 'Registra comidas al menos 3 días esta semana' },
     
     // Generales: IA
     ai_ask_query: { type: 'general', target: 1, xp: 50, title: 'Mente inquieta', desc: 'Pide una consulta a la IA' },
@@ -33,6 +34,7 @@ export const CHALLENGES = {
     ai_explain_exercise: { type: 'general', target: 1, xp: 50, title: 'Estudiante', desc: 'Solicita a la IA que te explique un ejercicio' },
     
     // Generales: Entrenamiento
+    train_2_workouts_week: { type: 'weekly', target: 2, xp: 150, title: 'Segundo Paso', desc: 'Registra 2 entrenamientos esta semana' },
     train_3_workouts_week: { type: 'weekly', target: 3, xp: 300, title: 'Constancia pura', desc: 'Registra 3 entrenamientos esta semana' },
     train_pr_random: { type: 'general', target: 1, xp: 500, title: 'Superando límites', desc: 'Supera el peso en tu ejercicio atascado' }
 };
@@ -41,6 +43,19 @@ export const CHALLENGES = {
 export const getSpainDate = () => {
     return new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Madrid" }); 
     // en-CA format is YYYY-MM-DD which is very useful for DB string comparison
+};
+
+// Devuelve el rango { mondayStr, sundayStr } (YYYY-MM-DD) de la semana actual en España
+export const getSpainWeekRange = () => {
+    const d = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Madrid" }));
+    const day = d.getDay() || 7;
+    d.setHours(0, 0, 0, 0);
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - day + 1);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const fmt = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    return { mondayStr: fmt(monday), sundayStr: fmt(sunday) };
 };
 
 // Comprueba si una fecha es de la semana actual en España (lunes a domingo)
@@ -113,7 +128,11 @@ export const trackChallenge = async (userId, challengeKey, increment = 1, opts =
             return { success: true, completedNow: false };
         }
 
-        userChallenge.progress += increment;
+        if (typeof opts.setProgress === 'number') {
+            userChallenge.progress = Math.max(userChallenge.progress, opts.setProgress);
+        } else {
+            userChallenge.progress += increment;
+        }
         if (userChallenge.progress > challengeDef.target) userChallenge.progress = challengeDef.target;
 
         let completedNow = false;

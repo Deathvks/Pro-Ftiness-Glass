@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   Play, Pause, Square, MapPin, Navigation,
-  Clock, Flame, Footprints, ChevronLeft
+  Clock, Flame, Footprints, ChevronLeft, RefreshCw
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -13,7 +13,9 @@ import {
   calculateDistance, 
   calculatePace, 
   formatDistance, 
-  getCurrentLocation, 
+  getCurrentLocation,
+  getLocationPermissionState,
+  isLocationPermissionError,
   watchLocation, 
   clearLocationWatch 
 } from '../utils/gpsUtils';
@@ -25,9 +27,6 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import PermissionModal from '../components/PermissionModal';
 
 const LS_KEY = 'active_cardio_session';
-
-// Color exacto del tema oscuro de la web (extraído de index.css)
-const DARK_THEME_COLOR = '#0c111b';
 
 // Función auxiliar para generar el icono con el color dinámico
 const createUserIcon = (color) => {
@@ -68,43 +67,31 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
     logWorkout: state.logWorkout
   })));
 
-  // --- TEMA PARA EL MAPA Y ACENTOS ---
-  const { theme, accent } = useAppTheme();
+  // --- TEMA PARA ACENTOS DEL MARCADOR Y RUTA ---
+  const { theme, accent, resolvedTheme } = useAppTheme();
+  const [accentColor, setAccentColor] = useState('#22c55e');
 
-  // Icono de usuario dinámico basado en el color de acento
-  const userIcon = useMemo(() => createUserIcon(accent), [accent]);
-
-  // Lógica para determinar el estilo del mapa
-  const mapConfig = useMemo(() => {
-    const isSystemDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const effectiveTheme = theme === 'system' ? (isSystemDark ? 'dark' : 'light') : theme;
-
-    if (effectiveTheme === 'light') {
-      return {
-        url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-        opacity: 1,
-        bgColor: '#f7fafc',
-        className: '',
-        gradientFrom: 'from-bg-primary/80'
-      };
-    } else if (effectiveTheme === 'oled') {
-      return {
-        url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        opacity: 1,
-        bgColor: '#000000',
-        className: '',
-        gradientFrom: 'from-black/80'
-      };
-    } else {
-      return {
-        url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        opacity: 0.5,
-        bgColor: DARK_THEME_COLOR,
-        className: 'map-tiles-dark-adjusted',
-        gradientFrom: 'from-bg-primary/80'
-      };
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const computed = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim();
+    if (computed) {
+      setAccentColor(computed);
     }
-  }, [theme]);
+  }, [theme, accent, resolvedTheme]);
+
+  // Icono de usuario dinámico basado en el color de acento resuelto
+  const userIcon = useMemo(() => createUserIcon(accentColor), [accentColor]);
+
+  // Mapa estilo Google Maps clásico (gratuito y sin API Key)
+  const mapConfig = useMemo(() => ({
+    url: 'https://mt{s}.google.com/vt/lyrs=m&hl=es&x={x}&y={y}&z={z}',
+    subdomains: ['0', '1', '2', '3'],
+    attribution: '&copy; Google Maps',
+    maxZoom: 20,
+    opacity: 1,
+    bgColor: '#f8f9fa',
+    className: ''
+  }), []);
 
   // --- LÓGICA DE INICIALIZACIÓN Y RECUPERACIÓN ---
   const getSavedState = () => {
@@ -138,6 +125,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
   const [distance, setDistance] = useState(savedState?.distance || 0);
 
   const [permissionStatus, setPermissionStatus] = useState('prompt');
+  const [isRetryingLocation, setIsRetryingLocation] = useState(false);
   const [followUser, setFollowUser] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
@@ -147,6 +135,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
 
   const watchIdRef = useRef(null);
   const timerRef = useRef(null);
+  const startTimeRef = useRef(savedState?.startTime || null);
 
   useEffect(() => {
     if (savedState && savedState.status === 'running' && savedState.lastTimestamp) {
@@ -161,6 +150,9 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
 
   useEffect(() => {
     if (status !== 'idle' && activityId) {
+      if (!startTimeRef.current) {
+        startTimeRef.current = new Date().toISOString();
+      }
       const stateToSave = {
         activityId,
         status,
@@ -168,7 +160,8 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
         path,
         distance,
         lastPosition: position,
-        lastTimestamp: Date.now()
+        lastTimestamp: Date.now(),
+        startTime: startTimeRef.current
       };
       localStorage.setItem(LS_KEY, JSON.stringify(stateToSave));
     }
@@ -183,25 +176,34 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
     return userProfile?.weight || 75;
   }, [bodyWeightLog, userProfile]);
 
+  const requestInitialLocation = useCallback(async () => {
+    setIsRetryingLocation(true);
+    try {
+      const pos = await getCurrentLocation();
+      setPosition([pos.lat, pos.lng]);
+      setPermissionStatus('granted');
+      setShowPermissionModal(false);
+    } catch (err) {
+      console.error('Error inicial GPS:', err);
+      const denied = isLocationPermissionError(err) || (await getLocationPermissionState()) === 'denied';
+      setPermissionStatus(denied ? 'denied' : 'unavailable');
+      if (denied) {
+        setShowPermissionModal(true);
+      }
+    } finally {
+      setIsRetryingLocation(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!activity) {
       goBack();
       return;
     }
 
-    // Inicializamos la posición usando gpsUtils (maneja Web/Nativo)
+    // Inicializamos la posición usando gpsUtils (maneja Web/Nativo y fallback en PC)
     if (!position) {
-      getCurrentLocation()
-        .then((pos) => {
-          setPosition([pos.lat, pos.lng]);
-          setPermissionStatus('granted');
-        })
-        .catch((err) => {
-          console.error("Error inicial GPS:", err);
-          // Si falla, asumimos que no hay permisos o GPS
-          setPermissionStatus('denied');
-          setShowPermissionModal(true);
-        });
+      requestInitialLocation();
     } else {
       setPermissionStatus('granted');
     }
@@ -211,12 +213,65 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
     }
 
     return () => stopTracking();
-  }, [activity, addToast]);
+  }, [activity, requestInitialLocation]);
+
+  // Escuchar cambios de permiso en Web (cuando el usuario activa ubicación en PC/navegador sin recargar)
+  useEffect(() => {
+    if (position || typeof window === 'undefined') return undefined;
+
+    let cancelled = false;
+    let permStatusObj = null;
+
+    const handlePermissionGranted = () => {
+      if (!cancelled) {
+        requestInitialLocation();
+      }
+    };
+
+    if (navigator.permissions?.query) {
+      navigator.permissions
+        .query({ name: 'geolocation' })
+        .then((statusObj) => {
+          if (cancelled) return;
+          permStatusObj = statusObj;
+          permStatusObj.onchange = () => {
+            if (statusObj.state === 'granted') {
+              handlePermissionGranted();
+            }
+          };
+        })
+        .catch(() => {});
+    }
+
+    const handleFocusOrVisible = async () => {
+      if (document.visibilityState && document.visibilityState !== 'visible') return;
+      if (permissionStatus === 'denied' || permissionStatus === 'unavailable') {
+        const state = await getLocationPermissionState();
+        if (state === 'granted') {
+          handlePermissionGranted();
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleFocusOrVisible);
+    document.addEventListener('visibilitychange', handleFocusOrVisible);
+
+    return () => {
+      cancelled = true;
+      if (permStatusObj) permStatusObj.onchange = null;
+      window.removeEventListener('focus', handleFocusOrVisible);
+      document.removeEventListener('visibilitychange', handleFocusOrVisible);
+    };
+  }, [position, permissionStatus, requestInitialLocation]);
 
   const startSession = async (isResuming = false) => {
     if (permissionStatus === 'denied') {
       setShowPermissionModal(true);
       return;
+    }
+
+    if (!startTimeRef.current) {
+      startTimeRef.current = new Date().toISOString();
     }
 
     setStatus('running');
@@ -318,7 +373,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
 
     const payload = {
       routineName: activity.name,
-      workout_date: new Date().toISOString(),
+      workout_date: startTimeRef.current || new Date().toISOString(),
       duration_seconds: seconds,
       calories_burned: calories,
       notes: `${userNote}\n${gpsNote}`,
@@ -356,25 +411,45 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  if (permissionStatus === 'denied') {
+  if (permissionStatus === 'denied' || permissionStatus === 'unavailable') {
+    const isDenied = permissionStatus === 'denied';
     return (
       <>
-        <div className="min-h-screen bg-bg-primary flex flex-col items-center justify-center p-6 text-center animate-fade-in">
+        <div
+          className="min-h-[100dvh] bg-bg-primary flex flex-col items-center justify-center p-6 text-center animate-fade-in"
+          style={{
+            paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 1.5rem)',
+            paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 1.5rem)'
+          }}
+        >
           <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
             <MapPin size={40} className="text-red-500" />
           </div>
-          <h2 className="text-2xl font-bold text-text-primary mb-2">Ubicación desactivada</h2>
-          <p className="text-text-secondary mb-8">
-            Para registrar tu ruta en el mapa, necesitamos acceso a tu ubicación.
-            Por favor, actívala en los ajustes de tu dispositivo.
+          <h2 className="text-2xl font-bold text-text-primary mb-2">
+            {isDenied ? 'Ubicación desactivada' : 'No se pudo obtener tu ubicación'}
+          </h2>
+          <p className="text-text-secondary max-w-md mb-8">
+            {isDenied
+              ? 'Para registrar tu ruta en el mapa, necesitamos acceso a tu ubicación. Actívala en tu navegador o dispositivo y pulsa «Reintentar».'
+              : 'El permiso parece activo, pero tu dispositivo o navegador no pudo fijar la ubicación. Comprueba la ubicación del sistema (Windows/macOS) o vuelve a intentarlo.'}
           </p>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap justify-center gap-3">
             <button onClick={goBack} className="px-6 py-3 bg-bg-secondary rounded-full font-bold text-text-primary transition hover:scale-105">
               Volver
             </button>
-            <button onClick={() => setShowPermissionModal(true)} className="px-6 py-3 bg-accent rounded-full font-bold text-accent-contrast transition hover:scale-105">
-              ¿Cómo activar?
+            <button
+              onClick={requestInitialLocation}
+              disabled={isRetryingLocation}
+              className="px-6 py-3 bg-accent rounded-full font-bold text-accent-contrast transition hover:scale-105 flex items-center gap-2 disabled:opacity-60"
+            >
+              <RefreshCw size={18} className={isRetryingLocation ? 'animate-spin' : ''} />
+              {isRetryingLocation ? 'Comprobando...' : 'Reintentar'}
             </button>
+            {isDenied && (
+              <button onClick={() => setShowPermissionModal(true)} className="px-6 py-3 bg-bg-secondary border border-glass-border rounded-full font-bold text-text-primary transition hover:scale-105">
+                ¿Cómo activar?
+              </button>
+            )}
           </div>
         </div>
         
@@ -382,6 +457,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
           isOpen={showPermissionModal} 
           onClose={() => setShowPermissionModal(false)} 
           permissionName="Ubicación" 
+          onRetry={requestInitialLocation}
         />
       </>
     );
@@ -390,15 +466,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
   if (!activity) return null;
 
   return (
-    <div className="relative w-full h-screen bg-bg-primary flex flex-col overflow-hidden">
-      <style>
-        {`
-          .map-tiles-dark-adjusted {
-            filter: brightness(0.9) contrast(1.1);
-          }
-        `}
-      </style>
-
+    <div className="relative w-full h-[100dvh] bg-bg-primary flex flex-col overflow-hidden">
       <div
         className="absolute inset-0 z-0"
         style={{ backgroundColor: mapConfig.bgColor }}
@@ -413,11 +481,13 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
           >
             <TileLayer
               url={mapConfig.url}
-              attribution='&copy; CartoDB'
+              subdomains={mapConfig.subdomains}
+              attribution={mapConfig.attribution}
+              maxZoom={mapConfig.maxZoom}
               opacity={mapConfig.opacity}
               className={mapConfig.className}
             />
-            <Polyline positions={path} pathOptions={{ color: accent, weight: 5, opacity: 0.8 }} />
+            <Polyline positions={path} pathOptions={{ color: accentColor, weight: 5, opacity: 0.85 }} />
             <Marker position={position} icon={userIcon} />
             <MapRecenter position={position} follow={followUser} />
           </MapContainer>
@@ -429,86 +499,117 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
         )}
       </div>
 
-      <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${mapConfig.gradientFrom} to-transparent z-10 pointer-events-none`} />
+      <div
+        className="absolute top-0 left-0 right-0 z-10 pointer-events-none"
+        style={{
+          height: 'calc(5.5rem + var(--safe-top, env(safe-area-inset-top, 0px)))',
+          background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 100%)'
+        }}
+      />
 
-      <div className="absolute top-0 left-0 right-0 z-20 p-4 flex justify-between items-start">
-        <button onClick={handleBackClick} className="p-3 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition">
-          <ChevronLeft size={24} />
-        </button>
-        <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-2">
-          <activity.icon size={16} className={activity.color} />
-          <span className="font-bold text-white text-sm">{activity.name}</span>
+      <div
+        className="absolute top-0 left-0 right-0 z-40 pointer-events-none"
+        style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
+      >
+        <div className="h-14 px-4 flex justify-between items-center">
+          <button
+            onClick={handleBackClick}
+            className="pointer-events-auto p-2.5 bg-black/65 backdrop-blur-md rounded-full text-white hover:bg-black/80 border border-white/20 transition active:scale-95 shadow-lg"
+          >
+            <ChevronLeft size={22} />
+          </button>
+          <div className="pointer-events-auto bg-black/65 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 flex items-center gap-2 shadow-lg">
+            <activity.icon size={15} className={activity.color} />
+            <span className="font-bold text-white text-xs sm:text-sm">{activity.name}</span>
+          </div>
+          <button
+            onClick={() => setFollowUser(!followUser)}
+            className={`pointer-events-auto p-2.5 backdrop-blur-md rounded-full border transition active:scale-95 shadow-lg ${
+              followUser
+                ? 'bg-accent text-accent-contrast border-transparent'
+                : 'bg-black/65 text-white border-white/20 hover:bg-black/80'
+            }`}
+          >
+            <Navigation size={20} fill={followUser ? "currentColor" : "none"} />
+          </button>
         </div>
-        <button onClick={() => setFollowUser(!followUser)} className={`p-3 backdrop-blur-md rounded-full transition ${followUser ? 'bg-accent text-bg-primary' : 'bg-black/40 text-accent-contrast'}`}>
-          <Navigation size={24} fill={followUser ? "currentColor" : "none"} />
-        </button>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 z-20 bg-bg-primary/90 backdrop-blur-xl rounded-t-3xl border-t border-text-primary/10 p-6 pb-28 md:pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-slide-up">
-        <div className="text-center mb-6">
-          <div className="text-6xl font-black font-mono text-text-primary tracking-tight">{formatTime(seconds)}</div>
-          <p className="text-xs text-text-muted uppercase tracking-widest mt-1">Tiempo Transcurrido</p>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="flex flex-col items-center">
-            <div className="flex items-end gap-1 mb-1">
-              <span className="text-2xl font-bold text-text-primary">{formatDistance(distance).split(' ')[0]}</span>
-              <span className="text-xs text-text-tertiary mb-1.5">{formatDistance(distance).split(' ')[1]}</span>
+      <div
+        className="absolute bottom-0 left-0 right-0 z-20 bg-bg-primary backdrop-blur-xl rounded-t-3xl border-t border-glass-border px-5 pt-3.5 shadow-[0_-10px_40px_rgba(0,0,0,0.45)] animate-slide-up"
+        style={{
+          backgroundColor: 'color-mix(in srgb, var(--bg-primary) 94%, transparent)',
+          paddingBottom: 'calc(1rem + var(--safe-bottom, env(safe-area-inset-bottom, 0px)))'
+        }}
+      >
+        <div className="max-w-lg mx-auto">
+          <div className="flex items-baseline justify-center gap-2 mb-2.5">
+            <div className="text-4xl sm:text-5xl font-black font-mono text-text-primary tracking-tight leading-none">
+              {formatTime(seconds)}
             </div>
-            <div className="flex items-center gap-1 text-xs text-text-secondary"><Footprints size={12} /> Distancia</div>
+            <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Tiempo</span>
           </div>
-          <div className="flex flex-col items-center border-x border-text-primary/10">
-            <div className="flex items-end gap-1 mb-1">
-              <span className="text-2xl font-bold text-text-primary">{calculatePace(seconds, distance).split(' ')[0]}</span>
-              <span className="text-xs text-text-tertiary mb-1.5">/km</span>
+
+          <div className="grid grid-cols-3 gap-2 mb-3.5">
+            <div className="flex flex-col items-center">
+              <div className="flex items-end gap-1">
+                <span className="text-lg sm:text-xl font-bold text-text-primary leading-tight">{formatDistance(distance).split(' ')[0]}</span>
+                <span className="text-[11px] text-text-muted mb-0.5">{formatDistance(distance).split(' ')[1]}</span>
+              </div>
+              <div className="flex items-center gap-1 text-[11px] text-text-secondary"><Footprints size={11} /> Distancia</div>
             </div>
-            <div className="flex items-center gap-1 text-xs text-text-secondary"><Clock size={12} /> Ritmo</div>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="flex items-end gap-1 mb-1">
-              <span className="text-2xl font-bold text-text-primary">{Math.round(activity.mets * currentWeight * (seconds / 3600))}</span>
-              <span className="text-xs text-text-tertiary mb-1.5">kcal</span>
+            <div className="flex flex-col items-center border-x border-glass-border">
+              <div className="flex items-end gap-1">
+                <span className="text-lg sm:text-xl font-bold text-text-primary leading-tight">{calculatePace(seconds, distance).split(' ')[0]}</span>
+                <span className="text-[11px] text-text-muted mb-0.5">/km</span>
+              </div>
+              <div className="flex items-center gap-1 text-[11px] text-text-secondary"><Clock size={11} /> Ritmo</div>
             </div>
-            <div className="flex items-center gap-1 text-xs text-text-secondary"><Flame size={12} /> Energía</div>
+            <div className="flex flex-col items-center">
+              <div className="flex items-end gap-1">
+                <span className="text-lg sm:text-xl font-bold text-text-primary leading-tight">{Math.round(activity.mets * currentWeight * (seconds / 3600))}</span>
+                <span className="text-[11px] text-text-muted mb-0.5">kcal</span>
+              </div>
+              <div className="flex items-center gap-1 text-[11px] text-text-secondary"><Flame size={11} /> Energía</div>
+            </div>
           </div>
-        </div>
 
-        <div className="flex justify-center items-center gap-6">
-          {status === 'idle' && (
-            <button 
-              onClick={() => startSession()} 
-              className="w-20 h-20 bg-accent rounded-full flex items-center justify-center hover:scale-105 transition-transform"
-              style={{ boxShadow: `0 0 30px ${accent}66` }}
-            >
-              <Play size={32} className="text-bg-secondary ml-1" fill="currentColor" />
-            </button>
-          )}
-
-          {status === 'running' && (
-            <button 
-              onClick={pauseSession} 
-              className="w-20 h-20 bg-accent rounded-full flex items-center justify-center hover:scale-105 transition-transform"
-              style={{ boxShadow: `0 0 30px ${accent}66` }}
-            >
-              <Pause size={32} className="text-bg-secondary" fill="currentColor" />
-            </button>
-          )}
-
-          {status === 'paused' && (
-            <>
+          <div className="flex justify-center items-center gap-4">
+            {status === 'idle' && (
               <button 
-                onClick={resumeSession} 
-                className="w-16 h-16 bg-accent rounded-full flex items-center justify-center hover:scale-105 transition-transform"
-                style={{ boxShadow: `0 0 20px ${accent}66` }}
+                onClick={() => startSession()} 
+                className="w-14 h-14 bg-accent text-accent-contrast rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                style={{ boxShadow: `0 0 24px ${accentColor}66` }}
               >
-                <Play size={24} className="text-bg-secondary ml-1" fill="currentColor" />
+                <Play size={24} className="ml-0.5" fill="currentColor" />
               </button>
-              <button onClick={handleFinishClick} disabled={isSaving} className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform disabled:opacity-50">
-                {isSaving ? <Spinner size={24} color="border-white" /> : <Square size={24} className="text-white" fill="currentColor" />}
+            )}
+
+            {status === 'running' && (
+              <button 
+                onClick={pauseSession} 
+                className="w-14 h-14 bg-accent text-accent-contrast rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                style={{ boxShadow: `0 0 24px ${accentColor}66` }}
+              >
+                <Pause size={24} fill="currentColor" />
               </button>
-            </>
-          )}
+            )}
+
+            {status === 'paused' && (
+              <>
+                <button 
+                  onClick={resumeSession} 
+                  className="w-14 h-14 bg-accent text-accent-contrast rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  style={{ boxShadow: `0 0 20px ${accentColor}66` }}
+                >
+                  <Play size={22} className="ml-0.5" fill="currentColor" />
+                </button>
+                <button onClick={handleFinishClick} disabled={isSaving} className="w-14 h-14 bg-red-500 rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform disabled:opacity-50">
+                  {isSaving ? <Spinner size={22} color="border-white" /> : <Square size={20} className="text-white" fill="currentColor" />}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

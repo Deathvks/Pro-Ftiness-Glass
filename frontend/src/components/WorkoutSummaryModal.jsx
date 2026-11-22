@@ -459,6 +459,59 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false, showRe
   const safeNotes = notes || '';
   const hasPRs = (newPRs && newPRs.length > 0) || (workoutData?.newPRs && workoutData.newPRs.length > 0);
 
+  const nextSessionTarget = (() => {
+    let bestCandidate = null;
+    safeDetails.forEach((ex) => {
+      const sets = Array.isArray(ex?.setsDone) ? ex.setsDone : [];
+      const validSets = sets.filter((s) => !(s?.is_warmup === true || s?.is_warmup === 'true') && (parseInt(s?.reps, 10) || 0) > 0);
+      const effectiveSets = validSets.length > 0 ? validSets : sets.filter((s) => (parseInt(s?.reps, 10) || 0) > 0);
+      if (effectiveSets.length === 0) return;
+
+      let bestWeight = 0;
+      let bestReps = 0;
+      effectiveSets.forEach((s) => {
+        const w = parseFloat(s.weight_kg) || 0;
+        const r = parseInt(s.reps, 10) || 0;
+        if (w > bestWeight || (w === bestWeight && r > bestReps)) {
+          bestWeight = w;
+          bestReps = r;
+        }
+      });
+
+      const score = bestWeight > 0 ? bestWeight * 100 + bestReps : bestReps;
+      if (!bestCandidate || score > bestCandidate.score) {
+        bestCandidate = {
+          name: ex.exerciseName || 'Tu ejercicio principal',
+          bestWeight: Math.round(bestWeight * 10) / 10,
+          bestReps,
+          score
+        };
+      }
+    });
+
+    if (!bestCandidate) return null;
+
+    if (bestCandidate.bestWeight > 0 && bestCandidate.bestReps >= 12) {
+      const nextWeight = Math.round((bestCandidate.bestWeight + 2.5) * 10) / 10;
+      return {
+        headline: `${bestCandidate.name}: sube a ${nextWeight} kg`,
+        detail: `Hoy completaste ${bestCandidate.bestWeight} kg × ${bestCandidate.bestReps} reps. En tu próxima sesión busca ${nextWeight} kg × ${Math.max(8, bestCandidate.bestReps - 2)}-${bestCandidate.bestReps} reps.`
+      };
+    }
+
+    if (bestCandidate.bestWeight > 0) {
+      return {
+        headline: `${bestCandidate.name}: busca ${bestCandidate.bestWeight} kg × ${bestCandidate.bestReps + 1} reps`,
+        detail: `Tu marca base hoy quedó en ${bestCandidate.bestWeight} kg × ${bestCandidate.bestReps} reps. Conseguir +1 rep la próxima vez ya es progreso real.`
+      };
+    }
+
+    return {
+      headline: `${bestCandidate.name}: apunta a ${bestCandidate.bestReps + 1} reps`,
+      detail: `Hoy cerraste con ${bestCandidate.bestReps} repeticiones. Intenta sumar al menos +1 rep en tu siguiente sesión.`
+    };
+  })();
+
   return (
     <ModalPortal>
       {/* TARJETA PARA EXPORTACIÓN 1080x1920 SUPREMA FUERA DE PANTALLA */}
@@ -827,6 +880,25 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false, showRe
                     </p>
                   </div>
                 )}
+
+                {nextSessionTarget && !isShareMode && (
+                  <div className="p-4 rounded-2xl bg-accent/10 border border-accent/25 flex items-start gap-3">
+                    <div className="p-2 rounded-xl bg-accent/20 text-accent shrink-0 mt-0.5">
+                      <Target size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="inline-block text-[10px] font-black uppercase tracking-wider text-accent mb-0.5">
+                        Objetivo para tu próxima sesión
+                      </span>
+                      <p className="text-sm font-extrabold text-text-primary leading-snug">
+                        {nextSessionTarget.headline}
+                      </p>
+                      <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                        {nextSessionTarget.detail}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {showReminderOffer && <NotificationOffer purpose="training" />}
@@ -846,7 +918,14 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false, showRe
 
               <button
                 type="button"
-                onClick={onClose}
+                onClick={() => {
+                  onClose();
+                  if (showReminderOffer) {
+                    setTimeout(() => {
+                      window.dispatchEvent(new CustomEvent('pfg-offer-pwa-install'));
+                    }, 350);
+                  }
+                }}
                 className="w-full py-3 rounded-xl bg-bg-secondary border border-glass-border text-text-secondary font-bold text-sm transition hover:bg-bg-primary"
               >
                 Cerrar

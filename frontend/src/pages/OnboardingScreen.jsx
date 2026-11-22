@@ -325,82 +325,90 @@ const OnboardingScreen = () => {
       setLoadingText('Analizando biotipo...');
       await new Promise(r => setTimeout(r, 800));
 
-      // --- MODIFICACIÓN: VERIFICAR SI EXISTE EL TEST INTERACTIVO ---
-      const hasQuizData = localStorage.getItem('temp_onboarding_data');
+      const existingRoutines = useAppStore.getState().routines || [];
 
-      if (hasQuizData) {
-        setLoadingText('Diseñando plan de 3 días...');
+      if (existingRoutines.length === 0) {
+        try {
+          setLoadingText('Diseñando plan de 3 días...');
 
-        // 1. OBTENER LISTA DE EJERCICIOS
-        const allExercises = await getExerciseList();
+          // 1. OBTENER LISTA DE EJERCICIOS
+          const allExercises = await getExerciseList();
 
-        // 2. SELECCIONAR CONFIGURACIÓN SEGÚN OBJETIVO (O FALLBACK)
-        const routinesToCreate = SPLIT_ROUTINES_CONFIG[formData.goal] || SPLIT_ROUTINES_CONFIG.maintain;
-        let createdCount = 0;
+          // 2. SELECCIONAR CONFIGURACIÓN SEGÚN OBJETIVO (O FALLBACK)
+          const routinesToCreate = SPLIT_ROUTINES_CONFIG[formData.goal] || SPLIT_ROUTINES_CONFIG.maintain;
+          let createdCount = 0;
 
-        // 3. GENERAR LAS 3 RUTINAS SECUENCIALMENTE
-        if (allExercises && allExercises.length > 0) {
-          for (const routineConfig of routinesToCreate) {
+          // 3. GENERAR LAS 3 RUTINAS SECUENCIALMENTE
+          if (allExercises && allExercises.length > 0) {
+            for (const routineConfig of routinesToCreate) {
+              setLoadingText(`Creando ${routineConfig.name}...`);
 
-            setLoadingText(`Creando ${routineConfig.name}...`);
+              const dayExercises = [];
+              const foundIds = new Set();
 
-            // Buscar ejercicios que coincidan con las keywords del día
-            const dayExercises = [];
-            const foundIds = new Set();
+              routineConfig.keywords.forEach(keyword => {
+                const matches = allExercises.filter(ex =>
+                  ex.name.toLowerCase().includes(keyword.toLowerCase()) &&
+                  !foundIds.has(ex.id)
+                );
 
-            // Mezclar keywords para variedad si hay muchas
-            routineConfig.keywords.forEach(keyword => {
-              const matches = allExercises.filter(ex =>
-                ex.name.toLowerCase().includes(keyword.toLowerCase()) &&
-                !foundIds.has(ex.id)
-              );
-
-              // Tomar 1 o 2 ejercicios por keyword para no llenar demasiado
-              // (Lógica simple: tomamos el primero que encontramos)
-              if (matches.length > 0) {
-                const match = matches[0]; // Podríamos hacer random aquí
-                foundIds.add(match.id);
-                dayExercises.push({
-                  exercise_id: match.id,
-                  name: match.name,
-                  sets: routineConfig.sets,
-                  reps: routineConfig.reps,
-                  weight: 0,
-                  rest_seconds: 60
-                });
-              }
-            });
-
-            // Si encontramos ejercicios, creamos la rutina
-            if (dayExercises.length > 0) {
-              // Limitamos a 6-7 ejercicios por día para que sea realista
-              const limitedExercises = dayExercises.slice(0, 7);
-
-              await createRoutine({
-                name: routineConfig.name,
-                description: routineConfig.description,
-                exercises: limitedExercises,
-                is_public: false
+                if (matches.length > 0) {
+                  const match = matches[0];
+                  foundIds.add(match.id);
+                  dayExercises.push({
+                    exercise_id: match.id,
+                    name: match.name,
+                    sets: routineConfig.sets,
+                    reps: routineConfig.reps,
+                    weight: 0,
+                    rest_seconds: 60
+                  });
+                }
               });
-              createdCount++;
+
+              if (dayExercises.length > 0) {
+                const limitedExercises = dayExercises.slice(0, 7);
+
+                try {
+                  await createRoutine({
+                    name: routineConfig.name,
+                    description: routineConfig.description,
+                    folder: 'Plan Inicial',
+                    exercises: limitedExercises,
+                    is_public: false
+                  });
+                  createdCount++;
+                } catch (routineErr) {
+                  if (routineErr?.status === 409) {
+                    createdCount++;
+                  } else {
+                    console.warn('No se pudo crear rutina inicial:', routineErr);
+                  }
+                }
+              }
             }
           }
-        }
 
-        if (createdCount > 0) {
-          addToast(`¡Plan de entrenamiento de ${createdCount} días generado!`, 'success');
-        } else {
-          // Fallback total si no hay ejercicios
-          await createRoutine({
-            name: `Plan Base: ${getGoalLabel(formData.goal)}`,
-            description: "Rutina inicial. ¡Añade tus ejercicios favoritos!",
-            exercises: [],
-            is_public: false
-          });
-          addToast('Rutina base creada. ¡Personalízala ahora!', 'info');
+          if (createdCount > 0) {
+            addToast(`¡Plan de entrenamiento de ${createdCount} días generado!`, 'success');
+          } else {
+            try {
+              await createRoutine({
+                name: `Plan Base: ${getGoalLabel(formData.goal)}`,
+                description: "Rutina inicial. ¡Añade tus ejercicios favoritos!",
+                folder: 'Plan Inicial',
+                exercises: [],
+                is_public: false
+              });
+              addToast('Rutina base creada. ¡Personalízala ahora!', 'info');
+            } catch (fallbackErr) {
+              console.warn('No se pudo crear rutina base:', fallbackErr);
+            }
+          }
+        } catch (planErr) {
+          console.warn('Error generando plan inicial en onboarding:', planErr);
         }
       }
-      // SI NO HAY QUIZ DATA, NO SE CREA NINGUNA RUTINA (NI BASE NI CUSTOM)
 
       // 4. GUARDADO DE PERFIL
       setLoadingText('Finalizando...');

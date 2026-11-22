@@ -384,11 +384,24 @@ const DashboardInsights = ({ setView }) => {
           });
 
           const markLabel = bestWeight > 0 ? `${Math.round(bestWeight * 10) / 10} kg × ${bestReps}` : `${bestReps} reps`;
-          marksMap.set(norm, { name: exName, mark: markLabel });
+          const roundedWeight = Math.round(bestWeight * 10) / 10;
+          const nextTargetLabel =
+            bestWeight > 0 && bestReps >= 12
+              ? `Meta Día 2: ${Math.round((roundedWeight + 2.5) * 10) / 10} kg`
+              : bestWeight > 0
+              ? `Meta Día 2: ${roundedWeight} kg × ${bestReps + 1}`
+              : `Meta Día 2: ${bestReps + 1} reps`;
+          marksMap.set(norm, {
+            name: exName,
+            mark: markLabel,
+            nextTarget: nextTargetLabel,
+            sortScore: bestWeight > 0 ? bestWeight * 100 + bestReps : bestReps
+          });
         });
       });
 
       const allMarks = Array.from(marksMap.values());
+      const primaryMark = [...allMarks].sort((a, b) => (b.sortScore || 0) - (a.sortScore || 0))[0] || null;
       const showCalibrationCard =
         completedSessions < 3 || (totalProgressingCount === 0 && totalWarningCount === 0);
 
@@ -397,6 +410,7 @@ const DashboardInsights = ({ setView }) => {
         step,
         totalBaselineExercises: allMarks.length,
         topMarks: allMarks.slice(0, 5),
+        primaryNextTarget: primaryMark ? `${primaryMark.name} · ${primaryMark.nextTarget}` : null,
         latestRoutineName: routineNames[0] || null,
         routineNames,
         showCalibrationCard
@@ -407,6 +421,7 @@ const DashboardInsights = ({ setView }) => {
         step: 0,
         totalBaselineExercises: 0,
         topMarks: [],
+        primaryNextTarget: null,
         latestRoutineName: null,
         routineNames: [],
         showCalibrationCard: totalProgressingCount === 0 && totalWarningCount === 0
@@ -1090,6 +1105,19 @@ const DashboardInsights = ({ setView }) => {
                         </span>
                       </span>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {calibrationSummary.primaryNextTarget && calibrationSummary.step > 0 && calibrationSummary.step < 3 && (
+                <div className="p-3 rounded-2xl bg-black/5 dark:bg-white/5 border border-accent/25 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-accent block">
+                      Objetivo concreto para tu próxima sesión
+                    </span>
+                    <span className="text-xs sm:text-sm font-extrabold text-text-primary block truncate">
+                      {calibrationSummary.primaryNextTarget}
+                    </span>
                   </div>
                 </div>
               )}

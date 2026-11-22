@@ -312,7 +312,8 @@ export const updateMyProfile = async (req, res, next) => {
     const {
       gender, age, height, activityLevel, goal, weight, login_email_notifications,
       email_activity_notifications, email_marketing_consent, email_coaching_consent, emailConsentVersion,
-      is_public_profile, show_level_xp, show_badges, show_gym, gym_data, timezone
+      is_public_profile, show_level_xp, show_badges, show_gym, gym_data, timezone,
+      training_reminder_hour
     } = req.body;
 
     if ((email_marketing_consent === true || email_coaching_consent === true) &&
@@ -338,6 +339,14 @@ export const updateMyProfile = async (req, res, next) => {
     }
 
     if (timezone) updateData.timezone = timezone;
+    if (training_reminder_hour === null) {
+      updateData.training_reminder_hour = null;
+    } else if (training_reminder_hour !== undefined) {
+      const parsedHour = Number(training_reminder_hour);
+      if (Number.isInteger(parsedHour) && parsedHour >= 0 && parsedHour <= 23) {
+        updateData.training_reminder_hour = parsedHour;
+      }
+    }
     if (typeof is_public_profile !== 'undefined') updateData.is_public_profile = is_public_profile;
     if (typeof show_level_xp !== 'undefined') updateData.show_level_xp = show_level_xp;
     if (typeof show_badges !== 'undefined') updateData.show_badges = show_badges;

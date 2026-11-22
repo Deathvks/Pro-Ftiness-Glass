@@ -102,11 +102,19 @@ const formatRelative = (iso) => {
   }
 };
 
+const formatEmailOutcome = (result = {}) => {
+  const sent = Number(result.emailSentCount) || 0;
+  const skipped = Number(result.emailSkippedCount) || 0;
+  const errors = Number(result.emailErrorCount) || 0;
+  return `${sent} ${sent === 1 ? 'correo enviado' : 'correos enviados'}, ${skipped} ${skipped === 1 ? 'omitido' : 'omitidos'} por permiso${errors ? ` y ${errors} ${errors === 1 ? 'con error' : 'con errores'}` : ''}`;
+};
+
 const ChannelStatusBadge = ({ label, status, errorText, Icon }) => {
+  const StatusIcon = Icon;
   if (status === 'success') {
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-extrabold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-        <Icon size={12} />
+        <StatusIcon size={12} />
         <span>{label}: Correcto</span>
       </span>
     );
@@ -114,7 +122,7 @@ const ChannelStatusBadge = ({ label, status, errorText, Icon }) => {
   if (status === 'no_subscription' || status === 'skipped') {
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-black/5 dark:bg-white/5 text-text-muted border border-black/5 dark:border-white/10">
-        <Icon size={12} />
+        <StatusIcon size={12} />
         <span>{label}: {status === 'no_subscription' ? 'Sin Push activo' : 'Omitido'}</span>
       </span>
     );
@@ -148,7 +156,7 @@ export default function AdminRetentionRescue() {
     try {
       const res = await getRetentionRescueDashboard();
       setData(res);
-    } catch (err) {
+    } catch {
       showToast('Error al cargar el panel de retención 72h', 'error');
     } finally {
       setIsLoading(false);
@@ -169,7 +177,10 @@ export default function AdminRetentionRescue() {
     try {
       const res = await triggerRetentionRescue({ userId, limit: 1 });
       if (res?.overview) setData(res.overview);
-      showToast(`Rescate personalizado enviado a ${username}`, 'success');
+      showToast(
+        `Aviso procesado para ${username}: ${formatEmailOutcome(res)}`,
+        res?.emailErrorCount ? 'info' : 'success'
+      );
     } catch (err) {
       showToast(err.message || 'Error al enviar rescate al usuario', 'error');
     } finally {
@@ -188,7 +199,10 @@ export default function AdminRetentionRescue() {
       if (res?.overview) setData(res.overview);
       const count = res?.processedCount || 0;
       if (count > 0) {
-        showToast(`Se enviaron ${count} rescates personalizados con éxito`, 'success');
+        showToast(
+          `Procesados ${count} avisos: ${formatEmailOutcome(res)}`,
+          res?.emailErrorCount ? 'info' : 'success'
+        );
       } else {
         showToast('No había usuarios pendientes para enviar en este lote', 'info');
       }
@@ -202,11 +216,18 @@ export default function AdminRetentionRescue() {
   const summary = data?.summary || {
     totalInactive72h: 0,
     pendingToRescueCount: 0,
+    emailEligibleInactiveCount: 0,
+    emailIneligibleInactiveCount: 0,
+    pendingEmailSendCount: 0,
+    pendingEmailSkipCount: 0,
     earlyCohortPendingCount: 0,
     upcomingCount: 0,
     totalSentCount: 0,
     successSentCount: 0,
     errorSentCount: 0,
+    emailSentCount: 0,
+    emailSkippedCount: 0,
+    emailErrorCount: 0,
     recoveredCount: 0,
   };
 
@@ -298,7 +319,7 @@ export default function AdminRetentionRescue() {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-text-secondary leading-relaxed max-w-3xl">
-            Detecta a usuarios que llevan <strong>72 horas o más</strong> sin actividad. Muestra un aviso dentro de la app y comprueba por separado si el usuario aceptó los recordatorios por push y por correo antes de enviarlos.
+            Detecta a todos los usuarios con <strong>72 horas o más</strong> sin actividad. El correo solo cuenta como enviable cuando el email está verificado y el consentimiento de entrenamiento sigue siendo válido; In-App y Push se contabilizan por separado.
           </p>
         </div>
 
@@ -332,13 +353,13 @@ export default function AdminRetentionRescue() {
             className="inline-flex items-center gap-2 px-4 sm:px-5 py-3 rounded-2xl bg-accent text-accent-contrast font-extrabold text-xs sm:text-sm shadow-lg shadow-accent/20 hover:brightness-110 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
           >
             {isSendingBatch ? <Spinner size={15} /> : <Send size={15} />}
-            <span>Enviar Lote Pendiente ({Math.min(15, summary.pendingToRescueCount)})</span>
+            <span>Procesar Lote Pendiente ({Math.min(15, summary.pendingToRescueCount)})</span>
           </button>
         </div>
       </div>
 
       {/* Tarjetas Bento de Resumen */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3 sm:gap-4">
         <div
           onClick={() => {
             setSubTab('inactive');
@@ -348,16 +369,50 @@ export default function AdminRetentionRescue() {
         >
           <div className="flex items-center justify-between gap-2 mb-2">
             <span className="text-[11px] font-extrabold text-amber-500 uppercase tracking-wider">
-              Inactivos +72h Pendientes
+              Inactivos +72h
             </span>
             <Clock size={18} className="text-amber-500 shrink-0" />
           </div>
           <div>
             <span className="text-3xl sm:text-4xl font-black text-text-primary">
-              {summary.pendingToRescueCount}
+              {summary.totalInactive72h}
             </span>
             <p className="text-[11px] font-semibold text-text-secondary mt-1">
-              {summary.totalInactive72h} totales (+72h) · {summary.earlyCohortPendingCount} nuevos (&lt;14d)
+              {summary.pendingToRescueCount} avisos pendientes · {summary.earlyCohortPendingCount} nuevos (&lt;14d)
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-emerald-500/5 rounded-3xl p-4 sm:p-5 ring-1 ring-emerald-500/25 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-[11px] font-extrabold text-emerald-500 uppercase tracking-wider">
+              Correo autorizado
+            </span>
+            <Mail size={18} className="text-emerald-500 shrink-0" />
+          </div>
+          <div>
+            <span className="text-3xl sm:text-4xl font-black text-text-primary">
+              {summary.emailEligibleInactiveCount}
+            </span>
+            <p className="text-[11px] font-semibold text-text-secondary mt-1">
+              {summary.pendingEmailSendCount} pendientes recibirían correo
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-amber-500/5 rounded-3xl p-4 sm:p-5 ring-1 ring-amber-500/25 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-[11px] font-extrabold text-amber-500 uppercase tracking-wider">
+              Correo omitido
+            </span>
+            <XCircle size={18} className="text-amber-500 shrink-0" />
+          </div>
+          <div>
+            <span className="text-3xl sm:text-4xl font-black text-text-primary">
+              {summary.emailIneligibleInactiveCount}
+            </span>
+            <p className="text-[11px] font-semibold text-text-secondary mt-1">
+              {summary.pendingEmailSkipCount} pendientes sin permiso válido
             </p>
           </div>
         </div>
@@ -391,7 +446,7 @@ export default function AdminRetentionRescue() {
         >
           <div className="flex items-center justify-between gap-2 mb-2">
             <span className="text-[11px] font-extrabold text-emerald-500 uppercase tracking-wider">
-              Rescates Enviados
+              Últimos rescates (máx. 250)
             </span>
             <CheckCircle size={18} className="text-emerald-500 shrink-0" />
           </div>
@@ -399,8 +454,8 @@ export default function AdminRetentionRescue() {
             <span className="text-3xl sm:text-4xl font-black text-text-primary">
               {summary.totalSentCount}
             </span>
-            <p className="text-[11px] font-semibold text-emerald-500 mt-1">
-              {summary.successSentCount} correctos · {summary.recoveredCount} usuarios recuperados
+            <p className="text-[11px] font-semibold text-text-secondary mt-1">
+              {summary.emailSentCount} correos enviados · {summary.emailSkippedCount} omitidos · {summary.recoveredCount} recuperados
             </p>
           </div>
         </div>
@@ -423,7 +478,7 @@ export default function AdminRetentionRescue() {
               {summary.errorSentCount}
             </span>
             <p className="text-[11px] font-semibold text-text-secondary mt-1">
-              Fallos de SMTP o suscripción Push caducada
+              {summary.emailErrorCount} errores de correo · fallos In-App/Push incluidos
             </p>
           </div>
         </div>
@@ -434,7 +489,7 @@ export default function AdminRetentionRescue() {
         <Clock size={16} className="text-accent shrink-0 mt-0.5" />
         <div>
           <span className="font-bold text-text-primary block mb-0.5">¿Cuándo se envían los avisos y los correos?</span>
-          Al cumplir 72 horas, el sistema intenta el siguiente pase automático del cron: <strong>cada hora en el minuto :25</strong>, solo en los pases de <strong>11:25 a 20:25 según la zona horaria de cada usuario</strong>, con un máximo de 15 usuarios por pase. La fecha de cada persona aparece en su ficha como estimación de la siguiente ventana; si hay más de 15 pendientes, puede retrasarse a pases posteriores. El correo de retención solo se manda si esa persona activó <strong>Recordatorios y novedades por correo</strong>. Si no, se omite el correo y pueden seguir enviándose el aviso dentro de la app y el Push. Los botones de envío manual adelantan el rescate inmediatamente.
+          Al cumplir 72 horas, el cron intenta el siguiente pase automático: <strong>cada hora en el minuto :25</strong>, entre <strong>11:25 y 20:25</strong> en la zona horaria de cada usuario, con un máximo de 15 rescates por pase. El correo solo se envía con dirección verificada y consentimiento válido para recordatorios de entrenamiento; si no, se omite aunque el aviso In-App o Push sí pueda procesarse. Los envíos manuales adelantan el aviso y vuelven a comprobar el permiso antes de intentar enviar el correo.
         </div>
       </div>
 
@@ -651,9 +706,11 @@ export default function AdminRetentionRescue() {
                       {!u.alreadyRescuedInCurrentCycle && (
                         <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-xl bg-bg-primary text-text-secondary ring-1 ring-black/5 dark:ring-white/10">
                           <Mail size={12} />
-                          {u.emailMarketingConsent
-                            ? `Correo sujeto a validación: ${formatDateTimeInTimezone(u.estimatedAutoSendAt, u.timezone)} (${u.timezone || 'Europe/Madrid'})`
-                            : 'Correo omitido: no aceptó recordatorios por email'}
+                          {u.emailWillSend
+                            ? `Correo autorizado; se enviará con el aviso (${formatDateTimeInTimezone(u.estimatedAutoSendAt, u.timezone)} · ${u.timezone || 'Europe/Madrid'})`
+                            : u.emailSkipReason === 'email_unverified_or_invalid'
+                            ? 'Correo omitido: email sin verificar o no utilizable'
+                            : 'Correo omitido: falta consentimiento válido para recordatorios de entrenamiento'}
                         </span>
                       )}
 
@@ -687,7 +744,7 @@ export default function AdminRetentionRescue() {
                       className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-accent text-accent-contrast font-extrabold text-xs sm:text-sm shadow-md shadow-accent/20 hover:brightness-110 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                     >
                       {sendingUserId === u.id ? <Spinner size={14} /> : <Send size={14} />}
-                      <span>{u.alreadyRescuedInCurrentCycle ? 'Reenviar rescate' : 'Enviar rescate ahora'}</span>
+                      <span>{u.alreadyRescuedInCurrentCycle ? 'Reprocesar aviso' : 'Procesar aviso ahora'}</span>
                     </button>
                   </div>
                 </div>
@@ -839,11 +896,13 @@ export default function AdminRetentionRescue() {
                           Siguiente aviso automático: {' '}
                           {formatDateTimeInTimezone(u.estimatedAutoSendAt, u.timezone)} ({u.timezone || 'Europe/Madrid'})
                         </span>
-                        {!u.emailMarketingConsent && (
-                          <span className="text-[11px] font-semibold text-amber-500 mt-1 block">
-                            Correo omitido sin consentimiento. El push requiere su propio permiso y el aviso dentro de la app se registra por separado.
-                          </span>
-                        )}
+                        <span className={`text-[11px] font-semibold mt-1 block ${u.emailWillSend ? 'text-emerald-500' : 'text-amber-500'}`}>
+                          {u.emailWillSend
+                            ? 'Correo autorizado: se intentará al procesar el rescate.'
+                            : u.emailSkipReason === 'email_unverified_or_invalid'
+                            ? 'El correo se omitirá porque la dirección no está verificada o no es utilizable.'
+                            : 'El correo se omitirá porque no hay consentimiento válido de entrenamiento. In-App y Push se gestionan por separado.'}
+                        </span>
                       </div>
                     </div>
 
