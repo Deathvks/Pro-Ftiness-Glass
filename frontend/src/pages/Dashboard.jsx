@@ -8,7 +8,7 @@ import {
   Droplet, Beef, Zap, CheckCircle, XCircle,
   ArrowUp, ArrowDown, Minus, ChevronRight, Trophy as TrophyLucide, Check, Crown,
   LayoutGrid, IceCream, TriangleAlert, Info, Share2, X, Loader2, Lock, List, Copy, ListFilter,
-  MapPin, Trash2, ShieldCheck
+  MapPin, Trash2, ShieldCheck, Sparkles, FileSpreadsheet
 } from 'lucide-react';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { FaChartPie, FaTrophy, FaInstagram } from 'react-icons/fa';
@@ -901,6 +901,80 @@ const Dashboard = ({ setView }) => {
         </div>
       )}
 
+      {(!workoutLog || workoutLog.length === 0) && !activeWorkout ? (
+        <GlassCard className="glass relative p-5 sm:p-7 rounded-[28px] overflow-hidden border border-accent/25 bg-gradient-to-br from-accent/15 via-accent/5 to-transparent shadow-lg mb-8">
+          <div className="flex flex-col gap-5">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-[20px] bg-accent text-accent-contrast flex items-center justify-center shrink-0 shadow-lg shadow-accent/25">
+                <Sparkles size={24} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/20 text-accent mb-1.5">
+                  {t('Tu primer paso hoy', { defaultValue: 'Tu primer paso hoy' })}
+                </span>
+                <h2 className="text-lg sm:text-xl font-black text-text-primary leading-snug">
+                  {routines.length > 0
+                    ? t('Tu plan está listo: {{name}}', { name: routines[0].name, defaultValue: `Tu plan está listo: ${routines[0].name}` })
+                    : t('Empieza en menos de 1 minuto', { defaultValue: 'Empieza en menos de 1 minuto' })}
+                </h2>
+                <p className="text-xs sm:text-sm text-text-secondary font-medium mt-1 leading-relaxed">
+                  {routines.length > 0
+                    ? t('Completa tu primera sesión para fijar tus marcas base y desbloquear tu analítica semanal.', { defaultValue: 'Completa tu primera sesión para fijar tus marcas base y desbloquear tu analítica semanal.' })
+                    : t('Crea tu primera rutina, importa tu historial desde Hevy o Strong o registra tu primera comida.', { defaultValue: 'Crea tu primera rutina, importa tu historial desde Hevy o Strong o registra tu primera comida.' })}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              {routines.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await startWorkout(routines[0]);
+                    setView('workout');
+                  }}
+                  className="flex-1 sm:flex-none px-5 py-3 rounded-2xl bg-accent text-accent-contrast font-black text-sm shadow-md shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <FaPlay size={13} />
+                  <span>{t('Empezar primer entreno', { defaultValue: 'Empezar primer entreno' })}</span>
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setView('routines', { openCreate: true, actionTs: Date.now() })}
+                    className="flex-1 sm:flex-none px-5 py-3 rounded-2xl bg-accent text-accent-contrast font-black text-sm shadow-md shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Plus size={16} strokeWidth={2.5} />
+                    <span>{t('Crear primera rutina', { defaultValue: 'Crear primera rutina' })}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setView('routines', { openImport: true, actionTs: Date.now() })}
+                    className="px-4 py-3 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <FileSpreadsheet size={15} className="text-accent" />
+                    <span>{t('Importar Hevy / Strong', { defaultValue: 'Importar Hevy / Strong' })}</span>
+                  </button>
+                </>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setView('nutrition')}
+                className="px-4 py-3 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <FaUtensils size={13} className="text-accent" />
+                <span>
+                  {nutritionLog && nutritionLog.length > 0
+                    ? t('Ver nutrición de hoy', { defaultValue: 'Ver nutrición de hoy' })
+                    : t('Registrar primera comida', { defaultValue: 'Registrar primera comida' })}
+                </span>
+              </button>
+            </div>
+          </div>
+        </GlassCard>
+      ) : (
       <div className="grid grid-cols-2 gap-4 mb-8">
         <GlassCard
           onClick={() => canOpenWeeklyRecap && setShowWeeklyRecap(true)}
@@ -958,6 +1032,7 @@ const Dashboard = ({ setView }) => {
           </div>
         </GlassCard>
       </div>
+      )}
 
 
       <div className="mb-10">
@@ -1151,7 +1226,10 @@ const Dashboard = ({ setView }) => {
               }) : (
                 <div className="glass p-8 rounded-[28px] text-center flex flex-col items-center gap-3">
                   <p className="text-sm text-text-muted">{t('Sin rutinas creadas.', { defaultValue: 'Sin rutinas creadas.' })}</p>
-                  <button onClick={() => setView('routines')} className="text-xs font-bold text-accent bg-accent/10 px-4 py-2 rounded-[20px] hover:bg-accent/20 transition-colors">{t('Crear primera rutina', { defaultValue: 'Crear primera rutina' })}</button>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <button onClick={() => setView('routines', { openCreate: true, actionTs: Date.now() })} className="text-xs font-bold text-accent bg-accent/10 px-4 py-2 rounded-[20px] hover:bg-accent/20 transition-colors cursor-pointer">{t('Crear primera rutina', { defaultValue: 'Crear primera rutina' })}</button>
+                    <button onClick={() => setView('routines', { openImport: true, actionTs: Date.now() })} className="text-xs font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-4 py-2 rounded-[20px] hover:text-text-primary transition-colors cursor-pointer">{t('Importar CSV', { defaultValue: 'Importar CSV' })}</button>
+                  </div>
                 </div>
               )}
             </div>

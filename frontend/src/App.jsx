@@ -247,6 +247,7 @@ export default function App() {
     show2FAPromo,
     setShow2FAPromo,
     checkWelcomeModal,
+    workoutLogCount,
   } = useAppStore(useShallow(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
@@ -264,6 +265,7 @@ export default function App() {
     show2FAPromo: state.show2FAPromo,
     setShow2FAPromo: state.setShow2FAPromo,
     checkWelcomeModal: state.checkWelcomeModal,
+    workoutLogCount: Array.isArray(state.workoutLog) ? state.workoutLog.length : 0,
   })));
 
   const computeHasSeenAllHubHighlights = useCallback(() => {
@@ -447,13 +449,21 @@ export default function App() {
     if (isAuthenticated && userProfile && !isLoading) {
       const hasSeenPromo = localStorage.getItem('has_seen_2fa_promo');
       const isAlreadyEnabled = userProfile?.twoFactorEnabled || userProfile?.isTwoFactorEnabled;
+      const isOnboardingDone = Boolean(userProfile.goal || userProfile.role === 'trainee');
+      const inWorkoutFlow = view === 'workout' || view === 'active-cardio';
 
-      // EL ORDEN IMPORTA: El 2FA espera a que las cookies hayan terminado
-      if (!hasSeenPromo && !isAlreadyEnabled && cookieConsent !== null) {
+      // Aplazamos el aviso 2FA para no interrumpir la sesión inicial del usuario nuevo:
+      // solo se muestra cuando ya ha completado al menos 1 entreno o su cuenta tiene >= 24h.
+      const createdRaw = userProfile.created_at || userProfile.createdAt;
+      const createdMs = createdRaw ? new Date(createdRaw).getTime() : NaN;
+      const isAccountMature = Number.isFinite(createdMs) && (Date.now() - createdMs >= 24 * 60 * 60 * 1000);
+      const hasEngagedOrReturned = workoutLogCount >= 1 || isAccountMature;
+
+      if (!hasSeenPromo && !isAlreadyEnabled && cookieConsent !== null && isOnboardingDone && !inWorkoutFlow && hasEngagedOrReturned) {
         setShow2FAPromo(true);
       }
     }
-  }, [isAuthenticated, userProfile, isLoading, cookieConsent]);
+  }, [isAuthenticated, userProfile, isLoading, cookieConsent, workoutLogCount, view, setShow2FAPromo]);
 
   const handleLogoutClick = useCallback(() => setShowLogoutConfirm(true), []);
 
@@ -634,7 +644,7 @@ export default function App() {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigateInternal} />;
       case 'progress': return <Progress darkMode={resolvedTheme !== 'light'} setView={navigateInternal} scrollRef={mainContentRef} />;
-      case 'routines': return <Routines setView={navigateInternal} mainContentRef={mainContentRef} />;
+      case 'routines': return <Routines setView={navigateInternal} mainContentRef={mainContentRef} navParams={navParams} />;
       case 'workout': return <Workout timer={workoutTimer} setView={navigateInternal} navParams={navParams} />;
       case 'nutrition': return <Nutrition setView={navigateInternal} navParams={navParams} />;
       case 'social':
