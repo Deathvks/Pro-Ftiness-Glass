@@ -44,6 +44,7 @@ export default function RootLayout() {
   
   const isAuthenticated = useAppStore(state => state.isAuthenticated);
   const userProfile = useAppStore(state => state.userProfile);
+  const workoutLog = useAppStore(state => state.workoutLog);
   const gamificationLevel = useAppStore(state => state.gamification?.level || state.userProfile?.level || 1);
   const gamificationEvents = useAppStore(state => (state.gamification as any)?.gamificationEvents);
   const clearGamificationEvents = useAppStore(state => (state as any).clearGamificationEvents);
@@ -374,8 +375,9 @@ export default function RootLayout() {
     const forceReset = Boolean((userProfile as any).force_password_reset);
     const needsVerify = userProfile.email_verified === false;
     const needsOnboarding = !userProfile.goal && userProfile.role !== 'trainee';
+    const hasCompletedFirstWorkout = Array.isArray(workoutLog) && workoutLog.length > 0;
 
-    if (!forceReset && !needsVerify && !needsOnboarding && !userProfile.two_factor_enabled) {
+    if (!forceReset && !needsVerify && !needsOnboarding && hasCompletedFirstWorkout && !userProfile.two_factor_enabled) {
       AsyncStorage.getItem(`two_factor_promo_dismissed_${uid}`)
         .then(val => {
           if (val !== 'true') {
@@ -400,7 +402,7 @@ export default function RootLayout() {
         })
         .catch(() => {});
     }
-  }, [isReady, isAuthenticated, userProfile, gamificationLevel]);
+  }, [isReady, isAuthenticated, userProfile, workoutLog, gamificationLevel]);
 
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme);

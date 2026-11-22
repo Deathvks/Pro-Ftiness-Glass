@@ -471,6 +471,23 @@ export default function SettingsScreen() {
     }
   };
 
+  // Actualizar hora preferida del recordatorio diario de entrenamiento
+  const handleUpdateReminderHour = async (hour: number) => {
+    if (!userProfile || isUpdatingPrivacy) return;
+    const prevHour = userProfile.training_reminder_hour ?? 18;
+    setIsUpdatingPrivacy(true);
+    setUserProfile({ ...userProfile, training_reminder_hour: hour });
+    try {
+      await userService.updateUserProfile({ training_reminder_hour: hour });
+      useAppStore.getState().showToast?.(`Recordatorio fijado a las ${String(hour).padStart(2, '0')}:00`);
+    } catch {
+      setUserProfile({ ...userProfile, training_reminder_hour: prevHour });
+      Alert.alert('Error', 'No se pudo actualizar la hora del recordatorio.');
+    } finally {
+      setIsUpdatingPrivacy(false);
+    }
+  };
+
   // Toggle de alertas de inicio de sesión por correo
   const handleToggleLoginEmail = async () => {
     if (!userProfile?.two_factor_enabled) {
@@ -1655,6 +1672,50 @@ export default function SettingsScreen() {
                         isDark={isDark}
                         disabled={isUpdatingPrivacy}
                       />
+                    </View>
+
+                    {/* Hora del recordatorio diario */}
+                    <View style={[styles.settingRowItem, { backgroundColor: subtleItemBg, flexDirection: 'column', alignItems: 'flex-start', gap: 10 }]}>
+                      <View>
+                        <Text style={[styles.rowItemTitle, { color: colors.text }]}>
+                          Hora preferida del recordatorio
+                        </Text>
+                        <Text style={[styles.rowItemSubtitle, { color: colors.textSecondary }]}>
+                          Elige a qué hora quieres recibir tu recordatorio para entrenar
+                        </Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                        {[9, 12, 16, 18, 20, 21].map((hour) => {
+                          const selectedHour = Number(userProfile?.training_reminder_hour ?? 18);
+                          const isSelected = selectedHour === hour;
+                          return (
+                            <TouchableOpacity
+                              key={hour}
+                              onPress={() => handleUpdateReminderHour(hour)}
+                              disabled={isUpdatingPrivacy}
+                              style={{
+                                paddingHorizontal: 12,
+                                paddingVertical: 7,
+                                borderRadius: 12,
+                                borderWidth: 1,
+                                backgroundColor: isSelected ? colors.tint : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
+                                borderColor: isSelected ? colors.tint : glassBorder,
+                              }}
+                              activeOpacity={0.8}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: 12,
+                                  fontWeight: '800',
+                                  color: isSelected ? activeTintContrast : colors.text,
+                                }}
+                              >
+                                {`${String(hour).padStart(2, '0')}:00`}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
                     </View>
 
                     {/* Recordatorios de asesoría */}

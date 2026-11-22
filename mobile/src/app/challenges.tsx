@@ -148,10 +148,26 @@ function ChallengeCard({ challenge, isDark, colors }: ChallengeCardProps) {
       <View style={styles.cardInnerContent}>
         <View style={styles.cardHeaderRow}>
           <View style={{ flex: 1, minWidth: 0, marginRight: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               <Text style={[styles.cardTitle, { color: colors.text, flexShrink: 1 }]} numberOfLines={1}>
                 {challenge.title}
               </Text>
+              {challenge.type === 'weekly' && (
+                <View
+                  style={{
+                    paddingHorizontal: 7,
+                    paddingVertical: 2,
+                    borderRadius: 8,
+                    backgroundColor: 'rgba(59, 130, 246, 0.16)',
+                    borderWidth: 1,
+                    borderColor: 'rgba(59, 130, 246, 0.3)',
+                  }}
+                >
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#3b82f6' }}>
+                    SEMANAL
+                  </Text>
+                </View>
+              )}
               {isCompleted && <CheckCircle2 size={16} color={colors.tint} />}
             </View>
             <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>

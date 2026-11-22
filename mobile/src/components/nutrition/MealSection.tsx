@@ -37,6 +37,9 @@ interface MealSectionProps {
   onCopyMeal?: (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => void;
   onScanBarcode?: () => void;
   isTourTarget?: boolean;
+  yesterdayCount?: number;
+  onRepeatYesterday?: () => void;
+  isRepeatingYesterday?: boolean;
 }
 
 export const MealSection: React.FC<MealSectionProps> = ({
@@ -52,6 +55,9 @@ export const MealSection: React.FC<MealSectionProps> = ({
   onCopyMeal,
   onScanBarcode,
   isTourTarget = false,
+  yesterdayCount = 0,
+  onRepeatYesterday,
+  isRepeatingYesterday = false,
 }) => {
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
@@ -317,25 +323,52 @@ export const MealSection: React.FC<MealSectionProps> = ({
               ]}
             >
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>Sin registros</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  try {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  } catch {}
-                  onAddFood();
-                }}
-                style={[
-                  styles.emptyAddBtn,
-                  {
-                    backgroundColor: colors.tint + '18',
-                    borderColor: colors.tint + '30',
-                  },
-                ]}
-                activeOpacity={0.7}
-              >
-                <Plus size={14} color={colors.tint} />
-                <Text style={[styles.emptyAddText, { color: colors.tint }]}>Añadir Comida</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 }}>
+                {yesterdayCount > 0 && onRepeatYesterday && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      try {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      } catch {}
+                      onRepeatYesterday();
+                    }}
+                    disabled={isRepeatingYesterday}
+                    style={[
+                      styles.emptyAddBtn,
+                      {
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                        borderColor: colors.border,
+                        opacity: isRepeatingYesterday ? 0.5 : 1,
+                      },
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <Copy size={13} color={colors.tint} />
+                    <Text style={[styles.emptyAddText, { color: colors.text }]}>
+                      Repetir ayer ({yesterdayCount})
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  onPress={() => {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch {}
+                    onAddFood();
+                  }}
+                  style={[
+                    styles.emptyAddBtn,
+                    {
+                      backgroundColor: colors.tint + '18',
+                      borderColor: colors.tint + '30',
+                    },
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <Plus size={14} color={colors.tint} />
+                  <Text style={[styles.emptyAddText, { color: colors.tint }]}>Añadir Comida</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         </View>

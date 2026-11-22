@@ -21,10 +21,12 @@ import {
   Target,
   ChevronRight,
   Sparkles,
+  Copy,
 } from 'lucide-react-native';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import GlobalHeader from '@/components/GlobalHeader';
 import { AndroidHeaderBlurTarget } from '@/components/AndroidHeaderBlur';
 import { TourTarget } from '@/components/tutorials/TourTarget';
@@ -96,6 +98,106 @@ export default function NutritionScreen() {
   const [mealGroupToDelete, setMealGroupToDelete] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [yesterdayLogs, setYesterdayLogs] = useState<FoodLogItem[]>([]);
+  const [isRepeatingYesterday, setIsRepeatingYesterday] = useState(false);
+
+  const previousDateStr = useMemo(() => {
+    const parsed = new Date(`${selectedDate}T12:00:00`);
+    if (Number.isNaN(parsed.getTime())) return null;
+    parsed.setDate(parsed.getDate() - 1);
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }, [selectedDate]);
+
+  useEffect(() => {
+    if (!previousDateStr) {
+      setYesterdayLogs([]);
+      return undefined;
+    }
+    let cancelled = false;
+    nutritionService
+      .getNutritionLogsByDate(previousDateStr)
+      .then((res: any) => {
+        if (cancelled) return;
+        setYesterdayLogs(Array.isArray(res?.nutrition) ? res.nutrition : []);
+      })
+      .catch(() => {
+        if (!cancelled) setYesterdayLogs([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [previousDateStr]);
+
+  const yesterdaySummary = useMemo(() => {
+    const byMeal: Record<'breakfast' | 'lunch' | 'dinner' | 'snack', FoodLogItem[]> = {
+      breakfast: [],
+      lunch: [],
+      dinner: [],
+      snack: [],
+    };
+    let calories = 0;
+    let protein = 0;
+    yesterdayLogs.forEach((log: any) => {
+      if (byMeal[log.meal_type as keyof typeof byMeal]) {
+        byMeal[log.meal_type as keyof typeof byMeal].push(log);
+      }
+      calories += Number(log.calories) || 0;
+      protein += Number(log.protein_g) || 0;
+    });
+    return { byMeal, calories, protein };
+  }, [yesterdayLogs]);
+
+  const handleQuickRepeatYesterday = async (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack' | null = null) => {
+    const sourceLogs = mealType ? (yesterdaySummary.byMeal[mealType] || []) : yesterdayLogs;
+    if (sourceLogs.length === 0 || isRepeatingYesterday) return;
+    setIsRepeatingYesterday(true);
+    try {
+      const results = await Promise.allSettled(
+        sourceLogs.map((log: any) =>
+          nutritionService.addFoodLog({
+            description: log.description,
+            calories: log.calories,
+            protein_g: log.protein_g,
+            carbs_g: log.carbs_g,
+            fats_g: log.fats_g,
+            sugars_g: log.sugars_g ?? log.sugar_g,
+            weight_g: log.weight_g,
+            image_url: log.image_url,
+            calories_per_100g: log.calories_per_100g,
+            protein_per_100g: log.protein_per_100g,
+            carbs_per_100g: log.carbs_per_100g,
+            fat_per_100g: log.fat_per_100g,
+            sugars_per_100g: log.sugars_per_100g,
+            log_date: selectedDate,
+            meal_type: mealType || log.meal_type,
+          })
+        )
+      );
+
+      results.forEach((res) => {
+        if (res.status === 'fulfilled' && res.value?.gamification && addGamificationEvents) {
+          addGamificationEvents(res.value.gamification);
+        }
+      });
+
+      const copiedCount = results.filter((r) => r.status === 'fulfilled').length;
+      if (copiedCount > 0) {
+        await fetchDataForDate(selectedDate);
+        if (fetchInitialData) fetchInitialData();
+        const label = mealType ? mealLabels[mealType].toLowerCase() : 'el día completo';
+        useAppStore.getState().showToast?.(`Copiados ${copiedCount} alimentos de ayer a ${label}.`);
+      } else {
+        Alert.alert('Error', 'No se pudieron copiar los alimentos de ayer.');
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'No se pudo repetir el registro de ayer.');
+    } finally {
+      setIsRepeatingYesterday(false);
+    }
+  };
 
   // Initial Load & On Date change
   useEffect(() => {
@@ -553,6 +655,72 @@ export default function NutritionScreen() {
             onPress={() => setShowCreatineModal(true)}
           />
 
+          {/* Banner Repetir Día de Ayer (Día 2 en 5 segundos) */}
+          {nutritionLog.length === 0 && yesterdayLogs.length > 0 && (
+            <View
+              style={{
+                borderRadius: 22,
+                borderWidth: 1,
+                borderColor: colors.tint + '44',
+                backgroundColor: colors.tint + '14',
+                padding: 16,
+                marginBottom: 16,
+                gap: 12,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+                <View
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    backgroundColor: colors.tint + '22',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Copy size={18} color={colors.tint} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '900', color: colors.tint, letterSpacing: 0.5, marginBottom: 2 }}>
+                    REGISTRO RÁPIDO EN 1 TOQUE
+                  </Text>
+                  <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text }}>
+                    Repite tus {yesterdayLogs.length} comidas de ayer
+                  </Text>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                    {Math.round(yesterdaySummary.calories).toLocaleString('es-ES')} kcal · {Math.round(yesterdaySummary.protein)}g de proteína listos en segundos.
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => handleQuickRepeatYesterday(null)}
+                disabled={isRepeatingYesterday}
+                activeOpacity={0.85}
+                style={{
+                  backgroundColor: colors.tint,
+                  borderRadius: 14,
+                  paddingVertical: 11,
+                  paddingHorizontal: 16,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  opacity: isRepeatingYesterday ? 0.6 : 1,
+                }}
+              >
+                {isRepeatingYesterday ? (
+                  <ActivityIndicator size="small" color={getContrastTextColor(colors.tint)} />
+                ) : (
+                  <Copy size={15} color={getContrastTextColor(colors.tint)} />
+                )}
+                <Text style={{ fontSize: 13, fontWeight: '800', color: getContrastTextColor(colors.tint) }}>
+                  Repetir día de ayer
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* 4 Meal Sections with Copy feature */}
           {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(mealKey => (
             <MealSection
@@ -562,6 +730,9 @@ export default function NutritionScreen() {
               totalCalories={mealTotals[mealKey] || 0}
               logs={meals[mealKey]}
               isTourTarget={mealKey === 'breakfast'}
+              yesterdayCount={yesterdaySummary.byMeal[mealKey]?.length || 0}
+              onRepeatYesterday={() => handleQuickRepeatYesterday(mealKey)}
+              isRepeatingYesterday={isRepeatingYesterday}
               onAddFood={() => setModal({ type: 'food', data: { mealType: mealKey } })}
               onScanBarcode={() => setModal({ type: 'food', data: { mealType: mealKey, initialScan: true } })}
               onEditFood={item => setModal({ type: 'food', data: { ...item, mealType: mealKey } })}

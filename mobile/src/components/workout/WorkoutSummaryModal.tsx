@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   ArrowRight,
   Share2,
+  Target,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -61,6 +62,62 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
       totalSetsCount += 1;
     });
   });
+
+  const nextSessionTarget = (() => {
+    let bestCandidate: { name: string; bestWeight: number; bestReps: number; score: number } | null = null;
+    (workoutData.details || []).forEach((ex: any) => {
+      const sets = Array.isArray(ex?.setsDone) ? ex.setsDone : [];
+      const validSets = sets.filter(
+        (s: any) => !(s?.is_warmup === true || s?.is_warmup === 'true') && (parseInt(s?.reps, 10) || 0) > 0
+      );
+      const effectiveSets = validSets.length > 0 ? validSets : sets.filter((s: any) => (parseInt(s?.reps, 10) || 0) > 0);
+      if (effectiveSets.length === 0) return;
+
+      let bestWeight = 0;
+      let bestReps = 0;
+      effectiveSets.forEach((s: any) => {
+        const w = parseFloat(s.weight_kg) || 0;
+        const r = parseInt(s.reps, 10) || 0;
+        if (w > bestWeight || (w === bestWeight && r > bestReps)) {
+          bestWeight = w;
+          bestReps = r;
+        }
+      });
+
+      const score = bestWeight > 0 ? bestWeight * 100 + bestReps : bestReps;
+      if (!bestCandidate || score > bestCandidate.score) {
+        bestCandidate = {
+          name: ex.exerciseName || ex.name || 'Tu ejercicio principal',
+          bestWeight: Math.round(bestWeight * 10) / 10,
+          bestReps,
+          score,
+        };
+      }
+    });
+
+    if (!bestCandidate) return null;
+    const picked = bestCandidate as { name: string; bestWeight: number; bestReps: number; score: number };
+
+    if (picked.bestWeight > 0 && picked.bestReps >= 12) {
+      const nextWeight = Math.round((picked.bestWeight + 2.5) * 10) / 10;
+      return {
+        headline: `${picked.name}: sube a ${nextWeight} kg`,
+        detail: `Hoy completaste ${picked.bestWeight} kg × ${picked.bestReps} reps. En tu próxima sesión busca ${nextWeight} kg × ${Math.max(8, picked.bestReps - 2)}-${picked.bestReps} reps.`,
+      };
+    }
+
+    if (picked.bestWeight > 0) {
+      return {
+        headline: `${picked.name}: busca ${picked.bestWeight} kg × ${picked.bestReps + 1} reps`,
+        detail: `Tu marca base hoy quedó en ${picked.bestWeight} kg × ${picked.bestReps} reps. Sumar +1 rep la próxima vez ya es progreso real.`,
+      };
+    }
+
+    return {
+      headline: `${picked.name}: apunta a ${picked.bestReps + 1} reps`,
+      detail: `Hoy cerraste con ${picked.bestReps} repeticiones. Intenta sumar al menos +1 rep en tu siguiente sesión.`,
+    };
+  })();
 
   const handleFinish = () => {
     try {
@@ -201,6 +258,49 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
                 <Text style={[styles.statLabel, { color: colors.textSecondary }]}>SERIES</Text>
               </View>
             </View>
+
+            {/* Objetivo concreto para la próxima sesión */}
+            {nextSessionTarget && (
+              <View
+                style={{
+                  width: '100%',
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: colors.tint + '44',
+                  backgroundColor: colors.tint + '14',
+                  padding: 14,
+                  marginBottom: 16,
+                  flexDirection: 'row',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                }}
+              >
+                <View
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 12,
+                    backgroundColor: colors.tint + '24',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginTop: 2,
+                  }}
+                >
+                  <Target size={18} color={colors.tint} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '900', color: colors.tint, letterSpacing: 0.6, marginBottom: 3 }}>
+                    OBJETIVO PARA TU PRÓXIMA SESIÓN
+                  </Text>
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: colors.text, marginBottom: 3 }}>
+                    {nextSessionTarget.headline}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 17 }}>
+                    {nextSessionTarget.detail}
+                  </Text>
+                </View>
+              </View>
+            )}
 
             {/* Botón Compartir Tarjeta PNG */}
             <TouchableOpacity

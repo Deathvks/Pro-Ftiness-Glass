@@ -64,6 +64,7 @@ import { enrichGymWithMedia } from '@/utils/gymMedia';
 import { Image as ExpoImage } from 'expo-image';
 import * as nutritionService from '@/services/nutritionService';
 import * as userService from '@/services/userService';
+import apiClient from '@/services/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import LevelBadge from '@/components/LevelBadge';
@@ -220,6 +221,53 @@ export default function Dashboard() {
   const [showGymModal, setShowGymModal] = useState(false);
   const [showDiscardWorkoutModal, setShowDiscardWorkoutModal] = useState(false);
   const [isSavingWater, setIsSavingWater] = useState(false);
+  const [microChallenges, setMicroChallenges] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!userProfile?.id) return;
+    let isMounted = true;
+    apiClient('/gamification/challenges')
+      .then((data: any) => {
+        if (isMounted && Array.isArray(data)) {
+          setMicroChallenges(data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [userProfile?.id, workoutLog?.length, nutritionLog?.length]);
+
+  const activeMicroChallenge = useMemo(() => {
+    const list = Array.isArray(microChallenges) ? microChallenges : [];
+    const pending = list.filter((c: any) => c && !c.completed);
+    if (pending.length === 0) return null;
+
+    const priorityIds = [
+      'train_2_workouts_week',
+      'nutri_3_days_week',
+      'daily_workout',
+      'daily_5_meals',
+      'daily_protein',
+      'daily_calories',
+      'train_3_workouts_week',
+      'daily_water',
+      'social_share_workout',
+      'nutri_save_favorite',
+    ];
+
+    const scoreChallenge = (c: any) => {
+      const hasProgress = (Number(c.progress) || 0) > 0 ? 0 : 100;
+      const idx = priorityIds.indexOf(c.id);
+      const priorityScore = idx === -1 ? 50 : idx;
+      const typeScore = c.type === 'weekly' ? 0 : c.type === 'daily' ? 10 : 20;
+      return hasProgress + priorityScore + typeScore;
+    };
+
+    return [...pending].sort((a, b) => scoreChallenge(a) - scoreChallenge(b))[0] || null;
+  }, [microChallenges]);
+
+  const isZeroDayUser = workoutLog.length === 0 && nutritionLog.length === 0 && bodyWeightLog.length === 0;
 
   // Global Toast Hook (Rendered at Root above all headers and modals)
   const { showToast } = useToast();
@@ -778,7 +826,105 @@ export default function Dashboard() {
         </View>
       )}
 
-      {/* 4. RESUMEN SEMANAL & RÉCORD (2 CARDS) */}
+      {/* 4. PRIMER PASO HOY (DÍA 0) o RESUMEN SEMANAL & RÉCORD */}
+      {isZeroDayUser ? (
+        <View
+          style={[
+            styles.glassCardBase,
+            cardSurface,
+            {
+              padding: 18,
+              marginBottom: 20,
+              borderColor: colors.tint + '44',
+              borderWidth: 1,
+              backgroundColor: hasThemedSurface ? colors.card : colors.tint + '10',
+              gap: 12,
+            },
+          ]}
+        >
+          {useGlass && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+            />
+          )}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 14,
+                backgroundColor: colors.tint + '22',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Sparkles size={20} color={colors.tint} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 10, fontWeight: '900', color: colors.tint, letterSpacing: 0.5 }}>
+                TU PRIMER PASO HOY
+              </Text>
+              <Text style={{ fontSize: 16, fontWeight: '900', color: colors.text }}>
+                Empieza en menos de 1 minuto
+              </Text>
+            </View>
+          </View>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 18 }}>
+            {routines.length > 0
+              ? `Ya tienes lista tu rutina "${routines[0].name}". Inicia tu primera sesión o registra tu primera comida.`
+              : 'Crea tu primera rutina, importa tus entrenos o registra tu primera comida para activar el progreso inteligente.'}
+          </Text>
+          <View style={{ gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => {
+                if (routines.length > 0 && startWorkout) {
+                  startWorkout(routines[0]);
+                  router.push('/workout');
+                } else {
+                  router.push('/(tabs)/routines' as any);
+                }
+              }}
+              activeOpacity={0.85}
+              style={{
+                backgroundColor: colors.tint,
+                borderRadius: 14,
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              <Play size={14} color={tintContrastText} fill={tintContrastText} />
+              <Text style={{ fontSize: 13, fontWeight: '900', color: tintContrastText }}>
+                {routines.length > 0 ? 'Empezar mi primer entreno' : 'Ver mis rutinas'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/nutrition' as any)}
+              activeOpacity={0.85}
+              style={{
+                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                borderRadius: 14,
+                paddingVertical: 11,
+                paddingHorizontal: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              <Utensils size={14} color={colors.tint} />
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>
+                Registrar primera comida
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
       <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
         {/* Resumen Semanal */}
         <TouchableOpacity
@@ -873,6 +1019,148 @@ export default function Dashboard() {
           </View>
         </TouchableOpacity>
       </View>
+      )}
+
+      {/* MICRO-RETO ACTIVO */}
+      {activeMicroChallenge && (
+        <View
+          style={[
+            styles.glassCardBase,
+            cardSurface,
+            {
+              padding: 16,
+              marginBottom: 18,
+              borderColor: colors.tint + '40',
+              borderWidth: 1,
+              backgroundColor: hasThemedSurface ? colors.card : colors.tint + '0D',
+              gap: 12,
+            },
+          ]}
+        >
+          {useGlass && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+            />
+          )}
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+            <View
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                backgroundColor: colors.tint + '20',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Trophy size={18} color={colors.tint} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 3 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: colors.tint + '22' }}>
+                    <Text style={{ fontSize: 10, fontWeight: '900', color: colors.tint }}>
+                      {activeMicroChallenge.type === 'weekly'
+                        ? 'RETO SEMANAL'
+                        : activeMicroChallenge.type === 'daily'
+                        ? 'MICRO-RETO DE HOY'
+                        : 'RETO ACTIVO'}
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 11, fontWeight: '900', color: colors.tint }}>
+                    +{activeMicroChallenge.xp} XP
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 11, fontWeight: '800', color: colors.textSecondary }}>
+                  {activeMicroChallenge.progress}/{activeMicroChallenge.target}
+                </Text>
+              </View>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text }}>
+                {activeMicroChallenge.title}
+              </Text>
+              <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2, lineHeight: 17 }}>
+                {activeMicroChallenge.desc}
+              </Text>
+              <View
+                style={{
+                  marginTop: 10,
+                  height: 6,
+                  width: '100%',
+                  borderRadius: 4,
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                  overflow: 'hidden',
+                }}
+              >
+                <View
+                  style={{
+                    height: '100%',
+                    borderRadius: 4,
+                    backgroundColor: colors.tint,
+                    width: `${Math.min(
+                      100,
+                      Math.round(
+                        ((Number(activeMicroChallenge.progress) || 0) /
+                          Math.max(1, Number(activeMicroChallenge.target) || 1)) *
+                          100
+                      )
+                    )}%`,
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => {
+                const id = activeMicroChallenge.id || '';
+                if (id.startsWith('nutri_') || ['daily_5_meals', 'daily_calories', 'daily_protein', 'daily_water'].includes(id)) {
+                  router.push('/(tabs)/nutrition' as any);
+                } else if (id.startsWith('social_')) {
+                  router.push('/(tabs)/social' as any);
+                } else {
+                  router.push('/(tabs)/routines' as any);
+                }
+              }}
+              activeOpacity={0.85}
+              style={{
+                flex: 1,
+                backgroundColor: colors.tint,
+                borderRadius: 12,
+                paddingVertical: 10,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 12, fontWeight: '900', color: tintContrastText }}>
+                {(() => {
+                  const id = activeMicroChallenge.id || '';
+                  if (id.startsWith('nutri_') || ['daily_5_meals', 'daily_calories', 'daily_protein', 'daily_water'].includes(id)) {
+                    return 'Ir a nutrición';
+                  }
+                  if (id.startsWith('social_')) return 'Ir al muro';
+                  return 'Ir a entrenar';
+                })()}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push('/challenges' as any)}
+              activeOpacity={0.85}
+              style={{
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+                borderRadius: 12,
+                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>Ver retos</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* 5. DASHBOARD INSIGHTS */}
       <DashboardInsights workoutLog={workoutLog} bodyWeightLog={bodyWeightLog} colors={colors} />

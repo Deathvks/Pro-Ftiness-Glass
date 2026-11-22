@@ -14,9 +14,105 @@ import { useColorScheme as useDeviceColorScheme } from '@/hooks/use-color-scheme
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as userService from '@/services/userService';
+import { createRoutine } from '@/services/routineService';
 import Animated, { FadeInRight, FadeInLeft, FadeOut } from 'react-native-reanimated';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { getContrastColor } from '@/utils/colorUtils';
+
+const STARTER_SPLIT_CONFIG: Record<string, Array<{ name: string; description: string; keywords: string[]; sets: number; reps: string }>> = {
+  lose: [
+    {
+      name: 'Día 1: Circuito Metabólico A',
+      description: 'Alta intensidad enfocada en tren inferior y cardio.',
+      keywords: ['Squat', 'Sentadilla', 'Zancada', 'Lunge', 'Burpee', 'Jumping', 'Comba'],
+      sets: 4,
+      reps: '15-20',
+    },
+    {
+      name: 'Día 2: Circuito Metabólico B',
+      description: 'Enfoque en tren superior y core para quemar calorías.',
+      keywords: ['Push Up', 'Flexiones', 'Plank', 'Plancha', 'Row', 'Remo', 'Mountain', 'Escalador'],
+      sets: 4,
+      reps: '12-15',
+    },
+    {
+      name: 'Día 3: Full Body Burn',
+      description: 'Rutina de cuerpo completo para maximizar el gasto energético semanal.',
+      keywords: ['Deadlift', 'Peso Muerto', 'Press', 'Thruster', 'Swing', 'Kettlebell', 'Cardio'],
+      sets: 3,
+      reps: '15',
+    },
+  ],
+  gain: [
+    {
+      name: 'Día 1: Empuje (Push)',
+      description: 'Pecho, Hombros y Tríceps. Enfoque en fuerza e hipertrofia.',
+      keywords: ['Bench Press', 'Press de Banca', 'Overhead', 'Militar', 'Push Up', 'Flexiones', 'Triceps', 'Lateral', 'Aperturas', 'Fly'],
+      sets: 3,
+      reps: '8-12',
+    },
+    {
+      name: 'Día 2: Tracción (Pull)',
+      description: 'Espalda y Bíceps. Construcción de la cadena posterior.',
+      keywords: ['Pull Up', 'Dominada', 'Row', 'Remo', 'Deadlift', 'Peso Muerto', 'Curl', 'Jalón', 'Lat'],
+      sets: 3,
+      reps: '8-12',
+    },
+    {
+      name: 'Día 3: Pierna (Legs)',
+      description: 'Entrenamiento completo de tren inferior.',
+      keywords: ['Squat', 'Sentadilla', 'Leg Press', 'Prensa', 'Lunge', 'Zancada', 'Extension', 'Curl Femoral', 'Calf', 'Gemelo'],
+      sets: 4,
+      reps: '10-12',
+    },
+  ],
+  recomp: [
+    {
+      name: 'Día 1: Torso Pesado',
+      description: 'Fuerza para la parte superior del cuerpo.',
+      keywords: ['Press de Banca', 'Bench', 'Row', 'Remo', 'Militar', 'Overhead', 'Pull Up', 'Dominada'],
+      sets: 4,
+      reps: '6-8',
+    },
+    {
+      name: 'Día 2: Pierna Pesada',
+      description: 'Fuerza y potencia para el tren inferior.',
+      keywords: ['Squat', 'Sentadilla', 'Deadlift', 'Peso Muerto', 'Prensa', 'Leg Press', 'Hip Thrust'],
+      sets: 4,
+      reps: '6-8',
+    },
+    {
+      name: 'Día 3: Full Body Hipertrofia',
+      description: 'Volumen y bombeo para todo el cuerpo.',
+      keywords: ['Curl', 'Extension', 'Lateral', 'Fly', 'Aperturas', 'Zancada', 'Lunge', 'Face Pull'],
+      sets: 3,
+      reps: '12-15',
+    },
+  ],
+  maintain: [
+    {
+      name: 'Día 1: Full Body A',
+      description: 'Ejercicios compuestos básicos.',
+      keywords: ['Squat', 'Sentadilla', 'Bench', 'Press de Banca', 'Row', 'Remo'],
+      sets: 3,
+      reps: '10',
+    },
+    {
+      name: 'Día 2: Movilidad y Core',
+      description: 'Recuperación activa, abdominales y estabilidad.',
+      keywords: ['Plank', 'Plancha', 'Crunch', 'Abdominal', 'Stretch', 'Estiramiento', 'Yoga', 'Bird Dog'],
+      sets: 3,
+      reps: '15',
+    },
+    {
+      name: 'Día 3: Full Body B',
+      description: 'Variaciones de ejercicios compuestos.',
+      keywords: ['Deadlift', 'Peso Muerto', 'Militar', 'Press', 'Lunge', 'Zancada', 'Dominada', 'Pull Up'],
+      sets: 3,
+      reps: '10',
+    },
+  ],
+};
 
 const ACTIVITY_LEVELS = [
   { v: 1.2, t: 'Sedentario', d: 'Poco o nada de ejercicio.', icon: Coffee },
@@ -163,13 +259,75 @@ export default function Onboarding() {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      let currentWeight = parseFloat(formData.weight);
-      let safeGoal = formData.goal;
+      const currentWeight = parseFloat(formData.weight);
+      const rawGoal = formData.goal || 'maintain';
+      const safeGoal = rawGoal === 'recomp' ? 'maintain' : rawGoal;
       let safeTargetWeight = currentWeight;
 
       if (safeGoal === 'lose') safeTargetWeight = currentWeight - 5;
       else if (safeGoal === 'gain') safeTargetWeight = currentWeight + 5;
-      
+
+      // Generar plan inicial de 3 rutinas acorde al objetivo
+      try {
+        const allExercises: any[] = (await (useAppStore.getState() as any).getOrFetchAllExercises?.()) || [];
+        const splitTemplates = STARTER_SPLIT_CONFIG[rawGoal] || STARTER_SPLIT_CONFIG.maintain;
+        let createdCount = 0;
+
+        if (Array.isArray(allExercises) && allExercises.length > 0) {
+          for (const routineConfig of splitTemplates) {
+            const dayExercises: any[] = [];
+            const foundIds = new Set();
+
+            routineConfig.keywords.forEach((kw) => {
+              const kwLower = kw.toLowerCase();
+              const match = allExercises.find(
+                (ex: any) =>
+                  !foundIds.has(ex.id) &&
+                  (ex.name?.toLowerCase().includes(kwLower) || ex.englishName?.toLowerCase().includes(kwLower))
+              );
+              if (match) {
+                foundIds.add(match.id);
+                dayExercises.push({
+                  exercise_id: match.id,
+                  name: match.name,
+                  sets: routineConfig.sets,
+                  reps: routineConfig.reps,
+                  weight: 0,
+                  rest_seconds: 60,
+                });
+              }
+            });
+
+            if (dayExercises.length > 0) {
+              try {
+                await createRoutine({
+                  name: routineConfig.name,
+                  description: routineConfig.description,
+                  folder: 'Plan Inicial',
+                  exercises: dayExercises.slice(0, 7),
+                  is_public: false,
+                });
+                createdCount++;
+              } catch (routineErr: any) {
+                if (routineErr?.status === 409) createdCount++;
+              }
+            }
+          }
+        }
+
+        if (createdCount === 0) {
+          await createRoutine({
+            name: `Plan Base: ${getGoalLabel(rawGoal)}`,
+            description: 'Rutina inicial. ¡Añade tus ejercicios favoritos!',
+            folder: 'Plan Inicial',
+            exercises: [],
+            is_public: false,
+          }).catch(() => {});
+        }
+      } catch (planErr) {
+        console.warn('Error generando plan inicial en onboarding mobile:', planErr);
+      }
+
       const cleanProfileData = {
         gender: formData.gender,
         age: parseInt(formData.age, 10),
@@ -187,6 +345,8 @@ export default function Onboarding() {
       useAppStore.setState(state => ({
         userProfile: { ...state.userProfile, ...cleanProfileData }
       }));
+
+      void (useAppStore.getState() as any).fetchInitialData?.();
 
       router.replace('/(tabs)');
     } catch (e: any) {

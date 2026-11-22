@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { Flame, Scale, Dumbbell, TrendingUp } from 'lucide-react-native';
+import { Flame, Scale, Dumbbell, TrendingUp, Target } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { getAppleCardSurfaceStyle, isAtmosphericTheme, shouldUseContentGlass } from '@/constants/theme';
@@ -23,6 +23,55 @@ export default function DashboardInsights({ workoutLog, bodyWeightLog, colors }:
     };
 
     if (workoutLog && workoutLog.length > 0) {
+      const strengthLogs = workoutLog.filter(
+        (l: any) => Array.isArray(l?.WorkoutLogDetails) && l.WorkoutLogDetails.length > 0
+      );
+      if (strengthLogs.length > 0 && strengthLogs.length < 3) {
+        let bestEx: { name: string; weight: number; reps: number; score: number } | null = null;
+        strengthLogs[0].WorkoutLogDetails.forEach((detail: any) => {
+          const exName = (detail?.exercise_name || '').trim();
+          if (!exName) return;
+          const sets = Array.isArray(detail?.WorkoutLogSets) ? detail.WorkoutLogSets : [];
+          const validSets = sets.filter(
+            (s: any) => !(s?.is_warmup === true || s?.is_warmup === 'true' || s?.is_warmup === 1) && (parseInt(s?.reps, 10) || 0) > 0
+          );
+          const effectiveSets = validSets.length > 0 ? validSets : sets.filter((s: any) => (parseInt(s?.reps, 10) || 0) > 0);
+          if (effectiveSets.length === 0) return;
+
+          let bestW = 0;
+          let bestR = 0;
+          effectiveSets.forEach((s: any) => {
+            const w = parseFloat(s.weight_kg) || 0;
+            const r = parseInt(s.reps, 10) || 0;
+            if (w > bestW || (w === bestW && r > bestR)) {
+              bestW = w;
+              bestR = r;
+            }
+          });
+          const score = bestW > 0 ? bestW * 100 + bestR : bestR;
+          if (!bestEx || score > bestEx.score) {
+            bestEx = { name: exName, weight: Math.round(bestW * 10) / 10, reps: bestR, score };
+          }
+        });
+
+        if (bestEx) {
+          const picked = bestEx as { name: string; weight: number; reps: number; score: number };
+          const targetDesc =
+            picked.weight > 0 && picked.reps >= 12
+              ? `Sube a ${Math.round((picked.weight + 2.5) * 10) / 10} kg en tu próxima sesión (${strengthLogs.length}/3 sesiones calibradas).`
+              : picked.weight > 0
+              ? `Busca ${picked.weight} kg × ${picked.reps + 1} reps (+1 rep) en tu siguiente entreno (${strengthLogs.length}/3 calibradas).`
+              : `Intenta superar tus ${picked.reps} reps llegando a ${picked.reps + 1} reps (${strengthLogs.length}/3 calibradas).`;
+          alerts.push({
+            id: 'next-session-target',
+            icon: Target,
+            title: `Meta Día 2 · ${picked.name}`,
+            message: targetDesc,
+            color: colors.tint,
+          });
+        }
+      }
+
       const daysSinceLastWorkout = getDaysDiff(workoutLog[0].workout_date);
       if (daysSinceLastWorkout > 3) {
         alerts.push({
