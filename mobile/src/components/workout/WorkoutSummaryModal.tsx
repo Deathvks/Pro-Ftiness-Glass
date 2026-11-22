@@ -1,5 +1,5 @@
 /* mobile/src/components/workout/WorkoutSummaryModal.tsx */
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -11,6 +11,7 @@ import {
   ScrollView,
   Pressable,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import {
@@ -22,11 +23,14 @@ import {
   ArrowRight,
   Share2,
   Target,
+  Bell,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { formatWorkoutTime } from '@/utils/workoutHelpers';
+import { getContrastTextColor } from '@/utils/colorUtils';
+import * as userService from '@/services/userService';
 import { WorkoutShareCard } from '@/components/workout/WorkoutShareCard';
 import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 
@@ -47,6 +51,69 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const shareCardRef = useRef<React.ComponentRef<typeof View>>(null);
   const [isSharing, setIsSharing] = useState(false);
+  const [showReminderOffer, setShowReminderOffer] = useState(false);
+  const [selectedOfferHour, setSelectedOfferHour] = useState<number>(() =>
+    Number(userProfile?.training_reminder_hour ?? 18)
+  );
+  const [savingReminderOffer, setSavingReminderOffer] = useState(false);
+
+  const reminderEligible = Boolean(
+    visible &&
+      userProfile?.id &&
+      !(userProfile.email_marketing_consent && userProfile.push_notifications)
+  );
+
+  useEffect(() => {
+    if (!reminderEligible || !userProfile?.id) return undefined;
+    let cancelled = false;
+    const cooldownKey = `pfg_notif_offer_dismiss_training_${userProfile.id}`;
+    AsyncStorage.getItem(cooldownKey)
+      .then(raw => {
+        if (cancelled) return;
+        const ts = Number(raw || '0');
+        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+        if (!ts || Date.now() - ts >= sevenDaysMs) {
+          setShowReminderOffer(true);
+        } else {
+          setShowReminderOffer(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setShowReminderOffer(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [reminderEligible, userProfile?.id]);
+
+  const handleAcceptReminderOffer = async () => {
+    if (savingReminderOffer || !userProfile) return;
+    setSavingReminderOffer(true);
+    try {
+      const payload = {
+        email_marketing_consent: true,
+        push_notifications: true,
+        training_reminder_hour: selectedOfferHour,
+      };
+      await userService.updateUserProfile(payload);
+      useAppStore.setState({ userProfile: { ...userProfile, ...payload } } as any);
+      useAppStore.getState().showToast?.(
+        `Recordatorios activados a las ${String(selectedOfferHour).padStart(2, '0')}:00`
+      );
+      setShowReminderOffer(false);
+    } catch {
+      Alert.alert('Error', 'No se pudieron activar los recordatorios.');
+    } finally {
+      setSavingReminderOffer(false);
+    }
+  };
+
+  const handleDismissReminderOffer = () => {
+    if (userProfile?.id) {
+      AsyncStorage.setItem(`pfg_notif_offer_dismiss_training_${userProfile.id}`, String(Date.now())).catch(() => {});
+    }
+    setShowReminderOffer(false);
+  };
 
   if (!visible || !workoutData) return null;
 
@@ -298,6 +365,108 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
                   <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 17 }}>
                     {nextSessionTarget.detail}
                   </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Oferta de recordatorio tras el entreno */}
+            {reminderEligible && showReminderOffer && (
+              <View
+                style={{
+                  width: '100%',
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                  padding: 14,
+                  marginBottom: 16,
+                  gap: 10,
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 10,
+                      backgroundColor: colors.tint + '20',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Bell size={16} color={colors.tint} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: colors.text }}>
+                      ¿Te avisamos para tu próximo entreno?
+                    </Text>
+                    <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                      Elige hora y activa push + email (puedes cambiarlo luego).
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {[9, 12, 16, 18, 20, 21].map(hour => {
+                    const active = selectedOfferHour === hour;
+                    return (
+                      <TouchableOpacity
+                        key={hour}
+                        onPress={() => setSelectedOfferHour(hour)}
+                        style={{
+                          paddingHorizontal: 10,
+                          paddingVertical: 5,
+                          borderRadius: 10,
+                          borderWidth: 1,
+                          backgroundColor: active ? colors.tint : 'transparent',
+                          borderColor: active ? colors.tint : colors.border,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontWeight: '800',
+                            color: active ? getContrastTextColor(colors.tint) : colors.text,
+                          }}
+                        >
+                          {`${String(hour).padStart(2, '0')}:00`}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <TouchableOpacity
+                    onPress={handleAcceptReminderOffer}
+                    disabled={savingReminderOffer}
+                    style={{
+                      flex: 1,
+                      backgroundColor: colors.tint,
+                      borderRadius: 12,
+                      paddingVertical: 9,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, fontWeight: '800', color: getContrastTextColor(colors.tint) }}>
+                      Activar avisos
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleDismissReminderOffer}
+                    style={{
+                      paddingHorizontal: 14,
+                      borderRadius: 12,
+                      paddingVertical: 9,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textSecondary }}>
+                      Ahora no
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             )}

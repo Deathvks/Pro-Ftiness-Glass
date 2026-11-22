@@ -1,5 +1,5 @@
 /* mobile/src/app/(tabs)/routines.tsx */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -53,7 +53,7 @@ import { getContrastTextColor } from '@/utils/routineHelpers';
 
 export default function RoutinesScreen() {
   const router = useRouter();
-  const { tab } = useLocalSearchParams<{ tab?: string }>();
+  const { tab, openImport } = useLocalSearchParams<{ tab?: string; openImport?: string }>();
   const theme = useAppStore((state) => state.theme);
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
@@ -85,7 +85,17 @@ export default function RoutinesScreen() {
   // Modals state
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
-  const [showDataTransferModal, setShowDataTransferModal] = useState(false);
+  const [showDataTransferModal, setShowDataTransferModal] = useState(
+    () => openImport === '1' || openImport === 'true'
+  );
+
+  useEffect(() => {
+    if (openImport !== '1' && openImport !== 'true') return undefined;
+    const t = setTimeout(() => {
+      setShowDataTransferModal(true);
+    }, 0);
+    return () => clearTimeout(t);
+  }, [openImport]);
   const [sharingRoutine, setSharingRoutine] = useState<any | null>(null);
   const [volumeFilterRoutine, setVolumeFilterRoutine] = useState<any | null>(null);
   const [shareData, setShareData] = useState<any | null>(null);

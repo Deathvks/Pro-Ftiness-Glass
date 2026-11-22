@@ -904,6 +904,25 @@ export default function Dashboard() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
+              onPress={() => router.push({ pathname: '/(tabs)/routines' as any, params: { openImport: '1' } })}
+              activeOpacity={0.85}
+              style={{
+                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                borderRadius: 14,
+                paddingVertical: 11,
+                paddingHorizontal: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              <ListFilter size={14} color={colors.tint} />
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>
+                Importar Hevy / Strong
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               onPress={() => router.push('/(tabs)/nutrition' as any)}
               activeOpacity={0.85}
               style={{

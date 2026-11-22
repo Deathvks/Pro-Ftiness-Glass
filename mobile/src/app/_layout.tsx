@@ -375,9 +375,22 @@ export default function RootLayout() {
     const forceReset = Boolean((userProfile as any).force_password_reset);
     const needsVerify = userProfile.email_verified === false;
     const needsOnboarding = !userProfile.goal && userProfile.role !== 'trainee';
+    const createdRaw = (userProfile as any).created_at || (userProfile as any).createdAt;
+    const createdMs = createdRaw ? new Date(createdRaw).getTime() : NaN;
+    const isAccountMature = Number.isFinite(createdMs) && Date.now() - createdMs >= 24 * 60 * 60 * 1000;
     const hasCompletedFirstWorkout = Array.isArray(workoutLog) && workoutLog.length > 0;
+    const hasEngagedOrReturned = hasCompletedFirstWorkout || isAccountMature;
+    const hasSeenPromoWeb =
+      typeof localStorage !== 'undefined' && localStorage.getItem('has_seen_2fa_promo') === 'true';
 
-    if (!forceReset && !needsVerify && !needsOnboarding && hasCompletedFirstWorkout && !userProfile.two_factor_enabled) {
+    if (
+      !forceReset &&
+      !needsVerify &&
+      !needsOnboarding &&
+      hasEngagedOrReturned &&
+      !hasSeenPromoWeb &&
+      !userProfile.two_factor_enabled
+    ) {
       AsyncStorage.getItem(`two_factor_promo_dismissed_${uid}`)
         .then(val => {
           if (val !== 'true') {
@@ -409,32 +422,74 @@ export default function RootLayout() {
   const themePreference = useAppStore(state => state.themePreference);
   const previewTheme = useAppStore(state => state.themeTest?.name);
   const showWelcomeModal = useAppStore(state => Boolean((state as any).showWelcomeModal));
+  const tourActive = useAppStore(state => Boolean((state as any).tourActive));
+  const cookieConsent = useAppStore(state => (state as any).cookieConsent);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
+  const needsOnboarding = Boolean(
+    isAuthenticated && userProfile && !userProfile.goal && userProfile.role !== 'trainee'
+  );
+  const inAuthOrOnboarding =
+    ['login', 'register', 'forgot-password', 'reset-password', 'onboarding'].includes(segments[0]) ||
+    needsOnboarding;
+  const inWorkoutFlow = ['workout', 'active-cardio', 'two-factor-setup'].includes(segments[0]);
+  const cookieBannerPending = Platform.OS === 'web' && !cookieConsent;
+
   const forceResetVisible = Boolean(
-    isReady && isAuthenticated && (userProfile as any)?.force_password_reset
+    isReady &&
+      isAuthenticated &&
+      (userProfile as any)?.force_password_reset &&
+      !['login', 'register', 'forgot-password', 'reset-password'].includes(segments[0])
   );
   const emailVerifyVisible = Boolean(
     isReady &&
       isAuthenticated &&
       userProfile &&
       !forceResetVisible &&
+      !inAuthOrOnboarding &&
+      !inWorkoutFlow &&
       userProfile.email_verified === false &&
       !dismissedEmailVerify
   );
-  const welcomeVisible = Boolean(showWelcomeModal && !forceResetVisible && !emailVerifyVisible);
+  const welcomeVisible = Boolean(
+    showWelcomeModal &&
+      !forceResetVisible &&
+      !emailVerifyVisible &&
+      !inAuthOrOnboarding &&
+      !inWorkoutFlow &&
+      !cookieBannerPending &&
+      !tourActive
+  );
   const twoFactorVisible = Boolean(
-    show2FAPromo && !forceResetVisible && !emailVerifyVisible && !welcomeVisible
+    show2FAPromo &&
+      !forceResetVisible &&
+      !emailVerifyVisible &&
+      !inAuthOrOnboarding &&
+      !inWorkoutFlow &&
+      !cookieBannerPending &&
+      !welcomeVisible &&
+      !tourActive
   );
   const milestoneVisible = Boolean(
     milestoneLevel !== null &&
       !forceResetVisible &&
       !emailVerifyVisible &&
+      !inAuthOrOnboarding &&
+      !inWorkoutFlow &&
+      !cookieBannerPending &&
       !welcomeVisible &&
-      !twoFactorVisible
+      !twoFactorVisible &&
+      !tourActive
   );
   const isGlobalModalOpen =
-    forceResetVisible || emailVerifyVisible || welcomeVisible || twoFactorVisible || milestoneVisible;
+    forceResetVisible ||
+    emailVerifyVisible ||
+    cookieBannerPending ||
+    welcomeVisible ||
+    twoFactorVisible ||
+    milestoneVisible ||
+    inAuthOrOnboarding ||
+    inWorkoutFlow;
 
   useEffect(() => {
     useAppStore.setState({ isGlobalModalOpen } as any);
@@ -527,6 +582,9 @@ export default function RootLayout() {
             if (userProfile?.id) {
               AsyncStorage.setItem(`two_factor_promo_dismissed_${userProfile.id}`, 'true').catch(() => {});
             }
+            try {
+              localStorage?.setItem('has_seen_2fa_promo', 'true');
+            } catch {}
             setShow2FAPromo(false);
             router.push('/two-factor-setup');
           }}
@@ -534,6 +592,9 @@ export default function RootLayout() {
             if (userProfile?.id) {
               AsyncStorage.setItem(`two_factor_promo_dismissed_${userProfile.id}`, 'true').catch(() => {});
             }
+            try {
+              localStorage?.setItem('has_seen_2fa_promo', 'true');
+            } catch {}
             setShow2FAPromo(false);
           }}
         />

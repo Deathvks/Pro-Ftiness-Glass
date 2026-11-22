@@ -16,6 +16,7 @@ type AdminUser = {
   lastSeen?: string; createdAt?: string; referralCount?: number; latest_device?: string;
   goal?: string; height?: number; age?: number; routineCount?: number; workoutCount?: number; nutritionCount?: number;
   profile_image_url?: string;
+  hasVoluntaryPush?: boolean; hasVoluntaryEmail?: boolean; pushSubCount?: number;
   google_id?: string; discord_id?: string; x_id?: string; github_id?: string; spotify_id?: string; facebook_id?: string;
 };
 const roles = [['user', 'Usuario'], ['trainer', 'Entrenador'], ['admin', 'Administrador']] as const;
@@ -48,10 +49,18 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
   const [now] = useState(Date.now);
   const [level, setLevel] = useState<number>(0);
   const [stage, setStage] = useState('all');
+  const [consentFilter, setConsentFilter] = useState('all');
   const [editor, setEditor] = useState<{ user?: AdminUser; photo?: boolean } | null>(null);
   const { busy, run } = useAdminAction();
-  const funnel = users.filter(user => !['admin', 'trainer', 'entrenador'].includes(user.role) &&
-    (!period || dateValue(user.createdAt) >= now - period * 86_400_000));
+  const regularUsers = users.filter(user => !['admin', 'trainer', 'entrenador'].includes(user.role));
+  const consentStats = {
+    total: regularUsers.length,
+    voluntaryAny: regularUsers.filter(u => Boolean(u.hasVoluntaryPush) || Boolean(u.hasVoluntaryEmail)).length,
+    voluntaryPush: regularUsers.filter(u => Boolean(u.hasVoluntaryPush)).length,
+    voluntaryEmail: regularUsers.filter(u => Boolean(u.hasVoluntaryEmail)).length,
+    onlyMandatory: regularUsers.filter(u => !u.hasVoluntaryPush && !u.hasVoluntaryEmail).length,
+  };
+  const funnel = regularUsers.filter(user => !period || dateValue(user.createdAt) >= now - period * 86_400_000);
   const funnelUsers = new Set(funnel.map(user => user.id));
   const stages: Record<string, (user: AdminUser) => boolean> = {
     profile: user => !user.goal || !(user.height || user.age),
@@ -77,9 +86,16 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
     const deviceGroup = ['app', 'pwa'].includes(platform) ? 'app' : platform === 'mobile' ? 'mobile' : 'web';
     const userLevel = user.level || 1;
     const userRole = user.role === 'entrenador' ? 'trainer' : user.role;
+    const matchesConsent =
+      consentFilter === 'all' ||
+      (consentFilter === 'voluntary_any' && (Boolean(user.hasVoluntaryPush) || Boolean(user.hasVoluntaryEmail))) ||
+      (consentFilter === 'voluntary_push' && Boolean(user.hasVoluntaryPush)) ||
+      (consentFilter === 'voluntary_email' && Boolean(user.hasVoluntaryEmail)) ||
+      (consentFilter === 'only_mandatory' && !user.hasVoluntaryPush && !user.hasVoluntaryEmail);
     return (role === 'all' || userRole === role) && (device === 'all' || deviceGroup === device) &&
       (!level || (userLevel >= level && (level === 41 || userLevel < level + 10))) &&
       (stage === 'all' || (funnelUsers.has(user.id) && stages[stage](user))) &&
+      matchesConsent &&
       adminSearch(search, user.username, user.name, user.email);
   }).sort((a, b) => {
     if (sort === 'name') return getName(a).localeCompare(getName(b), 'es');
@@ -110,6 +126,26 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
         {drop.count > 0 && <AdminBadge tone="warning">Mayor abandono · {drop.from} → {drop.to} · {drop.count}</AdminBadge>}
         <AdminSelect label="Filtrar por etapa" options={[[ 'all', 'Todas las etapas'], ...steps.map(step => [step.id, 'Pendientes · ' + step.label] as const)]} value={stage} onChange={setStage} />
       </AdminCard>
+      <AdminCard title="Consentimiento de notificaciones (Push / Email)">
+        <AdminText secondary>
+          Voluntarias (Push/Email): {consentStats.voluntaryAny} · Solo obligatorias: {consentStats.onlyMandatory}
+        </AdminText>
+        <AdminText secondary>
+          Push activas: {consentStats.voluntaryPush} · Email voluntario: {consentStats.voluntaryEmail} (sobre {consentStats.total} usuarios)
+        </AdminText>
+        <AdminSelect
+          label="Filtrar por avisos"
+          options={[
+            ['all', 'Todos los avisos'],
+            ['voluntary_any', 'Con voluntarias (Push/Email)'],
+            ['voluntary_push', 'Push activadas'],
+            ['voluntary_email', 'Email voluntario'],
+            ['only_mandatory', 'Solo obligatorias'],
+          ]}
+          value={consentFilter}
+          onChange={setConsentFilter}
+        />
+      </AdminCard>
       <AdminCard title="Gestión de usuarios">
         <View style={styles.actions}>
           <AdminButton icon={Plus} label="Crear usuario" variant="primary" onPress={() => setEditor({})} />
@@ -124,7 +160,7 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
         </View>
         <AdminBadge>{filtered.length} resultados</AdminBadge>
       </AdminCard>
-      <AdminRecords key={JSON.stringify([search, role, device, level, stage, period, sort])} items={filtered} keyFor={user => String(user.id)} render={user => (
+      <AdminRecords key={JSON.stringify([search, role, device, level, stage, consentFilter, period, sort])} items={filtered} keyFor={user => String(user.id)} render={user => (
         <UserSummaryCard user={user} online={now - dateValue(user.lastSeen) < 5 * 60_000} profileComplete={!stages.profile(user)}
           onEdit={() => setEditor({ user })} onPhoto={() => setEditor({ user, photo: true })}
           deleteDisabled={busy || String(user.id) === String(currentUser?.id)}
