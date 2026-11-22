@@ -23,7 +23,9 @@ import {
     FaSearch,
     FaShieldAlt,
     FaTrophy,
-    FaInfoCircle
+    FaInfoCircle,
+    FaChevronLeft,
+    FaChevronRight
 } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import GlassCard from './GlassCard';
@@ -189,6 +191,9 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
     const isShowingOlderRef = useRef(false);
     const scopeRef = useRef(scope);
     const gymFilterRef = useRef(gymFilter);
+    const gymAthletesScrollRef = useRef(null);
+    const athletesDragRef = useRef({ isDown: false, startX: 0, scrollLeft: 0, dragged: false });
+    const [athletesScrollState, setAthletesScrollState] = useState({ canLeft: false, canRight: false });
 
     const [activeCommentInput, setActiveCommentInput] = useState({});
     const [showComments, setShowComments] = useState({});
@@ -830,20 +835,104 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                     {/* Carrusel horizontal de atletas que entrenan en tu mismo gimnasio o ciudad */}
                     {filteredGymMembers.length > 0 && (
                         <div className="mt-4 pt-3.5 border-t border-black/5 dark:border-white/10">
-                            <div className="flex items-center justify-between mb-2.5">
+                            <div className="flex items-center justify-between mb-2.5 gap-2">
                                 <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
                                     <FaUsers className="text-accent" />
                                     Atletas en tu zona ({filteredGymMembers.length})
                                 </span>
+                                {(athletesScrollState.canLeft || athletesScrollState.canRight) && (
+                                    <div className="hidden md:flex items-center gap-1.5 shrink-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const el = gymAthletesScrollRef.current;
+                                                if (!el) return;
+                                                el.scrollBy({ left: -260, behavior: 'smooth' });
+                                            }}
+                                            disabled={!athletesScrollState.canLeft}
+                                            aria-label="Desplazar atletas a la izquierda"
+                                            className="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-text-primary flex items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                                        >
+                                            <FaChevronLeft className="text-[10px]" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const el = gymAthletesScrollRef.current;
+                                                if (!el) return;
+                                                el.scrollBy({ left: 260, behavior: 'smooth' });
+                                            }}
+                                            disabled={!athletesScrollState.canRight}
+                                            aria-label="Desplazar atletas a la derecha"
+                                            className="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-text-primary flex items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                                        >
+                                            <FaChevronRight className="text-[10px]" />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
-                            <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+                            <div
+                                ref={(node) => {
+                                    gymAthletesScrollRef.current = node;
+                                    if (node) {
+                                        const canLeft = node.scrollLeft > 4;
+                                        const canRight = node.scrollLeft + node.clientWidth < node.scrollWidth - 4;
+                                        if (canLeft !== athletesScrollState.canLeft || canRight !== athletesScrollState.canRight) {
+                                            requestAnimationFrame(() => {
+                                                setAthletesScrollState({ canLeft, canRight });
+                                            });
+                                        }
+                                    }
+                                }}
+                                onScroll={(e) => {
+                                    const el = e.currentTarget;
+                                    const canLeft = el.scrollLeft > 4;
+                                    const canRight = el.scrollLeft + el.clientWidth < el.scrollWidth - 4;
+                                    if (canLeft !== athletesScrollState.canLeft || canRight !== athletesScrollState.canRight) {
+                                        setAthletesScrollState({ canLeft, canRight });
+                                    }
+                                }}
+                                onMouseDown={(e) => {
+                                    const el = gymAthletesScrollRef.current;
+                                    if (!el) return;
+                                    athletesDragRef.current = {
+                                        isDown: true,
+                                        startX: e.pageX - el.offsetLeft,
+                                        scrollLeft: el.scrollLeft,
+                                        dragged: false
+                                    };
+                                }}
+                                onMouseMove={(e) => {
+                                    const el = gymAthletesScrollRef.current;
+                                    if (!el || !athletesDragRef.current.isDown) return;
+                                    const x = e.pageX - el.offsetLeft;
+                                    const walk = x - athletesDragRef.current.startX;
+                                    if (Math.abs(walk) > 6) {
+                                        athletesDragRef.current.dragged = true;
+                                    }
+                                    el.scrollLeft = athletesDragRef.current.scrollLeft - walk;
+                                }}
+                                onMouseUp={() => {
+                                    athletesDragRef.current.isDown = false;
+                                    setTimeout(() => {
+                                        athletesDragRef.current.dragged = false;
+                                    }, 50);
+                                }}
+                                onMouseLeave={() => {
+                                    athletesDragRef.current.isDown = false;
+                                }}
+                                className="flex gap-2.5 overflow-x-auto custom-scrollbar cursor-grab active:cursor-grabbing select-none pb-2 -mx-1 px-1"
+                            >
                                 {filteredGymMembers.map(member => {
                                     const isPending = member.hasPendingRequest || pendingRequestsLocal[member.id];
                                     const isSameGym = member.matchType === 'same_gym';
                                     return (
                                         <div
                                             key={member.id}
-                                            onClick={() => goToProfile(member.id)}
+                                            onClick={() => {
+                                                if (athletesDragRef.current.dragged) return;
+                                                goToProfile(member.id);
+                                            }}
                                             className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 transition-colors cursor-pointer shrink-0 min-w-[210px] sm:min-w-[230px] max-w-[250px]"
                                         >
                                             <UserAvatar
