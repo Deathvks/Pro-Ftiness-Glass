@@ -1,7 +1,14 @@
 /* mobile/src/services/offlineExerciseService.ts */
 import { Directory, File as ExpoFile, Paths } from 'expo-file-system';
-import { BACKEND_BASE_URL, API_BASE_URL } from './apiClient';
-import { getExerciseList } from './exerciseService';
+import apiClient, { BACKEND_BASE_URL, API_BASE_URL } from './apiClient';
+
+const fetchExerciseCatalog = async (): Promise<any[]> => {
+  try {
+    const data = await apiClient('/exercise-list/exercises');
+    if (Array.isArray(data)) return data.filter(Boolean);
+  } catch {}
+  return getOfflineExerciseCatalog();
+};
 
 const OFFLINE_DIR_NAME = 'offline_exercises';
 const OFFLINE_CATALOG_FILE = 'exercises_catalog.json';
@@ -204,7 +211,7 @@ export const normalizeMediaUrl = (url: any): string | null => {
 
 export const getAvailableExerciseCatalogStats = async (): Promise<ExerciseCatalogStats> => {
   try {
-    const exercises = await getExerciseList();
+    const exercises = await fetchExerciseCatalog();
     if (!Array.isArray(exercises) || exercises.length === 0) {
       return { exerciseCount: 0, mediaCount: 0, estimatedSize: '0 MB' };
     }
@@ -345,7 +352,7 @@ export const startOfflineDownloadSession = async () => {
     offlineDir.create({ idempotent: true, intermediates: true });
 
     // 1. Descargar catálogo de ejercicios
-    const exercises = await getExerciseList();
+    const exercises = await fetchExerciseCatalog();
     if (signal.aborted) throw new Error('Descarga cancelada');
 
     const cleanExercises = Array.isArray(exercises) ? exercises : [];

@@ -41,18 +41,18 @@ export const getExerciseHistory = (exerciseName) => {
 };
 
 /**
- * Obtiene los detalles completos de un ejercicio por su ID.
- * (No utiliza la caché 'cachedExerciseList' porque esta 
- * puede ser una lista simplificada. Hacemos una llamada dedicada.)
+ * Obtiene los detalles completos de un ejercicio por su ID desde el catálogo cacheado/offline.
  */
 export const getExerciseDetails = async (exerciseId) => {
     try {
-        // Se ajusta la ruta para que sea consistente con la de la lista.
-        const data = await apiClient(`/exercise-list/exercises/${exerciseId}`);
-        return data;
+        const list = await getExerciseList();
+        const found = Array.isArray(list)
+            ? list.find((ex) => String(ex?.id) === String(exerciseId))
+            : null;
+        return found || null;
     } catch (error) {
         console.error(`Failed to fetch details for exercise ${exerciseId}:`, error);
-        throw error;
+        return null;
     }
 };
 

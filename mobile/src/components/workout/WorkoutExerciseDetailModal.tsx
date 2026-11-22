@@ -34,7 +34,6 @@ import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview';
 import { askTrainerAI } from '@/services/aiService';
-import { getExerciseDetails } from '@/services/exerciseService';
 
 interface ModalGlassBackdropProps {
   isDark: boolean;
@@ -95,7 +94,7 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
   const gamification = useAppStore(state => state.gamification || {});
 
   const [localDetails, setLocalDetails] = useState<any>(exercise?.exercise_details || {});
-  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const isLoadingDetails = false;
 
   // Asegurar que el catálogo completo de ejercicios esté disponible para multimedia y técnica
   useEffect(() => {
@@ -158,48 +157,6 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
       return false;
     });
   }, [exercise, allExercises]);
-
-  // Completar detalles si faltan imágenes o vídeo en el payload del entrenamiento
-  useEffect(() => {
-    if (!exercise) return;
-    const catalogId =
-      exercise.exercise_list_id ||
-      exercise.exercise_id ||
-      exercise.exercise_details?.id ||
-      matchedFromStore?.id ||
-      (!exercise.routine_id ? exercise.id : null);
-    const hasInlineMedia = Boolean(
-      exercise.video_url ||
-        exercise.youtube_id ||
-        matchedFromStore?.video_url ||
-        matchedFromStore?.youtube_id
-    ) && Boolean(
-      exercise.images ||
-        exercise.image_url ||
-        exercise.image ||
-        matchedFromStore?.images ||
-        matchedFromStore?.image_url ||
-        matchedFromStore?.image_url_start ||
-        matchedFromStore?.image
-    );
-    if (!catalogId || hasInlineMedia) return;
-
-    let cancelled = false;
-    setIsLoadingDetails(true);
-    getExerciseDetails(catalogId)
-      .then((fetched: any) => {
-        if (!cancelled && fetched) {
-          setLocalDetails((prev: any) => ({ ...fetched, ...prev }));
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setIsLoadingDetails(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [exercise, matchedFromStore]);
 
   const mergedDetails = useMemo(() => {
     const rawEx = exercise || {};
