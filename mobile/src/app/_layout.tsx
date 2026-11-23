@@ -24,6 +24,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { getThemeBaseBackground } from '@/constants/theme';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { DynamicIslandTimer } from '@/components/workout/DynamicIslandTimer';
+import { FloatingActiveWorkoutBar } from '@/components/workout/FloatingActiveWorkoutBar';
 import { RestTimerModal } from '@/components/workout/RestTimerModal';
 import { OfflineDownloadFloatingBar } from '@/components/OfflineDownloadFloatingBar';
 import { StoryHost } from '@/components/social/StoryHost';
@@ -169,8 +170,9 @@ export default function RootLayout() {
   useRestTimerCompletion();
 
   useEffect(() => {
+    if (!isReady) return;
     return initNativeTimerSync(useAppStore);
-  }, []);
+  }, [isReady]);
 
   useEffect(() => {
     if (isReady && isAuthenticated) {
@@ -621,11 +623,12 @@ export default function RootLayout() {
           <Stack.Screen name="social-networks" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="physical-profile-editor" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="two-factor-setup" options={{ headerShown: false, animation: 'slide_from_right' }} />
-          <Stack.Screen name="workout" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="workout" options={{ headerShown: false, animation: 'fade', animationDuration: 150 }} />
           <Stack.Screen name="quick-cardio" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="active-cardio" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="share/routine/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
         </Stack>
+        <FloatingActiveWorkoutBar />
         <DynamicIslandTimer />
         <RestTimerModal />
         <OfflineDownloadFloatingBar />

@@ -1,7 +1,7 @@
 import { AppState, DeviceEventEmitter, NativeModules, Platform } from 'react-native';
 import {
   cancelRestTimerNotification,
-  ensureNotificationPermissionPrompt,
+  ensureTimerNotificationPermission,
   isExpoGoClient,
   presentInstantNotification,
   scheduleRestTimerNotification,
@@ -28,7 +28,7 @@ export const startNativeRestTimer = async (
 ) => {
   if (Platform.OS === 'web' || !endTimeMs || endTimeMs <= Date.now()) return;
 
-  const granted = await ensureNotificationPermissionPrompt(options.userId);
+  const granted = await ensureTimerNotificationPermission();
   if (!granted || endTimeMs <= Date.now()) return;
 
   if (NativeTimer) {
@@ -83,10 +83,22 @@ export const initNativeTimerSync = (store: any): (() => void) => {
     try {
       const res = await NativeTimer.getTimerState();
       const endTimeMs = Number(res?.endTimeMs || 0);
+      const skippedEndTimeMs = Number(res?.skippedEndTimeMs || 0);
       const state = store.getState();
       if (!state.isResting || state.isRestTimerPaused || state.restTimerEndTime !== deadline) return;
       if (!endTimeMs) {
-        state.stopRestTimer({ notifyNative: false });
+        if (skippedEndTimeMs === deadline) {
+          state.stopRestTimer({ notifyNative: false });
+        } else if (deadline > Date.now() + 1000) {
+          void startNativeRestTimer(deadline, {
+            title: state.activeWorkout?.routineName
+              ? `Descanso · ${state.activeWorkout.routineName}`
+              : 'Descanso entre series',
+            sound: state.restSoundEnabled ?? true,
+            vibrate: state.hapticsEnabled ?? true,
+            userId: state.userProfile?.id,
+          });
+        }
       } else if (Math.abs(endTimeMs - deadline) >= 1000) {
         state.addRestTime(Math.round((endTimeMs - deadline) / 1000), endTimeMs);
       }

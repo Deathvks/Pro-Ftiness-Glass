@@ -1,6 +1,6 @@
 /* mobile/src/components/routines/RoutineCard.tsx */
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Pressable, StyleSheet, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -112,8 +112,8 @@ export function RoutineCard({
       getAppleCardSurfaceStyle(theme, 20),
       {
         overflow: 'hidden',
-        borderColor: isActive ? colors.tint : (isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)')),
-        borderWidth: isActive ? 2 : (isIOS ? 0 : 1),
+        borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+        borderWidth: isIOS ? 0 : 1,
       },
       !isIOS && {
         backgroundColor: colors.card,
@@ -403,16 +403,15 @@ export function RoutineCard({
         )}
 
         {/* BOTÓN GRANDE PRINCIPAL (INICIAR / CONTINUAR / BLOQUEADO / COMPLETADO) - LIQUID GLASS */}
-        <TouchableOpacity
+        <Pressable
           onPress={() => {
-            try {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            } catch {}
             onPressStart();
+            try {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            } catch {}
           }}
           disabled={isCompletedToday || isBlockedByOtherWorkout}
-          activeOpacity={0.82}
-          style={[
+          style={({ pressed }) => [
             styles.mainButton,
             isCompletedToday ? {
               backgroundColor: isDark ? 'rgba(34, 197, 94, 0.14)' : 'rgba(34, 197, 94, 0.1)',
@@ -440,7 +439,8 @@ export function RoutineCard({
               shadowOpacity: isIOS ? 0.2 : (isDark ? 0.45 : 0.28),
               shadowRadius: 10,
               elevation: 5,
-            }
+            },
+            pressed && !isCompletedToday && !isBlockedByOtherWorkout && { opacity: 0.9, transform: [{ scale: 0.985 }] },
           ]}
         >
           {!isActive && !isCompletedToday && isBlockedByOtherWorkout && (
@@ -495,7 +495,7 @@ export function RoutineCard({
               </>
             )}
           </View>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );

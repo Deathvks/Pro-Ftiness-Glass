@@ -126,6 +126,9 @@ const useAppStore = create((set, get) => ({
                 }
             }));
         }
+
+        // Rehidratar entrenamiento activo y temporizador de descanso tras initLocalStorage()
+        get().hydrateWorkoutFromStorage?.();
     },
     themePreference: initialThemePref,
     theme: resolveTheme(initialThemePref),

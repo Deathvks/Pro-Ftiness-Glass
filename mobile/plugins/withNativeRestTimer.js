@@ -53,7 +53,6 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.widget.RemoteViews;
 import androidx.core.app.NotificationCompat;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
@@ -65,7 +64,7 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 public class NativeTimerModule extends ReactContextBaseJavaModule {
-    public static final String CHANNEL_ID = "native_timer_channel_v15";
+    public static final String CHANNEL_ID = "native_timer_channel_v16";
     public static final String COMPLETE_CHANNEL_ID = "native_timer_complete_v2";
     public static final String ACTION_ADD_TIME = "${pkg}.ACTION_ADD_TIME";
     public static final String ACTION_SKIP = "${pkg}.ACTION_SKIP";
@@ -74,6 +73,7 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
     private static final int COMPLETE_NOTIFICATION_ID = 1000;
     private static final int COMPLETE_ALARM_REQ_CODE = 888;
     static final String EXTRA_END_TIME = "endTimeMs";
+    private static final String EXTRA_SKIPPED_END_TIME = "skippedEndTimeMs";
     private static final long MAX_ALERT_DELAY_MS = 60_000;
 
     private static final String DEFAULT_TITLE = "Descanso entre series";
@@ -148,9 +148,12 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void getTimerState(Promise promise) {
+        SharedPreferences state = timerState(getReactApplicationContext());
         WritableMap result = Arguments.createMap();
-        long endTimeMs = timerState(getReactApplicationContext()).getLong(EXTRA_END_TIME, 0L);
+        long endTimeMs = state.getLong(EXTRA_END_TIME, 0L);
+        long skippedEndTimeMs = state.getLong(EXTRA_SKIPPED_END_TIME, 0L);
         result.putDouble(EXTRA_END_TIME, (double) endTimeMs);
+        result.putDouble(EXTRA_SKIPPED_END_TIME, (double) skippedEndTimeMs);
         promise.resolve(result);
     }
 
@@ -168,6 +171,7 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         if (context == null) return;
         timerState(context).edit()
                 .putLong(EXTRA_END_TIME, endTimeMs)
+                .remove(EXTRA_SKIPPED_END_TIME)
                 .putString("title", title)
                 .putInt("color", accentColor)
                 .putBoolean("sound", sound)
@@ -185,12 +189,13 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         if (smallIconId == 0) smallIconId = appIconId;
 
         Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-        if (launchIntent != null) {
-            launchIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        }
         int pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) pendingFlags |= PendingIntent.FLAG_IMMUTABLE;
-        PendingIntent contentPendingIntent = PendingIntent.getActivity(context, 0, launchIntent, pendingFlags);
+        PendingIntent contentPendingIntent = null;
+        if (launchIntent != null) {
+            launchIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            contentPendingIntent = PendingIntent.getActivity(context, 0, launchIntent, pendingFlags);
+        }
 
         scheduleCompletionAlarm(context, endTimeMs, contentPendingIntent);
         manager.cancel(COMPLETE_NOTIFICATION_ID);
@@ -203,32 +208,30 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         skipIntent.setAction(ACTION_SKIP);
         PendingIntent skipPendingIntent = PendingIntent.getBroadcast(context, 102, skipIntent, pendingFlags);
 
-        long timeRemaining = endTimeMs - System.currentTimeMillis();
-        long baseTime = SystemClock.elapsedRealtime() + timeRemaining;
-
-        RemoteViews customLayout = new RemoteViews(context.getPackageName(), R.layout.custom_timer_notification);
-        customLayout.setTextViewText(R.id.title, title);
-        customLayout.setChronometer(R.id.chronometer, baseTime, null, true);
-        customLayout.setTextColor(R.id.chronometer, accentColor);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            customLayout.setChronometerCountDown(R.id.chronometer, true);
-        }
-
+        // Cronómetro nativo de sistema: se muestra en pantalla de bloqueo en Android 8-16 sin bloqueo de vistas custom
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(smallIconId)
                 .setColor(accentColor)
                 .setLargeIcon(largeIcon)
-                .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
-                .setCustomContentView(customLayout)
-                .setContentIntent(contentPendingIntent)
+                .setContentTitle(title)
+                .setContentText("Descanso activo · Pulsa para volver")
+                .setSubText("Entrenamiento")
+                .setWhen(endTimeMs)
+                .setShowWhen(true)
+                .setUsesChronometer(true)
+                .setChronometerCountDown(true)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+                .setLocalOnly(true)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .addAction(0, "+30s", addTimePendingIntent)
                 .addAction(0, "Saltar", skipPendingIntent);
+
+        if (contentPendingIntent != null) {
+            builder.setContentIntent(contentPendingIntent);
+        }
 
         try {
             manager.notify(ACTIVE_NOTIFICATION_ID, builder.build());
@@ -237,14 +240,29 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         }
     }
 
-    private static synchronized void stopTimerInternal(Context context) {
+    private static synchronized void stopTimerInternal(Context context, long skippedEndTimeMs) {
         if (context == null) return;
-        timerState(context).edit().clear().apply();
+        SharedPreferences.Editor editor = timerState(context).edit()
+                .remove(EXTRA_END_TIME)
+                .remove("title")
+                .remove("color")
+                .remove("sound")
+                .remove("vibrate");
+        if (skippedEndTimeMs > 0) {
+            editor.putLong(EXTRA_SKIPPED_END_TIME, skippedEndTimeMs);
+        } else {
+            editor.remove(EXTRA_SKIPPED_END_TIME);
+        }
+        editor.apply();
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager != null) {
             manager.cancel(ACTIVE_NOTIFICATION_ID);
         }
         cancelCompletionAlarm(context);
+    }
+
+    private static synchronized void stopTimerInternal(Context context) {
+        stopTimerInternal(context, 0L);
     }
 
     public static synchronized void handleAddTimeFromBroadcast(Context context, int seconds) {
@@ -273,7 +291,7 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
     public static synchronized void handleSkipFromBroadcast(Context context) {
         long endTimeMs = timerState(context).getLong(EXTRA_END_TIME, 0L);
         if (endTimeMs == 0) return;
-        stopTimerInternal(context);
+        stopTimerInternal(context, endTimeMs);
 
         WritableMap payload = Arguments.createMap();
         payload.putString("action", "skip");
@@ -290,7 +308,7 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         boolean sound = state.getBoolean("sound", true);
         boolean vibrate = state.getBoolean("vibrate", true);
         int color = state.getInt("color", DEFAULT_COLOR);
-        stopTimerInternal(context);
+        stopTimerInternal(context, endTimeMs);
 
         if (now - endTimeMs <= MAX_ALERT_DELAY_MS) {
             publishCompletion(context, manager, sound, vibrate, color);
@@ -372,7 +390,7 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) flags |= PendingIntent.FLAG_IMMUTABLE;
             PendingIntent pendingIntent = PendingIntent.getBroadcast(context, COMPLETE_ALARM_REQ_CODE, intent, flags);
 
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()) {
+            if (openApp != null && (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms())) {
                 try {
                     alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(triggerAtMillis, openApp), pendingIntent);
                     return;

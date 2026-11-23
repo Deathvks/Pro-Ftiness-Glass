@@ -28,6 +28,7 @@ interface ExerciseMediaPreviewProps {
   showImageCounter?: boolean;
   previewColors?: { background: string; placeholder: string };
   onPress?: () => void;
+  onMediaAspectRatio?: (ratio: number, isPortrait: boolean) => void;
 }
 
 // Inyección de estilos para adaptar el iframe al contenedor vertical o centrado
@@ -118,10 +119,12 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   showImageCounter = true,
   previewColors,
   onPress,
+  onMediaAspectRatio,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(playYouTube);
-  const [imageError, setImageError] = useState(false);
+  const [loadedUris, setLoadedUris] = useState<Record<string, boolean>>({});
+  const [failedUris, setFailedUris] = useState<Record<string, boolean>>({});
   const [webViewLoading, setWebViewLoading] = useState(true);
   const [containerSize, setContainerSize] = useState({ width: 320, height: 200 });
   const [playerError, setPlayerError] = useState<string | null>(null);
@@ -373,25 +376,53 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
     return normFallback && !normFallback.includes('/muscle_groups/') ? [normFallback] : [];
   }, [target, subDetails, matchedFromStore, getImageUrl, youtubeThumbnail]);
 
+  const imagesKey = useMemo(() => images.join('|'), [images]);
+
+  const displayImages = useMemo(() => {
+    const alive = images.filter(uri => !failedUris[uri]);
+    if (alive.length > 0) return alive;
+    if (youtubeThumbnail && !failedUris[youtubeThumbnail]) return [youtubeThumbnail];
+    return [];
+  }, [images, failedUris, youtubeThumbnail]);
+
   useEffect(() => {
-    setImageError(false);
+    setFailedUris({});
+    setLoadedUris({});
     setCurrentIndex(0);
-  }, [images]);
+  }, [imagesKey]);
+
+  // Precargar todos los fotogramas para evitar parpadeos en negro al alternar
+  useEffect(() => {
+    images.forEach(uri => {
+      if (uri && uri.startsWith('http')) {
+        Image.prefetch(uri).catch(() => {});
+      }
+    });
+  }, [imagesKey]);
 
   useEffect(() => {
     setPlayerError(null);
     setWebViewLoading(true);
   }, [yid]);
 
-  // 4. Efecto de animación GIF cíclico si hay más de una foto
+  // 4. Efecto de animación GIF cíclico si hay más de una foto (solo avanza si el frame destino está decodificado)
   useEffect(() => {
-    if (images.length > 1 && !isPlaying) {
+    if (displayImages.length > 1 && !isPlaying) {
       const interval = setInterval(() => {
-        setCurrentIndex(prev => (prev + 1) % images.length);
+        setCurrentIndex(prev => {
+          const total = displayImages.length;
+          for (let step = 1; step < total; step++) {
+            const candidate = (prev + step) % total;
+            if (loadedUris[displayImages[candidate]]) {
+              return candidate;
+            }
+          }
+          return prev;
+        });
       }, 1150);
       return () => clearInterval(interval);
     }
-  }, [images.length, isPlaying]);
+  }, [displayImages, loadedUris, isPlaying]);
 
   // 5. Reproductor de Vídeo interactivo (YouTube o directo)
   if ((rawVideo || yid) && isPlaying && !staticOnly && !forceImageMode) {
@@ -502,21 +533,16 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
     );
   }
 
-  // 6. Imagen activa (con fallback a miniatura de YouTube si falla una imagen externa)
-  const activeImageUri =
-    !imageError && images.length > 0
-      ? images[currentIndex % images.length]
-      : youtubeThumbnail || null;
+  // 6. Capas apiladas para evitar desmontaje/parpadeo negro entre fotogramas del GIF
+  const safeIndex = displayImages.length > 0 ? currentIndex % displayImages.length : 0;
 
-  if (!activeImageUri) {
+  if (displayImages.length === 0) {
     return (
       <View style={[styles.fullContainer, styles.placeholderContainer, previewColors && { backgroundColor: previewColors.background }]}>
         <Dumbbell size={36} color={previewColors?.placeholder ?? 'rgba(255,255,255,0.3)'} />
       </View>
     );
   }
-
-  const isShowingYoutubeThumb = activeImageUri === youtubeThumbnail;
 
   return (
     <TouchableOpacity
@@ -534,18 +560,43 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       }}
       disabled={!onPress && (staticOnly || !(rawVideo || yid))}
     >
-      <Image
-        key={activeImageUri}
-        source={{ uri: activeImageUri }}
-        style={styles.imageFill}
-        resizeMode={isShowingYoutubeThumb ? 'cover' : fitMode}
-        onError={() => setImageError(true)}
-      />
+      <View style={styles.imageFill} pointerEvents="none">
+        {displayImages.map((uri, idx) => {
+          const isActive = idx === safeIndex;
+          const isShowingYoutubeThumb = uri === youtubeThumbnail;
+          return (
+            <Image
+              key={uri}
+              source={{ uri }}
+              fadeDuration={0}
+              style={[
+                styles.stackedImage,
+                {
+                  opacity: isActive ? 1 : 0,
+                  zIndex: isActive ? 2 : 1,
+                },
+              ]}
+              resizeMode={isShowingYoutubeThumb ? 'cover' : fitMode}
+              onLoad={e => {
+                setLoadedUris(prev => (prev[uri] ? prev : { ...prev, [uri]: true }));
+                const src = e?.nativeEvent?.source;
+                if (src?.width && src?.height && onMediaAspectRatio) {
+                  const ratio = src.width / src.height;
+                  onMediaAspectRatio(ratio, ratio < 1);
+                }
+              }}
+              onError={() => {
+                setFailedUris(prev => (prev[uri] ? prev : { ...prev, [uri]: true }));
+              }}
+            />
+          );
+        })}
+      </View>
 
-      {showImageCounter && images.length > 1 && !isPlaying && (
+      {showImageCounter && displayImages.length > 1 && !isPlaying && (
         <View style={styles.gifBadge}>
           <Text style={styles.gifBadgeText}>
-            GIF {currentIndex + 1}/{images.length}
+            GIF {safeIndex + 1}/{displayImages.length}
           </Text>
         </View>
       )}
@@ -578,6 +629,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
   },
   imageFill: {
+    width: '100%',
+    height: '100%',
+  },
+  stackedImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     width: '100%',
     height: '100%',
   },

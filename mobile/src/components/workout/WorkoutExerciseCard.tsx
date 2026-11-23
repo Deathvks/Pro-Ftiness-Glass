@@ -79,6 +79,8 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const [mediaAspectRatio, setMediaAspectRatio] = useState<number>(9 / 16);
+  const [isPortraitMedia, setIsPortraitMedia] = useState<boolean>(true);
 
   const addWarmupSets = useAppStore(state => state.addWarmupSets);
   const setExerciseReminder = useAppStore(state => state.setExerciseReminder);
@@ -230,6 +232,9 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
         <View
           style={[
             styles.mediaHeroContainer,
+            isPortraitMedia
+              ? { width: 220, maxWidth: '100%', aspectRatio: mediaAspectRatio, alignSelf: 'center' }
+              : { width: '100%', aspectRatio: mediaAspectRatio },
             {
               backgroundColor: isDark ? 'rgba(0, 0, 0, 0.35)' : 'rgba(0, 0, 0, 0.04)',
               borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
@@ -243,6 +248,11 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
             }}
             getImageUrl={getImageUrl}
             fitMode="contain"
+            onMediaAspectRatio={(ratio, isPortrait) => {
+              const clamped = Math.max(9 / 16, Math.min(16 / 9, ratio));
+              setMediaAspectRatio(clamped);
+              setIsPortraitMedia(isPortrait || ratio <= 1.05);
+            }}
             onPress={() => {
               try {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -828,8 +838,10 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   mediaHeroContainer: {
-    width: '100%',
-    height: 220,
+    width: 220,
+    maxWidth: '100%',
+    aspectRatio: 9 / 16,
+    alignSelf: 'center',
     borderRadius: 24,
     borderWidth: 1,
     overflow: 'hidden',

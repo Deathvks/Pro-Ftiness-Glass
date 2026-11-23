@@ -86,7 +86,6 @@ import { GymLocationModal } from '@/components/modals/GymLocationModal';
 import { WaterLogModal } from '@/components/nutrition/WaterLogModal';
 import { CreatineTrackerModal } from '@/components/nutrition/CreatineTrackerModal';
 import { SugarTargetModal } from '@/components/nutrition/SugarTargetModal';
-import { ConfirmationModal } from '@/components/social/ConfirmationModal';
 
 const getXpRequiredForLevel = (level: number) =>
   level <= 1 ? 0 : 50 * Math.pow(level, 2) + 350 * level - 400;
@@ -194,11 +193,8 @@ export default function Dashboard() {
   const isWorkoutTimerActive = useMemo(() => {
     if (!activeWorkout) return false;
     const accumulated = workoutAccumulatedTime || 0;
-    if (!workoutStartTime || isWorkoutPaused) {
-      return accumulated >= 1;
-    }
-    const current = Math.floor((Date.now() - workoutStartTime) / 1000);
-    return (accumulated + current) >= 1;
+    const currentMs = workoutStartTime && !isWorkoutPaused ? Math.max(0, Date.now() - workoutStartTime) : 0;
+    return Math.floor((accumulated + currentMs) / 1000) >= 1;
   }, [activeWorkout, workoutStartTime, workoutAccumulatedTime, isWorkoutPaused]);
 
   const nutritionLog = useAppStore(state => state.nutritionLog) || [];
@@ -219,7 +215,6 @@ export default function Dashboard() {
   const [showWaterModal, setShowWaterModal] = useState(false);
   const [showCreatineModal, setShowCreatineModal] = useState(false);
   const [showGymModal, setShowGymModal] = useState(false);
-  const [showDiscardWorkoutModal, setShowDiscardWorkoutModal] = useState(false);
   const [isSavingWater, setIsSavingWater] = useState(false);
   const [microChallenges, setMicroChallenges] = useState<any[]>([]);
 
@@ -765,66 +760,6 @@ export default function Dashboard() {
         </View>
       </TouchableOpacity>
       </TourTarget>
-
-      {/* 3. BANNER DE ENTRENAMIENTO EN CURSO (solo si el cronómetro ha iniciado >= 1s) */}
-      {activeWorkout && isWorkoutTimerActive && (
-        <View style={{ marginBottom: 16 }}>
-          <View
-            style={[
-              styles.glassCardBase, cardSurface,
-              {
-                borderColor: colors.tint + '60',
-                borderWidth: 1.5,
-                padding: 18,
-                backgroundColor: hasThemedSurface ? colors.card : colors.tint + '08',
-              },
-            ]}
-          >
-            {useGlass && (
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
-              />
-              )}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-              <View style={[styles.activeWorkoutIcon, { backgroundColor: colors.tint }]}>
-                <Dumbbell size={22} color={tintContrastText} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <View style={[styles.activeTag, { backgroundColor: colors.tint + '20' }]}>
-                  <Text style={[styles.activeTagText, { color: colors.tint }]}>ENTRENAMIENTO EN CURSO</Text>
-                </View>
-                <Text style={[styles.activeWorkoutTitle, { color: colors.text }]} numberOfLines={1}>
-                  {activeWorkout.routineName || activeWorkout.name || 'Entrenamiento Libre'}
-                </Text>
-                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
-                  Sesión activa en segundo plano.
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-              <TouchableOpacity
-                onPress={() => router.push('/workout')}
-                style={[styles.resumeBtn, { backgroundColor: colors.tint }]}
-                activeOpacity={0.85}
-              >
-                <Play size={15} color={tintContrastText} fill={tintContrastText} />
-                <Text style={[styles.resumeBtnText, { color: tintContrastText }]}>Continuar entreno</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setShowDiscardWorkoutModal(true)}
-                style={styles.discardBtn}
-                activeOpacity={0.8}
-              >
-                <Trash2 size={16} color="#ef4444" />
-                <Text style={styles.discardBtnText}>Descartar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      )}
 
       {/* 4. PRIMER PASO HOY (DÍA 0) o RESUMEN SEMANAL & RÉCORD */}
       {isZeroDayUser ? (
@@ -1554,7 +1489,7 @@ export default function Dashboard() {
             const isCompleted =
               completedRoutineIdsToday.map(String).includes(String(routine.id)) ||
               workoutLog.some((log: any) => String(log?.routine_id) === String(routine.id) && isSameDay(log.workout_date, new Date()));
-            const isActive = activeWorkout && String(activeWorkout.routineId) === String(routine.id);
+            const isActive = isWorkoutTimerActive && activeWorkout && String(activeWorkout.routineId) === String(routine.id);
 
             return (
               <TouchableOpacity
@@ -1599,9 +1534,7 @@ export default function Dashboard() {
                 style={[
                   styles.glassCardBase, cardSurface,
                   {
-                    borderColor: isActive
-                      ? colors.tint
-                      : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
                     padding: 16,
                     marginBottom: 10,
                     opacity: isCompleted ? 0.75 : 1,
@@ -1903,21 +1836,6 @@ export default function Dashboard() {
         currentSugar={nutritionTotals.sugar}
         maxSugar={targets.sugar}
         onClose={() => setShowSugarModal(false)}
-      />
-
-      <ConfirmationModal
-        visible={showDiscardWorkoutModal}
-        title="¿Descartar entrenamiento?"
-        message="Perderás el progreso de la sesión actual en curso."
-        confirmText="Descartar"
-        cancelText="Volver"
-        isDestructive={true}
-        onConfirm={() => {
-          if (stopWorkout) stopWorkout();
-          setShowDiscardWorkoutModal(false);
-          showToast('Entrenamiento descartado');
-        }}
-        onCancel={() => setShowDiscardWorkoutModal(false)}
       />
     </AnimatedScreen>
   );

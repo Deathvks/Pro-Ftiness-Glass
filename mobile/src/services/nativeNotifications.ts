@@ -137,7 +137,7 @@ export const getNotificationPermissionStatus = async (): Promise<'granted' | 'de
   try {
     const perms = await Notifications.getPermissionsAsync();
     if (perms.granted) return 'granted';
-    if (!perms.canAskAgain || perms.status === Notifications.PermissionStatus.DENIED) return 'denied';
+    if (!perms.canAskAgain && perms.status === Notifications.PermissionStatus.DENIED) return 'denied';
     return 'undetermined';
   } catch {
     return 'undetermined';
@@ -468,6 +468,37 @@ export const ensureNotificationPermissionPrompt = async (
       });
   }
   return permissionPromptInFlight;
+};
+
+let timerPermissionInFlight: Promise<boolean> | null = null;
+
+/**
+ * Solicita o verifica permiso de notificaciones exclusivamente para el temporizador de descanso,
+ * sin bloquearse aunque el usuario haya desactivado los recordatorios/push generales.
+ */
+export const ensureTimerNotificationPermission = async (): Promise<boolean> => {
+  if (isWeb) return false;
+  const status = await getNotificationPermissionStatus();
+  if (status === 'granted') {
+    await ensureAndroidNotificationChannels();
+    return true;
+  }
+  if (status === 'denied') return false;
+
+  if (!timerPermissionInFlight) {
+    timerPermissionInFlight = requestNotificationPermissions()
+      .then(async (res) => {
+        if (res.granted) {
+          await ensureAndroidNotificationChannels();
+        }
+        return res.granted;
+      })
+      .catch(() => false)
+      .finally(() => {
+        timerPermissionInFlight = null;
+      });
+  }
+  return timerPermissionInFlight;
 };
 
 export const syncPushOnAppStart = async (userId?: string | number | null) => {

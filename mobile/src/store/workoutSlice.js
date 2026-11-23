@@ -1,7 +1,7 @@
 /* frontend/src/store/workoutSlice.js */
 import * as workoutService from '../services/workoutService';
 import {
-  ensureNotificationPermissionPrompt,
+  ensureTimerNotificationPermission,
   presentInstantNotification,
 } from '../services/nativeNotifications';
 import {
@@ -127,13 +127,22 @@ const getRestTimerStateFromStorage = () => {
     const isResting = JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('isResting') : null));
     const isRestTimerPaused = JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('isRestTimerPaused') : null)) || false;
     const restTimerRemaining = JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerRemaining') : null));
+    const restTimerEndTime = JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerEndTime') : null));
+    const restTimerInitialDuration = JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerInitialDuration') : null));
+    const rawMode = typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerMode') : null;
+    const cleanedMode = typeof rawMode === 'string' ? rawMode.replace(/^"|"$/g, '') : null;
 
     if (isResting) {
+      // Si no está pausado y expiró hace más de 60s con la app cerrada, limpiamos estado obsoleto
+      if (!isRestTimerPaused && (!restTimerEndTime || restTimerEndTime <= Date.now() - 60000)) {
+        clearRestTimerInStorage();
+        return {};
+      }
       return {
         isResting,
-        restTimerEndTime: JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerEndTime') : null)),
-        restTimerInitialDuration: JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerInitialDuration') : null)),
-        restTimerMode: (typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerMode') : null) || 'hidden',
+        restTimerEndTime,
+        restTimerInitialDuration,
+        restTimerMode: cleanedMode && cleanedMode !== 'hidden' ? cleanedMode : 'minimized',
         isRestTimerPaused,
         restTimerRemaining,
       };
@@ -199,6 +208,25 @@ export const createWorkoutSlice = (set, get) => ({
   ...initialState,
   ...getWorkoutStateFromStorage(),
   ...getRestTimerStateFromStorage(),
+
+  hydrateWorkoutFromStorage: () => {
+    if (typeof localStorage === 'undefined') return;
+    const current = get();
+    const workoutPatch = !current.activeWorkout ? getWorkoutStateFromStorage() : {};
+    const restPatch = !current.isResting ? getRestTimerStateFromStorage() : {};
+    const combined = { ...workoutPatch, ...restPatch };
+    if (Object.keys(combined).length > 0) {
+      set(combined);
+    }
+    if (
+      restPatch.isResting &&
+      !restPatch.isRestTimerPaused &&
+      restPatch.restTimerEndTime &&
+      restPatch.restTimerEndTime > Date.now() + 1000
+    ) {
+      launchNativeTimer(restPatch.restTimerEndTime, get);
+    }
+  },
 
   fetchTodaysCompletedRoutines: async () => {
     try {
@@ -272,8 +300,13 @@ export const createWorkoutSlice = (set, get) => ({
       workoutAccumulatedTime: 0,
     };
     set(newState);
-    setWorkoutInStorage(newState);
-    void ensureNotificationPermissionPrompt(get().userProfile?.id);
+    setTimeout(() => {
+      const latest = get();
+      if (latest.activeWorkout?.startTime === newState.activeWorkout.startTime) {
+        setWorkoutInStorage(latest);
+      }
+    }, 0);
+    void ensureTimerNotificationPermission();
 
     if (catalog.length || !exercises.length) return;
 
@@ -327,8 +360,13 @@ export const createWorkoutSlice = (set, get) => ({
       workoutAccumulatedTime: 0,
     };
     set(newState);
-    setWorkoutInStorage(newState);
-    void ensureNotificationPermissionPrompt(get().userProfile?.id);
+    setTimeout(() => {
+      const latest = get();
+      if (latest.activeWorkout?.startTime === newState.activeWorkout.startTime) {
+        setWorkoutInStorage(latest);
+      }
+    }, 0);
+    void ensureTimerNotificationPermission();
   },
 
   togglePauseWorkout: () => {

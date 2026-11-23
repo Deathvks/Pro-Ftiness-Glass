@@ -107,11 +107,8 @@ export default function RoutinesScreen() {
   const isWorkoutTimerActive = useMemo(() => {
     if (!activeWorkout) return false;
     const accumulated = workoutAccumulatedTime || 0;
-    if (!workoutStartTime || isWorkoutPaused) {
-      return accumulated >= 1;
-    }
-    const current = Math.floor((Date.now() - workoutStartTime) / 1000);
-    return (accumulated + current) >= 1;
+    const currentMs = workoutStartTime && !isWorkoutPaused ? Math.max(0, Date.now() - workoutStartTime) : 0;
+    return Math.floor((accumulated + currentMs) / 1000) >= 1;
   }, [activeWorkout, workoutStartTime, workoutAccumulatedTime, isWorkoutPaused]);
 
   const isAnyWorkoutActive = activeWorkout !== null && activeWorkout !== undefined && isWorkoutTimerActive;
@@ -168,14 +165,14 @@ export default function RoutinesScreen() {
     return list;
   }, [routines, query, lastUsedMap, selectedFolder]);
 
-  // Iniciar entrenamiento
+  // Iniciar entrenamiento de inmediato (sin seleccionar la tarjeta visualmente)
   const handleStartWorkout = (routine: any) => {
-    if (activeWorkout && String(activeWorkout.routineId) === String(routine.id)) {
+    if (isAnyWorkoutActive && String(activeWorkout?.routineId) === String(routine.id)) {
       router.push('/workout');
       return;
     }
 
-    if (isAnyWorkoutActive && String(activeWorkout.routineId) !== String(routine.id)) {
+    if (isAnyWorkoutActive && String(activeWorkout?.routineId) !== String(routine.id)) {
       Alert.alert(
         'Entrenamiento en curso',
         `Ya tienes una sesión activa (${activeWorkout.routineName || 'Entrenamiento'}). ¿Deseas volver a ella o descartarla para iniciar "${routine.name}"?`,
@@ -648,8 +645,8 @@ export default function RoutinesScreen() {
             {filteredSorted && filteredSorted.length > 0 ? (
               filteredSorted.map((routine: any) => {
                 const isCompleted = completedRoutineIdsToday.includes(routine.id);
-                const isActive = activeWorkout && activeWorkout.routineId === routine.id;
-                const isBlocked = isAnyWorkoutActive && !isActive;
+                const isSameOngoing = isAnyWorkoutActive && String(activeWorkout?.routineId) === String(routine.id);
+                const isBlocked = isAnyWorkoutActive && !isSameOngoing;
                 const lastUsed = lastUsedMap.get(routine.id);
                 const inclusionStats = getRoutineInclusionStats(exclusions, routine);
 
@@ -666,7 +663,7 @@ export default function RoutinesScreen() {
                     onPressVolumeFilter={() => setVolumeFilterRoutine(routine)}
                     volumeInclusionStats={inclusionStats}
                     isCompletedToday={isCompleted}
-                    isActive={isActive}
+                    isActive={false}
                     isBlockedByOtherWorkout={isBlocked}
                     lastUsedDate={lastUsed}
                   />

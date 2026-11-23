@@ -1371,8 +1371,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   exerciseMediaBanner: {
-    width: '100%',
-    aspectRatio: 16 / 10,
+    width: 190,
+    maxWidth: '100%',
+    aspectRatio: 9 / 16,
+    alignSelf: 'center',
     borderRadius: 16,
     borderCurve: 'continuous',
     overflow: 'hidden',

@@ -76,6 +76,8 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
   const [stagedExercises, setStagedExercises] = useState<any[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<any | null>(null);
   const [playingVideo, setPlayingVideo] = useState(false);
+  const [detailMediaRatio, setDetailMediaRatio] = useState<number>(9 / 16);
+  const [isDetailPortrait, setIsDetailPortrait] = useState<boolean>(true);
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
 
@@ -106,6 +108,8 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
   }, [visible]);
 
   useEffect(() => {
+    setDetailMediaRatio(9 / 16);
+    setIsDetailPortrait(true);
     if (view === 'detail' && selectedExercise) {
       if (selectedExercise.video_url || selectedExercise.youtube_id) {
         setPlayingVideo(true);
@@ -552,6 +556,11 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
               <View
                 style={[
                   styles.detailMediaBox,
+                  playingVideo && (selectedExercise.video_url || selectedExercise.youtube_id || selectedExercise.video)
+                    ? { width: '100%', aspectRatio: 16 / 9 }
+                    : isDetailPortrait
+                      ? { width: 220, maxWidth: '100%', aspectRatio: detailMediaRatio, alignSelf: 'center' }
+                      : { width: '100%', aspectRatio: detailMediaRatio },
                   {
                     backgroundColor: '#0B0B0E',
                     borderColor: colors.border,
@@ -564,6 +573,11 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                   details={selectedExercise}
                   fitMode="contain"
                   playYouTube={playingVideo}
+                  onMediaAspectRatio={(ratio, isPortrait) => {
+                    const clamped = Math.max(9 / 16, Math.min(16 / 9, ratio));
+                    setDetailMediaRatio(clamped);
+                    setIsDetailPortrait(isPortrait || ratio <= 1.05);
+                  }}
                   onPress={() => {
                     if (
                       selectedExercise.video_url ||
@@ -791,8 +805,12 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                     {/* Large Media Preview (YouTube Thumbnail / Video or Animated GIF) */}
                     <View
                       style={{
-                        width: '100%',
-                        aspectRatio: 16 / 10,
+                        width: 190,
+                        maxWidth: '100%',
+                        aspectRatio: 9 / 16,
+                        alignSelf: 'center',
+                        borderRadius: 18,
+                        marginTop: 10,
                         backgroundColor: isDark ? '#0B0B0E' : '#18181B',
                         overflow: 'hidden',
                       }}
@@ -1072,19 +1090,25 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   exerciseCard: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 22,
     borderCurve: 'continuous',
     overflow: 'hidden',
+    padding: 12,
+    gap: 14,
   },
   mediaPreviewBox: {
-    width: '100%',
-    aspectRatio: 16 / 10,
+    width: 112,
+    aspectRatio: 9 / 16,
+    borderRadius: 16,
+    borderCurve: 'continuous',
     overflow: 'hidden',
+    flexShrink: 0,
   },
   cardContentBox: {
-    padding: 16,
+    flex: 1,
+    paddingVertical: 2,
   },
   exerciseName: {
     fontWeight: '700',
@@ -1124,8 +1148,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   detailMediaBox: {
-    width: '100%',
-    aspectRatio: 16 / 10,
+    width: 220,
+    maxWidth: '100%',
+    aspectRatio: 9 / 16,
+    alignSelf: 'center',
     borderRadius: 22,
     borderCurve: 'continuous',
     overflow: 'hidden',
