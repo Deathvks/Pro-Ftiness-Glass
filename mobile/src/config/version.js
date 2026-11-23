@@ -50,15 +50,35 @@ export const hasSeenCurrentWelcome = (storedTitle, targetTitle = CURRENT_WELCOME
   return false;
 };
 
+const parseSemver = (value) => {
+  const [corePart = '', prePart = ''] = String(value || '').trim().split('-', 2);
+  const core = corePart.split('.').map((part) => Number.parseInt(part, 10) || 0);
+  const pre = prePart
+    ? prePart.split('.').map((part) => (/^\d+$/.test(part) ? Number(part) : part.toLowerCase()))
+    : [];
+  return { core, pre };
+};
+
 export const isRemoteNewer = (current, remote) => {
   if (!current || !remote) return false;
-  const cParts = String(current).split('.').map(Number);
-  const rParts = String(remote).split('.').map(Number);
-  for (let i = 0; i < Math.max(cParts.length, rParts.length); i++) {
-    const r = rParts[i] || 0;
-    const c = cParts[i] || 0;
-    if (r > c) return true;
-    if (r < c) return false;
+  const c = parseSemver(current);
+  const r = parseSemver(remote);
+  for (let i = 0; i < Math.max(c.core.length, r.core.length, 3); i++) {
+    const rv = r.core[i] || 0;
+    const cv = c.core[i] || 0;
+    if (rv > cv) return true;
+    if (rv < cv) return false;
+  }
+  // Misma versión base: estable (sin sufijo) > pre-release (ej. 8.0.0 > 8.0.0-beta.1)
+  if (c.pre.length > 0 && r.pre.length === 0) return true;
+  if (c.pre.length === 0 && r.pre.length > 0) return false;
+  for (let i = 0; i < Math.max(c.pre.length, r.pre.length); i++) {
+    const rv = r.pre[i];
+    const cv = c.pre[i];
+    if (rv === undefined) return false;
+    if (cv === undefined) return true;
+    if (rv > cv) return true;
+    if (rv < cv) return false;
   }
   return false;
 };

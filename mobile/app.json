@@ -23,6 +23,7 @@
     "android": {
       "versionCode": 800,
       "package": "com.profitnessglass.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#178a44",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
