@@ -8,7 +8,13 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://profitnessglass.es/api"
+        "EXPO_PUBLIC_API_URL": "https://profitnessglass.es/api",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "459101292666-53tga4c1l8u2se5k21gsf5rk85825udq.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "459101292666-3l68mfimdoc046a69m2ijid1ok0c1ceh.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "459101292666-f3r0vb03r0pb0483fthqga6o8t3k9k9v.apps.googleusercontent.com",
+        "EXPO_PUBLIC_DISCORD_CLIENT_ID": "1481428590657798185",
+        "EXPO_PUBLIC_X_CLIENT_ID": "WnhVWUxzSk1yQVVQd2N1cXI1ZEI6MTpjaQ",
+        "EXPO_PUBLIC_GITHUB_CLIENT_ID": "Ov23liJ6BviSWYj4lt5c"
       }
     },
     "preview": {
@@ -17,13 +23,25 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://profitnessglass.es/api"
+        "EXPO_PUBLIC_API_URL": "https://profitnessglass.es/api",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "459101292666-53tga4c1l8u2se5k21gsf5rk85825udq.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "459101292666-3l68mfimdoc046a69m2ijid1ok0c1ceh.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "459101292666-f3r0vb03r0pb0483fthqga6o8t3k9k9v.apps.googleusercontent.com",
+        "EXPO_PUBLIC_DISCORD_CLIENT_ID": "1481428590657798185",
+        "EXPO_PUBLIC_X_CLIENT_ID": "WnhVWUxzSk1yQVVQd2N1cXI1ZEI6MTpjaQ",
+        "EXPO_PUBLIC_GITHUB_CLIENT_ID": "Ov23liJ6BviSWYj4lt5c"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://profitnessglass.es/api"
+        "EXPO_PUBLIC_API_URL": "https://profitnessglass.es/api",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "459101292666-53tga4c1l8u2se5k21gsf5rk85825udq.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "459101292666-fumg9ibvi2gau0re4gddf8lqmarjba7d.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "459101292666-f3r0vb03r0pb0483fthqga6o8t3k9k9v.apps.googleusercontent.com",
+        "EXPO_PUBLIC_DISCORD_CLIENT_ID": "1481428590657798185",
+        "EXPO_PUBLIC_X_CLIENT_ID": "WnhVWUxzSk1yQVVQd2N1cXI1ZEI6MTpjaQ",
+        "EXPO_PUBLIC_GITHUB_CLIENT_ID": "Ov23liJ6BviSWYj4lt5c"
       }
     }
   },
