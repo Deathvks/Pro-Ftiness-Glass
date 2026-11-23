@@ -314,7 +314,7 @@ export const createDataSlice = (set, get) => ({
         routines: [...state.routines, newRoutine]
       }));
 
-      if (get().addXp) get().addXp(20);
+      if (get().addXp) get().addXp(20, 'Rutina creada');
       if (get().checkStreak) get().checkStreak(getTodayDateString());
 
       return { success: true, routine: newRoutine, message: 'Rutina creada con éxito.' };
@@ -430,7 +430,7 @@ export const createDataSlice = (set, get) => ({
         }));
       }
 
-      if (get().addXp) get().addXp(10);
+      if (get().addXp) get().addXp(10, 'Peso registrado');
       if (get().checkStreak) get().checkStreak(getTodayDateString());
 
       return { success: true, message: 'Peso registrado con éxito.' };
@@ -467,7 +467,7 @@ export const createDataSlice = (set, get) => ({
       set({ bodyMeasurementsLog: history });
 
       if (response && response.xpAdded > 0) {
-        if (get().addXp) get().addXp(response.xpAdded);
+        if (get().addXp) get().addXp(response.xpAdded, 'Medida corporal registrada');
       }
 
       const message = (response && response.xpAdded > 0)

@@ -178,23 +178,62 @@ export default function RootLayout() {
   useEffect(() => {
     if (!gamificationEvents || gamificationEvents.length === 0) return;
     const showToast = useToastStore.getState().showToast;
+    let shouldRefreshProfile = false;
+
+    const getLevelUnlockSuffix = (lvl: number) => {
+      if (lvl === 5) return ' (¡Nuevos pasteles desbloqueados!)';
+      if (lvl === 10) return ' (¡Nuevos pasteles vibrantes desbloqueados!)';
+      if (lvl === 15) return ' (¡Nuevos degradados desbloqueados!)';
+      if (lvl === 20) return ' (¡Nuevos acentos animados desbloqueados!)';
+      return '';
+    };
 
     gamificationEvents.forEach((event: any) => {
       if (event.type === 'xp' && Number(event.amount) > 0) {
+        shouldRefreshProfile = true;
         showToast(`+${event.amount} XP: ${event.reason || 'Actividad completada'}`, 'success');
+      } else if (event.type === 'workout_completed') {
+        shouldRefreshProfile = true;
+        const xpAmount = Number(event.xpAdded ?? event.amount ?? 0);
+        if (xpAmount > 0) {
+          showToast(`+${xpAmount} XP: ${event.message || 'Entrenamiento completado'}`, 'success');
+        }
+        if (event.leveledUp && event.newLevel) {
+          showToast(
+            `¡Felicidades! Has subido al Nivel ${event.newLevel}!${getLevelUnlockSuffix(event.newLevel)}`,
+            'success',
+            5500
+          );
+        }
+      } else if (event.type === 'progressive_overload') {
+        shouldRefreshProfile = true;
+        const xpAmount = Number(event.xpAdded ?? event.amount ?? 0);
+        showToast(
+          xpAmount > 0
+            ? `+${xpAmount} XP: Sobrecarga progresiva lograda`
+            : event.message || '¡Sobrecarga progresiva lograda!',
+          'success',
+          4500
+        );
       } else if (event.type === 'badge') {
+        shouldRefreshProfile = true;
         showToast(`¡Insignia Desbloqueada! ${event.badge?.name || 'Nueva insignia'}`, 'success');
       } else if (event.type === 'level_up') {
-        let extraStr = '';
-        if (event.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
-        if (event.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
-        if (event.newLevel === 15) extraStr = ' (¡Nuevos degradados desbloqueados!)';
-        if (event.newLevel === 20) extraStr = ' (¡Nuevos acentos animados desbloqueados!)';
-        showToast(`¡Felicidades! Has subido al Nivel ${event.newLevel}!${extraStr}`, 'success', 5500);
+        shouldRefreshProfile = true;
+        showToast(
+          `¡Felicidades! Has subido al Nivel ${event.newLevel}!${getLevelUnlockSuffix(event.newLevel)}`,
+          'success',
+          5500
+        );
       } else if (event.type === 'challenge_completed') {
+        shouldRefreshProfile = true;
         showToast(`¡Reto completado! ${event.message} (+${event.xpAdded} XP)`, 'success');
         if (event.leveledUp && event.newLevel) {
-          showToast(`¡Felicidades! Has subido al Nivel ${event.newLevel}!`, 'success', 5500);
+          showToast(
+            `¡Felicidades! Has subido al Nivel ${event.newLevel}!${getLevelUnlockSuffix(event.newLevel)}`,
+            'success',
+            5500
+          );
         }
       } else if (event.type === 'info' && event.message) {
         showToast(event.message, 'info');
@@ -202,7 +241,26 @@ export default function RootLayout() {
     });
 
     clearGamificationEvents?.();
-  }, [gamificationEvents, clearGamificationEvents]);
+
+    if (shouldRefreshProfile && isAuthenticated) {
+      userService
+        .getMyProfile()
+        .then((profileData: any) => {
+          const store: any = useAppStore.getState();
+          if (profileData && store.setGamificationData) {
+            store.setGamificationData({
+              xp: profileData.xp,
+              level: profileData.level,
+              streak: profileData.streak,
+              workouts_count: profileData.workouts_count,
+              last_activity_date: profileData.last_activity_date,
+              unlocked_badges: profileData.unlocked_badges,
+            });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [gamificationEvents, clearGamificationEvents, isAuthenticated]);
 
   // Socket global para retos completados en tiempo real y notificaciones entrantes
   useEffect(() => {

@@ -341,10 +341,14 @@ export default function NutritionScreen() {
   const handleSaveWater = async (quantity_ml: number) => {
     setIsSubmitting(true);
     try {
-      await nutritionService.upsertWaterLog({
+      const res = await nutritionService.upsertWaterLog({
         log_date: selectedDate,
         quantity_ml,
       });
+      const events = res?.gamification || res?.gamificationEvents;
+      if (Array.isArray(events) && events.length > 0 && addGamificationEvents) {
+        addGamificationEvents(events);
+      }
       await fetchDataForDate(selectedDate);
       if (fetchNotifications) fetchNotifications();
       if (fetchInitialData) fetchInitialData();

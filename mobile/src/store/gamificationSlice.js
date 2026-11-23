@@ -66,37 +66,77 @@ export const createGamificationSlice = (set, get) => ({
     },
 
     // --- CORRECCIÓN: Eliminada lógica optimista ---
-    // Esta función ahora solo sirve para efectos visuales locales (Toasts) si es necesario,
-    // pero NO altera la XP real del usuario. La XP real viene del backend.
+    // Esta función actualiza estado visual/local de XP + emite el toast inmediato.
+    // La XP real consolidada viene del backend y se sincroniza al recibir respuesta/perfil.
     addXp: async (amount, reason = 'Actividad completada') => {
         console.log(`[Gamification Slice] Evento visual de XP: ${amount} por ${reason}`);
 
         if (amount > 0) {
-            set((state) => ({
-                gamification: {
-                    ...state.gamification,
-                    xp: (state.gamification.xp || 0) + amount,
-                    // Añadimos el evento para que salte la notificación
-                    gamificationEvents: [
-                        ...(state.gamification.gamificationEvents || []),
-                        { id: Date.now() + Math.random(), type: 'xp', amount, reason }
-                    ]
+            set((state) => {
+                const prevXp = state.gamification.xp || 0;
+                const prevLevel = state.gamification.level || calculateLevel(prevXp);
+                const nextXp = prevXp + amount;
+                const nextLevel = Math.max(prevLevel, calculateLevel(nextXp));
+                const nextEvents = [
+                    ...(state.gamification.gamificationEvents || []),
+                    { id: Date.now() + Math.random(), type: 'xp', amount, reason },
+                ];
+                if (nextLevel > prevLevel) {
+                    nextEvents.push({
+                        id: Date.now() + Math.random(),
+                        type: 'level_up',
+                        newLevel: nextLevel,
+                    });
                 }
-            }));
+
+                return {
+                    gamification: {
+                        ...state.gamification,
+                        xp: nextXp,
+                        level: nextLevel,
+                        gamificationEvents: nextEvents,
+                    },
+                };
+            });
         }
     },
 
     addGamificationEvents: (events) => {
         if (!events || events.length === 0) return;
-        set((state) => ({
-            gamification: {
-                ...state.gamification,
-                gamificationEvents: [
-                    ...(state.gamification.gamificationEvents || []),
-                    ...events.map(ev => ({ ...ev, id: Date.now() + Math.random() }))
-                ]
+        set((state) => {
+            let nextXp = state.gamification.xp || 0;
+            let nextLevel = state.gamification.level || calculateLevel(nextXp);
+            let nextStreak = state.gamification.streak || 0;
+
+            for (const ev of events) {
+                if (!ev) continue;
+                const delta = Number(ev.amount ?? ev.xpAdded ?? 0);
+                if (delta > 0) {
+                    nextXp += delta;
+                    nextLevel = Math.max(nextLevel, calculateLevel(nextXp));
+                }
+                const evLevel = Number(ev.newLevel ?? ev.level ?? 0);
+                if (evLevel > nextLevel) {
+                    nextLevel = evLevel;
+                }
+                if (typeof ev.streak === 'number' && ev.streak >= 0) {
+                    nextStreak = ev.streak;
+                }
             }
-        }));
+
+            return {
+                gamification: {
+                    ...state.gamification,
+                    xp: nextXp,
+                    level: nextLevel,
+                    streak: nextStreak,
+                    gamificationEvents: [
+                        ...(state.gamification.gamificationEvents || []),
+                        ...events.map(ev => ({ ...ev, id: Date.now() + Math.random() })),
+                    ],
+                },
+            };
+        });
     },
 
     unlockBadge: async (badgeId) => {
