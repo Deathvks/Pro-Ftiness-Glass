@@ -10,7 +10,7 @@ import { ChevronRight, Clock, Filter, Flame, MapPin, Save, Search, X } from 'luc
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
 import { RoutinesTabs } from '@/components/routines/RoutinesTabs';
-import { GlassButton } from '@/components/ui/GlassButton';
+import { GlassButton, LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SelectModal } from '@/components/ui/SelectModal';
 import { TourTarget } from '@/components/tutorials/TourTarget';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
@@ -55,9 +55,14 @@ function ActivitySheet({ activity, weight, saving, onClose, onSave, onStartGPS }
           <Text style={[styles.sheetTitle, { color: colors.text }]}>{activity.name}</Text>
           <Text style={[styles.secondary, { color: colors.textSecondary }]}>Intensidad {activity.intensity}</Text>
         </View>
-        <TouchableOpacity onPress={onClose} accessibilityLabel="Cerrar" hitSlop={8} style={styles.iconButton}>
-          <X size={22} color={colors.textSecondary} />
-        </TouchableOpacity>
+        <LiquidCloseButton
+          onPress={onClose}
+          accessibilityLabel="Cerrar"
+          hitSlop={8}
+          iconSize={20}
+          iconColor={colors.textSecondary}
+          style={styles.iconButton}
+        />
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetBody}>
         {activity.hasGPS && (

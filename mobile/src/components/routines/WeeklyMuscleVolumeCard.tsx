@@ -19,13 +19,13 @@ import {
   ChevronRight,
   Dumbbell,
   FolderKanban,
-  X,
   Sparkles,
   Layers,
   ChevronDown,
   Target,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -324,9 +324,11 @@ export function RoutineVolumeFilterModal({
                 Marca qué ejercicios deseas incluir en el volumen semanal
               </Text>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <X size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
+            <LiquidCloseButton
+              onPress={onClose}
+              iconColor={colors.textSecondary}
+              style={styles.closeBtn}
+            />
           </View>
 
           <ScrollView contentContainerStyle={styles.filterScroll} showsVerticalScrollIndicator={false}>
@@ -903,9 +905,11 @@ export function WeeklyMuscleVolumeCard({
                     {`Objetivo semanal: ${goalRange.min}-${goalRange.max} series`}
                   </Text>
                 </View>
-                <TouchableOpacity onPress={() => setSelectedMuscle(null)} style={styles.closeBtn}>
-                  <X size={18} color={colors.textSecondary} />
-                </TouchableOpacity>
+                <LiquidCloseButton
+                  onPress={() => setSelectedMuscle(null)}
+                  iconColor={colors.textSecondary}
+                  style={styles.closeBtn}
+                />
               </View>
 
               <ScrollView contentContainerStyle={styles.filterScroll} showsVerticalScrollIndicator={false}>

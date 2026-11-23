@@ -10,7 +10,6 @@ import {
   Share,
 } from 'react-native';
 import {
-  X,
   Trash2,
   Clock,
   Flame,
@@ -24,6 +23,7 @@ import {
   ChevronRight,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
@@ -238,9 +238,12 @@ export function DailyDetailModal({
                   {visibleLogs.length === 1 ? 'entrenamiento' : 'entrenamientos'}
                 </Text>
               </View>
-              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                <X size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
+              <LiquidCloseButton
+                onPress={onClose}
+                iconSize={20}
+                iconColor={colors.textSecondary}
+                style={styles.closeBtn}
+              />
             </View>
 
             {/* Content List */}
@@ -648,9 +651,13 @@ export function DailyDetailModal({
         >
           <View style={[styles.expandedHeader, { borderColor: colors.border }]}>
             <Text style={[styles.title, { color: colors.text }]}>Ruta GPS</Text>
-            <TouchableOpacity accessibilityLabel="Cerrar mapa" onPress={() => setExpandedPath(null)} style={styles.closeBtn}>
-              <X size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
+            <LiquidCloseButton
+              accessibilityLabel="Cerrar mapa"
+              onPress={() => setExpandedPath(null)}
+              iconSize={20}
+              iconColor={colors.textSecondary}
+              style={styles.closeBtn}
+            />
           </View>
           <CardioMap path={expandedPath} dark={isDark} color={colors.tint} />
         </SwipeableBottomSheet>

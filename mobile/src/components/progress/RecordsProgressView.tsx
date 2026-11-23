@@ -19,8 +19,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  X,
 } from 'lucide-react-native';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -312,12 +312,12 @@ export function RecordsProgressView() {
                 <Text style={[styles.modalTitle, { color: colors.text }]}>
                   Filtrar por ejercicio
                 </Text>
-                <TouchableOpacity
+                <LiquidCloseButton
                   onPress={() => setShowFilterModal(false)}
+                  iconSize={20}
+                  iconColor={colors.textSecondary}
                   style={styles.modalCloseBtn}
-                >
-                  <X size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
+                />
               </View>
 
               <ScrollView

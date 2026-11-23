@@ -31,6 +31,7 @@ import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import {
@@ -327,25 +328,12 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                       </View>
                     </View>
 
-                    <TouchableOpacity
+                    <LiquidCloseButton
                       onPress={onClose}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      style={[
-                        styles.closeBtn,
-                        {
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                        },
-                      ]}
-                      activeOpacity={0.7}
-                    >
-                      <GlassView
-                        glassEffectStyle="regular"
-                        colorScheme={isDark ? 'dark' : 'light'}
-                        style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
-                      />
-                      <X size={18} color={colors.textSecondary} />
-                    </TouchableOpacity>
+                      iconColor={colors.textSecondary}
+                      style={styles.closeBtn}
+                    />
                   </View>
 
                   {/* Body Content */}
@@ -835,19 +823,11 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                   ]}
                 >
                   <Text style={[styles.headerTitle, { color: colors.text }]}>Editar Registro</Text>
-                  <TouchableOpacity
+                  <LiquidCloseButton
                     onPress={handleCloseEdit}
-                    style={[
-                      styles.closeBtn,
-                      {
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                      },
-                    ]}
-                    activeOpacity={0.7}
-                  >
-                    <X size={18} color={colors.textSecondary} />
-                  </TouchableOpacity>
+                    iconColor={colors.textSecondary}
+                    style={styles.closeBtn}
+                  />
                 </View>
 
                   <View style={{ gap: 14 }}>

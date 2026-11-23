@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import {
-  X,
   ArrowLeft,
   Plus,
   Minus,
@@ -19,6 +18,7 @@ import {
   Pause,
   Square,
 } from 'lucide-react-native';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
 import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -231,13 +231,13 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
       />
 
       {/* Botón Cerrar (Esquina superior derecha) */}
-      <TouchableOpacity
+      <LiquidCloseButton
         onPress={handleClose}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        iconSize={20}
+        iconColor={colors.textSecondary}
         style={styles.closeBtn}
-      >
-        <X size={20} color={colors.textSecondary} />
-      </TouchableOpacity>
+      />
 
       {/* ===================== VISTA 1: SELECCIONAR ===================== */}
       {view === 'select' && (

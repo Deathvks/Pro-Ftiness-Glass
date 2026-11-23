@@ -14,6 +14,7 @@ import {
   Platform,
 } from 'react-native';
 import { GlassView } from 'expo-glass-effect';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import {
   Dumbbell,
   Trash2,
@@ -121,15 +122,11 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
                 Detalles e Historial de Registros
               </Text>
             </View>
-            <TouchableOpacity
+            <LiquidCloseButton
               onPress={onClose}
-              style={[
-                styles.closeIconBtn,
-                { backgroundColor: getUnselectedControlColors(theme).backgroundColor },
-              ]}
-            >
-              <X size={18} color={colors.text} />
-            </TouchableOpacity>
+              iconColor={colors.text}
+              style={styles.closeIconBtn}
+            />
           </View>
 
           {loading ? (
@@ -371,15 +368,11 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
                 Mueve el historial y rutinas hacia un ejercicio oficial
               </Text>
             </View>
-            <TouchableOpacity
+            <LiquidCloseButton
               onPress={onClose}
-              style={[
-                styles.closeIconBtn,
-                { backgroundColor: getUnselectedControlColors(theme).backgroundColor },
-              ]}
-            >
-              <X size={18} color={colors.text} />
-            </TouchableOpacity>
+              iconColor={colors.text}
+              style={styles.closeIconBtn}
+            />
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>

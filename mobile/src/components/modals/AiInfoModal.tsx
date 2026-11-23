@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Sparkles, X, Zap, Clock, ShieldCheck } from 'lucide-react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import { Sparkles, Zap, Clock, ShieldCheck } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
-import { GlassButton } from '@/components/ui/GlassButton';
+import { GlassButton, LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
 
 interface AiInfoModalProps {
@@ -68,22 +68,12 @@ export function AiInfoModal({ visible, onClose }: AiInfoModalProps) {
     >
       {/* Header Centered */}
       <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 16, alignItems: 'center' }}>
-        <TouchableOpacity
+        <LiquidCloseButton
           onPress={onClose}
-          style={{
-            position: 'absolute',
-            top: 8,
-            right: 20,
-            width: 34,
-            height: 34,
-            borderRadius: 17,
-            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <X size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+          size={34}
+          iconColor={colors.textSecondary}
+          style={{ position: 'absolute', top: 8, right: 20, zIndex: 10 }}
+        />
         <View
           style={{
             width: 60,

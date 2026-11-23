@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
-import { Globe, Users, Lock, CheckCircle, X } from 'lucide-react-native';
+import { Globe, Users, Lock, CheckCircle } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { updateUserProfile } from '@/services/userService';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
 
 export function PrivacyModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
@@ -79,24 +80,13 @@ export function PrivacyModal({ visible, onClose }: { visible: boolean; onClose: 
     >
       {/* Header */}
       <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 16, alignItems: 'center' }}>
-        <TouchableOpacity
+        <LiquidCloseButton
           onPress={onClose}
+          size={34}
+          iconColor={colors.textSecondary}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          style={{
-            position: 'absolute',
-            top: 8,
-            right: 20,
-            width: 34,
-            height: 34,
-            borderRadius: 17,
-            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10,
-          }}
-        >
-          <X size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+          style={{ position: 'absolute', top: 8, right: 20, zIndex: 10 }}
+        />
 
         <View
           style={{

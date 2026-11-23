@@ -1,21 +1,25 @@
 import React, { useRef, useEffect, useMemo } from 'react';
-import { View, Pressable, Animated, StyleSheet, ViewStyle, Platform } from 'react-native';
+import { View, Pressable, Animated, StyleSheet, ViewStyle, Platform, type StyleProp } from 'react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { BlurView } from 'expo-blur';
+import { X } from 'lucide-react-native';
+import useAppStore from '@/store/useAppStore';
+import { useAppColors } from '@/hooks/useAppColors';
 
 interface GlassButtonProps {
     onPress: () => void;
     children: React.ReactNode;
     theme: 'light' | 'dark' | 'oled' | 'galaxy' | 'ocean' | 'desert' | string;
-    style?: ViewStyle | ViewStyle[];
+    style?: StyleProp<ViewStyle>;
     color?: string;
     colors?: any;
     noShadow?: boolean;
     disabled?: boolean;
     accessibilityLabel?: string;
+    hitSlop?: number | { top?: number; bottom?: number; left?: number; right?: number };
 }
 
-export function GlassButton({ onPress, children, theme, style, color, noShadow, disabled, accessibilityLabel }: GlassButtonProps) {
+export function GlassButton({ onPress, children, theme, style, color, noShadow, disabled, accessibilityLabel, hitSlop }: GlassButtonProps) {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     
     const isLight = ['light', 'ocean', 'desert'].includes(theme);
@@ -124,8 +128,14 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
             disabled={disabled}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            hitSlop={hitSlop ?? { top: 10, bottom: 10, left: 10, right: 10 }}
             style={[{
+                position: finalStyle.position,
+                top: finalStyle.top,
+                right: finalStyle.right,
+                bottom: finalStyle.bottom,
+                left: finalStyle.left,
+                zIndex: finalStyle.zIndex,
                 flex: finalStyle.flex,
                 width: resolvedWidth,
                 height: resolvedHeight,
@@ -143,6 +153,11 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
         >
             <Animated.View style={[finalStyle, {
                 position: 'relative', 
+                top: undefined,
+                right: undefined,
+                bottom: undefined,
+                left: undefined,
+                zIndex: undefined,
                 flex: undefined,
                 width: (resolvedWidth !== undefined || finalStyle.flex !== undefined) ? '100%' : undefined,
                 height: typeof resolvedHeight === 'number' ? resolvedHeight : undefined,
@@ -191,5 +206,53 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
                 {children}
             </Animated.View>
         </Pressable>
+    );
+}
+
+interface LiquidCloseButtonProps {
+    onPress: () => void;
+    size?: number;
+    iconSize?: number;
+    iconColor?: string;
+    strokeWidth?: number;
+    color?: string;
+    theme?: string;
+    disabled?: boolean;
+    style?: StyleProp<ViewStyle>;
+    accessibilityLabel?: string;
+    hitSlop?: number | { top?: number; bottom?: number; left?: number; right?: number };
+}
+
+export function LiquidCloseButton({
+    onPress,
+    size = 36,
+    iconSize = 18,
+    iconColor,
+    strokeWidth = 2.25,
+    color,
+    theme: themeProp,
+    disabled,
+    style,
+    accessibilityLabel = 'Cerrar',
+    hitSlop,
+}: LiquidCloseButtonProps) {
+    const storeTheme = useAppStore(state => state.theme) || 'oled';
+    const colors = useAppColors();
+    const resolvedTheme = themeProp || storeTheme;
+    const resolvedIconColor = iconColor || colors.text;
+
+    return (
+        <GlassButton
+            onPress={onPress}
+            theme={resolvedTheme}
+            color={color}
+            disabled={disabled}
+            accessibilityLabel={accessibilityLabel}
+            hitSlop={hitSlop}
+            noShadow
+            style={[{ width: size, height: size, borderRadius: size / 2 }, style]}
+        >
+            <X size={iconSize} color={resolvedIconColor} strokeWidth={strokeWidth} />
+        </GlassButton>
     );
 }

@@ -38,6 +38,7 @@ import {
 import { BarcodeScannerModal } from './BarcodeScannerModal';
 import { FoodScannerModal, type ScannedAIFoodResult } from './FoodScannerModal';
 import { GlassView } from 'expo-glass-effect';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
@@ -767,20 +768,13 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                         : 'Busca o ingresa manualmente tus alimentos'}
                     </Text>
                   </View>
-                  <TouchableOpacity
+                  <LiquidCloseButton
                     onPress={onClose}
                     hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                    style={[
-                      styles.closeBtn,
-                      {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
-                      },
-                    ]}
-                    activeOpacity={0.7}
-                  >
-                    <X size={18} color={colors.textSecondary} strokeWidth={2.5} />
-                  </TouchableOpacity>
+                    iconColor={colors.textSecondary}
+                    strokeWidth={2.5}
+                    style={styles.closeBtn}
+                  />
                 </View>
 
                 {/* ==================== SUBVIEW: FOOD DETAIL / WEIGHT CUSTOMIZER ==================== */}

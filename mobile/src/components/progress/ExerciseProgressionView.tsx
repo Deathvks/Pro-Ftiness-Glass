@@ -12,7 +12,8 @@ import {
 import { useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
 import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
-import { BookOpen, ChevronDown, Search, X, Dumbbell, TrendingUp, Check } from 'lucide-react-native';
+import { BookOpen, ChevronDown, Search, Dumbbell, TrendingUp, Check } from 'lucide-react-native';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -226,12 +227,12 @@ export function ExerciseProgressionView() {
                 <Text style={[styles.pickerTitle, { color: colors.text }]}>
                   Selecciona un ejercicio
                 </Text>
-                <TouchableOpacity
+                <LiquidCloseButton
                   onPress={() => setShowPicker(false)}
+                  iconSize={20}
+                  iconColor={colors.textSecondary}
                   style={styles.pickerCloseBtn}
-                >
-                  <X size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
+                />
               </View>
 
               <View

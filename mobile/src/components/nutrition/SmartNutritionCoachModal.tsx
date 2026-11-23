@@ -10,7 +10,6 @@ import {
   Platform,
 } from 'react-native';
 import {
-  X,
   Flame,
   Beef,
   Wheat,
@@ -32,6 +31,7 @@ import {
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -159,17 +159,12 @@ export const SmartNutritionCoachModal: React.FC<SmartNutritionCoachModalProps> =
               </Text>
             </View>
 
-            <TouchableOpacity
+            <LiquidCloseButton
               onPress={onClose}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={[
-                styles.closeButton,
-                { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' },
-              ]}
-              activeOpacity={0.7}
-            >
-              <X size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
+              iconColor={colors.textSecondary}
+              style={styles.closeButton}
+            />
           </View>
 
           {/* Scrollable Content */}

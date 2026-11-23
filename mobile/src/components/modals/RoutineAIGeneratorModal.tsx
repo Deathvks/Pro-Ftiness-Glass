@@ -8,11 +8,11 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { Sparkles, X, Zap, AlertCircle } from 'lucide-react-native';
+import { Sparkles, Zap, AlertCircle } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
-import { GlassButton } from '@/components/ui/GlassButton';
+import { GlassButton, LiquidCloseButton } from '@/components/ui/GlassButton';
 import { askTrainerAI } from '@/services/aiService';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
 
@@ -145,24 +145,13 @@ export function RoutineAIGeneratorModal({
     >
       {/* Header Centered */}
       <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 14, alignItems: 'center' }}>
-        <TouchableOpacity
+        <LiquidCloseButton
           onPress={onClose}
           disabled={isLoading}
-          style={{
-            position: 'absolute',
-            top: 8,
-            right: 20,
-            width: 34,
-            height: 34,
-            borderRadius: 17,
-            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: isLoading ? 0.5 : 1,
-          }}
-        >
-          <X size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+          size={34}
+          iconColor={colors.textSecondary}
+          style={{ position: 'absolute', top: 8, right: 20, zIndex: 10 }}
+        />
 
         <View
           style={{

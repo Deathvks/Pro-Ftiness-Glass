@@ -9,9 +9,10 @@ import {
   Pressable,
 } from 'react-native';
 import { GlassView } from 'expo-glass-effect';
-import { X, Calendar as CalendarIcon, Flame, Dumbbell } from 'lucide-react-native';
+import { Calendar as CalendarIcon, Flame, Dumbbell } from 'lucide-react-native';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 
 interface ExerciseHistoryModalProps {
@@ -99,9 +100,12 @@ export function ExerciseHistoryModal({
                   {historyByDay.length === 1 ? 'sesión registrada' : 'sesiones registradas'}
                 </Text>
               </View>
-              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                <X size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
+              <LiquidCloseButton
+                onPress={onClose}
+                iconSize={20}
+                iconColor={colors.textSecondary}
+                style={styles.closeBtn}
+              />
             </View>
 
             {/* Year Filters */}

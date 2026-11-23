@@ -21,10 +21,9 @@ import {
   LogOut,
   Trash2,
   Medal,
-  X,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
-import { GlassButton } from '@/components/ui/GlassButton';
+import { GlassButton, LiquidCloseButton } from '@/components/ui/GlassButton';
 import * as Clipboard from 'expo-clipboard';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -499,9 +498,12 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
               <View style={[styles.modalCard, { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: 'transparent' }]}>
                 <View style={styles.modalHeader}>
                   <Text style={[styles.modalTitle, { color: colors.text }]}>Crear Grupo</Text>
-                  <TouchableOpacity onPress={() => setShowCreateModal(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <X size={20} color={colors.textSecondary} />
-                  </TouchableOpacity>
+                  <LiquidCloseButton
+                    onPress={() => setShowCreateModal(false)}
+                    iconSize={20}
+                    iconColor={colors.textSecondary}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  />
                 </View>
 
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Nombre del Grupo</Text>
@@ -583,9 +585,12 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
               <View style={[styles.modalCard, { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: 'transparent' }]}>
                 <View style={styles.modalHeader}>
                   <Text style={[styles.modalTitle, { color: colors.text }]}>Unirse a un Grupo</Text>
-                  <TouchableOpacity onPress={() => setShowJoinModal(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <X size={20} color={colors.textSecondary} />
-                  </TouchableOpacity>
+                  <LiquidCloseButton
+                    onPress={() => setShowJoinModal(false)}
+                    iconSize={20}
+                    iconColor={colors.textSecondary}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  />
                 </View>
 
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Código de Invitación</Text>

@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import {
@@ -26,7 +27,6 @@ import {
   Copy,
   Unlock,
   HelpCircle,
-  X,
   ShieldAlert,
   ArrowRight,
   CheckCircle2,
@@ -580,12 +580,12 @@ export default function TwoFactorSetupScreen() {
               <Text style={[styles.infoModalTitle, { color: colors.text }]}>
                 {infoModal === 'app' ? 'Autenticación por App' : 'Autenticación por Email'}
               </Text>
-              <TouchableOpacity
+              <LiquidCloseButton
                 onPress={() => setInfoModal(null)}
+                iconSize={20}
+                iconColor={colors.textSecondary}
                 style={styles.modalCloseBtn}
-              >
-                <X size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
+              />
             </View>
 
             <Text style={[styles.infoModalText, { color: colors.textSecondary }]}>

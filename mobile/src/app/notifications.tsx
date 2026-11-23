@@ -40,6 +40,7 @@ import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
 import { GlassView } from 'expo-glass-effect';
 import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { TourTarget } from '@/components/tutorials/TourTarget';
 
@@ -706,25 +707,11 @@ export default function NotificationsScreen() {
                 backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)',
               }}>
                 {/* Botón cerrar Liquid Glass */}
-                <TouchableOpacity 
+                <LiquidCloseButton
                   onPress={() => setSelectedNotification(null)}
-                  style={{ 
-                    position: 'absolute', 
-                    top: 20, 
-                    right: 20, 
-                    width: 36, 
-                    height: 36, 
-                    borderRadius: 18, 
-                    overflow: 'hidden',
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    zIndex: 10 
-                  }}
-                >
-                  <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, { borderRadius: 18 }]} />
-                  <X size={18} color={colors.textSecondary} />
-                </TouchableOpacity>
+                  iconColor={colors.textSecondary}
+                  style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}
+                />
 
                 {/* Encabezado */}
                 <View style={{ alignItems: 'center', marginBottom: 24 }}>

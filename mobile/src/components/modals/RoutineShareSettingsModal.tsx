@@ -9,11 +9,11 @@ import {
   Share as NativeShare,
   Platform,
 } from 'react-native';
-import { Share2, Lock, Users, Globe, CheckCircle, Copy, Link2, X } from 'lucide-react-native';
+import { Share2, Lock, Users, Globe, CheckCircle, Copy, Link2 } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
-import { GlassButton } from '@/components/ui/GlassButton';
+import { GlassButton, LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
 import { buildSharedRoutineUrl } from '@/utils/deepLinking';
 
@@ -106,15 +106,11 @@ export const RoutineShareSettingsModal: React.FC<RoutineShareSettingsModalProps>
     >
       <View style={styles.container}>
         {/* BOTÓN CERRAR */}
-        <TouchableOpacity
+        <LiquidCloseButton
           onPress={onClose}
-          style={[
-            styles.closeBtn,
-            { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
-          ]}
-        >
-          <X size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+          iconColor={colors.textSecondary}
+          style={styles.closeBtn}
+        />
 
         {/* CABECERA */}
         <View style={styles.header}>

@@ -9,9 +9,10 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
-import { X, Beef, Wheat, Salad, IceCream, Scale, Utensils, Star } from 'lucide-react-native';
+import { Beef, Wheat, Salad, IceCream, Scale, Utensils, Star } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
@@ -152,20 +153,12 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
                 </TouchableOpacity>
 
                 {/* Close Button */}
-                <TouchableOpacity
+                <LiquidCloseButton
                   onPress={handleClose}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  style={[
-                    styles.closeBtn,
-                    {
-                      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.55)' : 'rgba(255, 255, 255, 0.85)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.12)',
-                    },
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  <X size={18} color={colors.text} />
-                </TouchableOpacity>
+                  iconColor={colors.text}
+                  style={styles.closeBtn}
+                />
               </View>
 
               {/* Title & Calories / Weight */}

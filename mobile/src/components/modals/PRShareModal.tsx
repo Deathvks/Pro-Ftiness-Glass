@@ -5,7 +5,8 @@ import {
   Image, ActivityIndicator, Alert, ScrollView 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Trophy, TrendingUp, Calendar, X, Share2, Sparkles, ChevronRight, User } from 'lucide-react-native';
+import { Trophy, TrendingUp, Calendar, Share2, Sparkles, ChevronRight, User } from 'lucide-react-native';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
@@ -99,9 +100,15 @@ export const PRShareModal: React.FC<PRShareModalProps> = ({
         <View style={styles.contentContainer}>
           
           {/* BOTÓN CERRAR */}
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-            <X size={22} color="#fff" />
-          </TouchableOpacity>
+          <LiquidCloseButton
+            onPress={onClose}
+            size={38}
+            iconSize={20}
+            iconColor="#fff"
+            color="rgba(0,0,0,0.45)"
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            style={styles.closeBtn}
+          />
 
           <ScrollView 
             contentContainerStyle={styles.scrollContent} 

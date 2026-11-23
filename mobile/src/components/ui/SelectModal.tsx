@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions, Platform } from 'react-native';
-import { X, Check } from 'lucide-react-native';
+import { Check } from 'lucide-react-native';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import { getThemeBaseBackground, getUnselectedControlColors } from '@/constants/theme';
 
@@ -70,19 +71,12 @@ export function SelectModal({
         >
           {title}
         </Text>
-        <TouchableOpacity
+        <LiquidCloseButton
           onPress={onClose}
-          style={{
-            width: 32,
-            height: 32,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-            borderRadius: 16,
-          }}
-        >
-          <X size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+          size={34}
+          theme={theme}
+          iconColor={colors.textSecondary}
+        />
       </View>
 
       {/* List */}

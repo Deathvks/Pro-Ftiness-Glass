@@ -1,9 +1,10 @@
 /* mobile/src/components/modals/PRListModal.tsx */
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
-import { Trophy, ChevronRight, X } from 'lucide-react-native';
+import { Trophy, ChevronRight } from 'lucide-react-native';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import {
   SwipeableBottomSheet,
   getAppleSheetCardStyle,
@@ -47,17 +48,12 @@ export const PRListModal: React.FC<PRListModalProps> = ({
               Selecciona cuál quieres ver o compartir
             </Text>
           </View>
-          <TouchableOpacity
-            style={[
-              styles.closeBtn,
-              {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-              },
-            ]}
+          <LiquidCloseButton
             onPress={onClose}
-          >
-            <X size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
+            iconSize={20}
+            iconColor={colors.textSecondary}
+            style={styles.closeBtn}
+          />
         </View>
 
         {/* Lista de récords */}

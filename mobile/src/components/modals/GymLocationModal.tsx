@@ -31,6 +31,7 @@ import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import { GYM_BRANDS, enrichGymWithMedia } from '@/utils/gymMedia';
 import {
@@ -478,17 +479,12 @@ export function GymLocationModal({
               </View>
             </View>
 
-            <TouchableOpacity
+            <LiquidCloseButton
               onPress={onClose}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              style={[
-                styles.closeBtn,
-                { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' },
-              ]}
-              activeOpacity={0.7}
-            >
-              <X size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
+              iconColor={colors.textSecondary}
+              style={styles.closeBtn}
+            />
           </View>
 
           <ScrollView

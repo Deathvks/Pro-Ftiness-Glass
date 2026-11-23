@@ -7,12 +7,13 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import { Trophy, Gift, Check, Lock, Palette, X } from 'lucide-react-native';
+import { Trophy, Gift, Check, Lock, Palette } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
 
 interface RewardsModalProps {
@@ -98,16 +99,12 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
           </View>
           <Text style={[styles.title, { color: colors.text }]}>Recompensas</Text>
         </View>
-        <TouchableOpacity
+        <LiquidCloseButton
           onPress={onClose}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          style={[
-            styles.closeBtn,
-            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' },
-          ]}
-        >
-          <X size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+          iconColor={colors.textSecondary}
+          style={styles.closeBtn}
+        />
       </View>
 
       <ScrollView

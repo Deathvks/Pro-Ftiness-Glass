@@ -18,7 +18,6 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import {
-  X,
   Zap,
   ZapOff,
   Camera as CameraIcon,
@@ -28,6 +27,7 @@ import {
   Search,
 } from 'lucide-react-native';
 
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
@@ -334,9 +334,12 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
             <View style={styles.manualInputHeader}>
               <ScanBarcode size={22} color={colors.tint} />
               <Text style={[styles.manualInputTitle, { color: colors.text }]}>Código de Barras Manual</Text>
-              <TouchableOpacity onPress={() => setShowManualInput(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <X size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
+              <LiquidCloseButton
+                onPress={() => setShowManualInput(false)}
+                size={34}
+                iconColor={colors.textSecondary}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              />
             </View>
 
             <Text style={[styles.manualInputDesc, { color: colors.textSecondary }]}>
@@ -470,19 +473,20 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
 
         {/* Barra superior flotante de controles */}
         <View style={styles.topBar}>
-          <TouchableOpacity
+          <LiquidCloseButton
             onPress={() => {
               try {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               } catch {}
               onClose();
             }}
+            size={42}
+            iconSize={20}
+            iconColor="#ffffff"
+            strokeWidth={2.4}
+            color="rgba(0,0,0,0.4)"
             style={styles.glassCircleBtn}
-            activeOpacity={0.8}
-          >
-            <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
-            <X size={20} color="#ffffff" strokeWidth={2.4} />
-          </TouchableOpacity>
+          />
 
           <View style={styles.topCenterPill}>
             <BlurView intensity={35} tint="dark" style={StyleSheet.absoluteFill} />

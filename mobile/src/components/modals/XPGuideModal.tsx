@@ -29,9 +29,10 @@ import {
   Star,
   Trophy,
   Utensils,
-  X,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 
 import LevelBadge from '@/components/LevelBadge';
 import { getThemedModalCardColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
@@ -270,13 +271,12 @@ export function XPGuideModal({
             </View>
             <Text style={[styles.title, { color: colors.text }]}>Sistema XP</Text>
           </View>
-          <TouchableOpacity
+          <LiquidCloseButton
             onPress={onClose}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={[styles.closeBtn, { backgroundColor: subtleBg }]}
-          >
-            <X size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
+            iconColor={colors.textSecondary}
+            style={styles.closeBtn}
+          />
         </View>
 
         <View style={styles.tabsRow}>

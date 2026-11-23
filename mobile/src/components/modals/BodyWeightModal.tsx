@@ -7,11 +7,12 @@ import {
   TextInput,
   Platform,
 } from 'react-native';
-import { X, Scale } from 'lucide-react-native';
+import { Scale } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
 
 interface BodyWeightModalProps {
@@ -81,16 +82,12 @@ export function BodyWeightModal({
           <Text style={[styles.title, { color: colors.text }]}>
             {existingLog ? 'Editar Peso de Hoy' : 'Registrar Peso Corporal'}
           </Text>
-          <TouchableOpacity
+          <LiquidCloseButton
             onPress={onClose}
-            style={[
-              styles.closeBtn,
-              { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
-            ]}
+            iconColor={colors.textSecondary}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <X size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
+            style={styles.closeBtn}
+          />
         </View>
 
         <View style={styles.body}>

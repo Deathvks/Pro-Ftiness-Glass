@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ArrowRight, ShieldCheck, X } from 'lucide-react-native';
+import { ArrowRight, ShieldCheck } from 'lucide-react-native';
 
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -22,16 +23,12 @@ export function TwoFactorPromoModal({ visible, onConfigure, onClose }: TwoFactor
   return (
     <SwipeableBottomSheet visible={visible} onClose={onClose} isDark={isDark} maxHeight="75%">
       <View style={styles.content}>
-        <TouchableOpacity
+        <LiquidCloseButton
           onPress={onClose}
           accessibilityLabel="Cerrar aviso 2FA"
-          style={[
-            styles.closeBtn,
-            { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
-          ]}
-        >
-          <X size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+          iconColor={colors.textSecondary}
+          style={styles.closeBtn}
+        />
 
         <View style={[styles.iconCircle, { backgroundColor: colors.tint + '1A', borderColor: colors.tint + '44' }]}>
           <ShieldCheck size={34} color={colors.tint} strokeWidth={2.3} />

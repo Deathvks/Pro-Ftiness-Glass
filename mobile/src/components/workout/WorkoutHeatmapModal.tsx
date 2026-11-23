@@ -8,7 +8,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Activity, X } from 'lucide-react-native';
+import { Activity } from 'lucide-react-native';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 
 import {
   HEATMAP_INTENSITY_LEVELS,
@@ -92,13 +93,12 @@ export const WorkoutHeatmapModal: React.FC<WorkoutHeatmapModalProps> = ({
           </View>
         </View>
 
-        <TouchableOpacity
+        <LiquidCloseButton
           onPress={onClose}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={[styles.closeBtn, { backgroundColor: subtleBg }]}
-        >
-          <X size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+          iconColor={colors.textSecondary}
+          style={styles.closeBtn}
+        />
       </View>
 
       <View style={{ flex: 1, minHeight: 0 }}>

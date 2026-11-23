@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { ModalThemeBackground, getThemedModalCardColor } from '@/components/ui/ModalThemeBackground';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import {
   Activity,
   BarChart3,
@@ -225,21 +226,14 @@ export function TutorialsCenterModal({
                 </View>
               </View>
 
-              <TouchableOpacity
+              <LiquidCloseButton
                 onPress={onClose}
                 hitSlop={10}
                 accessibilityLabel="Cerrar tutoriales"
-                style={[
-                  styles.closeBtn,
-                  {
-                    backgroundColor: isDark
-                      ? 'rgba(255,255,255,0.08)'
-                      : 'rgba(0,0,0,0.06)',
-                  },
-                ]}
-              >
-                <X size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
+                iconSize={20}
+                iconColor={colors.textSecondary}
+                style={styles.closeBtn}
+              />
             </View>
 
             {/* Search Input */}

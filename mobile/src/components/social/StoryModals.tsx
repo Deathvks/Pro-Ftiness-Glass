@@ -12,6 +12,7 @@ import { useEvent } from 'expo';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { LiquidGlassSwitch } from '@/components/ui/LiquidGlassSwitch';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import { getThemeBaseBackground, getThemeSurfaceMode, getUnselectedControlColors } from '@/constants/theme';
@@ -72,10 +73,14 @@ export function StoryComposerModal({ visible, step, session, busy, onClose, onAc
       <View style={styles.sheetHeader}>
         <View style={[styles.headerIcon, { backgroundColor: colors.tint + '18' }]}><Icon size={23} color={colors.tint} /></View>
         <Text accessibilityRole="header" style={[styles.sheetTitle, { color: colors.text }]}>{terms ? 'Historias' : 'Compartir historia'}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" disabled={busy} onPress={onClose}
-          style={({ pressed }) => [styles.iconButton, { backgroundColor: unselected.backgroundColor, opacity: busy || pressed ? 0.55 : 1 }]}>
-          <X size={19} color={colors.textSecondary} />
-        </Pressable>
+        <LiquidCloseButton
+          accessibilityLabel="Cerrar"
+          disabled={busy}
+          onPress={onClose}
+          iconSize={19}
+          iconColor={colors.textSecondary}
+          style={styles.iconButton}
+        />
       </View>
       <ScrollView key={step + ':' + session} contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {terms ? (
@@ -528,10 +533,15 @@ export function StoryViewerModal({
               </Text>
             </View>
 
-            <Pressable accessibilityRole="button" accessibilityLabel="Cerrar historia" onPress={onClose}
-              style={({ pressed }) => [styles.iconButton, styles.mediaControl, pressed && { opacity: 0.7 }]}>
-              <X size={21} color="#ffffff" />
-            </Pressable>
+            <LiquidCloseButton
+              accessibilityLabel="Cerrar historia"
+              onPress={onClose}
+              size={38}
+              iconSize={20}
+              iconColor="#ffffff"
+              color="rgba(0,0,0,0.4)"
+              style={styles.iconButton}
+            />
           </View>
         </View>
 

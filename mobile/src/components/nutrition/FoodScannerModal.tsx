@@ -18,8 +18,9 @@ import * as Haptics from 'expo-haptics';
 import { File as ExpoFile } from 'expo-file-system';
 import { GlassView } from 'expo-glass-effect';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Camera, Sparkles, Upload, X, Zap } from 'lucide-react-native';
+import { Camera, Sparkles, Upload, Zap } from 'lucide-react-native';
 
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
@@ -250,21 +251,15 @@ export const FoodScannerModal: React.FC<FoodScannerModalProps> = ({
         </View>
 
         {/* Close Button */}
-        <TouchableOpacity
+        <LiquidCloseButton
           onPress={onClose}
           disabled={isScanning}
           hitSlop={10}
           accessibilityLabel="Cerrar escáner nutricional IA"
-          style={[
-            styles.closeBtn,
-            {
-              backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-              opacity: isScanning ? 0.45 : 1,
-            },
-          ]}
-        >
-          <X size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+          iconSize={20}
+          iconColor={colors.textSecondary}
+          style={styles.closeBtn}
+        />
 
         {/* Zap Icon Badge */}
         <LinearGradient

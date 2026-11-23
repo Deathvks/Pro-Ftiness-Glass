@@ -34,8 +34,9 @@ import {
   Sparkles,
   Gauge,
   Battery,
-  X,
 } from 'lucide-react-native';
+
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -879,13 +880,13 @@ export default function AppearanceScreen() {
               tintOpacity={0.92}
               style={styles.modalCard}
             >
-              <Pressable
+              <LiquidCloseButton
                 onPress={() => setShowGalaxyWarning(false)}
-                style={styles.modalCloseBtn}
+                iconSize={20}
+                iconColor={colors.textSecondary}
                 hitSlop={12}
-              >
-                <X size={20} color={colors.textSecondary} />
-              </Pressable>
+                style={styles.modalCloseBtn}
+              />
 
               <View style={[styles.modalIconWrap, { backgroundColor: '#a855f720' }]}>
                 <Sparkles size={30} color="#a855f7" />

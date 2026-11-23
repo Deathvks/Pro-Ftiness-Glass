@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions } from 'react-native';
 import { GlassView } from 'expo-glass-effect';
-import { X, Check } from 'lucide-react-native';
+import { Check } from 'lucide-react-native';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { WebView } from 'react-native-webview';
 
 // A simple workaround to crop images using WebView since writing a native gesture cropper from scratch takes hours
@@ -44,7 +45,7 @@ export const CropModal = ({ visible, imageUrl, onClose, onCrop }: any) => {
       >
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 20, paddingTop: 60 }}>
-            <TouchableOpacity onPress={onClose} style={styles.btn}><X color="#fff" /></TouchableOpacity>
+            <LiquidCloseButton onPress={onClose} size={44} iconSize={20} iconColor="#fff" color="rgba(0,0,0,0.45)" />
             <TouchableOpacity onPress={() => onCrop(imageUrl)} style={[styles.btn, { backgroundColor: '#10b981' }]}><Check color="#fff" /></TouchableOpacity>
           </View>
           

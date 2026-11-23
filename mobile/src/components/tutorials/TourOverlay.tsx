@@ -13,7 +13,9 @@ import { usePathname, useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
 import Svg, { Path, Rect } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import { ChevronLeft, ChevronRight, Sparkles, X } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react-native';
+
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -579,17 +581,14 @@ export function TourOverlay() {
             </Text>
           </View>
 
-          <TouchableOpacity
+          <LiquidCloseButton
             onPress={handleClose}
             hitSlop={12}
+            size={32}
+            iconSize={16}
+            iconColor={colors.textSecondary}
             accessibilityLabel="Cerrar tutorial"
-            style={[
-              styles.closeBtn,
-              { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
-            ]}
-          >
-            <X size={16} color={colors.textSecondary} />
-          </TouchableOpacity>
+          />
         </View>
 
         <Text style={[styles.title, { color: colors.text }]}>{step.title}</Text>

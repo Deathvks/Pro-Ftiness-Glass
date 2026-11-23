@@ -2,9 +2,10 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { AlertTriangle, ExternalLink, Info, ShieldCheck, X } from 'lucide-react-native';
+import { AlertTriangle, ExternalLink, Info, ShieldCheck } from 'lucide-react-native';
 
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { getContrastTextColor } from '@/utils/colorUtils';
@@ -40,15 +41,11 @@ export function GoogleTermsModal({
   return (
     <SwipeableBottomSheet visible={visible} onClose={onClose} isDark={isDark} maxHeight="85%">
       <View style={styles.content}>
-        <TouchableOpacity
+        <LiquidCloseButton
           onPress={onClose}
-          style={[
-            styles.closeBtn,
-            { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
-          ]}
-        >
-          <X size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+          iconColor={colors.textSecondary}
+          style={styles.closeBtn}
+        />
 
         <View
           style={[

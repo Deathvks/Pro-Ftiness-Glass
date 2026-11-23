@@ -13,7 +13,6 @@ import {
   Pressable,
 } from 'react-native';
 import {
-  X,
   Copy,
   CalendarDays,
   ChevronDown,
@@ -24,6 +23,8 @@ import {
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
+
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -334,17 +335,13 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
                 Añade los alimentos a {destinationName} del {destinationDate}.
               </Text>
             </View>
-            <TouchableOpacity
+            <LiquidCloseButton
               onPress={onClose}
               disabled={isCopying}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={[
-                styles.closeBtn,
-                { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' },
-              ]}
-            >
-              <X size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
+              iconColor={colors.textSecondary}
+              style={styles.closeBtn}
+            />
           </View>
 
           <ScrollView

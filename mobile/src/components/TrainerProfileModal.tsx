@@ -22,8 +22,8 @@ import {
   Zap,
   BadgeCheck,
   ChevronDown,
-  X,
 } from 'lucide-react-native';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
@@ -111,22 +111,15 @@ export default function TrainerProfileModal({
             <Text style={[styles.stickyTitle, { color: colors.text }]}>ENTRENADOR</Text>
           </View>
         )}
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Cerrar perfil del entrenador"
-          style={[
-            styles.closeBtn,
-            {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)',
-            },
-          ]}
+        <LiquidCloseButton
           onPress={handleClose}
-          activeOpacity={0.8}
+          accessibilityLabel="Cerrar perfil del entrenador"
+          iconSize={20}
+          iconColor={colors.text}
+          strokeWidth={2.5}
           hitSlop={8}
-        >
-          <X size={20} color={colors.text} strokeWidth={2.5} />
-        </TouchableOpacity>
+          style={styles.closeBtn}
+        />
       </View>
 
       {/* Scrollable Content */}

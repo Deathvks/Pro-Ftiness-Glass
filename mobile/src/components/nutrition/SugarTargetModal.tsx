@@ -7,10 +7,11 @@ import {
   Platform,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { X, IceCream, AlertTriangle, Info } from 'lucide-react-native';
+import { IceCream, AlertTriangle, Info } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
 
 interface SugarTargetModalProps {
@@ -63,19 +64,12 @@ export const SugarTargetModal: React.FC<SugarTargetModalProps> = ({
         ]}
       >
         {/* Close Button */}
-        <TouchableOpacity
+        <LiquidCloseButton
           onPress={handleClose}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={[
-            styles.closeButton,
-            {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-            },
-          ]}
-          activeOpacity={0.7}
-        >
-          <X size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+          iconColor={colors.textSecondary}
+          style={styles.closeButton}
+        />
 
         {/* Title Header */}
         <View style={styles.titleRow}>

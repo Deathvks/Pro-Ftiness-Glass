@@ -10,8 +10,9 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { CheckCircle2, MessageSquareText, Sparkles, Star, X } from 'lucide-react-native';
+import { CheckCircle2, MessageSquareText, Sparkles, Star } from 'lucide-react-native';
 
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import { useAppColors } from '@/hooks/useAppColors';
 import { useToast } from '@/hooks/useToast';
@@ -151,16 +152,12 @@ export function AppRatingModal({ visible, onClose, onSuccess }: AppRatingModalPr
             </Text>
           </View>
         </View>
-        <TouchableOpacity
+        <LiquidCloseButton
           onPress={onClose}
           accessibilityLabel="Cerrar modal de valoración"
-          style={[
-            styles.closeBtn,
-            { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
-          ]}
-        >
-          <X size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+          iconColor={colors.textSecondary}
+          style={styles.closeBtn}
+        />
       </View>
 
       {loadingInitial ? (

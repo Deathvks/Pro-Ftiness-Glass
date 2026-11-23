@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Pressable } from 'react-native';
-import { ShieldCheck, Scale, FileText, Lock, Mail, HeartPulse, X, Check, Globe } from 'lucide-react-native';
+import { ShieldCheck, Scale, FileText, Lock, Mail, HeartPulse, Check, Globe } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 
 export type LegalDocType = 'privacy' | 'terms' | 'legalNotice';
@@ -58,19 +59,12 @@ export function LegalDocumentModal({ visible, onClose, initialDoc = 'privacy' }:
                 Pro Fitness Glass • Cumplimiento RGPD y LOPDGDD
               </Text>
             </View>
-            <TouchableOpacity
+            <LiquidCloseButton
               onPress={onClose}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              style={[
-                styles.closeBtn,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-            >
-              <X size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
+              iconColor={colors.textSecondary}
+              style={styles.closeBtn}
+            />
           </View>
 
           {/* Segmented Tabs */}

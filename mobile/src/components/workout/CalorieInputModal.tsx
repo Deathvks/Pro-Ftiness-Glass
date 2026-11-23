@@ -13,9 +13,9 @@ import {
   Flame,
   Watch,
   CheckCircle,
-  X,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
@@ -74,19 +74,12 @@ export const CalorieInputModal: React.FC<CalorieInputModalProps> = ({
         >
           <ModalThemeBackground theme={theme} />
 
-          <TouchableOpacity
+          <LiquidCloseButton
             onPress={onCancel}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={[
-              styles.closeBtn,
-              {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-              },
-            ]}
-          >
-            <X size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
+            iconColor={colors.textSecondary}
+            style={styles.closeBtn}
+          />
 
           <View style={styles.header}>
             <View style={[styles.flameCircle, { backgroundColor: 'rgba(249, 115, 22, 0.15)' }]}>

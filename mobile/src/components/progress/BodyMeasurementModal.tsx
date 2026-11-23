@@ -12,11 +12,12 @@ import {
   Platform,
 } from 'react-native';
 import { GlassView } from 'expo-glass-effect';
-import { X, Ruler } from 'lucide-react-native';
+import { Ruler } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 
 export const MEASUREMENT_TYPES = [
@@ -96,9 +97,12 @@ export function BodyMeasurementModal({
               <Text style={[styles.title, { color: colors.text }]}>
                 Registrar Medida
               </Text>
-              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                <X size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
+              <LiquidCloseButton
+                onPress={onClose}
+                iconSize={20}
+                iconColor={colors.textSecondary}
+                style={styles.closeBtn}
+              />
             </View>
 
             {/* Zone Selector */}

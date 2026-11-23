@@ -28,6 +28,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -242,16 +243,12 @@ export function BugReportModal({ visible, onClose }: BugReportModalProps) {
                 <Text style={[styles.headerTitle, { color: colors.text }]}>Reportar problema</Text>
               </View>
 
-              <TouchableOpacity
+              <LiquidCloseButton
                 onPress={handleClose}
-                activeOpacity={0.7}
-                style={[
-                  styles.closeBtn,
-                  { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' },
-                ]}
-              >
-                <X size={18} color={colors.textSecondary} strokeWidth={2.5} />
-              </TouchableOpacity>
+                iconColor={colors.textSecondary}
+                strokeWidth={2.5}
+                style={styles.closeBtn}
+              />
             </View>
 
             {/* Scrollable Form Body */}
@@ -525,12 +522,15 @@ export function BugReportModal({ visible, onClose }: BugReportModalProps) {
         onRequestClose={() => setSelectedLightboxImage(null)}
       >
         <View style={styles.lightboxBackdrop}>
-          <TouchableOpacity
+          <LiquidCloseButton
             onPress={() => setSelectedLightboxImage(null)}
+            size={42}
+            iconSize={22}
+            iconColor="#ffffff"
+            strokeWidth={2.5}
+            color="rgba(0,0,0,0.45)"
             style={styles.lightboxCloseBtn}
-          >
-            <X size={24} color="#ffffff" strokeWidth={2.5} />
-          </TouchableOpacity>
+          />
 
           {selectedLightboxImage && (
             <Image

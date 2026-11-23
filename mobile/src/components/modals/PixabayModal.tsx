@@ -12,9 +12,10 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
-import { Search, X, Image as ImageIcon } from 'lucide-react-native';
+import { Search, Image as ImageIcon } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import {
   SwipeableBottomSheet,
   getAppleSheetCardStyle,
@@ -119,20 +120,11 @@ export const PixabayModal: React.FC<PixabayModalProps> = ({
           ]}
         >
           <Text style={[styles.title, { color: colors.text }]}>Imágenes de Portada</Text>
-          <TouchableOpacity
+          <LiquidCloseButton
             onPress={onClose}
-            activeOpacity={0.75}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <X size={19} color={colors.text} />
-          </TouchableOpacity>
+            iconSize={19}
+            iconColor={colors.text}
+          />
         </View>
 
         {/* Search Bar */}

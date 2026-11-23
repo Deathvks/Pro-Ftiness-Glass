@@ -2,9 +2,10 @@ import { useEffect, useEffectEvent, useRef, useState, type ComponentType, type R
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
-import { Search, X, type LucideProps } from 'lucide-react-native';
+import { Search, type LucideProps } from 'lucide-react-native';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import { getAppleCardSurfaceStyle, getThemeSurfaceMode, shouldUseContentGlass } from '@/constants/theme';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -119,10 +120,15 @@ export function AdminEditor({ title, onClose, busy = false, showCloseButton = fa
       isDark={getThemeSurfaceMode(theme) !== 'light'} backgroundColor={colors.background === 'transparent' ? colors.card : colors.background}>
       <View style={styles.editorHeader}>
         <Text accessibilityRole="header" style={[styles.title, { color: colors.text, flex: 1 }]}>{title}</Text>
-        {showCloseButton && <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" disabled={busy} onPress={onClose}
-          style={[styles.editorClose, { backgroundColor: colors.border, opacity: busy ? 0.4 : 1 }]}>
-          <X size={18} color={colors.text} />
-        </Pressable>}
+        {showCloseButton && (
+          <LiquidCloseButton
+            accessibilityLabel="Cerrar"
+            disabled={busy}
+            onPress={onClose}
+            iconColor={colors.text}
+            style={styles.editorClose}
+          />
+        )}
       </View>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.stack, { paddingHorizontal: 18, paddingBottom: 24 }]}>
         {children}

@@ -10,8 +10,9 @@ import {
   ScrollView,
   Pressable,
 } from 'react-native';
-import { Calculator, X, Disc } from 'lucide-react-native';
+import { Calculator, Disc } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
@@ -121,19 +122,12 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
           <ModalThemeBackground theme={theme} />
 
           {/* Close button */}
-          <TouchableOpacity
+          <LiquidCloseButton
             onPress={onClose}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={[
-              styles.closeBtn,
-              {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-              },
-            ]}
-          >
-            <X size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
+            iconColor={colors.textSecondary}
+            style={styles.closeBtn}
+          />
 
           <View style={styles.header}>
             <View style={[styles.iconCircle, { backgroundColor: colors.tint + '18' }]}>

@@ -11,12 +11,12 @@ import {
 } from 'react-native';
 import {
   CheckCircle,
-  X,
   Save,
   Dumbbell,
   Clock,
   Flame,
 } from 'lucide-react-native';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableSheetModal } from '@/components/ui/SwipeableBottomSheet';
 import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -105,19 +105,12 @@ export const WorkoutReviewModal: React.FC<WorkoutReviewModalProps> = ({
           </Text>
         </View>
 
-        <TouchableOpacity
+        <LiquidCloseButton
           onPress={onClose}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={[
-            styles.closeBtn,
-            {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-            },
-          ]}
-        >
-          <X size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+          iconColor={colors.textSecondary}
+          style={styles.closeBtn}
+        />
       </View>
 
       {/* List of completed exercises */}
