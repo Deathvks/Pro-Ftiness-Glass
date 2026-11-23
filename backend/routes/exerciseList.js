@@ -1,6 +1,7 @@
 import express from 'express';
 import exerciseListController from '../controllers/exerciseListController.js';
 import authenticateToken from '../middleware/authenticateToken.js';
+import authorizeAdmin, { authorizeTrainer } from '../middleware/authorizeAdmin.js';
 import { upload } from '../services/uploadService.js';
 
 import sequelize from '../db.js';
@@ -21,9 +22,9 @@ router.delete('/manual-exercises/all', exerciseListController.deleteAllManualExe
 router.post('/manual-exercises/transfer', exerciseListController.transferManualExercise);
 
 // Funciones de administrador
-router.post('/exercises/import-youtube', exerciseListController.importYouTubePlaylist);
-router.put('/exercises/:id', upload.array('images', 10), exerciseListController.updateExercise);
-router.delete('/exercises/:id', exerciseListController.deleteExercise);
+router.post('/exercises/import-youtube', authorizeAdmin, exerciseListController.importYouTubePlaylist);
+router.put('/exercises/:id', authorizeTrainer, upload.array('images', 10), exerciseListController.updateExercise);
+router.delete('/exercises/:id', authorizeAdmin, exerciseListController.deleteExercise);
 
 export default router;
 

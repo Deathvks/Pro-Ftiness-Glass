@@ -79,14 +79,23 @@ export const getSquadLeaderboard = async (req, res) => {
         model: User,
         as: 'Members',
         // CORRECCIÓN: 'last_active' -> 'lastSeen'
-        attributes: ['id', 'username', 'profile_image_url', 'xp', 'streak', 'lastSeen'],
+        attributes: ['id', 'username', 'profile_image_url', 'xp', 'streak', 'lastSeen', 'role', 'trainer_id'],
         through: { attributes: ['role'] }
       }]
     });
 
     if (!squad) return res.status(404).json({ error: 'Tribu no encontrada' });
 
-    const sortedMembers = squad.Members.sort((a, b) => (b.xp || 0) - (a.xp || 0));
+    const sortedMembers = squad.Members
+      .sort((a, b) => (b.xp || 0) - (a.xp || 0))
+      .map(member => {
+        const publicMember = member.toJSON();
+        if (publicMember.role === 'admin') {
+          publicMember.role = 'user';
+          publicMember.trainer_id = null;
+        }
+        return publicMember;
+      });
     
     res.json({ ...squad.toJSON(), Members: sortedMembers });
   } catch (error) {

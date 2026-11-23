@@ -74,14 +74,14 @@ export const getTrainerInfo = async (req, res, next) => {
 
     if (client.trainer_id) {
       trainer = await User.findByPk(client.trainer_id, {
-        attributes: ['id', 'username', 'name', 'profile_image_url', 'lastSeen']
+        attributes: ['id', 'username', 'name', 'profile_image_url', 'lastSeen', 'role']
       });
     }
 
     if (!trainer) {
       trainer = await User.findOne({
         where: { role: 'trainer' },
-        attributes: ['id', 'username', 'name', 'profile_image_url', 'lastSeen']
+        attributes: ['id', 'username', 'name', 'profile_image_url', 'lastSeen', 'role']
       });
     }
 
@@ -89,7 +89,7 @@ export const getTrainerInfo = async (req, res, next) => {
     if (!trainer) {
       trainer = await User.findOne({
         where: { role: 'admin' },
-        attributes: ['id', 'username', 'name', 'profile_image_url', 'lastSeen']
+        attributes: ['id', 'username', 'name', 'profile_image_url', 'lastSeen', 'role']
       });
     }
 
@@ -97,7 +97,7 @@ export const getTrainerInfo = async (req, res, next) => {
       return res.status(404).json({ message: 'Entrenador no encontrado.' });
     }
 
-    res.status(200).json(trainer);
+    res.status(200).json({ ...trainer.toJSON(), role: trainer.role === 'admin' ? 'user' : trainer.role });
   } catch (error) {
     console.error('Error al obtener info del entrenador:', error);
     next(error);

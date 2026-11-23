@@ -5,6 +5,7 @@ import { processUploadedFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/imageService.js';
 
 const { Story, User, StoryLike, StoryView, Friendship } = models;
+const sameUser = (a, b) => String(a) === String(b);
 
 const publicUserData = (user) => {
     if (!user) return user;
@@ -34,8 +35,35 @@ const getFriendIds = async (userId) => {
     });
 
     return friendships.map(f => 
-        f.requester_id === userId ? f.addressee_id : f.requester_id
+        sameUser(f.requester_id, userId) ? f.addressee_id : f.requester_id
     );
+};
+
+const findVisibleStory = async (id, userId) => {
+    const story = await Story.findOne({
+        where: { id, expires_at: { [Op.gt]: new Date() } },
+        attributes: ['id', 'user_id', 'privacy']
+    });
+    if (!story) return null;
+    if (sameUser(story.user_id, userId) || story.privacy === 'public') return story;
+    if (story.privacy !== 'friends') return null;
+    const friends = await getFriendIds(userId);
+    return friends.some(id => sameUser(id, story.user_id)) ? story : null;
+};
+
+const emitStoryEvent = async (req, userId, privacy, event, payload) => {
+    const io = req.app.get('io');
+    if (!io) return;
+    if (privacy === 'public') {
+        io.emit(event, payload);
+        return;
+    }
+    try {
+        const friends = privacy === 'friends' ? await getFriendIds(userId) : [];
+        io.to([userId, ...friends].map(String)).emit(event, payload);
+    } catch (error) {
+        console.error('Error notificando cambio de historia:', error);
+    }
 };
 
 export const createStory = async (req, res) => {
@@ -45,6 +73,10 @@ export const createStory = async (req, res) => {
 
         if (!req.file) {
             return res.status(400).json({ error: 'No se ha subido ningún archivo' });
+        }
+        if (privacy !== 'friends' && privacy !== 'public') {
+            await deleteFile(req.file.path).catch(() => {});
+            return res.status(400).json({ error: 'Visibilidad no válida' });
         }
 
         const isHDRBoolean = isHDR === 'true';
@@ -109,17 +141,10 @@ export const createStory = async (req, res) => {
             const { trackChallenge } = await import('../services/challengeService.js');
             await trackChallenge(userId, 'social_upload_story', 1);
         } catch (err) {}
-        const io = req.app.get('io');
-        if (io) {
-            io.emit('new_story', {
-                story: storyResponse,
-                user: {
-                    id: user.id,
-                    username: user.username,
-                    avatar: user.profile_image_url
-                }
-            });
-        }
+        await emitStoryEvent(req, userId, newStory.privacy, 'new_story', {
+            story: storyResponse,
+            user: { id: user.id, username: user.username, avatar: user.profile_image_url }
+        });
 
         res.status(201).json({ message: 'Historia creada', story: storyResponse });
 
@@ -198,7 +223,7 @@ export const getStories = async (req, res) => {
                 };
             }
 
-            const isLiked = story.likes.some(like => like.user_id === userId);
+            const isLiked = story.likes.some(like => sameUser(like.user_id, userId));
             const isViewed = story.views.length > 0; 
 
             if (!isViewed) {
@@ -229,8 +254,8 @@ export const getStories = async (req, res) => {
 
         // Ordenar: Yo primero -> Con no vistas -> Resto
         responseData.sort((a, b) => {
-            if (a.userId === userId) return -1;
-            if (b.userId === userId) return 1;
+            if (sameUser(a.userId, userId)) return -1;
+            if (sameUser(b.userId, userId)) return 1;
             if (a.hasUnseen === b.hasUnseen) return 0;
             return a.hasUnseen ? -1 : 1;
         });
@@ -260,10 +285,7 @@ export const deleteStory = async (req, res) => {
         // 2. Borrado lógico
         await story.destroy();
 
-        const io = req.app.get('io');
-        if (io) {
-            io.emit('delete_story', { storyId: id, userId });
-        }
+        await emitStoryEvent(req, userId, story.privacy, 'delete_story', { storyId: id, userId });
 
         res.json({ message: 'Historia eliminada' });
 
@@ -279,8 +301,7 @@ export const toggleLikeStory = async (req, res) => {
         const { id } = req.params;
 
         // Comprobar existencia (ligero)
-        const storyExists = await Story.count({ where: { id } });
-        if (!storyExists) return res.status(404).json({ error: 'Historia no encontrada' });
+        if (!await findVisibleStory(id, userId)) return res.status(404).json({ error: 'Historia no encontrada' });
 
         const existingLike = await StoryLike.findOne({
             where: { story_id: id, user_id: userId }
@@ -330,18 +351,19 @@ export const viewStory = async (req, res) => {
         const { id } = req.params;
 
         // Verificar si existe para no llenar DB de basura
-        const story = await Story.findByPk(id, { attributes: ['user_id'] });
+        const story = await findVisibleStory(id, userId);
         
         if (!story) {
-            return res.status(200).end();
+            return res.status(404).json({ error: 'Historia no encontrada' });
         }
 
         // findOrCreate es atómico y seguro
-        await StoryView.findOrCreate({
+        const [, created] = await StoryView.findOrCreate({
             where: { story_id: id, user_id: userId }
         });
+        if (created) req.app.get('io')?.to(String(userId)).emit('story_viewed', { storyId: id, userId: story.user_id });
 
-        res.status(200).end();
+        res.status(204).end();
 
     } catch (error) {
         console.error('Error marcando vista:', error);

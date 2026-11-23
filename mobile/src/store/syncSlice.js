@@ -1,0 +1,108 @@
+/* mobile/src/store/syncSlice.js */
+import * as Crypto from 'expo-crypto';
+import apiClient from '../services/apiClient';
+
+const STORAGE_KEY = 'offline_sync_queue';
+
+/** @typedef {{ id: string, endpoint: string, options: Record<string, unknown>, cardioUserId?: number | string }} QueuedRequest */
+/** @returns {QueuedRequest[]} */
+const getInitialQueue = () => {
+    try {
+        const stored = (typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null);
+        const queue = stored ? JSON.parse(stored) : [];
+        return Array.isArray(queue) ? queue : [];
+    } catch (e) {
+        console.error('Failed to parse offline sync queue from localStorage', e);
+        return [];
+    }
+};
+
+const saveQueue = (queue) => {
+    try {
+        if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
+    } catch (e) {
+        console.error('Failed to save offline sync queue to localStorage', e);
+    }
+};
+
+export const createSyncSlice = (set, get) => ({
+    syncQueue: getInitialQueue(),
+    hydrateSyncQueue: () => set({ syncQueue: getInitialQueue() }),
+    isSyncing: false,
+
+    // Añadir una petición a la cola
+    addToSyncQueue: (request) => {
+        const { endpoint, options, cardioUserId } = request;
+        const currentQueue = get().syncQueue;
+
+        // Evitamos duplicados exactos muy seguidos (opcional, pero recomendado)
+        const isDuplicate = currentQueue.some(item =>
+            item.endpoint === endpoint &&
+            item.cardioUserId === cardioUserId &&
+            JSON.stringify(item.options) === JSON.stringify(options)
+        );
+
+        if (isDuplicate) return;
+
+        const newQueue = [...currentQueue, {
+            id: Crypto.randomUUID(),
+            endpoint,
+            options,
+            cardioUserId,
+            timestamp: Date.now(),
+            retryCount: 0
+        }];
+        
+        saveQueue(newQueue);
+        set({ syncQueue: newQueue });
+    },
+
+    // Eliminar una petición de la cola (por éxito o descarte)
+    removeFromSyncQueue: (id) => {
+        const newQueue = get().syncQueue.filter(item => item.id !== id);
+        saveQueue(newQueue);
+        set({ syncQueue: newQueue });
+    },
+
+    // Actualizar estado de sincronización
+    setSyncing: (status) => set({ isSyncing: status }),
+
+    // Limpiar toda la cola (útil al cerrar sesión)
+    clearSyncQueue: () => {
+        saveQueue([]);
+        set({ syncQueue: [] });
+    },
+
+    // Sincronizar toda la cola pendiente al recuperar conexión
+    flushSyncQueue: async () => {
+        const { isSyncing, syncQueue, token, setSyncing, removeFromSyncQueue, fetchInitialData } = get();
+        if (isSyncing || !token || !Array.isArray(syncQueue) || syncQueue.length === 0) return false;
+
+        setSyncing(true);
+        let syncedAny = false;
+        try {
+            for (const item of syncQueue) {
+                if (get().token !== token) break;
+                try {
+                    await apiClient(item.endpoint, { ...(item.options || {}), queueWhenOffline: false });
+                    removeFromSyncQueue(item.id);
+                    syncedAny = true;
+                } catch (err) {
+                    const status = err?.status;
+                    // Descartamos errores permanentes 4xx (excepto 401/408/429) para no bloquear el resto de la cola
+                    if (status && status >= 400 && status < 500 && status !== 401 && status !== 408 && status !== 429) {
+                        removeFromSyncQueue(item.id);
+                        continue;
+                    }
+                    break;
+                }
+            }
+            if (syncedAny && get().token === token && fetchInitialData) {
+                await fetchInitialData().catch(() => {});
+            }
+        } finally {
+            setSyncing(false);
+        }
+        return syncedAny;
+    },
+});

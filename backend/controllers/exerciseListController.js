@@ -149,7 +149,7 @@ export const importYouTubePlaylist = async (req, res, next) => {
 export const updateExercise = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { name, muscle_group, category, equipment, video_url, existing_images, image_order } = req.body;
+        const { name, muscle_group, category, equipment, description, video_url, existing_images, image_order } = req.body;
 
         const exercise = await ExerciseList.findByPk(id);
         if (!exercise) return res.status(404).json({ message: 'Ejercicio no encontrado.' });
@@ -210,7 +210,8 @@ export const updateExercise = async (req, res, next) => {
             muscle_group: muscle_group !== undefined ? muscle_group : exercise.muscle_group,
             category: category !== undefined ? category : exercise.category,
             equipment: equipment !== undefined ? equipment : exercise.equipment,
-            video_url: video_url !== undefined ? video_url : exercise.video_url,
+            description: description !== undefined ? description : exercise.description,
+            video_url: req.user.role === 'admin' && video_url !== undefined ? video_url : exercise.video_url,
             images: finalImages,
             // Retrocompatibilidad con sistemas que busquen estas columnas
             image_url_start: finalImages[0] || null,

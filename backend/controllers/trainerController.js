@@ -80,7 +80,14 @@ export const getClients = async (req, res) => {
                 'id', 'name', 'username', 'lastSeen', ['created_at', 'createdAt'], 'profile_image_url',
                 'height', 'age', 'gender', 'goal', 'activity_level',
                 'anamnesis_data', 'role', 'email'
-            ]
+            ],
+            include: [{
+                association: 'BodyWeightLogs',
+                attributes: ['weight_kg'],
+                separate: true,
+                limit: 1,
+                order: [['log_date', 'DESC'], ['id', 'DESC']]
+            }]
         });
 
         // Check workouts for today
@@ -114,7 +121,8 @@ export const getClients = async (req, res) => {
                 lastSeen: client.lastSeen,
                 createdAt: client.created_at || client.createdAt,
                 profile_image_url: client.profile_image_url,
-                weight: client.weight,
+                role: client.role === 'admin' ? 'user' : client.role,
+                weight: client.BodyWeightLogs?.[0]?.weight_kg ?? null,
                 height: client.height,
                 age: client.age,
                 gender: client.gender,

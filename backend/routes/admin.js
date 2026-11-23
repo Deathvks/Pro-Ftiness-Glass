@@ -68,6 +68,7 @@ router.get('/email-unsubscribe-test', adminController.getEmailUnsubscribeTestSta
 router.post('/email-unsubscribe-test', notificationTestLimiter, adminController.sendEmailUnsubscribeTest);
 router.post('/email-mailbox-test', notificationTestLimiter, adminController.sendEmailMailboxTest);
 router.get('/notification-tests/status', notificationTestLimiter, adminController.getNotificationTestStatus);
+router.get('/notification-tests/devices', adminController.getPushTestDevices);
 router.post('/notification-tests/push', notificationTestLimiter, adminController.sendPushDeviceTest);
 router.get('/notification-tests/review', adminController.getNotificationReview);
 router.put('/notification-tests/review', adminController.updateNotificationReview);

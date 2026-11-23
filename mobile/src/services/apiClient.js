@@ -1,0 +1,254 @@
+/* mobile/src/services/apiClient.js */
+import useAppStore from '../store/useAppStore';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+import * as Device from 'expo-device';
+import { File as ExpoFile } from 'expo-file-system';
+
+const getMetroIp = () => {
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    const ip = hostUri.split(':')[0];
+    if (ip && ip !== 'localhost' && ip !== '127.0.0.1') return ip;
+  }
+  const linkingUri = Constants.linkingUri;
+  if (linkingUri) {
+    const match = linkingUri.match(/:\/\/(.*?)(:\d+)?(\/|$)/);
+    if (match && match[1] && match[1] !== 'localhost' && match[1] !== '127.0.0.1') {
+      return match[1];
+    }
+  }
+  const expUrl = Constants.experienceUrl;
+  if (expUrl) {
+    const match = expUrl.match(/:\/\/(.*?)(:\d+)?(\/|$)/);
+    if (match && match[1] && match[1] !== 'localhost' && match[1] !== '127.0.0.1') {
+      return match[1];
+    }
+  }
+  return null;
+};
+
+const resolveBaseUrl = () => {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+
+  // Si hay una URL HTTPS configurada explícitamente (túnel ngrok, dominio remoto o producción)
+  if (envUrl && envUrl.startsWith('https://')) {
+    return envUrl;
+  }
+
+  // 1. En dispositivo físico (iPhone/Android real)
+  if (Device.isDevice) {
+    const metroIp = getMetroIp();
+    if (metroIp) {
+      return `http://${metroIp}:3001/api`;
+    }
+    // Si la variable de entorno tiene una IP de red válida
+    if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+      return envUrl;
+    }
+    // Fallback con la IP local de desarrollo
+    return 'http://192.168.1.18:3001/api';
+  }
+
+  // 2. En emulador o simulador local
+  if (__DEV__) {
+    const host = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
+    return `http://${host}:3001/api`;
+  }
+
+  return envUrl || 'http://127.0.0.1:3001/api';
+};
+
+export const API_BASE_URL = resolveBaseUrl();
+export const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
+
+if (__DEV__) {
+  console.log('🌐 [API] Conectando a:', API_BASE_URL);
+}
+
+const apiClient = async (endpoint, options = {}) => {
+    const token = useAppStore.getState().token;
+    const { body, cardioUserId, queueWhenOffline: allowQueue, timeout = 30000, ...customConfig } = options;
+
+    // Headers por defecto.
+    const headers = { ...customConfig.headers };
+
+    // Identificamos plataforma para React Native
+    let platform = Platform.OS === 'ios' || Platform.OS === 'android' ? 'native' : 'web';
+    
+    headers['X-App-Platform'] = platform;
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const config = {
+        method: body ? 'POST' : 'GET',
+        ...customConfig,
+        headers,
+    };
+
+    // Diferenciamos entre body de tipo FormData (para subida de archivos) 
+    // y body de tipo JSON (para todo lo demás).
+    if (body) {
+        if (body instanceof FormData) {
+            // En Expo SDK 58+, expo/fetch requiere objetos con .bytes() (como ExpoFile de expo-file-system)
+            // o Blob, y lanza "Unsupported FormDataPart implementation" si se pasa un objeto plano { uri, name, type }.
+            // Normalizamos automáticamente cualquier entrada { uri, name, type } a un objeto compatible con expo/fetch.
+            if (Platform.OS !== 'web' && Array.isArray(body._parts)) {
+                body._parts = body._parts.map((part) => {
+                    if (!Array.isArray(part) || part.length < 2) return part;
+                    const [fieldName, value] = part;
+                    if (
+                        value &&
+                        typeof value === 'object' &&
+                        typeof value.uri === 'string' &&
+                        !('bytes' in value) &&
+                        !(value instanceof Blob)
+                    ) {
+                        const fileUri = value.uri;
+                        const fallbackName = fileUri.split('/').pop() || 'upload.jpg';
+                        const fileName = value.name || value.fileName || fallbackName;
+                        const mimeType = value.type || value.mimeType || 'application/octet-stream';
+                        return [
+                            fieldName,
+                            {
+                                name: fileName,
+                                type: mimeType,
+                                uri: fileUri,
+                                bytes: async () => {
+                                    const expoFile = new ExpoFile(fileUri);
+                                    return await expoFile.bytes();
+                                },
+                            },
+                        ];
+                    }
+                    return part;
+                });
+            }
+            // Si es FormData, NO establecemos Content-Type. 
+            // El navegador / expo-fetch lo hará automáticamente con el 'boundary' correcto.
+            config.body = body;
+        } else {
+            // Si es un objeto JSON, sí establecemos Content-Type y lo convertimos a string.
+            headers['Content-Type'] = 'application/json';
+            config.body = JSON.stringify(body);
+        }
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    config.signal = controller.signal;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            // Si la respuesta es un error (ej: 4xx, 5xx), intentamos leer el cuerpo del error.
+
+            // --- MANTENIMIENTO: Detectar si el servidor está en modo mantenimiento ---
+            if (response.status === 503) {
+                try {
+                    const maintenanceData = await response.json();
+                    if (maintenanceData.error === 'maintenance') {
+                        const maintenanceErr = new Error(maintenanceData.message || '🔧 Estamos en mantenimiento. Volvemos enseguida.');
+                        maintenanceErr.status = 503;
+                        maintenanceErr.isMaintenance = true;
+                        throw maintenanceErr;
+                    }
+                } catch (e) {
+                    if (e.isMaintenance) throw e;
+                }
+            }
+
+            if (response.status === 401 && !endpoint.includes('/auth/login')) {
+                useAppStore.getState().handleSessionExpiry();
+                // --- CAMBIO: Interrumpir flujo inmediatamente ---
+                throw new Error('Sesión expirada');
+            }
+
+            let errorMessage = 'Ha ocurrido un error inesperado.';
+
+            try {
+                const errorData = await response.json();
+                
+                // Priorizamos el mensaje de error específico de nuestra API
+                if (errorData.error) {
+                    errorMessage = errorData.error;
+                    // Luego, los errores de validación de express-validator
+                } else if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+                    errorMessage = errorData.errors[0].msg;
+                }
+
+                const err = new Error(errorMessage);
+                err.data = errorData; // Adjuntamos los datos completos
+                err.status = response.status; // FUNDAMENTAL para useOfflineSync
+                throw err;
+            } catch (parseError) {
+                if (parseError.data) throw parseError; // Ya es nuestro error personalizado
+
+                // Si no podemos parsear la respuesta, usar mensaje por defecto según status
+                if (response.status === 404) {
+                    errorMessage = 'Recurso no encontrado';
+                } else if (response.status === 403) {
+                    errorMessage = 'No tienes permiso para ver este recurso.';
+                }
+                
+                const fallbackErr = new Error(errorMessage);
+                fallbackErr.status = response.status;
+                throw fallbackErr;
+            }
+        }
+
+        if (response.status === 204) {
+            return; // No hay contenido que devolver
+        }
+
+        return response.json();
+    } catch (error) {
+        clearTimeout(timeoutId);
+
+        const errMessage = (error.message || '').toLowerCase();
+        const isNetworkFailure = 
+            error.name === 'AbortError' || 
+            errMessage.includes('failed to fetch') || 
+            errMessage.includes('fetch failed') ||
+            errMessage.includes('load failed') || 
+            errMessage.includes('networkerror') ||
+            errMessage.includes('network request failed') ||
+            errMessage.includes('fetchrequestcanceledexception') ||
+            errMessage.includes('timed out') ||
+            errMessage.includes('could not connect');
+
+        // Interceptamos fallos de red (Offline o Timeout por red lentísima) para peticiones de escritura (POST, PUT, DELETE, etc.)
+        const isAuthEndpoint = typeof endpoint === 'string' && endpoint.includes('/auth');
+        const queueWhenOffline = allowQueue !== false && !isAuthEndpoint;
+
+        if (isNetworkFailure && config.method !== 'GET' && queueWhenOffline) {
+            // No guardamos FormData en la cola por complejidad de serialización (imágenes, etc.)
+            const isFormData = body instanceof FormData;
+
+            if (!isFormData) {
+                console.log('Detectado modo offline o red muy lenta. Añadiendo petición a la cola de sincronización.');
+                useAppStore.getState().addToSyncQueue({ endpoint, options, cardioUserId });
+                // Lanzamos un error específico para que la UI sepa que se guardó en local
+                const queued = new Error('Conexión inestable. Cambio guardado localmente para sincronizar después.');
+                queued.isQueued = true;
+                throw queued;
+            }
+        }
+
+        if (isNetworkFailure) {
+            if (error.name === 'AbortError') {
+                throw new Error('La conexión es muy lenta. Revisa tu internet.');
+            }
+            throw new Error(`No se pudo conectar con el servidor (${API_BASE_URL}). Verifica que tu PC y el móvil estén en la misma red Wi-Fi y el backend esté encendido.`);
+        }
+        
+        // Si ya hemos procesado el mensaje, simplemente lo volvemos a lanzar.
+        throw error;
+    }
+};
+
+export default apiClient;
