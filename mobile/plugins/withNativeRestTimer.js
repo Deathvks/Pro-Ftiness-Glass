@@ -577,11 +577,14 @@ const withNativeRestTimer = (config) => {
     ensurePermission(manifest, 'android.permission.VIBRATE');
     ensurePermission(manifest, 'android.permission.SCHEDULE_EXACT_ALARM');
 
-    // Keep tablets/Chromebooks/non-GPS devices supported on Google Play
+    // Keep tablets/Chromebooks/Android Go/Cars/non-GPS devices supported on Google Play
     ensureOptionalFeature(manifest, 'android.hardware.camera');
+    ensureOptionalFeature(manifest, 'android.hardware.camera.any');
     ensureOptionalFeature(manifest, 'android.hardware.camera.autofocus');
     ensureOptionalFeature(manifest, 'android.hardware.location');
     ensureOptionalFeature(manifest, 'android.hardware.location.gps');
+    ensureOptionalFeature(manifest, 'android.hardware.screen.portrait');
+    ensureOptionalFeature(manifest, 'android.hardware.screen.landscape');
 
     const application = AndroidConfig.Manifest.getMainApplicationOrThrow(manifest);
     ensureGoogleOAuthIntentFilter(application, GOOGLE_ANDROID_SCHEMES);

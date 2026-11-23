@@ -24,6 +24,10 @@
       "versionCode": 803,
       "package": "com.profitnessglass.app",
       "googleServicesFile": "./google-services.json",
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#178a44",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
