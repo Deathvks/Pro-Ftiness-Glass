@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "Pro Fitness Glass",
     "slug": "mobile",
-    "version": "7.16.45",
+    "version": "8.0.0-beta.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "profitnessglass",
@@ -21,10 +21,10 @@
       }
     },
     "android": {
-      "versionCode": 377,
+      "versionCode": 800,
       "package": "com.profitnessglass.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#178a44",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -64,9 +64,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#178a44",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 180
         }
       ],
       "expo-image",
