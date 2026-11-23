@@ -12,6 +12,8 @@ import { installHapticsInterceptor } from '@/utils/haptics';
 import { loadCardioSession, syncPendingCardio } from '@/utils/cardio';
 import { resolveDeepLink } from '@/utils/deepLinking';
 import { syncPushOnAppStart } from '@/services/nativeNotifications';
+import { initNativeTimerSync } from '@/services/nativeRestTimer';
+import { useRestTimerCompletion } from '@/hooks/useRestTimerCompletion';
 import { initSocket } from '@/services/socket';
 import * as userService from '@/services/userService';
 import { useToastStore } from '@/store/toastStore';
@@ -164,6 +166,12 @@ export default function RootLayout() {
   }, [cardioUserId, hasPendingCardio, syncQueueLength, isAuthenticated, isReady]);
 
   // Cargar datos iniciales y sincronizar notificaciones push del dispositivo
+  useRestTimerCompletion();
+
+  useEffect(() => {
+    return initNativeTimerSync(useAppStore);
+  }, []);
+
   useEffect(() => {
     if (isReady && isAuthenticated) {
       useAppStore.getState().fetchInitialData();

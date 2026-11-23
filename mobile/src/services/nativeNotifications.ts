@@ -447,6 +447,29 @@ export const getDevicePushState = async (userId?: string | number | null) => {
   };
 };
 
+let permissionPromptInFlight: Promise<boolean> | null = null;
+
+export const ensureNotificationPermissionPrompt = async (
+  userId?: string | number | null
+): Promise<boolean> => {
+  if (isWeb) return false;
+  if (!isDevicePushEnabled(userId)) return false;
+
+  const status = await getNotificationPermissionStatus();
+  if (status === 'granted') return true;
+  if (status === 'denied') return false;
+
+  if (!permissionPromptInFlight) {
+    permissionPromptInFlight = registerDeviceForPushNotifications(userId)
+      .then((res) => res.ok)
+      .catch(() => false)
+      .finally(() => {
+        permissionPromptInFlight = null;
+      });
+  }
+  return permissionPromptInFlight;
+};
+
 export const syncPushOnAppStart = async (userId?: string | number | null) => {
   if (!userId) return;
   const uid = resolvePushUserId(userId);

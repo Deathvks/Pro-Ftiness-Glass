@@ -31,6 +31,9 @@ import useAppStore from '@/store/useAppStore';
 import { formatWorkoutTime } from '@/utils/workoutHelpers';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import * as userService from '@/services/userService';
+import { EMAIL_CONSENT_VERSION } from '@/config/emailConsent';
+import { registerDeviceForPushNotifications } from '@/services/nativeNotifications';
+import { updatePushPreferences } from '@/services/notificationService';
 import { WorkoutShareCard } from '@/components/workout/WorkoutShareCard';
 import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 
@@ -90,9 +93,14 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
     if (savingReminderOffer || !userProfile) return;
     setSavingReminderOffer(true);
     try {
+      const pushResult = await registerDeviceForPushNotifications(userProfile.id);
+      if (pushResult.ok) {
+        await updatePushPreferences('training', true, '2026-11-06').catch(() => {});
+      }
       const payload = {
         email_marketing_consent: true,
-        push_notifications: true,
+        emailConsentVersion: EMAIL_CONSENT_VERSION,
+        push_notifications: pushResult.ok,
         training_reminder_hour: selectedOfferHour,
       };
       await userService.updateUserProfile(payload);

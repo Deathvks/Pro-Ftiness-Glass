@@ -94,7 +94,8 @@
         {
           "color": "#22c55e"
         }
-      ]
+      ],
+      "./plugins/withNativeRestTimer"
     ],
     "experiments": {
       "typedRoutes": true,

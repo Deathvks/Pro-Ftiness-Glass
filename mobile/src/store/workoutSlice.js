@@ -1,16 +1,31 @@
 /* frontend/src/store/workoutSlice.js */
 import * as workoutService from '../services/workoutService';
 import {
-  scheduleRestTimerNotification,
-  cancelRestTimerNotification,
+  ensureNotificationPermissionPrompt,
   presentInstantNotification,
 } from '../services/nativeNotifications';
+import {
+  startNativeRestTimer,
+  stopNativeRestTimer,
+} from '../services/nativeRestTimer';
 import { formatDateForQuery } from '../utils/dateUtils';
 import { isSameDay } from '../utils/helpers';
 import * as Crypto from 'expo-crypto';
 
 const stopNativeTimer = () => {
-  void cancelRestTimerNotification();
+  void stopNativeRestTimer();
+};
+
+const launchNativeTimer = (endTimeMs, get) => {
+  const state = get();
+  const routineName = state.activeWorkout?.routineName;
+  void startNativeRestTimer(endTimeMs, {
+    title: routineName ? `Descanso · ${routineName}` : 'Descanso entre series',
+    color: getAccentColor(),
+    sound: state.restSoundEnabled ?? true,
+    vibrate: state.hapticsEnabled ?? true,
+    userId: state.userProfile?.id,
+  });
 };
 
 const getAccentColor = () => {
@@ -258,6 +273,7 @@ export const createWorkoutSlice = (set, get) => ({
     };
     set(newState);
     setWorkoutInStorage(newState);
+    void ensureNotificationPermissionPrompt(get().userProfile?.id);
 
     if (catalog.length || !exercises.length) return;
 
@@ -312,6 +328,7 @@ export const createWorkoutSlice = (set, get) => ({
     };
     set(newState);
     setWorkoutInStorage(newState);
+    void ensureNotificationPermissionPrompt(get().userProfile?.id);
   },
 
   togglePauseWorkout: () => {
@@ -568,7 +585,7 @@ export const createWorkoutSlice = (set, get) => ({
     };
     set(newState);
     setRestTimerInStorage(newState);
-    void scheduleRestTimerNotification(durationInSeconds, get().activeWorkout?.routineName);
+    launchNativeTimer(endTimeMs, get);
   },
 
   setRestTimerMode: (mode) => {
@@ -578,7 +595,7 @@ export const createWorkoutSlice = (set, get) => ({
   },
 
   togglePauseRestTimer: () => {
-    const { isRestTimerPaused, restTimerEndTime, restTimerRemaining, activeWorkout } = get();
+    const { isRestTimerPaused, restTimerEndTime, restTimerRemaining } = get();
     let newState;
 
     if (isRestTimerPaused) {
@@ -590,7 +607,7 @@ export const createWorkoutSlice = (set, get) => ({
         restTimerRemaining: null,
       };
       if (remainingMs > 1000) {
-        void scheduleRestTimerNotification(Math.ceil(remainingMs / 1000), activeWorkout?.routineName);
+        launchNativeTimer(newEndTime, get);
       }
     } else {
       const now = Date.now();
@@ -607,7 +624,7 @@ export const createWorkoutSlice = (set, get) => ({
     setRestTimerInStorage({ ...get(), ...newState });
   },
 
-  addRestTime: (secondsToAdd) => {
+  addRestTime: (secondsToAdd, nativeEndTime) => {
     set((state) => {
       if (state.isRestTimerPaused) {
         const currentRemaining = state.restTimerRemaining || 0;
@@ -623,14 +640,7 @@ export const createWorkoutSlice = (set, get) => ({
 
       if (!state.restTimerEndTime) return {};
       const now = Date.now();
-      let newEndTime;
-
-      if (state.restTimerEndTime < now) {
-        newEndTime = now + (secondsToAdd * 1000);
-      } else {
-        newEndTime = state.restTimerEndTime + (secondsToAdd * 1000);
-      }
-
+      const newEndTime = nativeEndTime ?? (Math.max(state.restTimerEndTime, now) + secondsToAdd * 1000);
       const newInitial = (state.restTimerInitialDuration || 0) + secondsToAdd;
 
       const newState = {
@@ -638,11 +648,13 @@ export const createWorkoutSlice = (set, get) => ({
         restTimerInitialDuration: Math.max(1, newInitial),
       };
       setRestTimerInStorage({ ...state, ...newState });
-      const remainingSec = Math.ceil((newEndTime - now) / 1000);
-      if (remainingSec > 1) {
-        void scheduleRestTimerNotification(remainingSec, state.activeWorkout?.routineName);
-      } else {
-        stopNativeTimer();
+      if (nativeEndTime === undefined) {
+        const remainingSec = Math.ceil((newEndTime - now) / 1000);
+        if (remainingSec > 1) {
+          launchNativeTimer(newEndTime, get);
+        } else {
+          stopNativeTimer();
+        }
       }
 
       return newState;
@@ -655,9 +667,9 @@ export const createWorkoutSlice = (set, get) => ({
     set({ restTimerEndTime: null, restTimerInitialDuration: null, isRestTimerPaused: false, restTimerRemaining: null, restTimerMode: 'hidden' });
   },
 
-  stopRestTimer: () => {
+  stopRestTimer: ({ notifyNative = true } = {}) => {
     clearRestTimerInStorage();
-    stopNativeTimer();
+    if (notifyNative) stopNativeTimer();
     set({
       isResting: false,
       restTimerEndTime: null,
