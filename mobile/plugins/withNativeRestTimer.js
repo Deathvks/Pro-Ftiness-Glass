@@ -519,6 +519,38 @@ function upsertReceiver(application, receiverObj) {
   }
 }
 
+function ensureGoogleOAuthIntentFilter(application, schemes) {
+  const mainActivity = application.activity?.find(
+    (act) => act.$?.['android:name'] === '.MainActivity'
+  );
+  if (!mainActivity) return;
+
+  mainActivity['intent-filter'] = mainActivity['intent-filter'] || [];
+  const existing = new Set(
+    mainActivity['intent-filter']
+      .flatMap((filter) => filter.data || [])
+      .map((d) => d.$?.['android:scheme'])
+      .filter(Boolean)
+  );
+
+  const missing = schemes.filter((s) => !existing.has(s));
+  if (missing.length === 0) return;
+
+  mainActivity['intent-filter'].push({
+    action: [{ $: { 'android:name': 'android.intent.action.VIEW' } }],
+    category: [
+      { $: { 'android:name': 'android.intent.category.DEFAULT' } },
+      { $: { 'android:name': 'android.intent.category.BROWSABLE' } },
+    ],
+    data: missing.map((scheme) => ({ $: { 'android:scheme': scheme } })),
+  });
+}
+
+const GOOGLE_ANDROID_SCHEMES = [
+  'com.googleusercontent.apps.459101292666-fumg9ibvi2gau0re4gddf8lqmarjba7d',
+  'com.googleusercontent.apps.459101292666-3l68mfimdoc046a69m2ijid1ok0c1ceh',
+];
+
 const withNativeRestTimer = (config) => {
   config = withAndroidManifest(config, (cfg) => {
     const manifest = cfg.modResults;
@@ -529,6 +561,7 @@ const withNativeRestTimer = (config) => {
     ensurePermission(manifest, 'android.permission.SCHEDULE_EXACT_ALARM');
 
     const application = AndroidConfig.Manifest.getMainApplicationOrThrow(manifest);
+    ensureGoogleOAuthIntentFilter(application, GOOGLE_ANDROID_SCHEMES);
     upsertReceiver(application, {
       $: {
         'android:name': '.NativeTimerActionReceiver',
