@@ -121,27 +121,7 @@ html.oled-theme {
   --header-solid: #000000;
 }
 
-/* Atmospheric palettes use the same restrained content surfaces as the base themes. */
-html:is(.galaxy-theme, .ocean-theme, .desert-theme) {
-  --glass-bg: var(--bg-secondary);
-  --glass-gradient: none;
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-highlight: inset 0 0 0 transparent;
-  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
-  --glass-content-filter: none;
-  --glass-hover-bg: var(--bg-primary);
-}
-
-html:is(.ocean-theme, .desert-theme):not(.dark) {
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.10);
-}
-
-html:is(.galaxy-theme, .ocean-theme, .desert-theme) .backdrop-blur-glass {
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-
+/* Atmospheric themes keep true Liquid Glass translucency tinted by each palette. */
 html.galaxy-theme {
   --bg-primary: #080814; 
   --bg-secondary: #0d0d1f;
@@ -151,6 +131,16 @@ html.galaxy-theme {
   --text-muted: #64748b;
 
   --bg-primary-rgb: 8, 8, 20;
+
+  --glass-blur: 28px;
+  --glass-bg: rgba(13, 13, 31, 0.34);
+  --glass-gradient: linear-gradient(135deg, rgba(192, 132, 252, 0.14) 0%, rgba(255, 255, 255, 0.04) 45%, rgba(255, 255, 255, 0) 100%);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: inset 0px 1px 1px rgba(255, 255, 255, 0.16), inset 0px -1px 1px rgba(0, 0, 0, 0.35);
+  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  --glass-saturation: 180%;
+  --glass-brightness: 1.08;
+  --glass-hover-bg: rgba(18, 18, 42, 0.50);
 
   --color-accent: #a855f7;
   --color-accent-transparent: rgba(168, 85, 247, 0.12);
@@ -1592,6 +1582,16 @@ html.ocean-theme {
 
   --bg-primary-rgb: 240, 249, 255;
 
+  --glass-blur: 28px;
+  --glass-bg: rgba(240, 249, 255, 0.44);
+  --glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.72) 0%, rgba(224, 242, 254, 0.16) 100%);
+  --glass-border: rgba(255, 255, 255, 0.55);
+  --glass-highlight: inset 0px 1px 1px rgba(255, 255, 255, 0.90), inset 0px -1px 1px rgba(8, 47, 73, 0.06);
+  --glass-shadow: 0 12px 36px rgba(8, 47, 73, 0.12);
+  --glass-saturation: 180%;
+  --glass-brightness: 1.02;
+  --glass-hover-bg: rgba(240, 249, 255, 0.62);
+
   --color-accent: #0ea5e9;
   --color-accent-transparent: rgba(14, 165, 233, 0.12);
   --color-accent-border: rgba(14, 165, 233, 0.28);
@@ -1610,6 +1610,16 @@ html.dark.ocean-theme {
   --text-muted: #bae6fd;
 
   --bg-primary-rgb: 8, 47, 73;
+
+  --glass-blur: 28px;
+  --glass-bg: rgba(8, 47, 73, 0.36);
+  --glass-gradient: linear-gradient(135deg, rgba(125, 211, 252, 0.16) 0%, rgba(255, 255, 255, 0.03) 50%, rgba(0, 0, 0, 0) 100%);
+  --glass-border: rgba(186, 230, 253, 0.16);
+  --glass-highlight: inset 0px 1px 1px rgba(186, 230, 253, 0.22), inset 0px -1px 1px rgba(0, 0, 0, 0.35);
+  --glass-shadow: 0 16px 40px rgba(2, 16, 28, 0.45);
+  --glass-saturation: 180%;
+  --glass-brightness: 1.08;
+  --glass-hover-bg: rgba(12, 74, 110, 0.52);
 
   --color-accent: #0ea5e9;
   --color-accent-transparent: rgba(14, 165, 233, 0.12);
@@ -1634,12 +1644,12 @@ html.ocean-theme #root::before {
 }
 
 html.dark.ocean-theme #root::before {
-  background-color: rgba(8, 47, 73, 0.5);
+  background-color: rgba(8, 47, 73, 0.42);
 }
 
 @media (min-width: 768px) {
-  html.ocean-theme #root::before {
-    background-color: rgba(240, 249, 255, 0.6);
+  html.ocean-theme:not(.dark) #root::before {
+    background-color: rgba(240, 249, 255, 0.55);
   }
 }
 
@@ -1662,6 +1672,16 @@ html.desert-theme {
 
   --bg-primary-rgb: 253, 248, 245;
 
+  --glass-blur: 28px;
+  --glass-bg: rgba(253, 248, 245, 0.46);
+  --glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.72) 0%, rgba(250, 237, 230, 0.18) 100%);
+  --glass-border: rgba(255, 255, 255, 0.55);
+  --glass-highlight: inset 0px 1px 1px rgba(255, 255, 255, 0.90), inset 0px -1px 1px rgba(92, 64, 51, 0.08);
+  --glass-shadow: 0 12px 36px rgba(92, 64, 51, 0.12);
+  --glass-saturation: 170%;
+  --glass-brightness: 1.02;
+  --glass-hover-bg: rgba(253, 248, 245, 0.64);
+
   --color-accent: #d2b48c;
   --color-accent-transparent: rgba(210, 180, 140, 0.12);
   --color-accent-border: rgba(210, 180, 140, 0.28);
@@ -1680,6 +1700,16 @@ html.dark.desert-theme {
   --text-muted: #d2b48c;
 
   --bg-primary-rgb: 44, 30, 22;
+
+  --glass-blur: 28px;
+  --glass-bg: rgba(44, 30, 22, 0.40);
+  --glass-gradient: linear-gradient(135deg, rgba(245, 222, 179, 0.15) 0%, rgba(255, 255, 255, 0.03) 50%, rgba(0, 0, 0, 0) 100%);
+  --glass-border: rgba(245, 222, 179, 0.16);
+  --glass-highlight: inset 0px 1px 1px rgba(245, 222, 179, 0.20), inset 0px -1px 1px rgba(0, 0, 0, 0.40);
+  --glass-shadow: 0 16px 40px rgba(15, 8, 4, 0.50);
+  --glass-saturation: 170%;
+  --glass-brightness: 1.06;
+  --glass-hover-bg: rgba(61, 43, 31, 0.54);
 
   --color-accent: #d2b48c;
   --color-accent-transparent: rgba(210, 180, 140, 0.12);
@@ -1704,12 +1734,12 @@ html.desert-theme #root::before {
 }
 
 html.dark.desert-theme #root::before {
-  background-color: rgba(44, 30, 22, 0.5);
+  background-color: rgba(44, 30, 22, 0.42);
 }
 
 @media (min-width: 768px) {
-  html.desert-theme #root::before {
-    background-color: rgba(253, 248, 245, 0.6);
+  html.desert-theme:not(.dark) #root::before {
+    background-color: rgba(253, 248, 245, 0.55);
   }
 }
 

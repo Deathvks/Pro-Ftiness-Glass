@@ -21,7 +21,7 @@
       }
     },
     "android": {
-      "versionCode": 802,
+      "versionCode": 803,
       "package": "com.profitnessglass.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {

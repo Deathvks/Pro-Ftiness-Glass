@@ -157,11 +157,20 @@ export function getInactiveTabColor(theme: string | undefined, textColor: string
 export const shouldUseContentGlass = (theme?: string): boolean =>
   Platform.OS !== 'ios' && !usesFrontendCardSurface(theme);
 
+const atmosphericGlassSurfaces: Record<string, { backgroundColor: string; borderColor: string }> = {
+  galaxy: { backgroundColor: 'rgba(13, 13, 31, 0.56)', borderColor: 'rgba(255, 255, 255, 0.14)' },
+  ocean: { backgroundColor: 'rgba(240, 249, 255, 0.62)', borderColor: 'rgba(255, 255, 255, 0.55)' },
+  'ocean-dark': { backgroundColor: 'rgba(8, 47, 73, 0.54)', borderColor: 'rgba(186, 230, 253, 0.18)' },
+  desert: { backgroundColor: 'rgba(253, 248, 245, 0.64)', borderColor: 'rgba(255, 255, 255, 0.55)' },
+  'desert-dark': { backgroundColor: 'rgba(44, 30, 22, 0.56)', borderColor: 'rgba(245, 222, 179, 0.18)' },
+};
+
 export const getAppleCardSurfaceStyle = (theme?: string, defaultRadius = 20): ViewStyle => {
-  if (usesFrontendCardSurface(theme)) {
+  const glassSurface = theme ? atmosphericGlassSurfaces[theme] : undefined;
+  if (glassSurface) {
     return {
-      backgroundColor: Colors[theme].card,
-      borderColor: Colors[theme].border,
+      backgroundColor: glassSurface.backgroundColor,
+      borderColor: glassSurface.borderColor,
       borderWidth: StyleSheet.hairlineWidth,
       borderRadius: Platform.OS === 'ios' ? 20 : defaultRadius,
       borderCurve: 'continuous',

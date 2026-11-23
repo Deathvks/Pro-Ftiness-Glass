@@ -1,17 +1,17 @@
 {
-  "version": "7.16.46",
-  "releaseNotes": "Actualización v7.16.46: pantalla de Soporte reorganizada en Ayuda y Comunidad, Información del Sistema y Herramientas y Guías Públicas.",
+  "version": "7.16.47",
+  "releaseNotes": "Actualización v7.16.47: Liquid Glass translúcido en los temas Océano, Galaxia y Desierto (modos claro y oscuro) y tracking de versiones en el panel Admin.",
   "welcome": {
-    "title": "Soporte Mejorado y Organizado",
-    "subtitle": "Encuentra más rápido la ayuda, herramientas públicas y guías de la app desde un diseño por bloques.",
+    "title": "Liquid Glass en Temas Atmosféricos",
+    "subtitle": "Océano, Galaxia y Desierto ahora lucen tarjetas translúcidas con desenfoque real y tracking de versiones en Admin.",
     "features": [
       {
-        "title": "Ayuda y Comunidad",
-        "description": "Acceso directo a preguntas frecuentes, reportes, sugerencias y canales oficiales en un mismo bloque."
+        "title": "Liquid Glass en Océano, Galaxia y Desierto",
+        "description": "Los contenedores dejan pasar el fondo estrellado, océano o dunas con desenfoque esmerilado y brillo de cristal tanto en modo claro como oscuro."
       },
       {
-        "title": "Información del Sistema",
-        "description": "Consulta la versión actual, novedades de cada actualización y el estado de la aplicación al instante."
+        "title": "Control de Versiones y Canal Beta",
+        "description": "Consulta desde el panel Admin qué versión y canal usa cada usuario en Web y App."
       },
       {
         "title": "Herramientas y Guías Públicas",
