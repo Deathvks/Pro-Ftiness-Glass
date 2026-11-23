@@ -241,6 +241,13 @@ export default function AsesoriaScreen() {
     );
   }, []);
 
+  const handleMessageEdited = useCallback((updatedMsg: any) => {
+    if (!updatedMsg?.id) return;
+    setMessages(prev =>
+      prev.map(msg => (String(msg.id) === String(updatedMsg.id) ? { ...msg, ...updatedMsg } : msg))
+    );
+  }, []);
+
   // Setup sockets
   useEffect(() => {
     fetchData();
@@ -249,15 +256,17 @@ export default function AsesoriaScreen() {
     if (socket) {
       socket.on('chat_message', handleNewMessage);
       socket.on('messages_read', handleMessagesRead);
+      socket.on('message_edited', handleMessageEdited);
     }
 
     return () => {
       if (socket) {
         socket.off('chat_message', handleNewMessage);
         socket.off('messages_read', handleMessagesRead);
+        socket.off('message_edited', handleMessageEdited);
       }
     };
-  }, [fetchData, handleNewMessage, handleMessagesRead]);
+  }, [fetchData, handleNewMessage, handleMessagesRead, handleMessageEdited]);
 
   const scrollToBottom = () => {
     setTimeout(() => {

@@ -14,7 +14,7 @@ import {
   Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   X,
   Image as ImageIcon,
@@ -42,6 +42,11 @@ import {
 } from '@/constants/theme';
 import ThemeBackground from '@/components/ThemeBackground';
 import { API_BASE_URL } from '@/services/apiClient';
+import {
+  createRoutine as createRoutineDirect,
+  getRoutineById,
+  updateRoutine as updateRoutineDirect,
+} from '@/services/routineService';
 import { GlassButton } from '@/components/ui/GlassButton';
 import GlobalHeader from '@/components/GlobalHeader';
 import { PixabayModal } from '@/components/modals/PixabayModal';
@@ -63,6 +68,10 @@ export default function RoutineEditorScreen() {
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ trainer?: string; id?: string }>();
+  const isTrainerTemplate = params?.trainer === '1' || params?.trainer === 'true';
+  const paramRoutineId = params?.id ? Number(params.id) : null;
+  const trainerInitKeyRef = React.useRef<string | null>(null);
   const isDark = !['light', 'ocean', 'desert'].includes(theme || '');
   const isIOS = Platform.OS === 'ios';
   const baseBackground = colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background;
@@ -152,6 +161,48 @@ export default function RoutineEditorScreen() {
     }
   }, [allExercises?.length]);
 
+  React.useEffect(() => {
+    if (!isTrainerTemplate) return;
+    const key = paramRoutineId ? String(paramRoutineId) : 'new';
+    if (trainerInitKeyRef.current === key) return;
+    trainerInitKeyRef.current = key;
+
+    if (!paramRoutineId) {
+      useAppStore.getState().clearRoutineEditorState();
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getRoutineById(String(paramRoutineId));
+        if (cancelled || !res) return;
+        const rawExercises = res.exercises || res.RoutineExercises || [];
+        setRoutineEditorState({
+          routineId: res.id,
+          routineName: res.name || '',
+          description: res.description || '',
+          folder: res.folder || '',
+          imageUrl: res.image_url || null,
+          exercises: rawExercises.map((ex: any) => ({
+            ...ex,
+            id: String(ex.id || ex.exercise_list_id || Math.random().toString(36).slice(2)),
+            exercise_id: ex.exercise_list_id || ex.exercise_id || null,
+            is_manual: Boolean(ex.is_manual || ex.exercise_list_id === null),
+          })),
+        });
+      } catch (error: any) {
+        if (!cancelled) {
+          Alert.alert('Error', error?.message || 'No se pudo cargar la rutina de entrenador.');
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isTrainerTemplate, paramRoutineId]);
+
   const uniqueFolders = useMemo(() => {
     const folders = routines
       .map((r: any) => r.folder)
@@ -199,10 +250,13 @@ export default function RoutineEditorScreen() {
   };
 
   const goBackSafe = () => {
+    if (isTrainerTemplate) {
+      useAppStore.getState().clearRoutineEditorState();
+    }
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/(tabs)/routines');
+      router.replace(isTrainerTemplate ? '/trainerPanel' : '/(tabs)/routines');
     }
   };
 
@@ -221,7 +275,7 @@ export default function RoutineEditorScreen() {
       description: description,
       image_url: imageUrl,
       folder: folder || null,
-      is_trainer_template: false,
+      is_trainer_template: isTrainerTemplate,
       exercises: exercises.map((ex: any, index: number) => ({
         exercise_list_id: ex.is_manual ? null : ex.exercise_list_id || ex.exercise_id || ex.id,
         name: ex.name,
@@ -234,6 +288,24 @@ export default function RoutineEditorScreen() {
     };
 
     try {
+      if (isTrainerTemplate) {
+        const saved = routineId
+          ? await updateRoutineDirect(routineId, routineData)
+          : await createRoutineDirect(routineData);
+        if (!saved || !saved.id) {
+          throw new Error('Error al guardar la rutina para clientes');
+        }
+        if (!routineId) {
+          useAppStore.getState().addXp?.(20, 'Rutina creada');
+          useAppStore.getState().showToast?.('Rutina para clientes creada.');
+        } else {
+          useAppStore.getState().showToast?.('Rutina para clientes actualizada.');
+        }
+        useAppStore.getState().clearRoutineEditorState();
+        goBackSafe();
+        return;
+      }
+
       if (routineId) {
         const updateRoutine = useAppStore.getState().updateRoutine;
         const res = await updateRoutine(routineId, routineData);
@@ -302,6 +374,7 @@ export default function RoutineEditorScreen() {
           scrollY={scrollY}
           showBackButton={true}
           hideRightButtons={true}
+          onBackPress={goBackSafe}
         />
       </View>
 
