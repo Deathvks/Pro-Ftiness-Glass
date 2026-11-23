@@ -1,5 +1,5 @@
 /* mobile/src/components/nutrition/PromoBanner.tsx */
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { getContrastTextColor } from '@/utils/routineHelpers';
+import TrainerProfileModal from '@/components/TrainerProfileModal';
 
 interface PromoBannerProps {
   type?: 'nutrition' | 'training' | 'routines';
@@ -25,6 +26,7 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({
   type = 'nutrition',
   onPress,
 }) => {
+  const [showProfile, setShowProfile] = useState(false);
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
@@ -53,6 +55,7 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({
   };
 
   return (
+    <>
     <View style={styles.container}>
       <TouchableOpacity
         onPress={handlePress}
@@ -102,6 +105,22 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({
             <Text style={[styles.description, { color: colors.textSecondary }]}>
               {content.desc}
             </Text>
+            <TouchableOpacity
+              onPress={(e: any) => {
+                e?.stopPropagation?.();
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch {}
+                setShowProfile(true);
+              }}
+              hitSlop={{ top: 6, bottom: 8, left: 4, right: 12 }}
+              activeOpacity={0.75}
+              style={styles.knowMoreBtn}
+            >
+              <Text style={[styles.knowMoreText, { color: colors.tint }]}>
+                Conócelo
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <View style={[styles.chevronCircle, { backgroundColor: isIOS ? colors.tint + '18' : colors.tint }, isIOS && { shadowOpacity: 0 }]}>
@@ -110,6 +129,9 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({
         </View>
       </TouchableOpacity>
     </View>
+
+    <TrainerProfileModal visible={showProfile} onClose={() => setShowProfile(false)} />
+    </>
   );
 };
 
@@ -166,6 +188,15 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontWeight: '500',
     lineHeight: 17,
+  },
+  knowMoreBtn: {
+    alignSelf: 'flex-start',
+    marginTop: 6,
+  },
+  knowMoreText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   chevronCircle: {
     width: 34,

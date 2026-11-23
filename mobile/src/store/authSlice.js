@@ -334,16 +334,25 @@ export const createAuthSlice = (set, get) => ({
     checkWelcomeModal: () => {
         const lastSeenVersion = localStorage.getItem('lastSeenVersion');
         const lastSeenTitle = localStorage.getItem('lastSeenWelcomeTitle');
-        if (lastSeenVersion !== APP_VERSION || !hasSeenCurrentWelcome(lastSeenTitle, CURRENT_WELCOME_TITLE)) {
+        if (lastSeenVersion === APP_VERSION) return;
+        if (!hasSeenCurrentWelcome(lastSeenTitle, CURRENT_WELCOME_TITLE)) {
             set({ showWelcomeModal: true });
         }
     },
 
     // Cierra el modal de bienvenida
     closeWelcomeModal: () => {
+        const remoteData = get().welcomeRemoteData;
+        const titleToSave = remoteData?.welcome?.title || CURRENT_WELCOME_TITLE;
+        const remoteVersion = remoteData?.version || APP_VERSION;
         localStorage.setItem('lastSeenVersion', APP_VERSION);
-        localStorage.setItem('lastSeenWelcomeTitle', CURRENT_WELCOME_TITLE);
-        set({ showWelcomeModal: false });
+        localStorage.setItem('lastSeenWelcomeTitle', String(titleToSave));
+        localStorage.setItem('lastSeenRemoteVersion', String(remoteVersion));
+        set({
+            showWelcomeModal: false,
+            welcomeRemoteData: null,
+            welcomeRemoteVersion: null,
+        });
     },
 
     // --- GESTIÓN DE COOKIES ---

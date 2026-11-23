@@ -27,7 +27,7 @@ import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
-import { getThemeBaseBackground } from '@/constants/theme';
+import { getThemeBaseBackground, isAtmosphericTheme } from '@/constants/theme';
 import { SocialUserAvatar, type AvatarUser } from '@/components/social/SocialUserAvatar';
 
 interface TrainerProfileModalProps {
@@ -90,7 +90,6 @@ export default function TrainerProfileModal({
         {
           backgroundColor: surfaceColor,
           borderColor: getThemedModalBorderColor(theme),
-          paddingBottom: Math.max(insets.bottom, 16),
           overflow: 'hidden',
         },
       ]}
@@ -128,7 +127,10 @@ export default function TrainerProfileModal({
         onScroll={handleScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom + 24, 36) },
+        ]}
       >
         {/* Hero Image Container */}
         <View style={styles.heroWrap}>
@@ -142,7 +144,14 @@ export default function TrainerProfileModal({
             style={styles.heroTopGrad}
           />
           <LinearGradient
-            colors={['transparent', surfaceColor]}
+            colors={[
+              'transparent',
+              isAtmosphericTheme(theme)
+                ? isDark
+                  ? 'rgba(0, 0, 0, 0.42)'
+                  : 'rgba(255, 255, 255, 0.45)'
+                : surfaceColor,
+            ]}
             style={styles.heroBottomGrad}
           />
         </View>
@@ -291,14 +300,8 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     position: 'absolute',
-    top: 24,
+    top: 20,
     right: 16,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   scrollArea: {
     flex: 1,

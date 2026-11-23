@@ -50,6 +50,7 @@ export function VersionUpdater() {
 
   const lastCheckRef = useRef(0);
   const inFlightRef = useRef(false);
+  const shownRemoteWelcomeRef = useRef<string | null>(null);
 
   const checkRemoteVersion = useCallback(async (force = false) => {
     const now = Date.now();
@@ -74,14 +75,36 @@ export function VersionUpdater() {
       }
 
       if (isAuthenticated && data.welcome?.title) {
-        const storedTitle = await AsyncStorage.getItem('lastSeenWelcomeTitle').catch(() => null);
-        if (!hasSeenCurrentWelcome(storedTitle, data.welcome.title)) {
-          useAppStore.setState({
-            showWelcomeModal: true,
-            welcomeRemoteData: data,
-            welcomeRemoteVersion: APP_VERSION,
-          } as any);
+        const remoteKey = `${data.version}::${data.welcome.title}`;
+        if (shownRemoteWelcomeRef.current === remoteKey) return;
+
+        const pairs = await AsyncStorage.multiGet([
+          'lastSeenWelcomeTitle',
+          'lastSeenRemoteVersion',
+          'lastSeenVersion',
+        ]).catch(() => [] as [string, string | null][]);
+        const storedMap = Object.fromEntries(pairs);
+        const storedTitle =
+          storedMap.lastSeenWelcomeTitle ||
+          (typeof localStorage !== 'undefined' ? localStorage.getItem('lastSeenWelcomeTitle') : null);
+        const storedRemoteVersion =
+          storedMap.lastSeenRemoteVersion ||
+          (typeof localStorage !== 'undefined' ? localStorage.getItem('lastSeenRemoteVersion') : null);
+
+        if (
+          storedRemoteVersion === String(data.version) ||
+          hasSeenCurrentWelcome(storedTitle, data.welcome.title)
+        ) {
+          shownRemoteWelcomeRef.current = remoteKey;
+          return;
         }
+
+        shownRemoteWelcomeRef.current = remoteKey;
+        useAppStore.setState({
+          showWelcomeModal: true,
+          welcomeRemoteData: data,
+          welcomeRemoteVersion: APP_VERSION,
+        } as any);
       }
     } catch {
       // Sin conexión o timeout puntual

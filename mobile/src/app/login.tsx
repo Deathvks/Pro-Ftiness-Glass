@@ -307,6 +307,7 @@ export default function Login() {
       style={[styles.container, { backgroundColor: theme.background }]}
     >
       <GlassView
+        pointerEvents="none"
         glassEffectStyle="regular"
         colorScheme={isDark ? 'dark' : 'light'}
         style={StyleSheet.absoluteFill}
@@ -589,8 +590,8 @@ export default function Login() {
           /* PANTALLA PRINCIPAL DE LOGIN */
           <>
             <Image
-              source={require('@/../assets/images/logo.webp')}
-              style={{ width: 72, height: 72, alignSelf: 'center', marginBottom: 12 }}
+              source={require('../../assets/images/logo.webp')}
+              style={{ width: 84, height: 84, alignSelf: 'center', marginBottom: 14 }}
               resizeMode="contain"
             />
 
@@ -829,14 +830,6 @@ export default function Login() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    onPress={() => handleOAuthPress('facebook', 'Facebook')}
-                    disabled={isLoading}
-                    style={[styles.socialButton, { backgroundColor: '#1877F2', borderColor: '#1877F2' }]}
-                  >
-                    <FontAwesome5 name="facebook-f" size={20} color="#fff" />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
                     onPress={() => handleOAuthPress('x', 'X')}
                     disabled={isLoading}
                     style={[
@@ -862,14 +855,6 @@ export default function Login() {
                     ]}
                   >
                     <FontAwesome5 name="github" size={22} color={colorScheme === 'light' ? '#fff' : '#333'} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => handleOAuthPress('spotify', 'Spotify')}
-                    disabled={isLoading}
-                    style={[styles.socialButton, { backgroundColor: '#1DB954', borderColor: '#1DB954' }]}
-                  >
-                    <FontAwesome5 name="spotify" size={22} color="#fff" />
                   </TouchableOpacity>
                 </View>
 
@@ -953,6 +938,8 @@ const styles = StyleSheet.create({
   },
   badgeContainer: {
     marginBottom: 16,
+    maxWidth: '100%',
+    alignItems: 'center',
   },
   badge: {
     flexDirection: 'row',
@@ -961,11 +948,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 7,
     borderRadius: 9999,
+    maxWidth: '100%',
   },
   badgeText: {
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.8,
+    flexShrink: 1,
+    textAlign: 'center',
   },
   headerTextContainer: {
     alignItems: 'center',
@@ -1034,8 +1024,10 @@ const styles = StyleSheet.create({
   },
   rememberRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
     marginVertical: 2,
     paddingHorizontal: 2,
   },
@@ -1111,9 +1103,12 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 4,
     marginTop: 8,
+    width: '100%',
   },
   footerText: {
     fontSize: 13,
@@ -1128,18 +1123,23 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     alignItems: 'center',
     gap: 8,
+    width: '100%',
   },
   legalNoticeText: {
     fontSize: 10,
     lineHeight: 14,
     textAlign: 'center',
     paddingHorizontal: 8,
+    width: '100%',
   },
   legalLinksRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    rowGap: 6,
+    columnGap: 8,
+    width: '100%',
   },
   legalLink: {
     fontSize: 10,

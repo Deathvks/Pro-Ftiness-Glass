@@ -31,6 +31,7 @@ import {
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LiquidCloseButton } from '@/components/ui/GlassButton';
 
 import useAppStore from '@/store/useAppStore';
@@ -57,6 +58,7 @@ export const SmartNutritionCoachModal: React.FC<SmartNutritionCoachModalProps> =
   onNavigateAsesoria,
 }) => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
@@ -110,6 +112,7 @@ export const SmartNutritionCoachModal: React.FC<SmartNutritionCoachModalProps> =
   return (
     <SwipeableBottomSheet
       scrollable
+      edgeToEdge
       visible={visible}
       onClose={onClose}
       isDark={isDark}
@@ -170,7 +173,10 @@ export const SmartNutritionCoachModal: React.FC<SmartNutritionCoachModalProps> =
           {/* Scrollable Content */}
           <ScrollView
             style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: Math.max(insets.bottom + 24, 36) },
+            ]}
             showsVerticalScrollIndicator={false}
           >
             {/* 1. SEGUIMIENTO DE PAUTA DE HOY */}

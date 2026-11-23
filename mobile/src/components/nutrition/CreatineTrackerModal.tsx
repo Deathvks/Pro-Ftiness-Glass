@@ -25,10 +25,9 @@ import {
   Save,
   Check,
 } from 'lucide-react-native';
-import { GlassView } from 'expo-glass-effect';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
-import { shouldUseContentGlass } from '@/constants/theme';
 import { useAppColors } from '@/hooks/useAppColors';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
 import { LiquidCloseButton } from '@/components/ui/GlassButton';
@@ -56,10 +55,10 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
   onClose,
   onRefresh,
 }) => {
+  const insets = useSafeAreaInsets();
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const useGlassCards = shouldUseContentGlass(theme);
 
   const fetchNotifications = useAppStore(state => state.fetchNotifications);
   const fetchInitialData = useAppStore(state => state.fetchInitialData);
@@ -284,6 +283,7 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
     <>
       <SwipeableBottomSheet
         scrollable
+        edgeToEdge
         visible={visible}
         onClose={onClose}
         isDark={isDark}
@@ -332,7 +332,10 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
           {/* Body Content */}
           <ScrollView
             style={styles.scrollBody}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: Math.max(insets.bottom + 24, 36) },
+            ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
@@ -340,14 +343,6 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
             <View style={styles.statsGrid}>
               {/* Días Totales */}
               <View style={[styles.statCard, getAppleSheetCardStyle(isDark, 20, theme)]}>
-                {useGlassCards && (
-                  <GlassView
-                    pointerEvents="none"
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                  />
-                )}
                 <Calendar size={22} color="#3b82f6" strokeWidth={2} />
                 <Text style={[styles.statValue, { color: colors.text }]}>
                   {stats.totalDays}
@@ -359,14 +354,6 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
 
               {/* Racha Actual */}
               <View style={[styles.statCard, getAppleSheetCardStyle(isDark, 20, theme)]}>
-                {useGlassCards && (
-                  <GlassView
-                    pointerEvents="none"
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                  />
-                )}
                 <TrendingUp size={22} color={getStreakColor(stats.currentStreak)} strokeWidth={2} />
                 <Text style={[styles.statValue, { color: getStreakColor(stats.currentStreak) }]}>
                   {stats.currentStreak}
@@ -378,14 +365,6 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
 
               {/* Promedio */}
               <View style={[styles.statCard, getAppleSheetCardStyle(isDark, 20, theme)]}>
-                {useGlassCards && (
-                  <GlassView
-                    pointerEvents="none"
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                  />
-                )}
                 <Zap size={22} color="#a855f7" strokeWidth={2} />
                 <Text style={[styles.statValue, { color: colors.text }]}>
                   {stats.averageGrams ? stats.averageGrams.toFixed(1) : '0.0'}
@@ -398,14 +377,6 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
 
               {/* Esta Semana */}
               <View style={[styles.statCard, getAppleSheetCardStyle(isDark, 20, theme)]}>
-                {useGlassCards && (
-                  <GlassView
-                    pointerEvents="none"
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                  />
-                )}
                 <Calendar size={22} color="#22c55e" strokeWidth={2} />
                 <Text style={[styles.statValue, { color: colors.text }]}>
                   {stats.thisWeekDays}/7
@@ -418,14 +389,6 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
 
             {/* 2. FORMULARIO PARA AÑADIR TOMA */}
             <View style={[styles.sectionCard, getAppleSheetCardStyle(isDark, 24, theme)]}>
-              {useGlassCards && (
-                <GlassView
-                  pointerEvents="none"
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-                />
-              )}
 
                     {/* Header de fecha seleccionada */}
                     <View style={styles.sectionHeaderRow}>
@@ -568,14 +531,6 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                       getAppleSheetCardStyle(isDark, 24, theme),
                     ]}
                   >
-                    {useGlassCards && (
-                      <GlassView
-                        pointerEvents="none"
-                        glassEffectStyle="regular"
-                        colorScheme={isDark ? 'dark' : 'light'}
-                        style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-                      />
-                    )}
 
                     <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 14 }]}>
                       Historial Reciente

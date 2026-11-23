@@ -12,9 +12,9 @@ import {
   Image,
   useColorScheme as useDeviceColorScheme,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
-import { Sparkles, UserPlus, ArrowRight, CheckCircle2, Eye, EyeOff, Mail, Check, ShieldCheck, Scale, FileText, Gift } from 'lucide-react-native';
+import { Sparkles, UserPlus, ArrowRight, CheckCircle2, Eye, EyeOff, Mail, Check, ShieldCheck, Scale, FileText } from 'lucide-react-native';
 import { FontAwesome5, FontAwesome6 } from '@expo/vector-icons';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
@@ -48,7 +48,6 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [referralCode, setReferralCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
@@ -72,7 +71,6 @@ export default function Register() {
   const inputRefs = React.useRef<Array<any>>([]);
 
   const router = useRouter();
-  const routeParams = useLocalSearchParams<{ ref?: string }>();
   const colors = useAppColors();
   const theme = colors;
   const currentStoreTheme = useAppStore(state => state.theme);
@@ -120,20 +118,6 @@ export default function Register() {
   }, [resendCooldown, needsVerification]);
 
   React.useEffect(() => {
-    const refParam = Array.isArray(routeParams.ref) ? routeParams.ref[0] : routeParams.ref;
-    if (refParam && refParam.trim()) {
-      const cleanRef = refParam.trim();
-      setReferralCode(cleanRef);
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('pending_ref', cleanRef);
-      }
-    } else if (typeof localStorage !== 'undefined') {
-      const pending = localStorage.getItem('pending_ref');
-      if (pending) setReferralCode(pending);
-    }
-  }, [routeParams.ref]);
-
-  React.useEffect(() => {
     if (twoFactorPending) {
       router.replace('/login');
     }
@@ -175,7 +159,7 @@ export default function Register() {
   const executeOAuth = async (provider: OAuthProvider, label: string) => {
     try {
       setIsLoading(true);
-      await runOAuthFlow(provider, referralCode);
+      await runOAuthFlow(provider);
     } catch (e: any) {
       alert(`Error conectando con ${label}: ` + (e.message || e));
     } finally {
@@ -237,10 +221,6 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      const currentRef =
-        referralCode.trim() ||
-        (typeof localStorage !== 'undefined' ? localStorage.getItem('pending_ref') : null);
-
       await registerUser({
         username: username.trim(),
         email: email.trim().toLowerCase(),
@@ -251,12 +231,7 @@ export default function Register() {
         marketingEmailConsent,
         coachingEmailConsent,
         emailConsentVersion: EMAIL_CONSENT_VERSION,
-        referralCode: currentRef || undefined,
       });
-
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('pending_ref');
-      }
 
       startVerification(email.trim().toLowerCase());
     } catch (error: any) {
@@ -307,6 +282,7 @@ export default function Register() {
       style={[styles.container, { backgroundColor: theme.background }]}
     >
       <GlassView
+        pointerEvents="none"
         glassEffectStyle="regular"
         colorScheme={isDark ? 'dark' : 'light'}
         style={StyleSheet.absoluteFill}
@@ -327,8 +303,8 @@ export default function Register() {
         {!needsVerification ? (
           <>
             <Image
-              source={require('@/../assets/images/logo.webp')}
-              style={{ width: 72, height: 72, alignSelf: 'center', marginBottom: 12 }}
+              source={require('../../assets/images/logo.webp')}
+              style={{ width: 84, height: 84, alignSelf: 'center', marginBottom: 14 }}
               resizeMode="contain"
             />
 
@@ -561,48 +537,6 @@ export default function Register() {
                   )}
                 </View>
 
-                {/* REFERRAL CODE INPUT (AUTO-POPULATED VIA ?ref= OR EDITABLE) */}
-                <View style={styles.inputWrapper}>
-                  <View style={{ position: 'relative', justifyContent: 'center' }}>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                          borderColor:
-                            referralCode.trim().length > 0
-                              ? theme.tint + '80'
-                              : focusedInput === 'referral'
-                              ? theme.tint
-                              : isDark
-                              ? 'rgba(255, 255, 255, 0.12)'
-                              : 'rgba(0, 0, 0, 0.07)',
-                          color: theme.text,
-                          paddingLeft: 40,
-                        },
-                      ]}
-                      placeholder="Código de invitación (opcional)"
-                      placeholderTextColor={theme.textSecondary}
-                      value={referralCode}
-                      onChangeText={val => {
-                        setReferralCode(val);
-                        if (typeof localStorage !== 'undefined') {
-                          if (val.trim()) localStorage.setItem('pending_ref', val.trim());
-                          else localStorage.removeItem('pending_ref');
-                        }
-                      }}
-                      onFocus={() => setFocusedInput('referral')}
-                      onBlur={() => setFocusedInput(null)}
-                      autoCapitalize="characters"
-                    />
-                    <Gift
-                      size={17}
-                      color={referralCode.trim().length > 0 ? theme.tint : theme.textSecondary}
-                      style={{ position: 'absolute', left: 14 }}
-                    />
-                  </View>
-                </View>
-
                 {/* CHECKBOX OBLIGATORIO DE CONSENTIMIENTO RGPD / LOPDGDD */}
                 <View style={styles.consentBlock}>
                   <TouchableOpacity
@@ -771,14 +705,6 @@ export default function Register() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    onPress={() => handleOAuthPress('facebook', 'Facebook')}
-                    disabled={isLoading}
-                    style={[styles.socialButton, { backgroundColor: '#1877F2', borderColor: '#1877F2' }]}
-                  >
-                    <FontAwesome5 name="facebook-f" size={20} color="#fff" />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
                     onPress={() => handleOAuthPress('x', 'X')}
                     disabled={isLoading}
                     style={[
@@ -805,14 +731,6 @@ export default function Register() {
                   >
                     <FontAwesome5 name="github" size={22} color={colorScheme === 'light' ? '#fff' : '#333'} />
                   </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => handleOAuthPress('spotify', 'Spotify')}
-                    disabled={isLoading}
-                    style={[styles.socialButton, { backgroundColor: '#1DB954', borderColor: '#1DB954' }]}
-                  >
-                    <FontAwesome5 name="spotify" size={22} color="#fff" />
-                  </TouchableOpacity>
                 </View>
 
                 {/* TEST INTERACTIVO */}
@@ -827,16 +745,16 @@ export default function Register() {
                     end={{ x: 1, y: 1 }}
                     style={styles.quizInner}
                   >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
                       <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: 8, borderRadius: 12 }}>
                         <Sparkles size={16} color="#FDE047" />
                       </View>
-                      <View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12, letterSpacing: 1 }}>TEST INTERACTIVO</Text>
                         <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, marginTop: 2 }}>Tu plan ideal en &lt; 2 min.</Text>
                       </View>
                     </View>
-                    <View style={{ backgroundColor: '#fff', padding: 8, borderRadius: 12 }}>
+                    <View style={{ backgroundColor: '#fff', padding: 8, borderRadius: 12, flexShrink: 0 }}>
                       <ArrowRight size={16} color={theme.tint} />
                     </View>
                   </LinearGradient>
@@ -1047,6 +965,8 @@ const styles = StyleSheet.create({
   },
   badgeContainer: {
     marginBottom: 16,
+    maxWidth: '100%',
+    alignItems: 'center',
   },
   badge: {
     flexDirection: 'row',
@@ -1055,11 +975,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 7,
     borderRadius: 9999,
+    maxWidth: '100%',
   },
   badgeText: {
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.8,
+    flexShrink: 1,
+    textAlign: 'center',
   },
   headerTextContainer: {
     alignItems: 'center',
@@ -1128,7 +1051,9 @@ const styles = StyleSheet.create({
   reqItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '47%',
+    flexBasis: '46%',
+    flexGrow: 1,
+    minWidth: 130,
     gap: 5,
   },
   reqDot: {
@@ -1136,10 +1061,12 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     borderWidth: 1,
+    flexShrink: 0,
   },
   reqText: {
     fontSize: 10,
     fontWeight: '500',
+    flexShrink: 1,
   },
   consentBlock: {
     marginTop: 2,
@@ -1229,12 +1156,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 10,
   },
   footer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 4,
     marginTop: 8,
+    width: '100%',
   },
   footerText: {
     fontSize: 13,
@@ -1249,18 +1180,23 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     alignItems: 'center',
     gap: 8,
+    width: '100%',
   },
   legalNoticeText: {
     fontSize: 10,
     lineHeight: 14,
     textAlign: 'center',
     paddingHorizontal: 8,
+    width: '100%',
   },
   legalLinksRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    rowGap: 6,
+    columnGap: 8,
+    width: '100%',
   },
   legalLink: {
     fontSize: 10,

@@ -69,19 +69,31 @@ export function WelcomeModal({ visible: propVisible, onClose }: WelcomeModalProp
 
   useEffect(() => {
     if (!visible) return;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('lastSeenVersion', String(APP_VERSION));
+      localStorage.setItem('lastSeenWelcomeTitle', String(title));
+      localStorage.setItem('lastSeenRemoteVersion', String(displayVersion));
+    }
     AsyncStorage.multiSet([
       ['lastSeenVersion', String(APP_VERSION)],
       ['lastSeenWelcomeTitle', String(title)],
+      ['lastSeenRemoteVersion', String(displayVersion)],
     ]).catch(() => {});
-  }, [visible, title]);
+  }, [visible, title, displayVersion]);
 
   const handleClose = () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('lastSeenVersion', String(APP_VERSION));
+      localStorage.setItem('lastSeenWelcomeTitle', String(title));
+      localStorage.setItem('lastSeenRemoteVersion', String(displayVersion));
+    }
     AsyncStorage.multiSet([
       ['lastSeenVersion', String(APP_VERSION)],
       ['lastSeenWelcomeTitle', String(title)],
+      ['lastSeenRemoteVersion', String(displayVersion)],
     ]).catch(() => {});
     if (onClose) onClose();
     else closeWelcomeModal?.();
