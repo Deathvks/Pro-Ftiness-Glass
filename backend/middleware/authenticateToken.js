@@ -1,6 +1,7 @@
 /* backend/middleware/authenticateToken.js */
 import jwt from 'jsonwebtoken';
 import models from '../models/index.js';
+import { extractClientMetadata } from '../utils/clientVersion.js';
 
 const { UserSession } = models;
 
@@ -35,14 +36,29 @@ const authenticateToken = async (req, res, next) => {
         const fiveMinutes = 5 * 60 * 1000;
         const now = new Date();
         const lastActive = new Date(session.last_active);
+        const clientMeta = extractClientMetadata(req);
+        const sessionUpdates = {};
 
         if (now - lastActive > fiveMinutes) {
-            // Ejecutamos update en segundo plano (sin await) para no frenar la respuesta
-            session.update({ last_active: now }).catch(err =>
-                console.error("[Auth] Error actualizando heartbeat de sesión:", err.message)
-            );
+            sessionUpdates.last_active = now;
             models.User.update({ lastSeen: now }, { where: { id: session.user_id } }).catch(err =>
                 console.error("[Auth] Error actualizando lastSeen de usuario:", err.message)
+            );
+        }
+        if (clientMeta.appVersion && clientMeta.appVersion !== session.app_version) {
+            sessionUpdates.app_version = clientMeta.appVersion;
+        }
+        if (clientMeta.appChannel && clientMeta.appChannel !== session.app_channel) {
+            sessionUpdates.app_channel = clientMeta.appChannel;
+        }
+        if (clientMeta.appOs && clientMeta.appOs !== session.app_os) {
+            sessionUpdates.app_os = clientMeta.appOs;
+        }
+
+        if (Object.keys(sessionUpdates).length > 0) {
+            // Ejecutamos update en segundo plano (sin await) para no frenar la respuesta
+            session.update(sessionUpdates).catch(err =>
+                console.error("[Auth] Error actualizando heartbeat de sesión:", err.message)
             );
         }
         // ----------------------------------------------

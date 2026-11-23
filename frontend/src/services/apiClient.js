@@ -1,6 +1,7 @@
 /* frontend/src/services/apiClient.js */
 import useAppStore from '../store/useAppStore';
 import { Capacitor } from '@capacitor/core';
+import { APP_VERSION } from '../config/version';
 
 const CANONICAL_API_BASE_URL = 'https://profitnessglass.es/api';
 
@@ -44,6 +45,11 @@ const apiClient = async (endpoint, options = {}) => {
     }
     
     headers['X-App-Platform'] = platform;
+    if (APP_VERSION) {
+        headers['X-App-Version'] = APP_VERSION;
+        headers['X-App-Channel'] = /(?:^|[-.])(beta|alpha|rc)(?:[.-]|\d|$)/i.test(String(APP_VERSION)) ? 'beta' : 'stable';
+    }
+    headers['X-App-OS'] = Capacitor.isNativePlatform() ? Capacitor.getPlatform() : 'web';
 
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;

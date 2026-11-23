@@ -14,6 +14,8 @@ import { getContrastTextColor } from '@/utils/colorUtils';
 type AdminUser = {
   id: number; username: string; name?: string; email: string; role: string; is_verified?: boolean; level?: number;
   lastSeen?: string; createdAt?: string; referralCount?: number; latest_device?: string;
+  latest_app_version?: string | null; latest_app_channel?: string | null; latest_app_os?: string | null;
+  beta_version?: string | null; is_beta?: boolean;
   goal?: string; height?: number; age?: number; routineCount?: number; workoutCount?: number; nutritionCount?: number;
   profile_image_url?: string;
   hasVoluntaryPush?: boolean; hasVoluntaryEmail?: boolean; pushSubCount?: number;
@@ -44,6 +46,7 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('all');
   const [device, setDevice] = useState('all');
+  const [versionFilter, setVersionFilter] = useState('all');
   const [sort, setSort] = useState('activity');
   const [period, setPeriod] = useState<number>(30);
   const [now] = useState(Date.now);
@@ -81,11 +84,34 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
     to: step.label,
     count: Math.max(0, (index ? steps[index - 1].count : funnel.length) - step.count),
   })).sort((a, b) => b.count - a.count)[0];
+  const versionCounts = new Map<string, number>();
+  let betaCount = 0;
+  let trackedCount = 0;
+  for (const user of users) {
+    if (user.is_beta) betaCount += 1;
+    const primaryVersion = user.is_beta ? (user.beta_version || user.latest_app_version) : user.latest_app_version;
+    if (primaryVersion) {
+      trackedCount += 1;
+      versionCounts.set(primaryVersion, (versionCounts.get(primaryVersion) ?? 0) + 1);
+    }
+  }
+  const versionBreakdown = Array.from(versionCounts.entries())
+    .map(([version, count]) => ({ version, count }))
+    .sort((a, b) => b.count - a.count || b.version.localeCompare(a.version));
+
   const filtered = users.filter(user => {
     const platform = user.latest_device || 'web';
     const deviceGroup = ['app', 'pwa'].includes(platform) ? 'app' : platform === 'mobile' ? 'mobile' : 'web';
     const userLevel = user.level || 1;
     const userRole = user.role === 'entrenador' ? 'trainer' : user.role;
+    const hasVersion = Boolean(user.latest_app_version || user.beta_version);
+    const matchesVersion =
+      versionFilter === 'all' ||
+      (versionFilter === 'beta' && Boolean(user.is_beta)) ||
+      (versionFilter === 'stable' && hasVersion && !user.is_beta) ||
+      (versionFilter === 'unknown' && !hasVersion) ||
+      (versionFilter.startsWith('ver:') &&
+        (user.latest_app_version === versionFilter.slice(4) || user.beta_version === versionFilter.slice(4)));
     const matchesConsent =
       consentFilter === 'all' ||
       (consentFilter === 'voluntary_any' && (Boolean(user.hasVoluntaryPush) || Boolean(user.hasVoluntaryEmail))) ||
@@ -93,6 +119,7 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
       (consentFilter === 'voluntary_email' && Boolean(user.hasVoluntaryEmail)) ||
       (consentFilter === 'only_mandatory' && !user.hasVoluntaryPush && !user.hasVoluntaryEmail);
     return (role === 'all' || userRole === role) && (device === 'all' || deviceGroup === device) &&
+      matchesVersion &&
       (!level || (userLevel >= level && (level === 41 || userLevel < level + 10))) &&
       (stage === 'all' || (funnelUsers.has(user.id) && stages[stage](user))) &&
       matchesConsent &&
@@ -146,6 +173,20 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
           onChange={setConsentFilter}
         />
       </AdminCard>
+      <AdminCard title="Versiones y canal Beta">
+        <AdminText secondary>
+          En Beta: {betaCount} · Con versión detectada: {trackedCount} · Sin versión: {Math.max(0, users.length - trackedCount)}
+        </AdminText>
+        {versionBreakdown.length > 0 && (
+          <View style={userCardStyles.tags}>
+            {versionBreakdown.map(item => (
+              <AdminBadge key={item.version} tone={/(?:^|[-.])(beta|alpha|rc)(?:[.-]|\d|$)/i.test(item.version) ? 'warning' : 'blue'}>
+                v{item.version} · {item.count}
+              </AdminBadge>
+            ))}
+          </View>
+        )}
+      </AdminCard>
       <AdminCard title="Gestión de usuarios">
         <View style={styles.actions}>
           <AdminButton icon={Plus} label="Crear usuario" variant="primary" onPress={() => setEditor({})} />
@@ -155,12 +196,26 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
         <View style={styles.actions}>
           <View style={filterField}><AdminSelect label="Rol" options={[[ 'all', 'Todos'], ...roles, ['trainee', 'Asesoría']]} value={role} onChange={setRole} /></View>
           <View style={filterField}><AdminSelect label="Plataforma" options={[[ 'all', 'Todas'], ['app', 'App / PWA'], ['mobile', 'Web móvil'], ['web', 'Escritorio']]} value={device} onChange={setDevice} /></View>
+          <View style={filterField}>
+            <AdminSelect
+              label="Versión"
+              options={[
+                ['all', 'Todas'],
+                ['beta', `En Beta (${betaCount})`],
+                ['stable', 'Solo estable'],
+                ['unknown', 'Sin versión'],
+                ...versionBreakdown.map(item => [`ver:${item.version}`, `v${item.version} (${item.count})`] as const),
+              ]}
+              value={versionFilter}
+              onChange={setVersionFilter}
+            />
+          </View>
           <View style={filterField}><AdminSelect label="Nivel" options={[[0, 'Todos'], [1, '1–10'], [11, '11–20'], [21, '21–30'], [31, '31–40'], [41, '41+']]} value={level} onChange={setLevel} /></View>
           <View style={filterField}><AdminSelect label="Orden" options={[[ 'activity', 'Última actividad'], ['date', 'Registro'], ['name', 'Nombre']]} value={sort} onChange={setSort} /></View>
         </View>
         <AdminBadge>{filtered.length} resultados</AdminBadge>
       </AdminCard>
-      <AdminRecords key={JSON.stringify([search, role, device, level, stage, consentFilter, period, sort])} items={filtered} keyFor={user => String(user.id)} render={user => (
+      <AdminRecords key={JSON.stringify([search, role, device, versionFilter, level, stage, consentFilter, period, sort])} items={filtered} keyFor={user => String(user.id)} render={user => (
         <UserSummaryCard user={user} online={now - dateValue(user.lastSeen) < 5 * 60_000} profileComplete={!stages.profile(user)}
           onEdit={() => setEditor({ user })} onPhoto={() => setEditor({ user, photo: true })}
           deleteDisabled={busy || String(user.id) === String(currentUser?.id)}
@@ -219,6 +274,11 @@ function UserSummaryCard({ user, online, profileComplete, onEdit, onPhoto, onDel
         <View style={userCardStyles.tags}>
           <AdminBadge tone={user.role === 'admin' ? 'accent' : trainer ? 'warning' : 'neutral'}>{roleLabel(user.role)}</AdminBadge>
           <AdminBadge>Nivel {user.level ?? 1}</AdminBadge>
+          {(user.beta_version || user.latest_app_version) && (
+            <AdminBadge tone={user.is_beta ? 'warning' : 'blue'}>
+              {user.is_beta ? `Beta · v${user.beta_version || user.latest_app_version}` : `v${user.latest_app_version}`}
+            </AdminBadge>
+          )}
         </View>
         <View accessible accessibilityLabel={user.is_verified ? 'Cuenta verificada' : 'Cuenta sin verificar'}
           style={[userCardStyles.verification, { backgroundColor: user.is_verified ? '#dcfce7' : '#fee2e2' }]}>

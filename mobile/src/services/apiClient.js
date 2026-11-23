@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import { File as ExpoFile } from 'expo-file-system';
+import { APP_VERSION } from '../config/version';
 
 const getMetroIp = () => {
   const hostUri = Constants.expoConfig?.hostUri;
@@ -77,6 +78,11 @@ const apiClient = async (endpoint, options = {}) => {
     let platform = Platform.OS === 'ios' || Platform.OS === 'android' ? 'native' : 'web';
     
     headers['X-App-Platform'] = platform;
+    if (APP_VERSION) {
+        headers['X-App-Version'] = APP_VERSION;
+        headers['X-App-Channel'] = /(?:^|[-.])(beta|alpha|rc)(?:[.-]|\d|$)/i.test(String(APP_VERSION)) ? 'beta' : 'stable';
+    }
+    headers['X-App-OS'] = Platform.OS;
 
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;

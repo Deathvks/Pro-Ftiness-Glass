@@ -30,6 +30,18 @@ UserSession.init({
         type: DataTypes.STRING,
         allowNull: true
     },
+    app_version: {
+        type: DataTypes.STRING(32),
+        allowNull: true
+    },
+    app_channel: {
+        type: DataTypes.STRING(16),
+        allowNull: true
+    },
+    app_os: {
+        type: DataTypes.STRING(16),
+        allowNull: true
+    },
     last_active: {
         type: DataTypes.DATE,
         allowNull: false,

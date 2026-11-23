@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle, Check, Camera,
   Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw,
-  BellRing, Mail, Lock
+  BellRing, Mail, Lock, Tag
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import MobileSectionList from '../components/MobileSectionList';
@@ -173,6 +173,45 @@ const PlatformBadge = ({ user }) => {
   );
 };
 
+const formatOsLabel = (os, device) => {
+  if (os === 'android') return 'Android';
+  if (os === 'ios') return 'iOS';
+  if (os === 'web') return device === 'pwa' ? 'PWA' : 'Web';
+  if (device === 'app') return 'App';
+  if (device === 'pwa') return 'PWA';
+  return null;
+};
+
+const VersionBadge = ({ user }) => {
+  const version = user.is_beta ? (user.beta_version || user.latest_app_version) : user.latest_app_version;
+  if (!version) return null;
+
+  const osLabel = formatOsLabel(user.latest_app_os, user.latest_device);
+  const sessionsTooltip = Array.isArray(user.app_versions) && user.app_versions.length > 0
+    ? user.app_versions.map((s) => `v${s.version}${s.os ? ` (${s.os})` : ''}`).join(' · ')
+    : `v${version}`;
+
+  if (user.is_beta) {
+    return (
+      <span
+        title={`Beta activa · ${sessionsTooltip}`}
+        className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black tracking-wider rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30"
+      >
+        BETA · v{version}{osLabel ? ` · ${osLabel}` : ''}
+      </span>
+    );
+  }
+
+  return (
+    <span
+      title={`Versión detectada · ${sessionsTooltip}`}
+      className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold tracking-wider rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 ring-1 ring-sky-500/20"
+    >
+      v{version}{osLabel ? ` · ${osLabel}` : ''}
+    </span>
+  );
+};
+
 // Componente para el indicador de estado
 const StatusIndicator = ({ lastSeen }) => {
   const [isOnline, setIsOnline] = useState(false);
@@ -235,6 +274,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
   const [reports, setReports] = useState([]);
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [platformFilter, setPlatformFilter] = useState('ALL');
+  const [versionFilter, setVersionFilter] = useState('ALL');
   const [levelFilter, setLevelFilter] = useState('ALL');
   const [funnelRange, setFunnelRange] = useState('30d'); // '7d' | '30d' | 'all'
   const [funnelStageFilter, setFunnelStageFilter] = useState('ALL'); // 'ALL' | 'STUCK_PROFILE' | 'STUCK_ROUTINE' | 'STUCK_WORKOUT1' | 'STUCK_WORKOUT2' | 'STUCK_NUTRITION'
@@ -562,6 +602,24 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
        });
     }
 
+    if (versionFilter !== 'ALL') {
+      filtered = filtered.filter(u => {
+        const hasVersion = Boolean(u.latest_app_version || u.beta_version);
+        if (versionFilter === 'BETA') return Boolean(u.is_beta);
+        if (versionFilter === 'STABLE') return hasVersion && !u.is_beta;
+        if (versionFilter === 'UNKNOWN') return !hasVersion;
+        if (versionFilter.startsWith('VER:')) {
+          const target = versionFilter.slice(4);
+          return (
+            u.latest_app_version === target ||
+            u.beta_version === target ||
+            (Array.isArray(u.app_versions) && u.app_versions.some(v => v.version === target))
+          );
+        }
+        return true;
+      });
+    }
+
     if (levelFilter !== 'ALL') {
        filtered = filtered.filter(u => {
           const lvl = u.level || 1;
@@ -624,7 +682,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
       default:
         return filtered.sort((a, b) => getTime(b.lastSeen) - getTime(a.lastSeen));
     }
-  }, [users, sortBy, searchQuery, roleFilter, platformFilter, levelFilter, funnelStageFilter, funnelRange, consentFilter]);
+  }, [users, sortBy, searchQuery, roleFilter, platformFilter, versionFilter, levelFilter, funnelStageFilter, funnelRange, consentFilter]);
 
   const totalPages = Math.ceil(reports.length / REPORTS_PER_PAGE);
   const currentReports = useMemo(() => {
@@ -758,6 +816,36 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
       voluntaryEmailVerified,
       onlyMandatory,
       onlyMandatoryPct: pct(onlyMandatory),
+    };
+  }, [users]);
+
+  const versionStats = useMemo(() => {
+    const counts = new Map();
+    let betaCount = 0;
+    let trackedCount = 0;
+
+    for (const u of users) {
+      if (u.is_beta) betaCount += 1;
+      const primary = u.is_beta ? (u.beta_version || u.latest_app_version) : u.latest_app_version;
+      if (primary) {
+        trackedCount += 1;
+        counts.set(primary, (counts.get(primary) || 0) + 1);
+      }
+    }
+
+    const breakdown = Array.from(counts.entries())
+      .map(([version, count]) => ({
+        version,
+        count,
+        isBeta: /(?:^|[-.])(beta|alpha|rc)(?:[.-]|\d|$)/i.test(version),
+      }))
+      .sort((a, b) => b.count - a.count || b.version.localeCompare(a.version));
+
+    return {
+      betaCount,
+      trackedCount,
+      unknownCount: Math.max(0, users.length - trackedCount),
+      breakdown,
     };
   }, [users]);
 
@@ -1101,6 +1189,88 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
               </div>
             </div>
 
+            {/* Versiones y Canal Beta */}
+            <div className="mb-8 p-4 sm:p-5 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Tag size={17} className="text-amber-500 shrink-0" />
+                    <h3 className="text-base sm:text-lg font-extrabold text-text-primary">
+                      Versiones y Canal Beta
+                    </h3>
+                  </div>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Pulsa un chip para filtrar el directorio por Beta o versión exacta (Web y App).
+                  </p>
+                </div>
+
+                {versionFilter !== 'ALL' && (
+                  <button
+                    type="button"
+                    onClick={() => setVersionFilter('ALL')}
+                    className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent/15 text-accent font-extrabold text-xs hover:bg-accent/25 transition-all cursor-pointer shrink-0"
+                  >
+                    <X size={13} />
+                    <span>Todas las versiones</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setVersionFilter(prev => prev === 'BETA' ? 'ALL' : 'BETA')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border cursor-pointer ${
+                    versionFilter === 'BETA'
+                      ? 'bg-amber-500/20 border-amber-500/60 text-amber-500 ring-2 ring-amber-500/20'
+                      : 'bg-bg-primary/60 border-black/5 dark:border-white/10 text-text-primary hover:border-amber-500/40'
+                  }`}
+                >
+                  <span>En Beta</span>
+                  <span className="px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-500 text-[10px] font-black">
+                    {versionStats.betaCount}
+                  </span>
+                </button>
+
+                {versionStats.breakdown.map((item) => {
+                  const filterKey = `VER:${item.version}`;
+                  const active = versionFilter === filterKey;
+                  return (
+                    <button
+                      key={item.version}
+                      type="button"
+                      onClick={() => setVersionFilter(prev => prev === filterKey ? 'ALL' : filterKey)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                        active
+                          ? 'bg-accent/15 border-accent/60 text-accent ring-2 ring-accent/20'
+                          : 'bg-bg-primary/60 border-black/5 dark:border-white/10 text-text-secondary hover:text-text-primary hover:border-accent/40'
+                      }`}
+                    >
+                      <span>{item.isBeta ? `Beta · v${item.version}` : `v${item.version}`}</span>
+                      <span className="px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[10px] font-black text-text-primary">
+                        {item.count}
+                      </span>
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => setVersionFilter(prev => prev === 'UNKNOWN' ? 'ALL' : 'UNKNOWN')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                    versionFilter === 'UNKNOWN'
+                      ? 'bg-slate-500/20 border-slate-500/50 text-text-primary'
+                      : 'bg-bg-primary/60 border-black/5 dark:border-white/10 text-text-muted hover:text-text-primary'
+                  }`}
+                >
+                  <span>Sin versión</span>
+                  <span className="px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[10px] font-black">
+                    {versionStats.unknownCount}
+                  </span>
+                </button>
+              </div>
+            </div>
+
             {/* Leyenda de Plataformas */}
               <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-8 p-4 sm:p-5 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
                 <span className="text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2 w-full sm:w-auto">
@@ -1184,7 +1354,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
               </div>
 
               {/* Controles de Filtrado en Grid para mejor ajuste */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 w-full">
                 
                 {/* Filtro: Rol */}
                 <div className="w-full z-40">
@@ -1228,6 +1398,25 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                       { value: 'APP', label: 'App Nativa (iOS/Android)' },
                       { value: 'MOBILE_WEB', label: 'Web Móvil' },
                       { value: 'DESKTOP', label: 'Web PC' }
+                    ]}
+                    className="w-full text-sm font-bold"
+                  />
+                </div>
+
+                {/* Filtro: Versión / Beta */}
+                <div className="w-full z-20">
+                   <CustomSelect
+                    value={versionFilter}
+                    onChange={setVersionFilter}
+                    options={[
+                      { value: 'ALL', label: 'Cualquier Versión' },
+                      { value: 'BETA', label: `En Beta (${versionStats.betaCount})` },
+                      { value: 'STABLE', label: 'Solo Estable' },
+                      { value: 'UNKNOWN', label: `Sin versión (${versionStats.unknownCount})` },
+                      ...versionStats.breakdown.map((item) => ({
+                        value: `VER:${item.version}`,
+                        label: `v${item.version} (${item.count})`,
+                      })),
                     ]}
                     className="w-full text-sm font-bold"
                   />
@@ -1341,6 +1530,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10">
                                 Lvl {user.level || 1}
                               </span>
+                              <VersionBadge user={user} />
                               {user.is_verified ? (
                                 <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-500/10 text-green-500 ring-1 ring-green-500/30" title="Verificado">
                                   <Check size={12} strokeWidth={3} />
@@ -1533,13 +1723,14 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                       <div className="flex flex-col gap-3 text-xs mt-2 border-t border-black/5 dark:border-white/5 pt-4">
                         
                         <div className="flex items-center justify-between">
-                           <div className="flex items-center gap-2">
+                           <div className="flex items-center gap-2 flex-wrap">
                              <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md ${user.role === 'admin' ? 'bg-accent text-accent-contrast ring-1 ring-accent/30' : user.role === 'trainer' ? 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
                                {user.role}
                              </span>
                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10">
                                Lvl {user.level || 1}
                              </span>
+                             <VersionBadge user={user} />
                            </div>
                            <div className="flex items-center gap-1.5">
                              {user.is_verified ? (

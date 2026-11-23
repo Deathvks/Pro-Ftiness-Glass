@@ -69,10 +69,16 @@ export const getAllUsers = async (req, res, next) => {
         .catch(() => []),
       db.sequelize
         .query(
-          'SELECT user_id, device_type FROM user_sessions ORDER BY last_active DESC',
+          'SELECT user_id, device_type, app_version, app_channel, app_os, last_active FROM user_sessions ORDER BY last_active DESC',
           { type: db.sequelize.QueryTypes.SELECT }
         )
-        .catch(() => []),
+        .catch(() =>
+          db.sequelize
+            .query('SELECT user_id, device_type, last_active FROM user_sessions ORDER BY last_active DESC', {
+              type: db.sequelize.QueryTypes.SELECT,
+            })
+            .catch(() => [])
+        ),
       db.sequelize
         .query('SELECT user_id, COUNT(*) AS cnt FROM routines GROUP BY user_id', {
           type: db.sequelize.QueryTypes.SELECT,
@@ -96,10 +102,53 @@ export const getAllUsers = async (req, res, next) => {
     ]);
 
     const refMap = new Map(referralCounts.map(r => [Number(r.user_id), parseInt(r.cnt, 10) || 0]));
+    const inferChannel = (channel, version) => {
+      if (channel === 'beta' || channel === 'stable') return channel;
+      if (typeof version === 'string' && /(?:^|[-.])(beta|alpha|rc)(?:[.-]|\d|$)/i.test(version)) return 'beta';
+      return version ? 'stable' : null;
+    };
+
     const devMap = new Map();
+    const versionMap = new Map();
     for (const s of sessionDevices) {
       const uid = Number(s.user_id);
       if (!devMap.has(uid) && s.device_type) devMap.set(uid, s.device_type);
+
+      const channel = inferChannel(s.app_channel, s.app_version);
+      if (!versionMap.has(uid)) {
+        versionMap.set(uid, {
+          latest_app_version: s.app_version || null,
+          latest_app_channel: channel,
+          latest_app_os: s.app_os || null,
+          beta_version: channel === 'beta' ? (s.app_version || null) : null,
+          is_beta: channel === 'beta',
+          app_versions: [],
+          _seen: new Set(),
+        });
+      }
+      const meta = versionMap.get(uid);
+      if (!meta.latest_app_version && s.app_version) {
+        meta.latest_app_version = s.app_version;
+        meta.latest_app_channel = channel;
+        meta.latest_app_os = s.app_os || meta.latest_app_os;
+      }
+      if (channel === 'beta') {
+        meta.is_beta = true;
+        if (!meta.beta_version && s.app_version) meta.beta_version = s.app_version;
+      }
+      if (s.app_version) {
+        const key = `${s.app_version}|${s.device_type || ''}|${s.app_os || ''}`;
+        if (!meta._seen.has(key) && meta.app_versions.length < 5) {
+          meta._seen.add(key);
+          meta.app_versions.push({
+            version: s.app_version,
+            channel,
+            os: s.app_os || null,
+            device_type: s.device_type || null,
+            last_active: s.last_active || null,
+          });
+        }
+      }
     }
     const rMap = new Map(routineCounts.map(r => [Number(r.user_id), parseInt(r.cnt, 10) || 0]));
     const wMap = new Map(workoutCounts.map(w => [Number(w.user_id), parseInt(w.cnt, 10) || 0]));
@@ -116,12 +165,19 @@ export const getAllUsers = async (req, res, next) => {
       const hasVoluntaryEmail = Boolean(u.email_marketing_consent || u.email_coaching_consent);
       const hasEmailActivity = Boolean(u.email_activity_notifications);
       const pushSubCount = pMap.get(uid) || 0;
+      const versionMeta = versionMap.get(uid);
 
       return {
         ...u,
         push_consents: parsedPush || null,
         referralCount: refMap.get(uid) || 0,
         latest_device: devMap.get(uid) || null,
+        latest_app_version: versionMeta?.latest_app_version || null,
+        latest_app_channel: versionMeta?.latest_app_channel || null,
+        latest_app_os: versionMeta?.latest_app_os || null,
+        beta_version: versionMeta?.beta_version || null,
+        is_beta: Boolean(versionMeta?.is_beta),
+        app_versions: versionMeta?.app_versions || [],
         routineCount: rMap.get(uid) || 0,
         workoutCount: wMap.get(uid) || 0,
         nutritionCount: nMap.get(uid) || 0,

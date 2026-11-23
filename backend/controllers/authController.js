@@ -13,6 +13,7 @@ import { createNotification } from '../services/notificationService.js';
 import { syncUserStreak, unlockBadge, addXp, DAILY_LOGIN_XP } from '../services/gamificationService.js';
 
 import { setAuthCookie, clearAuthCookie } from '../utils/authCookies.js';
+import { buildClientSessionFields } from '../utils/clientVersion.js';
 
 const { User, UserSession } = models;
 
@@ -72,6 +73,7 @@ const createUserSession = async (userId, token, req) => {
         device_type: deviceType,
         device_name: deviceName,
         ip_address: ip,
+        ...buildClientSessionFields(req),
         last_active: new Date()
       });
 

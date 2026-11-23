@@ -8,6 +8,7 @@ import db from '../models/index.js';
 import { generateVerificationCode, sendVerificationEmail, sendLoginAlertEmail } from '../services/emailService.js';
 import { createNotification } from '../services/notificationService.js';
 import { setAuthCookie } from '../utils/authCookies.js';
+import { buildClientSessionFields } from '../utils/clientVersion.js';
 
 const { User, UserSession } = db;
 
@@ -277,10 +278,13 @@ export const verifyLogin2FA = async (req, res, next) => {
       }
     });
 
+    const clientFields = buildClientSessionFields(req);
+
     if (existingSession) {
       await existingSession.update({
         token: jwtToken,
         ip_address: ip,
+        ...clientFields,
         last_active: new Date()
       });
     } else {
@@ -290,6 +294,7 @@ export const verifyLogin2FA = async (req, res, next) => {
         device_type: deviceType,
         device_name: deviceName,
         ip_address: ip,
+        ...clientFields,
         last_active: new Date()
       });
     }
