@@ -105,7 +105,7 @@ export const syncTrainingPushPreference = async (
 };
 
 export const ensureAndroidNotificationChannels = async () => {
-  if (Platform.OS !== 'android') return;
+  if (Platform.OS !== 'android' || isExpoGoClient()) return;
   try {
     await Notifications.setNotificationChannelAsync(CHANNEL_DEFAULT, {
       name: 'General y Entrenamiento',

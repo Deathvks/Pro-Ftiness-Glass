@@ -35,7 +35,8 @@ import { getAppleCardSurfaceStyle, shouldUseContentGlass, getUnselectedControlCo
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+const isNewArchitecture = Boolean((globalThis as { nativeFabricUIManager?: unknown }).nativeFabricUIManager);
+if (Platform.OS === 'android' && !isNewArchitecture && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 

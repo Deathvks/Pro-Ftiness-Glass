@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, ImageBackground, Animated, Platform, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, Animated, Platform, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -332,10 +332,12 @@ export default function Hub() {
               elevation: 5,
             }}
           >
-            <ImageBackground
-              source={{ uri: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=800&q=80' }}
-              style={{ flex: 1, justifyContent: 'flex-end' }}
-            >
+            <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=800&q=80' }}
+                style={StyleSheet.absoluteFill}
+                resizeMode="cover"
+              />
               <LinearGradient
                 colors={['transparent', 'rgba(0,0,0,0.45)', 'rgba(0,0,0,0.85)']}
                 style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '100%' }}
@@ -356,7 +358,7 @@ export default function Hub() {
                   Tu centro de control. Descubre retos, ajusta tu perfil y analiza todo tu progreso en un solo lugar.
                 </Text>
               </View>
-            </ImageBackground>
+            </View>
           </View>
 
           {/* Lista de Accesos Directos (Inset Grouped en iOS 26-27, Tarjetas en Android/Web) */}
