@@ -48,7 +48,7 @@ const LevelBadge = ({ level = 1, size = 'md', showName = false, className = '' }
                 </div>
 
                 {/* Sello/Gema con el Icono flotando abajo */}
-                <div className={`absolute ${s.iconBox} rounded-full bg-white dark:bg-[#0f172a] flex items-center justify-center p-[2px] shadow-lg z-20`}>
+                <div className={`absolute ${s.iconBox} rounded-full bg-white/70 dark:bg-[#0f172a] flex items-center justify-center p-[1.5px] shadow-md z-20`}>
                     <div className={`w-full h-full rounded-full bg-gradient-to-br ${tier.colors} flex items-center justify-center shadow-inner`}>
                         <Icon size={s.icon} className="text-white drop-shadow-md" strokeWidth={3} />
                     </div>

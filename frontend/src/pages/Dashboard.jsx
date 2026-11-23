@@ -809,7 +809,7 @@ const Dashboard = ({ setView }) => {
               title={currentGym ? `${currentGym.name}${currentGym.address ? ` - ${currentGym.address}` : ''}` : t('Localizar gimnasio', { defaultValue: 'Localizar gimnasio' })}
             >
               {currentGym?.logo || currentGym?.image ? (
-                <span className="relative w-4 h-4 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/20 bg-black/5 flex items-center justify-center">
+                <span className="relative w-4 h-4 rounded-full overflow-hidden shrink-0 bg-black/5 flex items-center justify-center">
                   <img
                     src={currentGym.logo || currentGym.image}
                     alt=""

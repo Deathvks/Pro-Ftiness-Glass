@@ -1,6 +1,6 @@
 {
-  "version": "7.16.47",
-  "releaseNotes": "Actualización v7.16.47: Liquid Glass translúcido en los temas Océano, Galaxia y Desierto (modos claro y oscuro) y tracking de versiones en el panel Admin.",
+  "version": "7.16.48",
+  "releaseNotes": "Actualización v7.16.48: bordes más suaves y limpios en el Dashboard y tarjetas de Entrenamiento y Nutrición para temas claros, Océano y Desierto.",
   "welcome": {
     "title": "Liquid Glass en Temas Atmosféricos",
     "subtitle": "Océano, Galaxia y Desierto ahora lucen tarjetas translúcidas con desenfoque real y tracking de versiones en Admin.",

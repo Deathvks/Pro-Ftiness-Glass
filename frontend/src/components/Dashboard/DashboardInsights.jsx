@@ -493,7 +493,7 @@ const DashboardInsights = ({ setView }) => {
           {/* Varias tarjetas representadas con sombras estratificadas, sin capas que puedan saltar */}
           <GlassCard
             style={{
-              boxShadow: '0 5px 0 -1px var(--bg-primary), 0 6px 0 0 var(--glass-border), 0 11px 0 -2px var(--bg-primary), 0 12px 0 -1px var(--glass-border), var(--glass-shadow)'
+              boxShadow: '0 8px 18px -8px rgba(0, 0, 0, 0.12), var(--glass-shadow)'
             }}
             className={`glass relative z-10 flex flex-col gap-3 p-4 sm:p-5 rounded-[26px] border-none shadow-lg transition-all duration-300 ring-1 group-hover:ring-accent/40 ${
               totalWarningCount > 0 || (nutritionPlan?.isWarning && hasAnyNutritionActivity)
