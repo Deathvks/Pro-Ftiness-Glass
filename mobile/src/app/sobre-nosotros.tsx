@@ -64,7 +64,7 @@ const MODULES = [
     icon: Flame,
     color: '#fb7185',
     title: 'Nutrición y Calculadoras Deportivas',
-    desc: 'Cálculo de TMB y TDEE con Mifflin-St Jeor, macros, hidratación, creatina y escáner nutricional por cámara IA.',
+    desc: 'Cálculo de TMB y TDEE con Mifflin-St Jeor, macros, hidratación, creatina y lector de códigos de barras.',
   },
   {
     icon: MapPin,

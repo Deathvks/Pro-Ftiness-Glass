@@ -14,7 +14,6 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import {
-  X,
   Zap,
   Plus,
   Trash2,
@@ -29,8 +28,9 @@ import {
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
+import { shouldUseContentGlass } from '@/constants/theme';
 import { useAppColors } from '@/hooks/useAppColors';
-import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
+import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
 import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 import { getContrastTextColor } from '@/utils/colorUtils';
@@ -59,6 +59,7 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const useGlassCards = shouldUseContentGlass(theme);
 
   const fetchNotifications = useAppStore(state => state.fetchNotifications);
   const fetchInitialData = useAppStore(state => state.fetchInitialData);
@@ -286,178 +287,145 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
         visible={visible}
         onClose={onClose}
         isDark={isDark}
-        backgroundColor={colors.card}
-        height="88%"
         maxHeight="90%"
         avoidKeyboard
       >
-        <View style={{ flex: 1 }}>
-                  {/* Header (Liquid Glass) */}
-                  <View
-                    style={[
-                      styles.header,
-                      {
-                        borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-                      },
-                    ]}
-                  >
-                    <View style={styles.headerLeft}>
-                      <View
-                        style={[
-                          styles.headerIconBadge,
-                          {
-                            backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                            borderColor: 'rgba(168, 85, 247, 0.35)',
-                          },
-                        ]}
-                      >
-                        <GlassView
-                          glassEffectStyle="regular"
-                          colorScheme={isDark ? 'dark' : 'light'}
-                          style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
-                        />
-                        <Zap size={22} color="#a855f7" strokeWidth={2.5} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
-                          Creatina
-                        </Text>
-                        <Text style={[styles.headerSubtitle, { color: colors.textMuted }]} numberOfLines={1}>
-                          Dosis recomendada: ~{creatineTarget}g/día
-                        </Text>
-                      </View>
-                    </View>
+        <View style={styles.sheetInner}>
+          {/* Header */}
+          <View
+            style={[
+              styles.header,
+              {
+                borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+              },
+            ]}
+          >
+            <View style={styles.headerLeft}>
+              <View
+                style={[
+                  styles.headerIconBadge,
+                  {
+                    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                    borderColor: 'rgba(168, 85, 247, 0.35)',
+                  },
+                ]}
+              >
+                <Zap size={22} color="#a855f7" strokeWidth={2.5} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+                  Creatina
+                </Text>
+                <Text style={[styles.headerSubtitle, { color: colors.textMuted }]} numberOfLines={1}>
+                  Dosis recomendada: ~{creatineTarget}g/día
+                </Text>
+              </View>
+            </View>
 
-                    <LiquidCloseButton
-                      onPress={onClose}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      iconColor={colors.textSecondary}
-                      style={styles.closeBtn}
-                    />
-                  </View>
+            <LiquidCloseButton
+              onPress={onClose}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              iconColor={colors.textSecondary}
+            />
+          </View>
 
-                  {/* Body Content */}
-                  <ScrollView
-                    style={styles.scrollBody}
-                    contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                  >
-                  {/* 1. STATS BENTO GRID (Identical to Frontend) */}
-                  <View style={styles.statsGrid}>
-                    {/* Días Totales */}
-                    <View
-                      style={[
-                        styles.statCard,
-                        {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.85)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
-                        },
-                      ]}
-                    >
-                      <GlassView
-                        glassEffectStyle="regular"
-                        colorScheme={isDark ? 'dark' : 'light'}
-                        style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                      />
-                      <Calendar size={22} color="#3b82f6" strokeWidth={2} />
-                      <Text style={[styles.statValue, { color: colors.text }]}>
-                        {stats.totalDays}
-                      </Text>
-                      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                        Días totales
-                      </Text>
-                    </View>
+          {/* Body Content */}
+          <ScrollView
+            style={styles.scrollBody}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* 1. STATS BENTO GRID */}
+            <View style={styles.statsGrid}>
+              {/* Días Totales */}
+              <View style={[styles.statCard, getAppleSheetCardStyle(isDark, 20, theme)]}>
+                {useGlassCards && (
+                  <GlassView
+                    pointerEvents="none"
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                  />
+                )}
+                <Calendar size={22} color="#3b82f6" strokeWidth={2} />
+                <Text style={[styles.statValue, { color: colors.text }]}>
+                  {stats.totalDays}
+                </Text>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                  Días totales
+                </Text>
+              </View>
 
-                    {/* Racha Actual */}
-                    <View
-                      style={[
-                        styles.statCard,
-                        {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.85)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
-                        },
-                      ]}
-                    >
-                      <GlassView
-                        glassEffectStyle="regular"
-                        colorScheme={isDark ? 'dark' : 'light'}
-                        style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                      />
-                      <TrendingUp size={22} color={getStreakColor(stats.currentStreak)} strokeWidth={2} />
-                      <Text style={[styles.statValue, { color: getStreakColor(stats.currentStreak) }]}>
-                        {stats.currentStreak}
-                      </Text>
-                      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                        Racha actual
-                      </Text>
-                    </View>
+              {/* Racha Actual */}
+              <View style={[styles.statCard, getAppleSheetCardStyle(isDark, 20, theme)]}>
+                {useGlassCards && (
+                  <GlassView
+                    pointerEvents="none"
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                  />
+                )}
+                <TrendingUp size={22} color={getStreakColor(stats.currentStreak)} strokeWidth={2} />
+                <Text style={[styles.statValue, { color: getStreakColor(stats.currentStreak) }]}>
+                  {stats.currentStreak}
+                </Text>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                  Racha actual
+                </Text>
+              </View>
 
-                    {/* Promedio */}
-                    <View
-                      style={[
-                        styles.statCard,
-                        {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.85)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
-                        },
-                      ]}
-                    >
-                      <GlassView
-                        glassEffectStyle="regular"
-                        colorScheme={isDark ? 'dark' : 'light'}
-                        style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                      />
-                      <Zap size={22} color="#a855f7" strokeWidth={2} />
-                      <Text style={[styles.statValue, { color: colors.text }]}>
-                        {stats.averageGrams ? stats.averageGrams.toFixed(1) : '0.0'}
-                        <Text style={{ fontSize: 14 }}>g</Text>
-                      </Text>
-                      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                        Promedio
-                      </Text>
-                    </View>
+              {/* Promedio */}
+              <View style={[styles.statCard, getAppleSheetCardStyle(isDark, 20, theme)]}>
+                {useGlassCards && (
+                  <GlassView
+                    pointerEvents="none"
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                  />
+                )}
+                <Zap size={22} color="#a855f7" strokeWidth={2} />
+                <Text style={[styles.statValue, { color: colors.text }]}>
+                  {stats.averageGrams ? stats.averageGrams.toFixed(1) : '0.0'}
+                  <Text style={{ fontSize: 14 }}>g</Text>
+                </Text>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                  Promedio
+                </Text>
+              </View>
 
-                    {/* Esta Semana */}
-                    <View
-                      style={[
-                        styles.statCard,
-                        {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.85)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
-                        },
-                      ]}
-                    >
-                      <GlassView
-                        glassEffectStyle="regular"
-                        colorScheme={isDark ? 'dark' : 'light'}
-                        style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                      />
-                      <Calendar size={22} color="#22c55e" strokeWidth={2} />
-                      <Text style={[styles.statValue, { color: colors.text }]}>
-                        {stats.thisWeekDays}/7
-                      </Text>
-                      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                        Esta semana
-                      </Text>
-                    </View>
-                  </View>
+              {/* Esta Semana */}
+              <View style={[styles.statCard, getAppleSheetCardStyle(isDark, 20, theme)]}>
+                {useGlassCards && (
+                  <GlassView
+                    pointerEvents="none"
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                  />
+                )}
+                <Calendar size={22} color="#22c55e" strokeWidth={2} />
+                <Text style={[styles.statValue, { color: colors.text }]}>
+                  {stats.thisWeekDays}/7
+                </Text>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                  Esta semana
+                </Text>
+              </View>
+            </View>
 
-                  {/* 2. FORMULARIO PARA AÑADIR TOMA (Identical to Frontend) */}
-                  <View
-                    style={[
-                      styles.sectionCard,
-                      {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.75)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
-                      },
-                    ]}
-                  >
-                    <GlassView
-                      glassEffectStyle="regular"
-                      colorScheme={isDark ? 'dark' : 'light'}
-                      style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-                    />
+            {/* 2. FORMULARIO PARA AÑADIR TOMA */}
+            <View style={[styles.sectionCard, getAppleSheetCardStyle(isDark, 24, theme)]}>
+              {useGlassCards && (
+                <GlassView
+                  pointerEvents="none"
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+                />
+              )}
 
                     {/* Header de fecha seleccionada */}
                     <View style={styles.sectionHeaderRow}>
@@ -593,21 +561,21 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                     )}
                   </View>
 
-                  {/* 3. HISTORIAL RECIENTE (Identical to Frontend) */}
+                  {/* 3. HISTORIAL RECIENTE */}
                   <View
                     style={[
                       styles.sectionCard,
-                      {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.6)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
-                      },
+                      getAppleSheetCardStyle(isDark, 24, theme),
                     ]}
                   >
-                    <GlassView
-                      glassEffectStyle="regular"
-                      colorScheme={isDark ? 'dark' : 'light'}
-                      style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-                    />
+                    {useGlassCards && (
+                      <GlassView
+                        pointerEvents="none"
+                        glassEffectStyle="regular"
+                        colorScheme={isDark ? 'dark' : 'light'}
+                        style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+                      />
+                    )}
 
                     <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 14 }]}>
                       Historial Reciente
@@ -627,18 +595,9 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                             key={log.id}
                             style={[
                               styles.historyItem,
-                              {
-                                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.85)',
-                                borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
-                              },
+                              getAppleSheetCardStyle(isDark, 18, theme),
                             ]}
                           >
-                            <GlassView
-                              glassEffectStyle="regular"
-                              colorScheme={isDark ? 'dark' : 'light'}
-                              style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
-                            />
-
                             {/* Grams Badge */}
                             <View
                               style={[
@@ -679,11 +638,6 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                                 hitSlop={6}
                                 activeOpacity={0.7}
                               >
-                                <GlassView
-                                  glassEffectStyle="regular"
-                                  colorScheme={isDark ? 'dark' : 'light'}
-                                  style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
-                                />
                                 <Edit2 size={15} color={colors.text} />
                               </TouchableOpacity>
 
@@ -699,11 +653,6 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                                 hitSlop={6}
                                 activeOpacity={0.7}
                               >
-                                <GlassView
-                                  glassEffectStyle="regular"
-                                  colorScheme={isDark ? 'dark' : 'light'}
-                                  style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
-                                />
                                 <Trash2 size={15} color="#ef4444" />
                               </TouchableOpacity>
                             </View>
@@ -816,7 +765,7 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                 {/* Header */}
                 <View
                   style={[
-                    styles.header,
+                    styles.editHeader,
                     {
                       borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
                     },
@@ -826,7 +775,6 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                   <LiquidCloseButton
                     onPress={handleCloseEdit}
                     iconColor={colors.textSecondary}
-                    style={styles.closeBtn}
                   />
                 </View>
 
@@ -883,18 +831,10 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                         disabled={isSubmitting}
                         style={[
                           styles.editCancelBtn,
-                          {
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
-                          },
+                          getAppleSheetCardStyle(isDark, 18, theme),
                         ]}
                         activeOpacity={0.7}
                       >
-                        <GlassView
-                          glassEffectStyle="regular"
-                          colorScheme={isDark ? 'dark' : 'light'}
-                          style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
-                        />
                         <Text style={[styles.editCancelText, { color: colors.text }]}>Cancelar</Text>
                       </TouchableOpacity>
 
@@ -945,22 +885,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
   },
-  cardWrapper: {
-    width: '100%',
-    maxWidth: 440,
-    height: '86%',
-    maxHeight: 740,
-    borderRadius: 32,
-    overflow: 'hidden',
-    borderWidth: 1,
-  },
-  card: {
-    flex: 1,
-    paddingTop: 18,
-    paddingHorizontal: 18,
-    paddingBottom: 16,
+  sheetInner: {
+    flexShrink: 1,
+    minHeight: 0,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    marginBottom: 14,
+    flexShrink: 0,
+  },
+  editHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -997,22 +936,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 2,
   },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    position: 'relative',
-    flexShrink: 0,
-  },
   scrollBody: {
-    flex: 1,
+    flexShrink: 1,
+    minHeight: 0,
   },
   scrollContent: {
-    paddingBottom: 16,
+    paddingHorizontal: 18,
+    paddingTop: 2,
+    paddingBottom: 24,
   },
   statsGrid: {
     flexDirection: 'row',
