@@ -10,11 +10,13 @@ import {
   ActivityIndicator,
   ScrollView,
   Image,
+  Modal,
+  Pressable,
   useColorScheme as useDeviceColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
-import { Sparkles, UserPlus, ArrowRight, CheckCircle2, Eye, EyeOff, Mail, Check, ShieldCheck, Scale, FileText } from 'lucide-react-native';
+import { Sparkles, UserPlus, ArrowRight, CheckCircle2, Eye, EyeOff, Mail, Check, Info } from 'lucide-react-native';
 import { FontAwesome5, FontAwesome6 } from '@expo/vector-icons';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
@@ -26,6 +28,9 @@ import { registerUser, verifyEmail, resendVerificationEmail } from '@/services/a
 import { EMAIL_CONSENT_VERSION, EMAIL_CONSENT_TEXT } from '@/config/emailConsent';
 import { LegalDocumentModal, LegalDocType } from '@/components/modals/LegalDocumentModal';
 import { GoogleTermsModal } from '@/components/modals/GoogleTermsModal';
+import { EmotionalOnboardingModal, type InteractiveQuizData } from '@/components/auth/EmotionalOnboardingModal';
+import { LiquidCloseButton } from '@/components/ui/GlassButton';
+import { getThemedModalBorderColor, getThemedModalCardColor } from '@/components/ui/ModalThemeBackground';
 import { runOAuthFlow, type OAuthProvider } from '@/utils/oauthAuth';
 
 const GoogleIcon = ({ size }: { size: number }) => (
@@ -59,10 +64,13 @@ export default function Register() {
   const [marketingEmailConsent, setMarketingEmailConsent] = useState(false);
   const [coachingEmailConsent, setCoachingEmailConsent] = useState(false);
 
-  // Modal Legal
+  // Modal Legal & Test Interactivo
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [legalDocType, setLegalDocType] = useState<LegalDocType>('privacy');
   const [showGoogleTerms, setShowGoogleTerms] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [showQuizInfoModal, setShowQuizInfoModal] = useState(false);
+  const [quizData, setQuizData] = useState<InteractiveQuizData | null>(null);
 
   // Verification state
   const [needsVerification, setNeedsVerification] = useState(false);
@@ -156,9 +164,23 @@ export default function Register() {
     else router.push('/privacy');
   };
 
+  const persistQuizTemp = (data: InteractiveQuizData | null) => {
+    if (typeof localStorage === 'undefined') return;
+    if (data) localStorage.setItem('temp_onboarding_data', JSON.stringify(data));
+    else localStorage.removeItem('temp_onboarding_data');
+  };
+
+  const handleQuizFinish = (data: InteractiveQuizData) => {
+    setQuizData(data);
+    persistQuizTemp(data);
+    setShowQuiz(false);
+    useAppStore.getState().showToast?.('¡Plan calculado! Completa tu registro para reclamarlo.', 'success');
+  };
+
   const executeOAuth = async (provider: OAuthProvider, label: string) => {
     try {
       setIsLoading(true);
+      persistQuizTemp(quizData);
       await runOAuthFlow(provider);
     } catch (e: any) {
       alert(`Error conectando con ${label}: ` + (e.message || e));
@@ -221,6 +243,7 @@ export default function Register() {
     setIsLoading(true);
 
     try {
+      persistQuizTemp(quizData);
       await registerUser({
         username: username.trim(),
         email: email.trim().toLowerCase(),
@@ -735,8 +758,8 @@ export default function Register() {
 
                 {/* TEST INTERACTIVO */}
                 <TouchableOpacity
-                  onPress={() => router.push('/onboarding')}
-                  style={[styles.quizCard, { borderColor: theme.border }]}
+                  onPress={() => setShowQuiz(true)}
+                  style={[styles.quizCard, { borderColor: quizData ? theme.tint : theme.border }]}
                   activeOpacity={0.88}
                 >
                   <LinearGradient
@@ -750,12 +773,29 @@ export default function Register() {
                         <Sparkles size={16} color="#FDE047" />
                       </View>
                       <View style={{ flex: 1, minWidth: 0 }}>
-                        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12, letterSpacing: 1 }}>TEST INTERACTIVO</Text>
-                        <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, marginTop: 2 }}>Tu plan ideal en &lt; 2 min.</Text>
+                        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12, letterSpacing: 1 }}>
+                          {quizData ? 'TEST COMPLETADO' : 'TEST INTERACTIVO'}
+                        </Text>
+                        <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, marginTop: 2 }}>
+                          {quizData ? 'Plan listo · Completa tu registro.' : 'Tu plan ideal en < 2 min.'}
+                        </Text>
                       </View>
                     </View>
-                    <View style={{ backgroundColor: '#fff', padding: 8, borderRadius: 12, flexShrink: 0 }}>
-                      <ArrowRight size={16} color={theme.tint} />
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      <TouchableOpacity
+                        accessibilityLabel="Más información sobre el test interactivo"
+                        onPress={(e: any) => {
+                          e?.stopPropagation?.();
+                          setShowQuizInfoModal(true);
+                        }}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        style={{ padding: 6, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.16)' }}
+                      >
+                        <Info size={16} color="#fff" />
+                      </TouchableOpacity>
+                      <View style={{ backgroundColor: '#fff', padding: 8, borderRadius: 12 }}>
+                        <ArrowRight size={16} color={theme.tint} />
+                      </View>
                     </View>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -949,6 +989,84 @@ export default function Register() {
           void executeOAuth('google', 'Google');
         }}
         onClose={() => setShowGoogleTerms(false)}
+      />
+
+      {/* INFO MODAL: ¿QUÉ ES EL TEST INTERACTIVO? */}
+      <Modal
+        visible={showQuizInfoModal}
+        transparent
+        statusBarTranslucent
+        navigationBarTranslucent
+        animationType="fade"
+        onRequestClose={() => setShowQuizInfoModal(false)}
+      >
+        <View style={styles.infoModalOverlay}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setShowQuizInfoModal(false)}
+          />
+          <View
+            style={[
+              styles.infoModalCard,
+              {
+                backgroundColor: getThemedModalCardColor(currentStoreTheme),
+                borderColor: getThemedModalBorderColor(currentStoreTheme),
+              },
+            ]}
+          >
+            <LiquidCloseButton
+              accessibilityLabel="Cerrar información"
+              onPress={() => setShowQuizInfoModal(false)}
+              iconColor={theme.text}
+              style={{ position: 'absolute', top: 14, right: 14, zIndex: 10 }}
+            />
+
+            <View style={[styles.infoModalIcon, { backgroundColor: theme.tint + '1A', borderColor: theme.tint + '44' }]}>
+              <Sparkles size={28} color={theme.tint} />
+            </View>
+            <Text style={[styles.infoModalTitle, { color: theme.text }]}>
+              ¿Qué es el Test Interactivo?
+            </Text>
+            <Text style={[styles.infoModalDesc, { color: theme.textSecondary }]}>
+              Es una herramienta inteligente diseñada para crear tu perfil de fitness perfecto en cuestión de segundos.
+            </Text>
+
+            <View style={{ gap: 10, width: '100%', marginBottom: 18 }}>
+              {[
+                'Rutina de entrenamiento personalizada.',
+                'Cálculo de macros y calorías exactas.',
+                'Adaptado a tu nivel y equipamiento.',
+              ].map(line => (
+                <View key={line} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <CheckCircle2 size={17} color="#22c55e" />
+                  <Text style={{ color: theme.text, fontSize: 13.5, fontWeight: '600', flex: 1 }}>
+                    {line}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.86}
+              onPress={() => {
+                setShowQuizInfoModal(false);
+                setShowQuiz(true);
+              }}
+              style={[styles.infoModalBtn, { backgroundColor: theme.tint }]}
+            >
+              <Sparkles size={17} color={contrastColor} />
+              <Text style={{ color: contrastColor, fontWeight: '800', fontSize: 14.5 }}>
+                ¡Comenzar Test Gratis!
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <EmotionalOnboardingModal
+        visible={showQuiz}
+        onFinish={handleQuizFinish}
+        onClose={() => setShowQuiz(false)}
       />
     </KeyboardAvoidingView>
   );
@@ -1205,5 +1323,50 @@ const styles = StyleSheet.create({
   legalDot: {
     fontSize: 10,
     opacity: 0.5,
+  },
+  infoModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.68)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  infoModalCard: {
+    width: '100%',
+    maxWidth: 370,
+    borderRadius: 28,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'center',
+  },
+  infoModalIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  infoModalTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  infoModalDesc: {
+    fontSize: 13.5,
+    lineHeight: 19,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  infoModalBtn: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 16,
   },
 });

@@ -224,13 +224,27 @@ export default function Onboarding() {
   const [isLoading, setIsLoading] = useState(false);
   const [direction, setDirection] = useState('right');
   
-  const [formData, setFormData] = useState({
-    gender: 'male',
-    age: '',
-    height: '',
-    weight: '',
-    activityLevel: 1.55,
-    goal: 'lose'
+  const [formData, setFormData] = useState(() => {
+    let prefilledGoal = 'lose';
+    let prefilledWeight = '';
+    try {
+      const quizRaw = typeof localStorage !== 'undefined' ? localStorage.getItem('temp_onboarding_data') : null;
+      if (quizRaw) {
+        const quiz = JSON.parse(quizRaw);
+        if (quiz.currentWeight) prefilledWeight = String(quiz.currentWeight);
+        if (quiz.goal === 'muscle') prefilledGoal = 'gain';
+        else if (quiz.goal === 'hybrid') prefilledGoal = 'recomp';
+        else if (quiz.goal === 'lose') prefilledGoal = 'lose';
+      }
+    } catch {}
+    return {
+      gender: 'male',
+      age: '',
+      height: '',
+      weight: prefilledWeight,
+      activityLevel: 1.55,
+      goal: prefilledGoal,
+    };
   });
 
   const handleNext = () => {
@@ -341,6 +355,9 @@ export default function Onboarding() {
       };
 
       await userService.updateUserProfile(cleanProfileData);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('temp_onboarding_data');
+      }
       
       useAppStore.setState(state => ({
         userProfile: { ...state.userProfile, ...cleanProfileData }
