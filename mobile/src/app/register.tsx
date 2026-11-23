@@ -19,7 +19,7 @@ import { GlassView } from 'expo-glass-effect';
 import { Sparkles, UserPlus, ArrowRight, CheckCircle2, Eye, EyeOff, Mail, Check, Info } from 'lucide-react-native';
 import { FontAwesome5, FontAwesome6 } from '@expo/vector-icons';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastColor, getContrastTextColor } from '@/utils/colorUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -85,6 +85,7 @@ export default function Register() {
   const twoFactorPending = useAppStore(state => state.twoFactorPending);
   const isDark = !['light', 'ocean', 'desert'].includes(currentStoreTheme);
   const contrastColor = getContrastColor(theme.tint, currentStoreTheme);
+  const buttonTextColor = getContrastTextColor(theme.tint);
   const colorScheme = useDeviceColorScheme();
   const insets = useSafeAreaInsets();
 
@@ -1054,8 +1055,8 @@ export default function Register() {
               }}
               style={[styles.infoModalBtn, { backgroundColor: theme.tint }]}
             >
-              <Sparkles size={17} color={contrastColor} />
-              <Text style={{ color: contrastColor, fontWeight: '800', fontSize: 14.5 }}>
+              <Sparkles size={17} color={buttonTextColor} />
+              <Text style={{ color: buttonTextColor, fontWeight: '800', fontSize: 14.5 }}>
                 ¡Comenzar Test Gratis!
               </Text>
             </TouchableOpacity>
