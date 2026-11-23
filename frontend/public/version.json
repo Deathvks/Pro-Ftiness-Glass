@@ -1,25 +1,21 @@
 {
-  "version": "7.16.45",
-  "releaseNotes": "Actualización v7.16.45: scroll completo hasta arriba en escritorio y carrusel deslizable con flechas y arrastre en Atletas en tu zona.",
+  "version": "7.16.46",
+  "releaseNotes": "Actualización v7.16.46: pantalla de Soporte reorganizada en Ayuda y Comunidad, Información del Sistema y Herramientas y Guías Públicas.",
   "welcome": {
-    "title": "Aviso de Migración Ultracompacto",
-    "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",
+    "title": "Soporte Mejorado y Organizado",
+    "subtitle": "Encuentra más rápido la ayuda, herramientas públicas y guías de la app desde un diseño por bloques.",
     "features": [
       {
-        "title": "Máxima Compactación en Móvil",
-        "description": "El distintivo de migración ahora se integra en línea con el texto, reduciendo la altura del aviso a solo 2 líneas sin tapar la pantalla."
+        "title": "Ayuda y Comunidad",
+        "description": "Acceso directo a preguntas frecuentes, reportes, sugerencias y canales oficiales en un mismo bloque."
       },
       {
-        "title": "Elementos Agrupados en PC",
-        "description": "Distintivo, mensaje explicativo, enlace y botón de cierre aparecen juntos y centrados sin espacios vacíos de lado a lado."
+        "title": "Información del Sistema",
+        "description": "Consulta la versión actual, novedades de cada actualización y el estado de la aplicación al instante."
       },
       {
-        "title": "Cierre Permanente (X)",
-        "description": "Puedes ocultar el aviso pulsando su botón X en cualquier momento y no volverá a mostrarse."
-      },
-      {
-        "title": "Apertura Superior en Tutoriales",
-        "description": "Al seleccionar cualquier apartado o volver atrás, la vista se posiciona automáticamente arriba del todo."
+        "title": "Herramientas y Guías Públicas",
+        "description": "Calculadoras, guías y recursos públicos agrupados para acceder sin perderte."
       }
     ]
   }
