@@ -21,7 +21,7 @@
       }
     },
     "android": {
-      "versionCode": 801,
+      "versionCode": 802,
       "package": "com.profitnessglass.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
@@ -86,7 +86,17 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Permite a ProFitnessGlass escanear códigos de barras de alimentos para registrar tus comidas rápidamente."
+          "cameraPermission": "Permite a ProFitnessGlass escanear códigos de barras de alimentos para registrar tus comidas rápidamente.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite a ProFitnessGlass acceder a tus fotos para subir imágenes de perfil y publicaciones.",
+          "cameraPermission": "Permite a ProFitnessGlass usar tu cámara para tomar fotos.",
+          "microphonePermission": false
         }
       ],
       [

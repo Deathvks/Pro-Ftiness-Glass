@@ -508,6 +508,23 @@ function ensurePermission(manifest, permissionName) {
   }
 }
 
+function ensureOptionalFeature(manifest, featureName) {
+  manifest.manifest['uses-feature'] = manifest.manifest['uses-feature'] || [];
+  const existing = manifest.manifest['uses-feature'].find(
+    (entry) => entry.$ && entry.$['android:name'] === featureName
+  );
+  if (existing) {
+    existing.$['android:required'] = 'false';
+  } else {
+    manifest.manifest['uses-feature'].push({
+      $: {
+        'android:name': featureName,
+        'android:required': 'false',
+      },
+    });
+  }
+}
+
 function upsertReceiver(application, receiverObj) {
   application.receiver = application.receiver || [];
   const targetName = receiverObj.$['android:name'];
@@ -559,6 +576,12 @@ const withNativeRestTimer = (config) => {
     ensurePermission(manifest, 'android.permission.POST_NOTIFICATIONS');
     ensurePermission(manifest, 'android.permission.VIBRATE');
     ensurePermission(manifest, 'android.permission.SCHEDULE_EXACT_ALARM');
+
+    // Keep tablets/Chromebooks/non-GPS devices supported on Google Play
+    ensureOptionalFeature(manifest, 'android.hardware.camera');
+    ensureOptionalFeature(manifest, 'android.hardware.camera.autofocus');
+    ensureOptionalFeature(manifest, 'android.hardware.location');
+    ensureOptionalFeature(manifest, 'android.hardware.location.gps');
 
     const application = AndroidConfig.Manifest.getMainApplicationOrThrow(manifest);
     ensureGoogleOAuthIntentFilter(application, GOOGLE_ANDROID_SCHEMES);
