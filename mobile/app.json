@@ -5,9 +5,10 @@
     "version": "7.16.45",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "scheme": "profitnessglass",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "bundleIdentifier": "com.profitnessglass.app",
       "icon": "./assets/expo.icon",
       "associatedDomains": [
         "applinks:profitnessglass.es",

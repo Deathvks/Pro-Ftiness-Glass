@@ -254,9 +254,14 @@ export const googleLogin = async (req, res, next) => {
     let googleUser = {};
 
     try {
+      const allowedAudiences = [
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_IOS_CLIENT_ID,
+        process.env.GOOGLE_ANDROID_CLIENT_ID
+      ].filter(Boolean);
       const ticket = await client.verifyIdToken({
         idToken: token,
-        audience: process.env.GOOGLE_CLIENT_ID,
+        audience: allowedAudiences.length > 0 ? allowedAudiences : process.env.GOOGLE_CLIENT_ID,
       });
       const payload = ticket.getPayload();
       googleUser = {
@@ -929,9 +934,22 @@ export const xLogin = async (req, res, next) => {
 };
 
 export const githubLogin = async (req, res, next) => {
-  const { code, referralCode } = req.body;
+  const { code, redirectUri, clientId, referralCode } = req.body;
 
   if (!code) return res.status(400).json({ error: 'Se requiere el código de autorización de GitHub.' });
+
+  const useMobileApp =
+    Boolean(clientId) &&
+    Boolean(process.env.GITHUB_MOBILE_CLIENT_ID) &&
+    clientId === process.env.GITHUB_MOBILE_CLIENT_ID &&
+    Boolean(process.env.GITHUB_MOBILE_CLIENT_SECRET);
+
+  const resolvedClientId = useMobileApp
+    ? process.env.GITHUB_MOBILE_CLIENT_ID
+    : process.env.GITHUB_CLIENT_ID;
+  const resolvedClientSecret = useMobileApp
+    ? process.env.GITHUB_MOBILE_CLIENT_SECRET
+    : process.env.GITHUB_CLIENT_SECRET;
 
   try {
     const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
@@ -941,9 +959,10 @@ export const githubLogin = async (req, res, next) => {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        client_id: process.env.GITHUB_CLIENT_ID,
-        client_secret: process.env.GITHUB_CLIENT_SECRET,
-        code
+        client_id: resolvedClientId,
+        client_secret: resolvedClientSecret,
+        code,
+        ...(redirectUri ? { redirect_uri: redirectUri } : {})
       })
     });
 

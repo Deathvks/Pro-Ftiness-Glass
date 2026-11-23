@@ -25,7 +25,10 @@ export function resolveDeepLink(rawUrl: string | null | undefined): ResolvedDeep
   // Ignore OAuth callback URLs handled by WebBrowser.openAuthSessionAsync
   if (
     rawUrl.includes('access_token=') ||
-    (rawUrl.includes('code=') && rawUrl.includes('state='))
+    rawUrl.includes(':/oauthredirect') ||
+    rawUrl.includes('://oauth') ||
+    (rawUrl.includes('code=') && rawUrl.includes('state=')) ||
+    (rawUrl.includes('error=') && rawUrl.includes('state='))
   ) {
     return null;
   }
@@ -42,8 +45,8 @@ export function resolveDeepLink(rawUrl: string | null | undefined): ResolvedDeep
         return null;
       }
       rawPath = parsed.pathname || '/';
-    } else if (proto === 'mobile') {
-      // Custom scheme: mobile://share/routine/12 puts "share" in hostname and "/routine/12" in pathname
+    } else if (proto === 'profitnessglass' || proto === 'mobile') {
+      // Custom scheme: profitnessglass://share/routine/12 puts "share" in hostname and "/routine/12" in pathname
       const hostPart = parsed.hostname ? `/${parsed.hostname}` : '';
       const pathPart = parsed.pathname && parsed.pathname !== '/' ? parsed.pathname : '';
       rawPath = `${hostPart}${pathPart}` || '/';
