@@ -10,7 +10,8 @@ import {
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GlassView } from 'expo-glass-effect';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import {
   CheckCircle2,
@@ -21,6 +22,7 @@ import {
   ShieldCheck,
   Droplets,
   Scale,
+  Sparkles,
 } from 'lucide-react-native';
 
 import { useToastStore, ToastItem } from '@/store/toastStore';
@@ -35,6 +37,14 @@ export const ToastContainer: React.FC = () => {
   const colors = useAppColors();
   const theme = useAppStore((state) => state.theme);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const supportsNativeGlass = useMemo(() => {
+    if (Platform.OS !== 'ios') return false;
+    try {
+      return isLiquidGlassAvailable();
+    } catch {
+      return false;
+    }
+  }, []);
 
   const anim = useRef(new Animated.Value(0)).current;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -92,13 +102,14 @@ export const ToastContainer: React.FC = () => {
     });
   };
 
-  const { IconComponent, iconColor, iconBg, glowColor, cleanMessage } = useMemo(() => {
+  const { IconComponent, iconColor, iconBg, glowColor, borderTint, cleanMessage } = useMemo(() => {
     if (!currentToast) {
       return {
         IconComponent: Info,
         iconColor: colors.tint,
-        iconBg: colors.tint + '20',
-        glowColor: colors.tint + '15',
+        iconBg: colors.tint + '22',
+        glowColor: colors.tint + '16',
+        borderTint: colors.tint + '38',
         cleanMessage: '',
       };
     }
@@ -106,30 +117,38 @@ export const ToastContainer: React.FC = () => {
     const raw = currentToast.message || '';
     let msg = raw;
     let type = currentToast.type || 'info';
+    const lower = msg.toLowerCase();
+    const isXpOrGamification =
+      /\bxp\b/i.test(msg) ||
+      lower.includes('nivel') ||
+      lower.includes('insignia') ||
+      lower.includes('reto completado');
 
     // Auto-detect based on emojis or keywords if type is default
-    if (msg.includes('🏋') || msg.toLowerCase().includes('gimnasio')) {
+    if (msg.includes('🏋') || lower.includes('gimnasio')) {
       type = 'gym';
       msg = msg.replace(/^[🏋️\s]+/, '');
-    } else if (msg.includes('🛡') || msg.toLowerCase().includes('escudo')) {
+    } else if (msg.includes('🛡') || lower.includes('escudo')) {
       type = 'shield';
       msg = msg.replace(/^[🛡️\s]+/, '');
-    } else if (msg.includes('💧') || msg.toLowerCase().includes('agua')) {
+    } else if (msg.includes('💧') || lower.includes('agua')) {
       msg = msg.replace(/^[💧\s]+/, '');
       return {
         IconComponent: Droplets,
         iconColor: '#38bdf8',
         iconBg: 'rgba(56, 189, 248, 0.20)',
-        glowColor: 'rgba(56, 189, 248, 0.15)',
+        glowColor: 'rgba(56, 189, 248, 0.14)',
+        borderTint: 'rgba(56, 189, 248, 0.35)',
         cleanMessage: msg,
       };
-    } else if (msg.includes('⚖') || msg.toLowerCase().includes('peso')) {
+    } else if (msg.includes('⚖') || lower.includes('peso')) {
       msg = msg.replace(/^[⚖️\s]+/, '');
       return {
         IconComponent: Scale,
         iconColor: colors.tint,
-        iconBg: colors.tint + '20',
-        glowColor: colors.tint + '15',
+        iconBg: colors.tint + '22',
+        glowColor: colors.tint + '16',
+        borderTint: colors.tint + '38',
         cleanMessage: msg,
       };
     }
@@ -139,24 +158,27 @@ export const ToastContainer: React.FC = () => {
         return {
           IconComponent: Dumbbell,
           iconColor: colors.tint,
-          iconBg: colors.tint + '25',
-          glowColor: colors.tint + '20',
+          iconBg: colors.tint + '24',
+          glowColor: colors.tint + '18',
+          borderTint: colors.tint + '40',
           cleanMessage: msg,
         };
       case 'shield':
         return {
           IconComponent: ShieldCheck,
-          iconColor: '#a855f7',
-          iconBg: 'rgba(168, 85, 247, 0.22)',
-          glowColor: 'rgba(168, 85, 247, 0.18)',
+          iconColor: colors.tint,
+          iconBg: colors.tint + '22',
+          glowColor: colors.tint + '18',
+          borderTint: colors.tint + '38',
           cleanMessage: msg,
         };
       case 'success':
         return {
-          IconComponent: CheckCircle2,
-          iconColor: '#22c55e',
-          iconBg: 'rgba(34, 197, 94, 0.20)',
-          glowColor: 'rgba(34, 197, 94, 0.15)',
+          IconComponent: isXpOrGamification ? Sparkles : CheckCircle2,
+          iconColor: colors.tint,
+          iconBg: colors.tint + '22',
+          glowColor: colors.tint + '16',
+          borderTint: colors.tint + '40',
           cleanMessage: msg,
         };
       case 'error':
@@ -164,7 +186,8 @@ export const ToastContainer: React.FC = () => {
           IconComponent: AlertCircle,
           iconColor: '#ef4444',
           iconBg: 'rgba(239, 68, 68, 0.20)',
-          glowColor: 'rgba(239, 68, 68, 0.15)',
+          glowColor: 'rgba(239, 68, 68, 0.14)',
+          borderTint: 'rgba(239, 68, 68, 0.35)',
           cleanMessage: msg,
         };
       case 'warning':
@@ -172,16 +195,18 @@ export const ToastContainer: React.FC = () => {
           IconComponent: AlertTriangle,
           iconColor: '#f59e0b',
           iconBg: 'rgba(245, 158, 11, 0.20)',
-          glowColor: 'rgba(245, 158, 11, 0.15)',
+          glowColor: 'rgba(245, 158, 11, 0.14)',
+          borderTint: 'rgba(245, 158, 11, 0.35)',
           cleanMessage: msg,
         };
       case 'info':
       default:
         return {
-          IconComponent: Info,
+          IconComponent: isXpOrGamification ? Sparkles : Info,
           iconColor: colors.tint,
-          iconBg: colors.tint + '20',
-          glowColor: colors.tint + '15',
+          iconBg: colors.tint + '22',
+          glowColor: colors.tint + '16',
+          borderTint: colors.tint + '38',
           cleanMessage: msg,
         };
     }
@@ -227,17 +252,31 @@ export const ToastContainer: React.FC = () => {
           style={[
             styles.toastCard,
             {
-              backgroundColor: isDark ? 'rgba(18, 18, 24, 0.94)' : 'rgba(255, 255, 255, 0.96)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.10)',
+              backgroundColor: supportsNativeGlass
+                ? 'transparent'
+                : isDark
+                ? 'rgba(18, 18, 24, 0.88)'
+                : 'rgba(255, 255, 255, 0.90)',
+              borderColor: borderTint,
             },
           ]}
         >
-          {/* Liquid Glass blur backdrop */}
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
+          {/* Liquid Glass backdrop */}
+          {supportsNativeGlass ? (
+            <GlassView
+              pointerEvents="none"
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: 22, borderCurve: 'continuous' }]}
+            />
+          ) : (
+            <BlurView
+              pointerEvents="none"
+              intensity={Platform.OS === 'android' ? 45 : 30}
+              tint={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: 22 }]}
+            />
+          )}
 
           {/* Ambient Glow */}
           <View
