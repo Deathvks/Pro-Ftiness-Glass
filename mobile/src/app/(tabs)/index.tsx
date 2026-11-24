@@ -1176,8 +1176,8 @@ export default function Dashboard() {
             shadowOffset: { width: 0, height: 4 },
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <ExpoImage
                   source={require('../../../assets/images/galaxy.jpg')}
@@ -1195,18 +1195,9 @@ export default function Dashboard() {
                   contentFit="cover"
                 />
               </View>
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <FontAwesome5 name="palette" size={11} color="#a78bfa" />
-                  <Text style={{ fontSize: 13, fontWeight: '800', color: colors.text }}>
-                    Desbloquea Galaxia, Desierto y Océano
-                  </Text>
-                </View>
-                <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>
-                  {nextThemeTarget
-                    ? `Te ${nextThemeTarget.remaining === 1 ? 'falta 1 amigo' : `faltan ${nextThemeTarget.remaining} amigos`} para ${nextThemeTarget.name} y +1.000 XP`
-                    : 'Invita amigos y consigue +1.000 XP y temas exclusivos'}
-                </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: isDark ? 'rgba(139, 92, 246, 0.22)' : 'rgba(124, 58, 237, 0.12)' }}>
+                <FontAwesome5 name="bolt" size={9} color={isDark ? '#c4b5fd' : '#6d28d9'} />
+                <Text style={{ fontSize: 10, fontWeight: '800', color: isDark ? '#e9d5ff' : '#6d28d9' }}>+1.000 XP / amigo</Text>
               </View>
             </View>
             <TouchableOpacity
@@ -1219,11 +1210,24 @@ export default function Dashboard() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                marginLeft: 8,
               }}
             >
               <FontAwesome5 name="times" size={11} color={colors.textMuted} />
             </TouchableOpacity>
+          </View>
+
+          <View style={{ marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <FontAwesome5 name="palette" size={12} color="#a78bfa" />
+              <Text style={{ fontSize: 13.5, fontWeight: '800', color: colors.text, flex: 1 }} numberOfLines={1}>
+                Desbloquea Galaxia, Desierto y Océano
+              </Text>
+            </View>
+            <Text style={{ fontSize: 11.5, color: colors.textMuted, marginTop: 3 }}>
+              {nextThemeTarget
+                ? `Te ${nextThemeTarget.remaining === 1 ? 'falta 1 amigo' : `faltan ${nextThemeTarget.remaining} amigos`} para ${nextThemeTarget.name} y +1.000 XP`
+                : 'Invita amigos y consigue +1.000 XP y temas exclusivos'}
+            </Text>
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

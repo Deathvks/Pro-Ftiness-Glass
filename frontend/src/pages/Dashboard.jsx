@@ -1188,90 +1188,94 @@ const Dashboard = ({ setView }) => {
       )}
 
       {nextThemeTarget && !hideThemeDiscovery && (
-        <GlassCard className="glass p-4 sm:p-5 rounded-[26px] mb-6 border-none ring-1 ring-black/10 dark:ring-white/15 relative">
-          <button
-            type="button"
-            onClick={() => {
-              setHideThemeDiscovery(true);
-              try { localStorage.setItem('pfg_hide_theme_discovery_v1', 'true'); } catch { /* ignore */ }
-            }}
-            aria-label="Ocultar tarjeta de temas"
-            className="absolute top-3.5 right-3.5 w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <FaXmark size={12} />
-          </button>
-
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pr-6">
-            <div className="flex items-start gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 rounded-2xl bg-accent/15 text-accent flex items-center justify-center shrink-0 mt-0.5">
-                <FaGift size={18} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <span className="text-sm sm:text-base font-extrabold text-text-primary">
-                    Desbloquea temas compartiendo la app
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/15 text-accent text-[10px] font-black uppercase tracking-wider">
-                    <FaBolt size={9} /> +1.000 XP / amigo
-                  </span>
+        <GlassCard className="glass p-4 sm:p-5 rounded-[26px] mb-6 border-none ring-1 ring-black/10 dark:ring-white/15">
+          <div className="flex flex-col gap-3.5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 rounded-2xl bg-accent/15 text-accent flex items-center justify-center shrink-0 mt-0.5">
+                  <FaGift size={18} />
                 </div>
-                <p className="text-xs text-text-secondary leading-relaxed">
-                  Llevas <strong>{referralCount}</strong> {referralCount === 1 ? 'amigo' : 'amigos'} · Te faltan <strong>{nextThemeTarget.req - referralCount}</strong> para <strong>{nextThemeTarget.label}</strong>.
-                </p>
-
-                <div className="grid grid-cols-3 gap-2 mt-3 max-w-md">
-                  <button
-                    type="button"
-                    onClick={() => setShowRewardsModal(true)}
-                    className="relative h-14 sm:h-16 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-1.5 sm:p-2 flex items-end cursor-pointer"
-                    style={{ background: 'radial-gradient(circle at 25% 25%, rgba(168,85,247,0.5), transparent 60%), linear-gradient(135deg, #070314, #1d0b3b)' }}
-                  >
-                    <span className="text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
-                      <FaMeteor size={9} className="text-[#c084fc] shrink-0" /> Galaxia · 3
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
+                    <span className="text-sm sm:text-base font-extrabold text-text-primary leading-snug">
+                      Desbloquea temas compartiendo la app
                     </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowRewardsModal(true)}
-                    className="relative h-14 sm:h-16 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-1.5 sm:p-2 flex items-end cursor-pointer bg-amber-900"
-                  >
-                    <img src="/assets/themes/desert.jpg" alt="Desierto" className="absolute inset-0 w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <span className="relative z-10 text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
-                      <FaSun size={9} className="text-[#fcd34d] shrink-0" /> Desierto · 5
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/15 text-accent text-[10px] font-black uppercase tracking-wider shrink-0">
+                      <FaBolt size={9} /> +1.000 XP / amigo
                     </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowRewardsModal(true)}
-                    className="relative h-14 sm:h-16 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-1.5 sm:p-2 flex items-end cursor-pointer bg-sky-900"
-                  >
-                    <img src="/assets/themes/ocean.jpg" alt="Océano" className="absolute inset-0 w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <span className="relative z-10 text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
-                      <FaUmbrellaBeach size={9} className="text-[#7dd3fc] shrink-0" /> Océano · 7
-                    </span>
-                  </button>
+                  </div>
+                  <p className="text-xs text-text-secondary leading-relaxed">
+                    Llevas <strong>{referralCount}</strong> {referralCount === 1 ? 'amigo' : 'amigos'} · Te faltan <strong>{nextThemeTarget.req - referralCount}</strong> para <strong>{nextThemeTarget.label}</strong>.
+                  </p>
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setHideThemeDiscovery(true);
+                  try { localStorage.setItem('pfg_hide_theme_discovery_v1', 'true'); } catch { /* ignore */ }
+                }}
+                aria-label="Ocultar tarjeta de temas"
+                className="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer shrink-0"
+              >
+                <FaXmark size={12} />
+              </button>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={_handleShareReferral}
-                className="px-4 py-2.5 rounded-xl bg-accent text-accent-contrast font-extrabold text-xs hover:brightness-110 transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-              >
-                <FaShareNodes size={12} />
-                <span>Invitar (+1.000 XP)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowRewardsModal(true)}
-                className="px-3.5 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-text-primary font-bold text-xs transition-all flex items-center justify-center cursor-pointer"
-              >
-                Probar temas
-              </button>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div className="grid grid-cols-3 gap-2 w-full lg:max-w-md">
+                <button
+                  type="button"
+                  onClick={() => setShowRewardsModal(true)}
+                  className="relative h-14 sm:h-16 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-1.5 sm:p-2 flex items-end cursor-pointer"
+                  style={{ background: 'radial-gradient(circle at 25% 25%, rgba(168,85,247,0.5), transparent 60%), linear-gradient(135deg, #070314, #1d0b3b)' }}
+                >
+                  <span className="text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
+                    <FaMeteor size={9} className="text-[#c084fc] shrink-0" /> Galaxia · 3
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRewardsModal(true)}
+                  className="relative h-14 sm:h-16 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-1.5 sm:p-2 flex items-end cursor-pointer bg-amber-900"
+                >
+                  <img src="/assets/themes/desert.jpg" alt="Desierto" className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <span className="relative z-10 text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
+                    <FaSun size={9} className="text-[#fcd34d] shrink-0" /> Desierto · 5
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRewardsModal(true)}
+                  className="relative h-14 sm:h-16 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-1.5 sm:p-2 flex items-end cursor-pointer bg-sky-900"
+                >
+                  <img src="/assets/themes/ocean.jpg" alt="Océano" className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <span className="relative z-10 text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
+                    <FaUmbrellaBeach size={9} className="text-[#7dd3fc] shrink-0" /> Océano · 7
+                  </span>
+                </button>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={_handleShareReferral}
+                  className="px-4 py-2.5 rounded-xl bg-accent text-accent-contrast font-extrabold text-xs hover:brightness-110 transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <FaShareNodes size={12} />
+                  <span>Invitar (+1.000 XP)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRewardsModal(true)}
+                  className="px-3.5 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-text-primary font-bold text-xs transition-all flex items-center justify-center cursor-pointer"
+                >
+                  Probar temas
+                </button>
+              </div>
             </div>
           </div>
         </GlassCard>

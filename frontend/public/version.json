@@ -1,21 +1,21 @@
 {
-  "version": "7.16.57",
-  "releaseNotes": "Actualización v7.16.57: corregido el error de renderizado con Lock en Apariencia, textos más nítidos sin desenfoque en Galaxia/Desierto/Océano, cabecera Mis Temas en una sola línea en móvil y modales de prueba desde abajo.",
+  "version": "7.16.58",
+  "releaseNotes": "Actualización v7.16.58: mejorada la tarjeta de descubrimiento de temas en Inicio para que el botón de cerrar (X) no chafe ni parta el título en móvil.",
   "welcome": {
-    "title": "Apariencia Más Nítida y Sin Errores",
-    "subtitle": "Corregimos el fallo en Apariencia, mejoramos la nitidez del texto y pulimos la cabecera Mis Temas y los modales móviles.",
+    "title": "Inicio Más Limpio y Legible",
+    "subtitle": "Corregimos la alineación del botón de cerrar en la tarjeta de temas y recompensas de Inicio en Web, Capacitor y Nativo.",
     "features": [
       {
-        "title": "Error de Icono Solucionado en Apariencia",
-        "description": "Reemplazado el candado por FaLock de FontAwesome para evitar fallos en los acentos bloqueados."
+        "title": "Cabecera Sin Colisiones con la X",
+        "description": "El botón de cerrar ocupa su propia columna flex para que el título y las vistas previas respiren a ancho completo."
       },
       {
-        "title": "Textos Nítidos y Cabecera En Una Línea",
-        "description": "Eliminado el degradado borroso en Tema Galaxia/Desierto/Océano y evitado el salto de línea al solapar Mis Temas."
+        "title": "Requisitos 3, 5 y 7 y +1.000 XP",
+        "description": "Consulta cuántos amigos te faltan y abre el selector de temas en vivo con un toque."
       },
       {
-        "title": "Modales Móviles Desde Abajo",
-        "description": "Tanto Recompensas como el aviso iOS de prueba abren desde abajo con barra gris superior interactiva."
+        "title": "Diseño Consistente en Todas las Plataformas",
+        "description": "Ajuste aplicado en Web, Capacitor y React Native."
       }
     ]
   }
