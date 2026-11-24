@@ -1,5 +1,5 @@
 import ModalPortal from './ModalPortal';
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import {
@@ -27,7 +27,7 @@ const REWARDS = [
     name: 'Tema Galaxia',
     previewCaption: 'Liquid Glass · Estelar',
     description: 'Un viaje al espacio con tonos púrpuras oscuros y fondo estelar inmersivo.',
-    requiredReferrals: 5,
+    requiredReferrals: 3,
     icon: FaMeteor,
     accentHex: '#a855f7',
     variants: [{ id: 'galaxy', label: 'Usar tema', testLabel: 'Probar 10s' }],
@@ -37,7 +37,7 @@ const REWARDS = [
     name: 'Tema Desierto',
     previewCaption: 'Liquid Glass · Dunas (Claro / Oscuro)',
     description: 'Tonos cálidos de arena y atardecer con dunas del desierto en modo claro u oscuro.',
-    requiredReferrals: 8,
+    requiredReferrals: 5,
     icon: FaSun,
     accentHex: '#f59e0b',
     imageUrl: '/assets/themes/desert.jpg',
@@ -51,7 +51,7 @@ const REWARDS = [
     name: 'Tema Océano',
     previewCaption: 'Liquid Glass · Océano (Claro / Oscuro)',
     description: 'Tonos profundos de agua y azules vibrantes con fondo de playa en claro u oscuro.',
-    requiredReferrals: 11,
+    requiredReferrals: 7,
     icon: FaUmbrellaBeach,
     accentHex: '#0ea5e9',
     imageUrl: '/assets/themes/ocean.jpg',
@@ -73,6 +73,9 @@ export default function RewardsModal({ isOpen, onClose }) {
   const userProfile = useAppStore((state) => state.userProfile);
   const { addToast } = useToast();
   const { theme, activeTheme, setTheme, startThemeTest, isTestingTheme, testTimeLeft } = useAppTheme();
+  const [dragOffsetY, setDragOffsetY] = useState(0);
+  const dragStartYRef = useRef(null);
+  const didDragRef = useRef(false);
 
   if (!isOpen) return null;
 
@@ -127,19 +130,68 @@ export default function RewardsModal({ isOpen, onClose }) {
     handleCopyReferral();
   };
 
+  const handleTouchStart = (e) => {
+    dragStartYRef.current = e.touches?.[0]?.clientY ?? null;
+    didDragRef.current = false;
+  };
+
+  const handleTouchMove = (e) => {
+    if (dragStartYRef.current === null) return;
+    const delta = (e.touches?.[0]?.clientY ?? dragStartYRef.current) - dragStartYRef.current;
+    if (delta > 6) {
+      didDragRef.current = true;
+      setDragOffsetY(delta);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (dragOffsetY > 75) {
+      setDragOffsetY(0);
+      dragStartYRef.current = null;
+      onClose();
+      return;
+    }
+    setDragOffsetY(0);
+    dragStartYRef.current = null;
+  };
+
   return (
     <ModalPortal>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 !pt-[calc(0.75rem+var(--safe-top))] !pb-[calc(0.75rem+var(--safe-bottom))]">
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 !pt-[calc(0.75rem+var(--safe-top,0px))]">
         <div
           className="absolute inset-0 bg-black/65 backdrop-blur-sm transition-opacity"
           onClick={onClose}
         />
 
-        <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-bg-secondary border border-glass-border rounded-[30px] shadow-2xl p-5 sm:p-7 animate-[slide-up_0.3s_ease-out] overflow-hidden">
+        <div
+          style={dragOffsetY > 0 ? { transform: `translateY(${dragOffsetY}px)`, transition: 'none' } : undefined}
+          className="relative mt-auto sm:mt-0 w-full max-w-lg max-h-[90dvh] sm:max-h-[88vh] flex flex-col bg-bg-secondary border-t sm:border border-glass-border rounded-t-[32px] rounded-b-none sm:rounded-[30px] shadow-2xl px-5 pt-2.5 pb-[calc(1rem+var(--safe-bottom,env(safe-area-inset-bottom,0px)))] sm:p-7 animate-[slide-up_0.28s_cubic-bezier(0.32,0.72,0,1)] sm:animate-[scale-in_0.2s_ease-out] overflow-hidden"
+        >
           <div className="absolute -top-20 -right-20 w-44 h-44 bg-accent/20 blur-[55px] rounded-full pointer-events-none" />
 
+          {/* Barra gris superior (drag handle) en móvil para deslizar o pulsar y cerrar */}
+          <div
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onClick={() => {
+              if (!didDragRef.current) onClose();
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label="Deslizar hacia abajo o pulsar para cerrar"
+            className="w-full py-2 -mt-1 mb-2 flex items-center justify-center sm:hidden cursor-grab active:cursor-grabbing shrink-0 relative z-20 touch-none"
+          >
+            <div className="w-12 h-1.5 rounded-full bg-black/20 dark:bg-white/25" />
+          </div>
+
           {/* Header */}
-          <div className="flex justify-between items-center gap-3 mb-4 relative z-10 shrink-0">
+          <div
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            className="flex justify-between items-center gap-3 mb-4 relative z-10 shrink-0"
+          >
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-11 h-11 rounded-2xl bg-accent/15 flex items-center justify-center text-accent shrink-0">
                 <FaGift size={20} />

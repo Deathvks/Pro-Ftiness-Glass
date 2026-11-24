@@ -1,21 +1,21 @@
 {
-  "version": "7.16.55",
-  "releaseNotes": "Actualización v7.16.55: vistas previas de temas despejadas en móvil (Apariencia y Recompensas en Web, Capacitor y Nativo) sacando la etiqueta Liquid Glass fuera de la imagen para que el paisaje luzca completo.",
+  "version": "7.16.56",
+  "releaseNotes": "Actualización v7.16.56: el modal de Recompensas ahora abre desde abajo en móvil con la barra superior gris para deslizar y cerrar, y bajamos los requisitos de invitación (Galaxia 3, Desierto 5 y Océano 7).",
   "welcome": {
-    "title": "Vistas Previas Más Limpias en Móvil",
-    "subtitle": "Mejoramos las tarjetas de Galaxia, Desierto y Océano para que las imágenes se vean despejadas en pantalla pequeña.",
+    "title": "Recompensas Más Cerca y Bottom Sheet Móvil",
+    "subtitle": "Desbloquea los temas exclusivos con menos invitaciones y disfruta el nuevo modal deslizable desde abajo.",
     "features": [
       {
-        "title": "Imágenes Sin Texto Tapando el Fondo",
-        "description": "Movimos la etiqueta Liquid Glass debajo del título del tema y dejamos solo un badge compacto en esquina."
+        "title": "Nuevos Requisitos: 3, 5 y 7 Amigos",
+        "description": "Tema Galaxia pasa a 3 amigos, Desierto a 5 y Océano a 7 en Web, Capacitor y Nativo (+1.000 XP cada uno)."
       },
       {
-        "title": "Mismo Diseño en Todas las Plataformas",
-        "description": "Apariencia, Recompensas e Inicio actualizados en Web, Capacitor y React Native."
+        "title": "Modal de Recompensas Desde Abajo",
+        "description": "Abre como hoja inferior nativa en móvil con barra gris superior para pulsar o deslizar y cerrar."
       },
       {
-        "title": "Recompensa de +1.000 XP y Pruebas de 10s",
-        "description": "Sigue probando los temas en vivo e invitando amigos con un toque."
+        "title": "Vistas Previas Despejadas",
+        "description": "Sigue probando los temas 10s en vivo y viendo tu progreso al instante."
       }
     ]
   }

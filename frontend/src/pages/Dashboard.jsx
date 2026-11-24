@@ -747,12 +747,12 @@ const Dashboard = ({ setView }) => {
   const [hideThemeDiscovery, setHideThemeDiscovery] = useState(() => {
     try { return localStorage.getItem('pfg_hide_theme_discovery_v1') === 'true'; } catch { return false; }
   });
-  const nextThemeTarget = referralCount < 5
-    ? { label: 'Galaxia', req: 5, accent: '#a855f7' }
-    : referralCount < 8
-    ? { label: 'Desierto', req: 8, accent: '#f59e0b' }
-    : referralCount < 11
-    ? { label: 'Océano', req: 11, accent: '#0ea5e9' }
+  const nextThemeTarget = referralCount < 3
+    ? { label: 'Galaxia', req: 3, accent: '#a855f7' }
+    : referralCount < 5
+    ? { label: 'Desierto', req: 5, accent: '#f59e0b' }
+    : referralCount < 7
+    ? { label: 'Océano', req: 7, accent: '#0ea5e9' }
     : null;
   const isCapacitor = !!window.Capacitor?.isNativePlatform?.() || window.location.origin.includes('localhost') && !window.location.port;
   const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://profitnessglass.es') : window.location.origin;
@@ -1227,7 +1227,7 @@ const Dashboard = ({ setView }) => {
                     style={{ background: 'radial-gradient(circle at 25% 25%, rgba(168,85,247,0.5), transparent 60%), linear-gradient(135deg, #070314, #1d0b3b)' }}
                   >
                     <span className="text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
-                      <FaMeteor size={9} className="text-[#c084fc] shrink-0" /> Galaxia · 5
+                      <FaMeteor size={9} className="text-[#c084fc] shrink-0" /> Galaxia · 3
                     </span>
                   </button>
                   <button
@@ -1238,7 +1238,7 @@ const Dashboard = ({ setView }) => {
                     <img src="/assets/themes/desert.jpg" alt="Desierto" className="absolute inset-0 w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     <span className="relative z-10 text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
-                      <FaSun size={9} className="text-[#fcd34d] shrink-0" /> Desierto · 8
+                      <FaSun size={9} className="text-[#fcd34d] shrink-0" /> Desierto · 5
                     </span>
                   </button>
                   <button
@@ -1249,7 +1249,7 @@ const Dashboard = ({ setView }) => {
                     <img src="/assets/themes/ocean.jpg" alt="Océano" className="absolute inset-0 w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     <span className="relative z-10 text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
-                      <FaUmbrellaBeach size={9} className="text-[#7dd3fc] shrink-0" /> Océano · 11
+                      <FaUmbrellaBeach size={9} className="text-[#7dd3fc] shrink-0" /> Océano · 7
                     </span>
                   </button>
                 </div>

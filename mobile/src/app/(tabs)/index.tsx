@@ -313,9 +313,9 @@ export default function Dashboard() {
 
   const referralCount = userProfile?.referralCount || 0;
   const nextThemeTarget = useMemo(() => {
-    if (referralCount < 1) return { name: 'Galaxia', required: 1, remaining: 1 - referralCount };
+    if (referralCount < 3) return { name: 'Galaxia', required: 3, remaining: 3 - referralCount };
     if (referralCount < 5) return { name: 'Desierto', required: 5, remaining: 5 - referralCount };
-    if (referralCount < 10) return { name: 'Océano', required: 10, remaining: 10 - referralCount };
+    if (referralCount < 7) return { name: 'Océano', required: 7, remaining: 7 - referralCount };
     return null;
   }, [referralCount]);
 
@@ -1161,7 +1161,7 @@ export default function Dashboard() {
       )}
 
       {/* 4B. DESCUBRIMIENTO DE TEMAS EXCLUSIVOS Y +1.000 XP */}
-      {!hideThemeDiscovery && referralCount < 10 && (
+      {!hideThemeDiscovery && referralCount < 7 && (
         <View
           style={{
             marginBottom: 14,

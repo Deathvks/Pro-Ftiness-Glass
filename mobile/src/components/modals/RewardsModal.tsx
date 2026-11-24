@@ -49,7 +49,7 @@ const REWARDS: RewardItem[] = [
     name: 'Tema Galaxia',
     previewCaption: 'Liquid Glass · Estelar',
     description: 'Un viaje al espacio con tonos púrpuras oscuros y un fondo estelar inmersivo.',
-    requiredReferrals: 5,
+    requiredReferrals: 3,
     color: '#a855f7',
     iconName: 'meteor',
     previewImage: require('../../../assets/images/galaxy.jpg'),
@@ -60,7 +60,7 @@ const REWARDS: RewardItem[] = [
     name: 'Tema Desierto',
     previewCaption: 'Liquid Glass · Dunas',
     description: 'Tonos cálidos de arena y atardecer con dunas del desierto en modo claro u oscuro.',
-    requiredReferrals: 8,
+    requiredReferrals: 5,
     color: '#f59e0b',
     iconName: 'sun',
     previewImage: require('../../../assets/images/desert.jpg'),
@@ -74,7 +74,7 @@ const REWARDS: RewardItem[] = [
     name: 'Tema Océano',
     previewCaption: 'Liquid Glass · Océano',
     description: 'Tonos profundos de agua y azules vibrantes con fondo de playa en claro u oscuro.',
-    requiredReferrals: 11,
+    requiredReferrals: 7,
     color: '#0ea5e9',
     iconName: 'umbrella-beach',
     previewImage: require('../../../assets/images/ocean.jpg'),
@@ -97,8 +97,6 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
   const isIOS = Platform.OS === 'ios';
   const tintContrastText = getContrastTextColor(colors.tint);
   const isTestingTheme = Boolean(themeTest?.name);
-
-  if (!visible) return null;
 
   const referralCount = userProfile?.referralCount || 0;
   const isAdmin = userProfile?.role === 'admin';
@@ -147,11 +145,12 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
 
   return (
     <SwipeableBottomSheet
-      scrollable={false}
+      scrollable
       visible={visible}
       onClose={onClose}
       isDark={isDark}
       backgroundColor={colors.card}
+      height="88%"
       maxHeight="88%"
     >
       {/* Header */}
@@ -184,7 +183,7 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
       </View>
 
       <ScrollView
-        style={{ flexShrink: 1 }}
+        style={{ flex: 1 }}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >

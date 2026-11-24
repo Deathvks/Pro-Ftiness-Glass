@@ -255,13 +255,13 @@ export default function AppearanceScreen({ setView }) {
     handleCopyReferral();
   };
 
-  const isGalaxyUnlocked = referralCount >= 5 || isAdmin;
+  const isGalaxyUnlocked = referralCount >= 3 || isAdmin;
   const isGalaxyActive = activeTheme === 'galaxy';
 
-  const isDesertUnlocked = referralCount >= 8 || isAdmin;
+  const isDesertUnlocked = referralCount >= 5 || isAdmin;
   const isDesertActive = activeTheme === 'desert' || activeTheme === 'desert-dark';
 
-  const isOceanUnlocked = referralCount >= 11 || isAdmin;
+  const isOceanUnlocked = referralCount >= 7 || isAdmin;
   const isOceanActive = activeTheme === 'ocean' || activeTheme === 'ocean-dark';
 
   
@@ -612,7 +612,7 @@ export default function AppearanceScreen({ setView }) {
               <div className="absolute bottom-6 left-1/2 w-1.5 h-1.5 rounded-full bg-sky-200/90 shadow-[0_0_8px_#38bdf8]" />
               <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
                 {isGalaxyUnlocked ? <FaLockOpen size={9} className="text-emerald-400" /> : <FaLock size={9} className="text-white/80" />}
-                {isGalaxyUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 5)}/5`}
+                {isGalaxyUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 3)}/3`}
               </span>
             </div>
 
@@ -632,7 +632,7 @@ export default function AppearanceScreen({ setView }) {
                     {isGalaxyUnlocked ? (
                       <><FaLockOpen size={11} className="text-green-500" /> Desbloqueado</>
                     ) : (
-                      <><FaLock size={11} className="text-text-muted" /> {Math.max(0, 5 - referralCount)} {5 - referralCount === 1 ? 'amigo más' : 'amigos más'} para desbloquear</>
+                      <><FaLock size={11} className="text-text-muted" /> {Math.max(0, 3 - referralCount)} {3 - referralCount === 1 ? 'amigo más' : 'amigos más'} para desbloquear</>
                     )}
                   </div>
                 </div>
@@ -676,7 +676,7 @@ export default function AppearanceScreen({ setView }) {
             </div>
             {!isGalaxyUnlocked && (
               <div className="mt-3 w-full h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-[#a855f7] to-[#3b82f6] transition-all duration-500" style={{ width: `${Math.min(100, Math.round((referralCount / 5) * 100))}%` }} />
+                <div className="h-full rounded-full bg-gradient-to-r from-[#a855f7] to-[#3b82f6] transition-all duration-500" style={{ width: `${Math.min(100, Math.round((referralCount / 3) * 100))}%` }} />
               </div>
             )}
             {isGalaxyActive && (
@@ -712,7 +712,7 @@ export default function AppearanceScreen({ setView }) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
               <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
                 {isDesertUnlocked ? <FaLockOpen size={9} className="text-emerald-400" /> : <FaLock size={9} className="text-white/80" />}
-                {isDesertUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 8)}/8`}
+                {isDesertUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 5)}/5`}
               </span>
             </div>
 
@@ -732,7 +732,7 @@ export default function AppearanceScreen({ setView }) {
                     {isDesertUnlocked ? (
                       <><FaLockOpen size={11} className="text-green-500" /> Desbloqueado</>
                     ) : (
-                      <><FaLock size={11} className="text-text-muted" /> {Math.max(0, 8 - referralCount)} {8 - referralCount === 1 ? 'amigo más' : 'amigos más'} para desbloquear</>
+                      <><FaLock size={11} className="text-text-muted" /> {Math.max(0, 5 - referralCount)} {5 - referralCount === 1 ? 'amigo más' : 'amigos más'} para desbloquear</>
                     )}
                   </div>
                 </div>
@@ -798,7 +798,7 @@ export default function AppearanceScreen({ setView }) {
             </div>
             {!isDesertUnlocked && (
               <div className="mt-3 w-full h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-[#f59e0b] to-[#ea580c] transition-all duration-500" style={{ width: `${Math.min(100, Math.round((referralCount / 8) * 100))}%` }} />
+                <div className="h-full rounded-full bg-gradient-to-r from-[#f59e0b] to-[#ea580c] transition-all duration-500" style={{ width: `${Math.min(100, Math.round((referralCount / 5) * 100))}%` }} />
               </div>
             )}
             {isDesertActive && (
@@ -820,7 +820,7 @@ export default function AppearanceScreen({ setView }) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
               <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
                 {isOceanUnlocked ? <FaLockOpen size={9} className="text-emerald-400" /> : <FaLock size={9} className="text-white/80" />}
-                {isOceanUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 11)}/11`}
+                {isOceanUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 7)}/7`}
               </span>
             </div>
 
@@ -840,7 +840,7 @@ export default function AppearanceScreen({ setView }) {
                     {isOceanUnlocked ? (
                       <><FaLockOpen size={11} className="text-green-500" /> Desbloqueado</>
                     ) : (
-                      <><FaLock size={11} className="text-text-muted" /> {Math.max(0, 11 - referralCount)} {11 - referralCount === 1 ? 'amigo más' : 'amigos más'} para desbloquear</>
+                      <><FaLock size={11} className="text-text-muted" /> {Math.max(0, 7 - referralCount)} {7 - referralCount === 1 ? 'amigo más' : 'amigos más'} para desbloquear</>
                     )}
                   </div>
                 </div>
@@ -906,7 +906,7 @@ export default function AppearanceScreen({ setView }) {
             </div>
             {!isOceanUnlocked && (
               <div className="mt-3 w-full h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-[#0ea5e9] to-[#0284c7] transition-all duration-500" style={{ width: `${Math.min(100, Math.round((referralCount / 11) * 100))}%` }} />
+                <div className="h-full rounded-full bg-gradient-to-r from-[#0ea5e9] to-[#0284c7] transition-all duration-500" style={{ width: `${Math.min(100, Math.round((referralCount / 7) * 100))}%` }} />
               </div>
             )}
             {isOceanActive && (

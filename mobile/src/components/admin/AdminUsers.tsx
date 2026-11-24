@@ -26,9 +26,9 @@ const roleLabel = (role: string) => roles.find(([value]) => value === role)?.[1]
 const dateValue = (value?: string) => Date.parse(value ?? '') || 0;
 const getName = (user: AdminUser) => user.username || user.name || 'Usuario';
 const unlocks = [
-  { label: 'Galaxia', count: 5, icon: Sparkles, color: '#a855f7' },
-  { label: 'Desierto', count: 8, icon: Sun, color: '#f59e0b' },
-  { label: 'Océano', count: 11, icon: Droplets, color: '#0ea5e9' },
+  { label: 'Galaxia', count: 3, icon: Sparkles, color: '#a855f7' },
+  { label: 'Desierto', count: 5, icon: Sun, color: '#f59e0b' },
+  { label: 'Océano', count: 7, icon: Droplets, color: '#0ea5e9' },
 ] as const;
 const providers = [['google_id', 'Google'], ['discord_id', 'Discord'], ['x_id', 'X'], ['github_id', 'GitHub'], ['spotify_id', 'Spotify'], ['facebook_id', 'Facebook']] as const;
 const platformNames: Record<string, string> = { app: 'App nativa', pwa: 'PWA', mobile: 'Web móvil', desktop: 'Escritorio', web: 'Web' };

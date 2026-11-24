@@ -152,7 +152,7 @@ const SPECIAL_THEMES: SpecialTheme[] = [
     previewCaption: 'Liquid Glass · Estelar',
     previewImage: require('../../assets/images/galaxy.jpg'),
     tint: '#a855f7',
-    requiredReferrals: 5,
+    requiredReferrals: 3,
     icon: MeteorIcon,
     variants: [{ id: 'galaxy', label: 'Aplicar', testLabel: 'Probar 10s' }],
     textLight: '#a855f7',
@@ -165,7 +165,7 @@ const SPECIAL_THEMES: SpecialTheme[] = [
     previewCaption: 'Liquid Glass · Dunas',
     previewImage: require('../../assets/images/desert.jpg'),
     tint: '#f59e0b',
-    requiredReferrals: 8,
+    requiredReferrals: 5,
     icon: DesertIcon,
     variants: [
       { id: 'desert', label: 'Claro', testLabel: 'Probar Claro' },
@@ -181,7 +181,7 @@ const SPECIAL_THEMES: SpecialTheme[] = [
     previewCaption: 'Liquid Glass · Océano',
     previewImage: require('../../assets/images/ocean.jpg'),
     tint: '#0ea5e9',
-    requiredReferrals: 11,
+    requiredReferrals: 7,
     icon: OceanIcon,
     variants: [
       { id: 'ocean', label: 'Claro', testLabel: 'Probar Claro' },

@@ -690,9 +690,9 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
     return reports.slice(startIndex, startIndex + REPORTS_PER_PAGE);
   }, [reports, reportPage]);
 
-  const galaxyUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 5).length, [users]);
-  const desertUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 8).length, [users]);
-  const oceanUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 11).length, [users]);
+  const galaxyUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 3).length, [users]);
+  const desertUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 5).length, [users]);
+  const oceanUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 7).length, [users]);
 
   const retentionFunnel = useMemo(() => {
     const now = Date.now();
@@ -1626,17 +1626,17 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                             <div className="flex justify-center items-center gap-1.5">
                               <span className="text-sm font-black text-text-primary bg-black/5 dark:bg-white/5 w-8 h-8 rounded-full flex items-center justify-center ring-1 ring-black/5 dark:ring-white/10">{user.referralCount || 0}</span>
                               <div className="flex -space-x-1 ml-1">
-                                {(user.referralCount >= 5 || user.role === 'admin') && (
+                                {(user.referralCount >= 3 || user.role === 'admin') && (
                                   <div className="w-5 h-5 rounded-full bg-[#a855f7] flex items-center justify-center ring-2 ring-bg-primary z-30" title="Galaxia">
                                     <Sparkles size={10} className="text-white" />
                                   </div>
                                 )}
-                                {(user.referralCount >= 8 || user.role === 'admin') && (
+                                {(user.referralCount >= 5 || user.role === 'admin') && (
                                   <div className="w-5 h-5 rounded-full bg-[#f59e0b] flex items-center justify-center ring-2 ring-bg-primary z-20" title="Desierto">
                                     <Sun size={10} className="text-white" />
                                   </div>
                                 )}
-                                {(user.referralCount >= 11 || user.role === 'admin') && (
+                                {(user.referralCount >= 7 || user.role === 'admin') && (
                                   <div className="w-5 h-5 rounded-full bg-[#0ea5e9] flex items-center justify-center ring-2 ring-bg-primary z-10" title="Océano">
                                     <Droplets size={10} className="text-white" />
                                   </div>
@@ -1774,17 +1774,17 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                           <div className="flex justify-center items-center gap-1.5 mt-1 sm:mt-0">
                             <span className="text-sm font-black text-text-primary bg-black/5 dark:bg-white/5 w-8 h-8 rounded-full flex items-center justify-center ring-1 ring-black/5 dark:ring-white/10">{user.referralCount || 0}</span>
                             <div className="flex -space-x-1 ml-1">
-                              {(user.referralCount >= 5 || user.role === 'admin') && (
+                              {(user.referralCount >= 3 || user.role === 'admin') && (
                                 <div className="w-5 h-5 rounded-full bg-[#a855f7] flex items-center justify-center ring-2 ring-bg-primary z-30" title="Galaxia">
                                   <Sparkles size={10} className="text-white" />
                                 </div>
                               )}
-                              {(user.referralCount >= 8 || user.role === 'admin') && (
+                              {(user.referralCount >= 5 || user.role === 'admin') && (
                                 <div className="w-5 h-5 rounded-full bg-[#f59e0b] flex items-center justify-center ring-2 ring-bg-primary z-20" title="Desierto">
                                   <Sun size={10} className="text-white" />
                                 </div>
                               )}
-                              {(user.referralCount >= 11 || user.role === 'admin') && (
+                              {(user.referralCount >= 7 || user.role === 'admin') && (
                                 <div className="w-5 h-5 rounded-full bg-[#0ea5e9] flex items-center justify-center ring-2 ring-bg-primary z-10" title="Océano">
                                   <Droplets size={10} className="text-white" />
                                 </div>
