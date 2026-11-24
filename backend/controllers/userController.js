@@ -475,6 +475,14 @@ export const updateMyAccount = async (req, res, next) => {
 
     if (Object.keys(fieldsToUpdate).length > 0) {
       await user.update(fieldsToUpdate);
+
+      if (fieldsToUpdate.email !== undefined && (user.email_marketing_consent || user.email_coaching_consent)) {
+        await updateEmailConsents(
+          user,
+          { email_marketing_consent: false, email_coaching_consent: false },
+          'profile_email_change'
+        );
+      }
       
       if (newImagePath && oldImageUrl) {
         await deleteFile(oldImageUrl);

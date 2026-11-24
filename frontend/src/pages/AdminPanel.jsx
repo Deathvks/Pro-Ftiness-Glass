@@ -799,6 +799,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
     const voluntaryPush = regularUsers.filter(u => Boolean(u.hasVoluntaryPush)).length;
     const voluntaryPushWithDevice = regularUsers.filter(u => Boolean(u.hasVoluntaryPush) && Number(u.pushSubCount || 0) > 0).length;
     const voluntaryEmail = regularUsers.filter(u => Boolean(u.hasVoluntaryEmail)).length;
+    const voluntaryTrainingEmail = regularUsers.filter(u => Boolean(u.hasTrainingEmail)).length;
     const voluntaryEmailVerified = regularUsers.filter(u => Boolean(u.hasVoluntaryEmail) && Boolean(u.is_verified)).length;
     const voluntaryAny = regularUsers.filter(u => Boolean(u.hasVoluntaryPush) || Boolean(u.hasVoluntaryEmail)).length;
     const onlyMandatory = regularUsers.filter(u => !u.hasVoluntaryPush && !u.hasVoluntaryEmail).length;
@@ -812,6 +813,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
       voluntaryPushPct: pct(voluntaryPush),
       voluntaryPushWithDevice,
       voluntaryEmail,
+      voluntaryTrainingEmail,
       voluntaryEmailPct: pct(voluntaryEmail),
       voluntaryEmailVerified,
       onlyMandatory,
@@ -1162,7 +1164,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                   </div>
                   <div className="text-2xl font-black text-text-primary">{notificationConsentStats.voluntaryEmail}</div>
                   <p className="text-[11px] text-text-secondary mt-1">
-                    {notificationConsentStats.voluntaryEmailVerified} con correo verificado
+                    {notificationConsentStats.voluntaryTrainingEmail} autorizados en entreno (Retención)
                   </p>
                 </button>
 

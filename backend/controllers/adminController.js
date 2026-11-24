@@ -7,7 +7,7 @@ import os from 'os';
 import fs from 'node:fs';
 import { processUploadedFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/imageService.js';
-import { canSendOptionalEmail, sendDomainMailboxTest, sendEmailPreferenceTest } from '../services/emailService.js';
+import { canSendOptionalEmail, getOptionalEmailEligibility, sendDomainMailboxTest, sendEmailPreferenceTest } from '../services/emailService.js';
 import { isDomainSmtpConfigured } from '../config/mailContacts.js';
 import { hasPushConsent, PUSH_PURPOSES } from '../config/pushConsent.js';
 import { isSupportedPushEndpoint } from '../services/pushService.js';
@@ -155,6 +155,11 @@ export const getAllUsers = async (req, res, next) => {
     const nMap = new Map(nutritionCounts.map(n => [Number(n.user_id), parseInt(n.cnt, 10) || 0]));
     const pMap = new Map(pushCounts.map(p => [Number(p.user_id), parseInt(p.cnt, 10) || 0]));
 
+    const [trainingEmailStatuses, coachingEmailStatuses] = await Promise.all([
+      getOptionalEmailEligibility(users, 'training'),
+      getOptionalEmailEligibility(users, 'coaching'),
+    ]);
+
     const enrichedUsers = users.map(u => {
       const uid = Number(u.id);
       let parsedPush = u.push_consents;
@@ -162,7 +167,9 @@ export const getAllUsers = async (req, res, next) => {
         try { parsedPush = JSON.parse(parsedPush); } catch { parsedPush = null; }
       }
       const hasVoluntaryPush = PUSH_PURPOSES.some(p => hasPushConsent(parsedPush, p));
-      const hasVoluntaryEmail = Boolean(u.email_marketing_consent || u.email_coaching_consent);
+      const hasTrainingEmail = Boolean(trainingEmailStatuses.get(uid)?.allowed);
+      const hasCoachingEmail = Boolean(coachingEmailStatuses.get(uid)?.allowed);
+      const hasVoluntaryEmail = hasTrainingEmail || hasCoachingEmail;
       const hasEmailActivity = Boolean(u.email_activity_notifications);
       const pushSubCount = pMap.get(uid) || 0;
       const versionMeta = versionMap.get(uid);
@@ -183,6 +190,8 @@ export const getAllUsers = async (req, res, next) => {
         nutritionCount: nMap.get(uid) || 0,
         pushSubCount,
         hasVoluntaryPush,
+        hasTrainingEmail,
+        hasCoachingEmail,
         hasVoluntaryEmail,
         hasEmailActivity,
         onlyMandatoryNotifications: !hasVoluntaryPush && !hasVoluntaryEmail,

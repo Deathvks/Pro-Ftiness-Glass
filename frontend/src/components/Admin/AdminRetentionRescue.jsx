@@ -222,6 +222,8 @@ export default function AdminRetentionRescue() {
     pendingEmailSkipCount: 0,
     earlyCohortPendingCount: 0,
     upcomingCount: 0,
+    upcomingEmailSendCount: 0,
+    emailAuthorizedTotal: 0,
     totalSentCount: 0,
     successSentCount: 0,
     errorSentCount: 0,
@@ -386,7 +388,7 @@ export default function AdminRetentionRescue() {
         <div className="bg-emerald-500/5 rounded-3xl p-4 sm:p-5 ring-1 ring-emerald-500/25 flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2 mb-2">
             <span className="text-[11px] font-extrabold text-emerald-500 uppercase tracking-wider">
-              Correo autorizado
+              Correo autorizado (≥72h)
             </span>
             <Mail size={18} className="text-emerald-500 shrink-0" />
           </div>
@@ -395,7 +397,7 @@ export default function AdminRetentionRescue() {
               {summary.emailEligibleInactiveCount}
             </span>
             <p className="text-[11px] font-semibold text-text-secondary mt-1">
-              {summary.pendingEmailSendCount} pendientes recibirían correo
+              {summary.pendingEmailSendCount} pendientes · {summary.upcomingEmailSendCount || 0} próximos (&lt;72h) · {summary.emailAuthorizedTotal || 0} autorizados totales
             </p>
           </div>
         </div>

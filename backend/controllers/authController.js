@@ -1450,6 +1450,13 @@ export const verifyEmail = async (req, res, next) => {
     });
     if (!affected) return res.status(400).json({ error: 'Código no encontrado o expirado' });
     user.set(verified, { raw: true });
+    if (isPendingUpdate && (user.email_marketing_consent || user.email_coaching_consent)) {
+      await updateEmailConsents(
+        user,
+        { email_marketing_consent: false, email_coaching_consent: false },
+        'email_verification_update'
+      );
+    }
 
     const platform = req.headers['x-app-platform'] || 'web';
     const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';

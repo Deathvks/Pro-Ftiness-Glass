@@ -412,16 +412,8 @@ export const getRetentionRescueOverview = async () => {
     }
   }
 
-  const eligibleEmailStatuses = await getOptionalEmailEligibility(
-    [...eligibleInactiveUsers, ...upcomingUsers].map(user => ({
-      id: user.id,
-      email: user.email,
-      is_verified: user.emailVerified,
-      email_marketing_consent: user.emailMarketingConsent,
-    })),
-    'training'
-  );
-  const applyEmailEligibility = users => users.map(user => {
+  const eligibleEmailStatuses = await getOptionalEmailEligibility(users, 'training');
+  const applyEmailEligibility = list => list.map(user => {
     const status = eligibleEmailStatuses.get(Number(user.id));
     return {
       ...user,
@@ -467,6 +459,10 @@ export const getRetentionRescueOverview = async () => {
     u => !u.alreadyRescuedInCurrentCycle && u.emailWillSend
   ).length;
   const pendingEmailSkipCount = pendingToRescueCount - pendingEmailSendCount;
+  const upcomingEmailSendCount = upcomingUsers.filter(u => u.emailWillSend).length;
+  const emailAuthorizedTotal = users.filter(
+    u => u.role !== 'admin' && u.role !== 'trainer' && u.role !== 'entrenador' && eligibleEmailStatuses.get(Number(u.id))?.allowed === true
+  ).length;
   const earlyCohortPendingCount = eligibleInactiveUsers.filter(
     u => !u.alreadyRescuedInCurrentCycle && u.isEarlyCohort
   ).length;
@@ -490,6 +486,8 @@ export const getRetentionRescueOverview = async () => {
       pendingEmailSkipCount,
       earlyCohortPendingCount,
       upcomingCount: upcomingUsers.length,
+      upcomingEmailSendCount,
+      emailAuthorizedTotal,
       totalSentCount,
       successSentCount,
       errorSentCount,

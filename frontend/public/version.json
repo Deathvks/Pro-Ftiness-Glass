@@ -1,21 +1,21 @@
 {
-  "version": "7.16.49",
-  "releaseNotes": "Actualización v7.16.49: enlace de cambio de contraseña funcional en Web/App, pantalla 2FA ajustada bajo el notch y portadas reales al compartir noticias.",
+  "version": "7.16.50",
+  "releaseNotes": "Actualización v7.16.50: sincronizado el conteo de correos autorizados entre Admin Usuarios y Retención 72h, e invalidación automática de permisos obsoletos al cambiar de correo.",
   "welcome": {
-    "title": "Seguridad 2FA y Enlaces Pulidos",
-    "subtitle": "Corregido el enlace de restablecimiento tras alertas 2FA, ajustados los márgenes superiores del notch y portadas reales al compartir artículos.",
+    "title": "Admin y Retención 72h Sincronizados",
+    "subtitle": "Unificada la validación real de consentimientos de correo entre el panel de usuarios y la retención a las 72h.",
     "features": [
       {
-        "title": "Restablecimiento de Contraseña 100% Operativo",
-        "description": "Los enlaces de seguridad de correo y alertas 2FA abren directamente el cambio de contraseña en Web, Capacitor y App Nativa."
+        "title": "Métrica de Correo Unificada",
+        "description": "Admin Usuarios valida ahora verificación de correo y evento criptográfico igual que Retención 72h, mostrando además cuántos usuarios son elegibles para avisos de entreno."
       },
       {
-        "title": "Pantalla 2FA Adaptada al Notch",
-        "description": "Ajustado el área segura superior y el ancho de los 6 dígitos en móvil para verificar sin cortes ni solapamientos."
+        "title": "Desglose Claro en Retención 72h",
+        "description": "La tarjeta de correo autorizado distingue claramente los inactivos ≥72h, los próximos (<72h) y el total autorizado en la plataforma."
       },
       {
-        "title": "Portadas Reales al Compartir Noticias",
-        "description": "WhatsApp, Telegram y redes sociales muestran ahora la imagen de portada específica de cada artículo."
+        "title": "Consentimiento Limpio al Cambiar de Email",
+        "description": "Si un usuario cambia su dirección de correo, se revocan automáticamente consentimientos vinculados al email anterior para evitar falsos positivos."
       }
     ]
   }
