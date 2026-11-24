@@ -42,6 +42,7 @@ import PublicPageFooter from '../components/PublicPageFooter';
 import * as newsService from '../services/newsService';
 import NewsCoverImage from '../components/News/NewsCoverImage';
 import { trackCatalogVisit } from '../utils/newsTracker';
+import { buildNewsCollectionSchema } from '../utils/newsSchema.js';
 import useAppStore from '../store/useAppStore';
 
 const DEFAULT_CATEGORIES = ['Todas', 'Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
@@ -312,22 +313,8 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
     navigate(isAuthenticated ? '/dashboard' : '/');
   };
 
-  // Structured Data Schema para página de colección de artículos
-  const collectionSchema = useMemo(() => ({
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    'name': 'Noticias y Artículos de Fitness, Nutrición y Entrenamiento',
-    'description': 'Guías científicas, artículos y novedades sobre hipertrofia, dietética deportiva y fitness en Pro Fitness Glass.',
-    'url': `${BASE_URL}/noticias`,
-    'publisher': {
-      '@type': 'Organization',
-      'name': 'Pro Fitness Glass',
-      'logo': {
-        '@type': 'ImageObject',
-        'url': `${BASE_URL}/logo.webp`
-      }
-    }
-  }), []);
+  // Structured Data Schema compartido para página de colección de artículos
+  const collectionSchema = useMemo(() => buildNewsCollectionSchema(), []);
 
   const isHeroVisible = currentPage === 1 && !currentSearch && news && news.length > 0;
   const featuredArticle = isHeroVisible ? news[0] : null;

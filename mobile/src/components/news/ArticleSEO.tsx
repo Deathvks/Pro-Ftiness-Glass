@@ -17,6 +17,45 @@ function upsertMetaTag(attrName: 'name' | 'property', attrValue: string, content
   el.setAttribute('content', content);
 }
 
+function upsertLinkTag(rel: string, href: string, hreflang?: string) {
+  if (typeof document === 'undefined') return;
+  const selector = hreflang
+    ? `link[rel="${rel}"][hreflang="${hreflang}"]`
+    : `link[rel="${rel}"]`;
+  let el = document.querySelector(selector) as HTMLLinkElement | null;
+  if (!el) {
+    el = document.createElement('link');
+    el.rel = rel;
+    if (hreflang) el.setAttribute('hreflang', hreflang);
+    document.head.appendChild(el);
+  }
+  el.href = href;
+}
+
+function upsertJsonLdScript(id: string, payload: unknown) {
+  if (typeof document === 'undefined') return;
+  let script = document.getElementById(id) as HTMLScriptElement | null;
+  if (!script) {
+    script = document.createElement('script');
+    script.id = id;
+    script.type = 'application/ld+json';
+    document.head.appendChild(script);
+  }
+  script.textContent = JSON.stringify(payload);
+}
+
+function isOrganizationAuthor(authorName = '') {
+  const n = authorName.trim().toLowerCase();
+  if (!n) return true;
+  return (
+    n.includes('pro fitness') ||
+    n.includes('equipo') ||
+    n.includes('editorial') ||
+    n.includes('redacci') ||
+    n.includes('nutricionista')
+  );
+}
+
 export function ArticleSEO({ article }: { article?: Partial<NewsArticle> & Record<string, any> | null }) {
   useEffect(() => {
     if (!article || Platform.OS !== 'web' || typeof document === 'undefined') return;
@@ -37,10 +76,15 @@ export function ArticleSEO({ article }: { article?: Partial<NewsArticle> & Recor
     const modifiedDate = article.updatedAt
       ? new Date(article.updatedAt).toISOString()
       : publishedDate;
+    const authorName = String(article.author_name || 'Equipo Editorial Pro Fitness Glass').trim();
+    const category = article.category || 'Fitness';
 
     document.title = title;
     if (description) upsertMetaTag('name', 'description', description);
     upsertMetaTag('name', 'robots', 'index, follow, max-image-preview:large, max-snippet:-1');
+    upsertLinkTag('canonical', canonicalUrl);
+    upsertLinkTag('alternate', canonicalUrl, 'es');
+    upsertLinkTag('alternate', canonicalUrl, 'x-default');
     upsertMetaTag('property', 'og:type', 'article');
     upsertMetaTag('property', 'og:site_name', 'Pro Fitness Glass');
     upsertMetaTag('property', 'og:title', title);
@@ -55,26 +99,19 @@ export function ArticleSEO({ article }: { article?: Partial<NewsArticle> & Recor
     upsertMetaTag('name', 'twitter:description', description);
     upsertMetaTag('name', 'twitter:image', image);
 
-    let ldScript = document.getElementById('pfg-article-jsonld') as HTMLScriptElement | null;
-    if (!ldScript) {
-      ldScript = document.createElement('script');
-      ldScript.id = 'pfg-article-jsonld';
-      ldScript.type = 'application/ld+json';
-      document.head.appendChild(ldScript);
-    }
-
-    const articleSchema = {
+    upsertJsonLdScript('pfg-article-jsonld', {
       '@context': 'https://schema.org',
-      '@type': 'NewsArticle',
+      '@type': 'Article',
       mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
       headline: article.title,
       description,
       image: [image],
       datePublished: publishedDate,
       dateModified: modifiedDate,
+      inLanguage: 'es-ES',
       author: {
-        '@type': 'Person',
-        name: article.author_name || 'Equipo Pro Fitness Glass',
+        '@type': isOrganizationAuthor(authorName) ? 'Organization' : 'Person',
+        name: authorName,
         url: BASE_URL,
       },
       publisher: {
@@ -82,9 +119,20 @@ export function ArticleSEO({ article }: { article?: Partial<NewsArticle> & Recor
         name: 'Pro Fitness Glass',
         logo: { '@type': 'ImageObject', url: `${BASE_URL}/logo.webp` },
       },
-      articleSection: article.category || 'Fitness',
-    };
-    ldScript.textContent = JSON.stringify(articleSchema);
+      articleSection: category,
+      keywords: article.tags || 'fitness, nutricion, entrenamiento',
+    });
+
+    upsertJsonLdScript('pfg-breadcrumb-jsonld', {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Inicio', item: BASE_URL },
+        { '@type': 'ListItem', position: 2, name: 'Noticias', item: `${BASE_URL}/noticias` },
+        { '@type': 'ListItem', position: 3, name: category, item: `${BASE_URL}/noticias?category=${encodeURIComponent(category)}` },
+        { '@type': 'ListItem', position: 4, name: article.title, item: canonicalUrl },
+      ],
+    });
   }, [article]);
 
   return null;

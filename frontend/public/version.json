@@ -1,21 +1,21 @@
 {
-  "version": "7.16.62",
-  "releaseNotes": "Actualización v7.16.62: prerrenderizado automático de noticias al publicar, editar o borrar y respuesta 404 noindex para artículos inexistentes.",
+  "version": "7.16.63",
+  "releaseNotes": "Actualización v7.16.63: unificados los esquemas JSON-LD (Article, BreadcrumbList, CollectionPage y autor Organization/Person) entre el prerenderizado del servidor, el cliente web y mobile.",
   "welcome": {
-    "title": "Publicación Instantánea y Sin Soft 404",
-    "subtitle": "Las nuevas noticias generan su versión HTML al momento y las URLs inexistentes dejan de devolver Soft 404.",
+    "title": "Datos Estructurados Unificados",
+    "subtitle": "El servidor prerrenderizado y la app cliente generan ahora exactamente el mismo Schema.org para Google.",
     "features": [
       {
-        "title": "Prerrender Automático en Vivo",
-        "description": "Cada noticia publicada por cron o panel genera su HTML estático y RSS al instante sin esperar a un build."
+        "title": "Schema Article y BreadcrumbList Idénticos",
+        "description": "Prerenderizado y Helmet comparten la misma definición única con inLanguage, keywords y migas de pan."
       },
       {
-        "title": "Limpieza de Obsoletos",
-        "description": "Al despublicar o eliminar un artículo se retira también su carpeta estática en dist."
+        "title": "Autor Organization o Person Inteligente",
+        "description": "Distingue automáticamente entre redacción editorial y autores individuales según las directrices de Google."
       },
       {
-        "title": "Control Real de 404",
-        "description": "Backend y frontend marcan con noindex (y HTTP 404 en el servidor Express) los slugs que no existen."
+        "title": "CollectionPage en el Índice de Noticias",
+        "description": "Añadido también al HTML inicial de /noticias y sincronizado con mobile web."
       }
     ]
   }

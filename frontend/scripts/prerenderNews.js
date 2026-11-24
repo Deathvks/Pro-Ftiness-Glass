@@ -3,6 +3,11 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getNewsCoverUrls } from '../src/utils/newsCover.js';
+import {
+  buildNewsArticleSchema,
+  buildNewsBreadcrumbSchema,
+  buildNewsCollectionSchema,
+} from '../src/utils/newsSchema.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -209,7 +214,8 @@ function injectMeta(html, {
   category = 'Fitness',
   datePublished,
   dateModified,
-  robots = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'
+  robots = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+  jsonLdScripts = []
 }) {
   const safeTitle = escapeHtml(title);
   const safeDesc = escapeHtml(description);
@@ -268,12 +274,27 @@ function injectMeta(html, {
     `<meta name="twitter:image" content="${safeImg}" />\n  <meta name="twitter:image:alt" content="${safeTitle}" />`
   );
 
-  // Inyectar Schema.org específico para Article cumpliendo estándares de Google Rich Results
-  if (type === 'article') {
-    const pubIso = datePublished ? new Date(datePublished).toISOString() : new Date().toISOString();
-    const modIso = dateModified ? new Date(dateModified).toISOString() : pubIso;
-    const articleJsonLd = `\n  <script type="application/ld+json">\n  {\n    "@context": "https://schema.org",\n    "@type": "Article",\n    "headline": ${JSON.stringify(title)},\n    "description": ${JSON.stringify(description)},\n    "image": [${JSON.stringify(image)}],\n    "datePublished": ${JSON.stringify(pubIso)},\n    "dateModified": ${JSON.stringify(modIso)},\n    "articleSection": ${JSON.stringify(category)},\n    "inLanguage": "es-ES",\n    "author": [{\n      "@type": "Organization",\n      "name": "Equipo Editorial Pro Fitness Glass",\n      "url": "${BASE_URL}"\n    }],\n    "mainEntityOfPage": {\n      "@type": "WebPage",\n      "@id": ${JSON.stringify(url)}\n    },\n    "publisher": {\n      "@type": "Organization",\n      "name": "Pro Fitness Glass",\n      "logo": {\n        "@type": "ImageObject",\n        "url": "${BASE_URL}/logo.webp"\n      }\n    }\n  }\n  </script>`;
-    output = output.replace('</head>', `${articleJsonLd}\n</head>`);
+  // Inyectar Schema.org unificado (Article + BreadcrumbList o CollectionPage) con data-rh="true" para sincronizar con Helmet
+  const resolvedSchemas = Array.isArray(jsonLdScripts) && jsonLdScripts.length > 0
+    ? jsonLdScripts
+    : type === 'article'
+      ? [
+          buildNewsArticleSchema({
+            article: { title, category },
+            canonicalUrl: url,
+            description,
+            image,
+            publishedDate: datePublished,
+            modifiedDate: dateModified,
+          }),
+        ]
+      : [];
+
+  if (resolvedSchemas.length > 0) {
+    const ldMarkup = resolvedSchemas
+      .map((schema) => `\n  <script type="application/ld+json" data-rh="true">${JSON.stringify(schema)}</script>`)
+      .join('');
+    output = output.replace('</head>', `${ldMarkup}\n</head>`);
   }
 
   return output;
@@ -378,7 +399,8 @@ export function buildNewsIndexHtml(baseHtml, articles) {
     description: 'Aprende con artículos basados en evidencia científica, optimiza tus comidas y domina tu rendimiento en el gimnasio con Pro Fitness Glass.',
     image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/noticias`,
-    type: 'website'
+    type: 'website',
+    jsonLdScripts: [buildNewsCollectionSchema()],
   });
   return injectPrerenderBody(newsIndexHtml, newsBodyHtml, 'NewsListPage');
 }
@@ -425,15 +447,31 @@ export function buildArticleHtml(baseHtml, article, contentOverride = '') {
     </footer>
   </article>`;
 
+  const canonicalUrl = `${BASE_URL}/noticias/${slug}`;
+  const metaDescription = article.seo_description || article.summary || 'Guía científica de entrenamiento y nutrición deportiva en Pro Fitness Glass.';
   const articleHtml = injectMeta(baseHtml, {
     title: article.seo_title || article.title,
-    description: article.seo_description || article.summary || 'Guía científica de entrenamiento y nutrición deportiva en Pro Fitness Glass.',
+    description: metaDescription,
     image: articleImage,
-    url: `${BASE_URL}/noticias/${slug}`,
+    url: canonicalUrl,
     type: 'article',
     category: article.category,
     datePublished: article.published_at || article.createdAt,
-    dateModified: article.updatedAt || article.published_at || article.createdAt
+    dateModified: article.updatedAt || article.published_at || article.createdAt,
+    jsonLdScripts: [
+      buildNewsArticleSchema({
+        article,
+        canonicalUrl,
+        description: metaDescription,
+        image: articleImage,
+        publishedDate: article.published_at || article.createdAt,
+        modifiedDate: article.updatedAt || article.published_at || article.createdAt,
+      }),
+      buildNewsBreadcrumbSchema({
+        article,
+        canonicalUrl,
+      }),
+    ],
   });
   return injectPrerenderBody(articleHtml, articleBodyHtml, 'NewsDetailPage');
 }

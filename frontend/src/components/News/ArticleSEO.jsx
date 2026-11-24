@@ -2,8 +2,9 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { getNewsCoverUrls } from '../../utils/newsCover.js';
+import { buildNewsArticleSchema, buildNewsBreadcrumbSchema, NEWS_BASE_URL } from '../../utils/newsSchema.js';
 
-const BASE_URL = 'https://profitnessglass.es';
+const BASE_URL = NEWS_BASE_URL;
 
 export default function ArticleSEO({ article }) {
   if (!article) return null;
@@ -18,67 +19,19 @@ export default function ArticleSEO({ article }) {
   const publishedDate = article.published_at ? new Date(article.published_at).toISOString() : new Date().toISOString();
   const modifiedDate = article.updatedAt ? new Date(article.updatedAt).toISOString() : publishedDate;
 
-  // Schema.org NewsArticle Structured Data
-  const articleSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'NewsArticle',
-    'mainEntityOfPage': {
-      '@type': 'WebPage',
-      '@id': canonicalUrl,
-    },
-    'headline': article.title,
-    'description': description,
-    'image': [image],
-    'datePublished': publishedDate,
-    'dateModified': modifiedDate,
-    'author': {
-      '@type': 'Person',
-      'name': article.author_name || 'Equipo Pro Fitness Glass',
-      'url': BASE_URL,
-    },
-    'publisher': {
-      '@type': 'Organization',
-      'name': 'Pro Fitness Glass',
-      'logo': {
-        '@type': 'ImageObject',
-        'url': `${BASE_URL}/logo.webp`,
-      },
-    },
-    'articleSection': article.category || 'Fitness',
-    'keywords': article.tags || 'fitness, nutricion, entrenamiento',
-  };
+  const articleSchema = buildNewsArticleSchema({
+    article,
+    canonicalUrl,
+    description,
+    image,
+    publishedDate,
+    modifiedDate,
+  });
 
-  // Schema.org BreadcrumbList
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    'itemListElement': [
-      {
-        '@type': 'ListItem',
-        'position': 1,
-        'name': 'Inicio',
-        'item': BASE_URL,
-      },
-      {
-        '@type': 'ListItem',
-        'position': 2,
-        'name': 'Noticias',
-        'item': `${BASE_URL}/noticias`,
-      },
-      {
-        '@type': 'ListItem',
-        'position': 3,
-        'name': article.category || 'Artículo',
-        'item': `${BASE_URL}/noticias?category=${encodeURIComponent(article.category || '')}`,
-      },
-      {
-        '@type': 'ListItem',
-        'position': 4,
-        'name': article.title,
-        'item': canonicalUrl,
-      },
-    ],
-  };
+  const breadcrumbSchema = buildNewsBreadcrumbSchema({
+    article,
+    canonicalUrl,
+  });
 
   return (
     <Helmet>
