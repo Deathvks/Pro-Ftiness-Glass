@@ -51,6 +51,8 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="profitnessglass.es" />
                 <data android:scheme="http" android:host="profitnessglass.es" />
+                <data android:scheme="https" android:host="www.profitnessglass.es" />
+                <data android:scheme="http" android:host="www.profitnessglass.es" />
             </intent-filter>
 
             <intent-filter>

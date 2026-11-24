@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { ArrowLeft, CheckCircle2, Dumbbell, KeyRound } from 'lucide-react-native';
@@ -22,6 +23,7 @@ import { useToast } from '@/hooks/useToast';
 import { resetPassword } from '@/services/authService';
 import useAppStore from '@/store/useAppStore';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import { resolveDeepLink } from '@/utils/deepLinking';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
@@ -33,7 +35,10 @@ export default function ResetPasswordScreen() {
   const contrastText = getContrastTextColor(colors.tint);
   const { showToast } = useToast();
 
-  const [token, setToken] = useState<string | null>(null);
+  const rawParam = Array.isArray(params.token) ? params.token[0] : params.token;
+  const paramToken = typeof rawParam === 'string' && rawParam.trim() ? rawParam.trim() : null;
+  const [fallbackToken, setFallbackToken] = useState<string | null>(null);
+  const token = paramToken ?? fallbackToken;
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
@@ -41,17 +46,44 @@ export default function ResetPasswordScreen() {
   const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
-    const rawToken = typeof params.token === 'string' && params.token.trim() ? params.token.trim() : null;
-    if (rawToken) {
-      setToken(rawToken);
-    } else if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    if (paramToken) return;
+
+    let active = true;
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const fromSearch = new URLSearchParams(window.location.search).get('token');
-      if (fromSearch) setToken(fromSearch);
-      else showToast('Token de restablecimiento no encontrado.', 'error');
-    } else {
-      showToast('Token de restablecimiento no encontrado.', 'error');
+      const timer = setTimeout(() => {
+        if (!active) return;
+        if (fromSearch) {
+          setFallbackToken(fromSearch);
+        } else {
+          showToast('Token de restablecimiento no encontrado.', 'error');
+        }
+      }, 0);
+      return () => {
+        active = false;
+        clearTimeout(timer);
+      };
     }
-  }, [params.token, showToast]);
+
+    Linking.getInitialURL()
+      .then((initialUrl) => {
+        if (!active) return;
+        const resolved = resolveDeepLink(initialUrl);
+        const fromInitial = resolved?.pathname === '/reset-password' ? resolved.params?.token : null;
+        if (fromInitial) {
+          setFallbackToken(fromInitial);
+        } else {
+          showToast('Token de restablecimiento no encontrado.', 'error');
+        }
+      })
+      .catch(() => {
+        if (active) showToast('Token de restablecimiento no encontrado.', 'error');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [paramToken, showToast]);
 
   useEffect(() => {
     if (!isSuccess) return;

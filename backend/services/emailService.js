@@ -202,7 +202,8 @@ export const sendVerificationEmail = async (email, code) => {
 
 // Enviar email para resetear contraseña
 export const sendPasswordResetEmail = async (email, token) => {
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+  const frontendBaseUrl = (process.env.FRONTEND_URL || 'https://profitnessglass.es').replace(/\/+$/, '');
+  const resetUrl = `${frontendBaseUrl}/reset-password?token=${encodeURIComponent(token)}`;
   const mailOptions = {
     to: email,
     subject: 'Restablecimiento de Contraseña - Pro Fitness Glass',
@@ -236,7 +237,8 @@ export const sendPasswordResetEmail = async (email, token) => {
 // --- NUEVA FUNCIÓN: Alerta de inicio de sesión ---
 export const sendLoginAlertEmail = async (email, { ip, userAgent, token }) => {
   // Usamos el token generado para ir directo al reset
-  const changePasswordUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+  const frontendBaseUrl = (process.env.FRONTEND_URL || 'https://profitnessglass.es').replace(/\/+$/, '');
+  const changePasswordUrl = `${frontendBaseUrl}/reset-password?token=${encodeURIComponent(token)}`;
   
   const mailOptions = {
     to: email,

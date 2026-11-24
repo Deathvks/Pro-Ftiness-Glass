@@ -227,7 +227,6 @@ export default function App() {
     ...verificationProps
   } = useAppInitialization({ 
       setView, 
-      setAuthView: (v) => navigate(`/${v}`), 
       view 
   });
 
@@ -354,20 +353,39 @@ export default function App() {
     return Capacitor.isNativePlatform() && window.location.pathname === '/';
   });
 
+const extractCapacitorDeepLinkPath = (rawUrl) => {
+  if (!rawUrl || typeof rawUrl !== 'string') return null;
+  if (
+    rawUrl.includes('access_token=') ||
+    rawUrl.includes(':/oauthredirect') ||
+    rawUrl.includes('://oauth') ||
+    (rawUrl.includes('code=') && rawUrl.includes('state=')) ||
+    (rawUrl.includes('error=') && rawUrl.includes('state='))
+  ) {
+    return null;
+  }
+  try {
+    const url = new URL(rawUrl);
+    const proto = url.protocol.replace(/:$/, '').toLowerCase();
+    const rawPath =
+      proto === 'http' || proto === 'https'
+        ? url.pathname || '/'
+        : `${url.hostname ? `/${url.hostname}` : ''}${url.pathname && url.pathname !== '/' ? url.pathname : ''}` || '/';
+    const cleanPath = rawPath.replace(/\/+$/, '') || '/';
+    if (cleanPath === '/' && !url.search) return null;
+    return `${cleanPath}${url.search}`;
+  } catch {
+    return null;
+  }
+};
+
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
       // 1. Cold start deep link (cuando la app arranca desde cerrada)
       CapApp.getLaunchUrl().then(launchUrl => {
-        if (launchUrl?.url) {
-          try {
-            const url = new URL(launchUrl.url);
-            if (url.pathname && url.pathname !== '/') {
-              navigate(url.pathname + url.search, { replace: true });
-              return;
-            }
-          } catch (e) {
-            console.error('Error parseando deep link en cold start:', e);
-          }
+        const target = extractCapacitorDeepLinkPath(launchUrl?.url);
+        if (target) {
+          navigate(target, { replace: true });
         }
       }).catch(() => {}).finally(() => {
         setIsCheckingLaunchUrl(false);
@@ -375,13 +393,9 @@ export default function App() {
 
       // 2. Warm start deep link (cuando la app ya estaba abierta en segundo plano)
       const listener = CapApp.addListener('appUrlOpen', data => {
-        try {
-          const url = new URL(data.url);
-          if (url.pathname && url.pathname !== '/') {
-            navigate(url.pathname + url.search);
-          }
-        } catch (e) {
-          console.error('Error parseando deep link:', e);
+        const target = extractCapacitorDeepLinkPath(data?.url);
+        if (target) {
+          navigate(target);
         }
       });
       return () => {
@@ -939,7 +953,8 @@ export default function App() {
     location.pathname === '/aviso-legal' ||
     location.pathname === '/legal' ||
     location.pathname.startsWith('/share/') ||
-    location.pathname === '/reset-password';
+    location.pathname === '/reset-password' ||
+    location.pathname === '/resetPassword';
 
   return (
     <>
@@ -1105,6 +1120,7 @@ export default function App() {
                  <ResetPasswordScreen showLogin={() => navigate('/login')} />
             </Suspense>
         } />
+        <Route path="/resetPassword" element={<Navigate to={`/reset-password${location.search}`} replace />} />
         
         <Route path="/share/routine/:id" element={
             <Suspense fallback={<InitialLoadingSkeleton />}>

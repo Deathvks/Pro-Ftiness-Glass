@@ -7,7 +7,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useRestTimerCompletion } from './useRestTimerCompletion';
 import { getPushView } from '../config/pushRoutes';
 
-export const useAppInitialization = ({ setView, setAuthView, view }) => {
+export const useAppInitialization = ({ setView, view }) => {
   useRestTimerCompletion();
   const [isInitialLoad, setIsInitialLoad] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -186,7 +186,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
       window.location.pathname === '/aviso-legal' ||
       window.location.pathname === '/legal' ||
       window.location.pathname.startsWith('/share/') ||
-      window.location.pathname === '/reset-password'
+      window.location.pathname === '/reset-password' ||
+      window.location.pathname === '/resetPassword'
     );
 
     if (isAuthenticated) {
@@ -222,17 +223,6 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
           fetchDataForDate(today);
       }
   }, [view, isAuthenticated, fetchDataForDate]);
-
-  useEffect(() => {
-    const handleUrlChange = () => {
-      if (window.location.pathname === '/reset-password' && !isAuthenticated) {
-        setAuthView('resetPassword');
-      }
-    };
-    handleUrlChange(); 
-    window.addEventListener('popstate', handleUrlChange); 
-    return () => window.removeEventListener('popstate', handleUrlChange);
-  }, [isAuthenticated, setAuthView]); 
 
   // Actualizar el chat al regresar a la app sin interrumpir la alarma de descanso.
   useEffect(() => {

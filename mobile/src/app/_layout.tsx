@@ -375,13 +375,21 @@ export default function RootLayout() {
     };
   }, [isReady, router]);
 
+  const lastHandledDeepLinkRef = useRef<string | null>(null);
+  const pathnameRef = useRef(pathname);
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
+
   // Deep Links / Enlaces compartidos (Universal Links, App Links y esquema mobile://)
   useEffect(() => {
     if (!isReady) return;
 
     const handleIncomingUrl = (url: string | null | undefined) => {
+      if (!url || lastHandledDeepLinkRef.current === url) return;
       const target = resolveDeepLink(url);
       if (!target) return;
+      lastHandledDeepLinkRef.current = url;
 
       const isPublicDeepLink =
         target.pathname.startsWith('/share/') ||
@@ -414,10 +422,12 @@ export default function RootLayout() {
       }
 
       try {
+        const currentPathname = pathnameRef.current;
+        const navigateFn = currentPathname === target.pathname ? router.replace : router.push;
         if (target.params) {
-          router.push({ pathname: target.pathname as any, params: target.params });
-        } else {
-          router.push(target.pathname as any);
+          navigateFn({ pathname: target.pathname as any, params: target.params });
+        } else if (currentPathname !== target.pathname) {
+          navigateFn(target.pathname as any);
         }
       } catch {}
     };

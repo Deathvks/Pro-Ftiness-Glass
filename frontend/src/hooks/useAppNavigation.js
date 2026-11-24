@@ -24,7 +24,7 @@ export const useAppNavigation = (navigateRouter) => {
         const path = window.location.pathname;
 
     const validPaths = [
-      '/', '/login', '/register', '/forgot-password', '/forgotPassword', '/reset-password', '/privacy', '/terms', '/aviso-legal', '/legal',
+      '/', '/login', '/register', '/forgot-password', '/forgotPassword', '/reset-password', '/resetPassword', '/privacy', '/terms', '/aviso-legal', '/legal',
       '/cookies', '/politica-cookies', '/politica-de-cookies',
       '/dashboard', '/progress', '/routines', '/workout', '/nutrition',
       '/social', '/hub', '/quickCardio', '/active-cardio', '/settings', '/appearance',

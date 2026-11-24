@@ -45,7 +45,7 @@ export function resolveDeepLink(rawUrl: string | null | undefined): ResolvedDeep
         return null;
       }
       rawPath = parsed.pathname || '/';
-    } else if (proto === 'profitnessglass' || proto === 'mobile') {
+    } else if (proto === 'profitnessglass' || proto === 'profitness' || proto === 'mobile') {
       // Custom scheme: profitnessglass://share/routine/12 puts "share" in hostname and "/routine/12" in pathname
       const hostPart = parsed.hostname ? `/${parsed.hostname}` : '';
       const pathPart = parsed.pathname && parsed.pathname !== '/' ? parsed.pathname : '';
@@ -114,13 +114,14 @@ export function resolveDeepLink(rawUrl: string | null | undefined): ResolvedDeep
   if (normalized === '/login') {
     return { pathname: '/login' };
   }
-  if (normalized === '/reset-password') {
+  const lowerNormalized = normalized.toLowerCase();
+  if (lowerNormalized === '/reset-password' || lowerNormalized === '/resetpassword') {
     return {
       pathname: '/reset-password',
       params: queryParams.token ? { token: queryParams.token } : undefined,
     };
   }
-  if (normalized === '/forgot-password') {
+  if (lowerNormalized === '/forgot-password' || lowerNormalized === '/forgotpassword') {
     return { pathname: '/forgot-password' };
   }
   if (normalized === '/dashboard') {

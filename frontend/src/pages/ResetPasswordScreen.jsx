@@ -1,5 +1,6 @@
 /* frontend/src/pages/ResetPasswordScreen.jsx */
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Dumbbell, KeyRound, CheckCircle2, ArrowLeft } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
@@ -8,6 +9,7 @@ import { resetPassword } from '../services/authService';
 import SEOHead from '../components/SEOHead';
 
 const ResetPasswordScreen = ({ showLogin }) => {
+    const location = useLocation();
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [token, setToken] = useState(null);
@@ -17,14 +19,14 @@ const ResetPasswordScreen = ({ showLogin }) => {
     const { addToast } = useToast();
 
     useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
+        const urlParams = new URLSearchParams(location.search || window.location.search);
         const tokenFromUrl = urlParams.get('token');
         if (tokenFromUrl) {
             setToken(tokenFromUrl);
         } else {
             addToast('Token de restablecimiento no encontrado.', 'error');
         }
-    }, [addToast]);
+    }, [location.search, addToast]);
 
     useEffect(() => {
         if (isSuccess) {
