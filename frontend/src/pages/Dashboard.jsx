@@ -1188,28 +1188,13 @@ const Dashboard = ({ setView }) => {
       )}
 
       {nextThemeTarget && !hideThemeDiscovery && (
-        <GlassCard className="glass p-4 sm:p-5 rounded-[26px] mb-6 border-none ring-1 ring-black/10 dark:ring-white/15">
-          <div className="flex flex-col gap-3.5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 min-w-0 flex-1">
-                <div className="w-10 h-10 rounded-2xl bg-accent/15 text-accent flex items-center justify-center shrink-0 mt-0.5">
-                  <FaGift size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
-                    <span className="text-sm sm:text-base font-extrabold text-text-primary leading-snug">
-                      Desbloquea temas compartiendo la app
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/15 text-accent text-[10px] font-black uppercase tracking-wider shrink-0">
-                      <FaBolt size={9} /> +1.000 XP / amigo
-                    </span>
-                  </div>
-                  <p className="text-xs text-text-secondary leading-relaxed">
-                    Llevas <strong>{referralCount}</strong> {referralCount === 1 ? 'amigo' : 'amigos'} · Te faltan <strong>{nextThemeTarget.req - referralCount}</strong> para <strong>{nextThemeTarget.label}</strong>.
-                  </p>
-                </div>
-              </div>
-
+        <GlassCard className="glass px-4 pt-3 pb-4 sm:px-5 sm:pt-3.5 sm:pb-5 rounded-[26px] mb-6 border-none ring-1 ring-black/10 dark:ring-white/15">
+          <div className="flex flex-col gap-3">
+            {/* Fila superior dedicada para la insignia XP y el botón X arriba del resto */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-accent/15 text-accent text-[10px] font-black uppercase tracking-wider">
+                <FaBolt size={9} /> +1.000 XP / amigo
+              </span>
               <button
                 type="button"
                 onClick={() => {
@@ -1217,10 +1202,24 @@ const Dashboard = ({ setView }) => {
                   try { localStorage.setItem('pfg_hide_theme_discovery_v1', 'true'); } catch { /* ignore */ }
                 }}
                 aria-label="Ocultar tarjeta de temas"
-                className="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                className="w-7 h-7 -mr-1 -mt-0.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer shrink-0"
               >
                 <FaXmark size={12} />
               </button>
+            </div>
+
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-accent/15 text-accent flex items-center justify-center shrink-0 mt-0.5">
+                <FaGift size={18} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm sm:text-base font-extrabold text-text-primary leading-snug">
+                  Desbloquea temas compartiendo la app
+                </p>
+                <p className="text-xs text-text-secondary leading-relaxed mt-0.5">
+                  Llevas <strong>{referralCount}</strong> {referralCount === 1 ? 'amigo' : 'amigos'} · Te faltan <strong>{nextThemeTarget.req - referralCount}</strong> para <strong>{nextThemeTarget.label}</strong>.
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">

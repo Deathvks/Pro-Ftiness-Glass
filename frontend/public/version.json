@@ -1,21 +1,21 @@
 {
-  "version": "7.16.58",
-  "releaseNotes": "Actualización v7.16.58: mejorada la tarjeta de descubrimiento de temas en Inicio para que el botón de cerrar (X) no chafe ni parta el título en móvil.",
+  "version": "7.16.59",
+  "releaseNotes": "Actualización v7.16.59: botón de cerrar (X) subido por encima del contenido en la tarjeta de temas del Dashboard para que el título se muestre despejado a ancho completo.",
   "welcome": {
-    "title": "Inicio Más Limpio y Legible",
-    "subtitle": "Corregimos la alineación del botón de cerrar en la tarjeta de temas y recompensas de Inicio en Web, Capacitor y Nativo.",
+    "title": "Tarjeta de Temas Más Despejada",
+    "subtitle": "Subimos el botón de cerrar por encima del título para evitar saltos de línea innecesarios en móvil.",
     "features": [
       {
-        "title": "Cabecera Sin Colisiones con la X",
-        "description": "El botón de cerrar ocupa su propia columna flex para que el título y las vistas previas respiren a ancho completo."
+        "title": "Botón X Arriba Sin Molestar",
+        "description": "El botón de cerrar y la insignia +1.000 XP ocupan la fila superior dejando el texto libre debajo."
       },
       {
-        "title": "Requisitos 3, 5 y 7 y +1.000 XP",
-        "description": "Consulta cuántos amigos te faltan y abre el selector de temas en vivo con un toque."
+        "title": "Vistas Previas en Inicio",
+        "description": "Galaxia (3), Desierto (5) y Océano (7) siguen accesibles con un toque desde Inicio."
       },
       {
-        "title": "Diseño Consistente en Todas las Plataformas",
-        "description": "Ajuste aplicado en Web, Capacitor y React Native."
+        "title": "Consistente en Web y Capacitor",
+        "description": "Mismo diseño limpio que en React Native."
       }
     ]
   }
