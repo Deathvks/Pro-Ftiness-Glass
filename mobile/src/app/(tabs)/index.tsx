@@ -11,7 +11,10 @@ import {
   Animated,
   Platform,
   Alert,
+  Share,
 } from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Dumbbell,
@@ -87,6 +90,7 @@ import { GymLocationModal } from '@/components/modals/GymLocationModal';
 import { WaterLogModal } from '@/components/nutrition/WaterLogModal';
 import { CreatineTrackerModal } from '@/components/nutrition/CreatineTrackerModal';
 import { SugarTargetModal } from '@/components/nutrition/SugarTargetModal';
+import { RewardsModal } from '@/components/modals/RewardsModal';
 
 const getXpRequiredForLevel = (level: number) =>
   level <= 1 ? 0 : 50 * Math.pow(level, 2) + 350 * level - 400;
@@ -297,6 +301,39 @@ export default function Dashboard() {
       }).catch(() => {});
     }
   }, [userProfile?.gym_data]);
+
+  const [showRewardsModal, setShowRewardsModal] = useState(false);
+  const [hideThemeDiscovery, setHideThemeDiscovery] = useState(true);
+
+  useEffect(() => {
+    AsyncStorage.getItem('pfg_hide_theme_discovery_v1')
+      .then(val => setHideThemeDiscovery(val === '1'))
+      .catch(() => setHideThemeDiscovery(false));
+  }, []);
+
+  const referralCount = userProfile?.referralCount || 0;
+  const nextThemeTarget = useMemo(() => {
+    if (referralCount < 1) return { name: 'Galaxia', required: 1, remaining: 1 - referralCount };
+    if (referralCount < 5) return { name: 'Desierto', required: 5, remaining: 5 - referralCount };
+    if (referralCount < 10) return { name: 'Océano', required: 10, remaining: 10 - referralCount };
+    return null;
+  }, [referralCount]);
+
+  const handleDismissThemeDiscovery = () => {
+    setHideThemeDiscovery(true);
+    AsyncStorage.setItem('pfg_hide_theme_discovery_v1', '1').catch(() => {});
+  };
+
+  const handleShareReferral = async () => {
+    const code = userProfile?.referral_code || '';
+    const link = `https://profitnessglass.es/register?ref=${code}`;
+    try {
+      await Share.share({
+        message: `¡Entrena conmigo en Pro Fitness Glass! Regístrate con mi enlace y empieza con buen pie: ${link}`,
+        url: link,
+      });
+    } catch {}
+  };
 
   const handleSaveGym = (gymData: any) => {
     const enriched = enrichGymWithMedia(gymData);
@@ -1123,6 +1160,119 @@ export default function Dashboard() {
         </View>
       )}
 
+      {/* 4B. DESCUBRIMIENTO DE TEMAS EXCLUSIVOS Y +1.000 XP */}
+      {!hideThemeDiscovery && referralCount < 10 && (
+        <View
+          style={{
+            marginBottom: 14,
+            borderRadius: 20,
+            padding: 15,
+            backgroundColor: isDark ? 'rgba(20, 24, 38, 0.74)' : 'rgba(255, 255, 255, 0.88)',
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(139, 92, 246, 0.28)' : 'rgba(124, 58, 237, 0.2)',
+            shadowColor: '#000',
+            shadowOpacity: isDark ? 0.25 : 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <ExpoImage
+                  source={require('../../../assets/images/galaxy.jpg')}
+                  style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: isDark ? '#18181b' : '#ffffff' }}
+                  contentFit="cover"
+                />
+                <ExpoImage
+                  source={require('../../../assets/images/desert.jpg')}
+                  style={{ width: 28, height: 28, borderRadius: 14, marginLeft: -8, borderWidth: 2, borderColor: isDark ? '#18181b' : '#ffffff' }}
+                  contentFit="cover"
+                />
+                <ExpoImage
+                  source={require('../../../assets/images/ocean.jpg')}
+                  style={{ width: 28, height: 28, borderRadius: 14, marginLeft: -8, borderWidth: 2, borderColor: isDark ? '#18181b' : '#ffffff' }}
+                  contentFit="cover"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <FontAwesome5 name="palette" size={11} color="#a78bfa" />
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: colors.text }}>
+                    Desbloquea Galaxia, Desierto y Océano
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>
+                  {nextThemeTarget
+                    ? `Te ${nextThemeTarget.remaining === 1 ? 'falta 1 amigo' : `faltan ${nextThemeTarget.remaining} amigos`} para ${nextThemeTarget.name} y +1.000 XP`
+                    : 'Invita amigos y consigue +1.000 XP y temas exclusivos'}
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={handleDismissThemeDiscovery}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: 13,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                marginLeft: 8,
+              }}
+            >
+              <FontAwesome5 name="times" size={11} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity
+              onPress={handleShareReferral}
+              activeOpacity={0.85}
+              style={{ flex: 1, borderRadius: 12, overflow: 'hidden' }}
+            >
+              <LinearGradient
+                colors={['#7c3aed', '#4f46e5']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                }}
+              >
+                <FontAwesome5 name="share-alt" size={11} color="#ffffff" />
+                <Text style={{ fontSize: 12, fontWeight: '800', color: '#ffffff' }}>Invitar (+1.000 XP)</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setShowRewardsModal(true)}
+              activeOpacity={0.85}
+              style={{
+                paddingVertical: 10,
+                paddingHorizontal: 14,
+                borderRadius: 12,
+                backgroundColor: isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)',
+                borderWidth: 1,
+                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+              }}
+            >
+              <FontAwesome5 name="eye" size={11} color={colors.text} />
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>Probar temas</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* 5. DASHBOARD INSIGHTS */}
       <DashboardInsights workoutLog={workoutLog} bodyWeightLog={bodyWeightLog} colors={colors} />
 
@@ -1843,6 +1993,11 @@ export default function Dashboard() {
         currentSugar={nutritionTotals.sugar}
         maxSugar={targets.sugar}
         onClose={() => setShowSugarModal(false)}
+      />
+
+      <RewardsModal
+        visible={showRewardsModal}
+        onClose={() => setShowRewardsModal(false)}
       />
     </AnimatedScreen>
   );

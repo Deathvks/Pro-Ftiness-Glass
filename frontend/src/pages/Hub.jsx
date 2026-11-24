@@ -207,7 +207,7 @@ export default function Hub({ setView }) {
             onPreload={() => preloadViewChunk('challenges')}
             icon={FaTrophy}
             title="Retos y Misiones"
-            description="Gana XP y sube de nivel"
+            description="Gana +1.000 XP/amigo y recompensas"
             onClick={() => {
               if (userProfile?.id) {
                 localStorage.setItem(`visited_challenges_v2_${userProfile.id}`, 'true');
@@ -224,7 +224,7 @@ export default function Hub({ setView }) {
             onPreload={() => preloadViewChunk('appearance')}
             icon={FaPalette}
             title="Apariencia"
-            description="Temas, acentos y colores"
+            description="3 temas exclusivos, acentos y colores"
             onClick={() => setView('appearance')}
           />
 

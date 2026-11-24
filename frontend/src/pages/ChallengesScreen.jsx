@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserGroupIcon, FireIcon, BoltIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { Share2, Copy, CheckCircle, ChevronLeft } from 'lucide-react';
-import { FaMeteor } from 'react-icons/fa6';
+import { FaMeteor, FaGift, FaSun, FaUmbrellaBeach } from 'react-icons/fa6';
 import apiClient from '../services/apiClient';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
@@ -146,10 +146,23 @@ const ChallengesScreen = ({ setView }) => {
                                         <span className="text-white/60 text-xs uppercase font-bold ml-2">Click para copiar</span>
                                     </div>
                                     <button 
+                                        type="button"
                                         onClick={(e) => { e.stopPropagation(); setShowRewardsModal(true); }}
-                                        className="mt-4 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-[14px] text-sm font-bold transition-colors inline-flex items-center gap-2 backdrop-blur-md shadow-sm border border-white/20"
+                                        className="mt-4 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-[16px] text-xs sm:text-sm font-bold transition-colors inline-flex flex-wrap items-center justify-center md:justify-start gap-2.5 backdrop-blur-md shadow-sm border border-white/25 cursor-pointer"
                                     >
-                                        <span>🎁 Ver Recompensas (Llevas {userProfile?.referralCount || 0})</span>
+                                        <span className="inline-flex -space-x-1.5 items-center">
+                                            <span className="w-6 h-6 rounded-full border border-white/50 bg-[#1d0b3b] flex items-center justify-center text-[#c084fc]">
+                                                <FaMeteor size={10} />
+                                            </span>
+                                            <span className="w-6 h-6 rounded-full border border-white/50 overflow-hidden bg-amber-700 flex items-center justify-center">
+                                                <img src="/assets/themes/desert.jpg" alt="Desierto" className="w-full h-full object-cover" />
+                                            </span>
+                                            <span className="w-6 h-6 rounded-full border border-white/50 overflow-hidden bg-sky-700 flex items-center justify-center">
+                                                <img src="/assets/themes/ocean.jpg" alt="Océano" className="w-full h-full object-cover" />
+                                            </span>
+                                        </span>
+                                        <FaGift size={13} />
+                                        <span>Ver temas y recompensas (Llevas {userProfile?.referralCount || 0})</span>
                                     </button>
                                 </div>
                                 <div className="flex-shrink-0 flex items-center justify-center w-full md:w-auto mt-4 md:mt-0">

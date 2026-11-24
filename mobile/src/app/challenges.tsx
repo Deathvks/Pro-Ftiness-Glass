@@ -30,6 +30,8 @@ import {
   Info,
 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { Image as ExpoImage } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 
 import apiClient from '@/services/apiClient';
@@ -425,7 +427,7 @@ export default function ChallengesScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Botón Ver Recompensas */}
+          {/* Botón Ver Recompensas con miniaturas */}
           <TouchableOpacity
             onPress={e => {
               e.stopPropagation();
@@ -437,9 +439,14 @@ export default function ChallengesScreen() {
             activeOpacity={0.8}
             style={[styles.rewardsButton, { backgroundColor: referralChipBg, borderColor: referralChipBorder }]}
           >
-            <Gift size={16} color={tabContrastTextColor} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 2 }}>
+              <ExpoImage source={require('../../assets/images/galaxy.jpg')} style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.6)' }} contentFit="cover" />
+              <ExpoImage source={require('../../assets/images/desert.jpg')} style={{ width: 20, height: 20, borderRadius: 10, marginLeft: -6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.6)' }} contentFit="cover" />
+              <ExpoImage source={require('../../assets/images/ocean.jpg')} style={{ width: 20, height: 20, borderRadius: 10, marginLeft: -6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.6)' }} contentFit="cover" />
+            </View>
+            <FontAwesome5 name="gift" size={14} color={tabContrastTextColor} />
             <Text style={[styles.rewardsButtonText, { color: tabContrastTextColor }]}>
-              Ver Recompensas (Llevas {userProfile?.referralCount || 0})
+              Ver temas y recompensas (Llevas {userProfile?.referralCount || 0})
             </Text>
           </TouchableOpacity>
         </TouchableOpacity>

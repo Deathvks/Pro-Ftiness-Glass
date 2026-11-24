@@ -1,21 +1,21 @@
 {
-  "version": "7.16.53",
-  "releaseNotes": "Actualización v7.16.53: modal de Recompensas renovado en Web, Capacitor y Nativo con vistas previas reales, insignia +1.000 XP/amigo, prueba en vivo de 10s y botón directo para compartir.",
+  "version": "7.16.54",
+  "releaseNotes": "Actualización v7.16.54: nuevos puntos orgánicos de descubrimiento en Inicio, Hub, Retos y Resumen post-entreno para previsualizar temas exclusivos y ganar +1.000 XP invitando amigos.",
   "welcome": {
-    "title": "Modal de Recompensas Interactivo",
-    "subtitle": "Previsualiza los temas Galaxia, Desierto y Océano desde Recompensas, pruébalos 10s e invita con un toque.",
+    "title": "Descubre Temas y Gana +1.000 XP",
+    "subtitle": "Ahora ves tus temas desbloqueables y recompensas de invitación directamente en Inicio, Hub, Retos y al finalizar tu entreno.",
     "features": [
       {
-        "title": "Vistas Previas en Vivo en Recompensas",
-        "description": "Cada tema muestra ahora su aspecto real Liquid Glass con tu progreso exacto de amigos."
+        "title": "Tarjeta en Inicio y Prueba Directa",
+        "description": "Previsualiza Galaxia, Desierto y Océano desde Inicio, consulta cuántos amigos te faltan y abre Recompensas al instante."
       },
       {
-        "title": "Prueba de 10s Sin Salir del Modal",
-        "description": "Prueba Galaxia, Desierto y Océano (claro u oscuro) en vivo antes de compartir tu invitación."
+        "title": "Resumen Post-Entreno con Invitación",
+        "description": "Comparte tu entreno o invita a un amigo nada más terminar la sesión para sumar +1.000 XP."
       },
       {
-        "title": "Compartir y +1.000 XP Siempre Visibles",
-        "description": "Insignia destacada de +1.000 XP por amigo y barra inferior fija para compartir o copiar tu enlace al instante."
+        "title": "Retos y Hub Renovados",
+        "description": "Miniaturas reales en Retos y descripciones más claras en Hub para acceder antes a temas y recompensas."
       }
     ]
   }

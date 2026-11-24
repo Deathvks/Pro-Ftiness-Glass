@@ -10,7 +10,9 @@ import {
   Modal,
   ScrollView,
   Pressable,
+  Share,
 } from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -498,6 +500,70 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
                 </View>
               </View>
             )}
+
+            {/* Invitación rápida post-entreno */}
+            <View
+              style={{
+                width: '100%',
+                borderRadius: 18,
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+                padding: 13,
+                marginBottom: 14,
+                gap: 10,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
+                    backgroundColor: colors.tint + '22',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <FontAwesome5 name="gift" size={14} color={colors.tint} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ fontSize: 12.5, fontWeight: '800', color: colors.text }}>
+                    ¿Invitas a alguien a entrenar contigo?
+                  </Text>
+                  <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16 }}>
+                    Gana +1.000 XP y desbloquea los temas Galaxia, Desierto y Océano.
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  const code = userProfile?.referral_code || '';
+                  const link = `https://profitnessglass.es/register?ref=${code}`;
+                  void Share.share({
+                    title: 'Únete a Pro Fitness Glass',
+                    message: `¡Acabo de completar mi entrenamiento en Pro Fitness Glass! Regístrate gratis con mi enlace: ${link}`,
+                    url: link,
+                  }).catch(() => {});
+                }}
+                activeOpacity={0.8}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 7,
+                  backgroundColor: colors.tint,
+                  borderRadius: 12,
+                  paddingVertical: 9,
+                  paddingHorizontal: 12,
+                }}
+              >
+                <FontAwesome5 name="share-alt" size={12} color={getContrastTextColor(colors.tint)} />
+                <Text style={{ fontSize: 12, fontWeight: '800', color: getContrastTextColor(colors.tint) }}>
+                  Invitar (+1.000 XP)
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Botón Compartir Tarjeta PNG */}
             <TouchableOpacity

@@ -434,7 +434,7 @@ export default function Hub() {
               <HubButton
                 icon={Trophy}
                 title="Retos y Misiones"
-                description="Gana XP y sube de nivel"
+                description="Gana +1.000 XP/amigo y recompensas"
                 colors={colors}
                 iosBadgeColor="#FF9F0A"
                 onPress={() => router.push('/challenges' as any)}
@@ -445,7 +445,7 @@ export default function Hub() {
               <HubButton
                 icon={Paintbrush}
                 title="Apariencia"
-                description="Temas, acentos y colores"
+                description="3 temas exclusivos, acentos y colores"
                 colors={colors}
                 iosBadgeColor="#BF5AF2"
                 onPress={() => router.push('/appearance')}

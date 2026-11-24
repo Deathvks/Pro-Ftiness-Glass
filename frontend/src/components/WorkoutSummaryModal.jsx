@@ -11,7 +11,8 @@ import {
   FaTrash,
   FaXmark,
   FaArrowLeft,
-  FaShareNodes
+  FaShareNodes,
+  FaGift,
 } from 'react-icons/fa6';
 import { useTranslation } from 'react-i18next';
 import { toBlob } from 'html-to-image';
@@ -919,6 +920,58 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false, showRe
               </div>
 
               {showReminderOffer && <NotificationOffer purpose="training" />}
+
+              {!isShareMode && (
+                <div className="mt-4 p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0 mt-0.5">
+                      <FaGift size={14} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-extrabold text-text-primary">
+                        ¿Invitas a alguien a entrenar contigo?
+                      </p>
+                      <p className="text-[11px] text-text-secondary leading-snug mt-0.5">
+                        Gana <strong>+1.000 XP</strong> y desbloquea los temas Galaxia, Desierto y Océano.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const code = useAppStore.getState().userProfile?.referral_code || '';
+                      const base = Capacitor.isNativePlatform()
+                        ? (import.meta.env.VITE_WEB_URL || 'https://profitnessglass.es')
+                        : window.location.origin;
+                      const url = `${base}/register?ref=${code}`;
+                      const payload = {
+                        title: 'Únete a Pro Fitness Glass',
+                        text: 'Acabo de completar mi entrenamiento en Pro Fitness Glass. Regístrate gratis con mi enlace:',
+                        url,
+                      };
+                      if (Capacitor.isNativePlatform()) {
+                        try {
+                          await Share.share({ ...payload, dialogTitle: 'Invitar a entrenar' });
+                          return;
+                        } catch { /* fallback */ }
+                      } else if (navigator.share) {
+                        try {
+                          await navigator.share(payload);
+                          return;
+                        } catch (err) {
+                          if (err?.name === 'AbortError') return;
+                        }
+                      }
+                      navigator.clipboard?.writeText(url).catch(() => {});
+                      showToast('Enlace de invitación copiado (+1.000 XP por amigo)', 'success');
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-accent text-accent-contrast font-extrabold text-xs hover:brightness-110 transition-all inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                  >
+                    <FaShareNodes size={11} />
+                    <span>Invitar (+1.000 XP)</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Pie Fijo de Botones */}

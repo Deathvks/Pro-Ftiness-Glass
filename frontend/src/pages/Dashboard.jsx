@@ -60,7 +60,9 @@ import SEOHead from '../components/SEOHead';
 import WeeklyRecapCard from '../components/WeeklyRecapCard';
 import PRShareCard from '../components/PRShareCard';
 import DashboardInsights from '../components/Dashboard/DashboardInsights';
+import RewardsModal from '../components/RewardsModal';
 import { useAppTheme } from '../hooks/useAppTheme'; 
+import { FaGift, FaShareNodes, FaSun, FaUmbrellaBeach, FaBolt, FaXmark } from 'react-icons/fa6';
 
 const _isIOS = () => {
   if (typeof navigator === 'undefined') return false;
@@ -741,6 +743,17 @@ const Dashboard = ({ setView }) => {
   const _displayReferralCount = isAdmin ? maxReferrals : referralCount;
   const _referralProgress = isAdmin ? 100 : Math.min((referralCount / maxReferrals) * 100, 100);
   const _isCampaignComplete = referralCount >= maxReferrals || isAdmin;
+  const [showRewardsModal, setShowRewardsModal] = useState(false);
+  const [hideThemeDiscovery, setHideThemeDiscovery] = useState(() => {
+    try { return localStorage.getItem('pfg_hide_theme_discovery_v1') === 'true'; } catch { return false; }
+  });
+  const nextThemeTarget = referralCount < 5
+    ? { label: 'Galaxia', req: 5, accent: '#a855f7' }
+    : referralCount < 8
+    ? { label: 'Desierto', req: 8, accent: '#f59e0b' }
+    : referralCount < 11
+    ? { label: 'Océano', req: 11, accent: '#0ea5e9' }
+    : null;
   const isCapacitor = !!window.Capacitor?.isNativePlatform?.() || window.location.origin.includes('localhost') && !window.location.port;
   const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://profitnessglass.es') : window.location.origin;
   const referralLink = `${baseUrl}/register?ref=${userProfile?.referral_code || ''}`;
@@ -1168,6 +1181,96 @@ const Dashboard = ({ setView }) => {
                 className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-text-primary font-bold text-xs transition-all flex items-center justify-center cursor-pointer"
               >
                 {t('Ver retos', { defaultValue: 'Ver retos' })}
+              </button>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+
+      {nextThemeTarget && !hideThemeDiscovery && (
+        <GlassCard className="glass p-4 sm:p-5 rounded-[26px] mb-6 border-none ring-1 ring-black/10 dark:ring-white/15 relative">
+          <button
+            type="button"
+            onClick={() => {
+              setHideThemeDiscovery(true);
+              try { localStorage.setItem('pfg_hide_theme_discovery_v1', 'true'); } catch { /* ignore */ }
+            }}
+            aria-label="Ocultar tarjeta de temas"
+            className="absolute top-3.5 right-3.5 w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <FaXmark size={12} />
+          </button>
+
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pr-6">
+            <div className="flex items-start gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-2xl bg-accent/15 text-accent flex items-center justify-center shrink-0 mt-0.5">
+                <FaGift size={18} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <span className="text-sm sm:text-base font-extrabold text-text-primary">
+                    Desbloquea temas compartiendo la app
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/15 text-accent text-[10px] font-black uppercase tracking-wider">
+                    <FaBolt size={9} /> +1.000 XP / amigo
+                  </span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed">
+                  Llevas <strong>{referralCount}</strong> {referralCount === 1 ? 'amigo' : 'amigos'} · Te faltan <strong>{nextThemeTarget.req - referralCount}</strong> para <strong>{nextThemeTarget.label}</strong>.
+                </p>
+
+                <div className="grid grid-cols-3 gap-2 mt-3 max-w-md">
+                  <button
+                    type="button"
+                    onClick={() => setShowRewardsModal(true)}
+                    className="relative h-12 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-2 flex items-end cursor-pointer"
+                    style={{ background: 'radial-gradient(circle at 25% 25%, rgba(168,85,247,0.5), transparent 60%), linear-gradient(135deg, #070314, #1d0b3b)' }}
+                  >
+                    <span className="text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
+                      <FaMeteor size={9} className="text-[#c084fc] shrink-0" /> Galaxia · 5
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowRewardsModal(true)}
+                    className="relative h-12 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-2 flex items-end cursor-pointer bg-amber-900"
+                  >
+                    <img src="/assets/themes/desert.jpg" alt="Desierto" className="absolute inset-0 w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                    <span className="relative z-10 text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
+                      <FaSun size={9} className="text-[#fcd34d] shrink-0" /> Desierto · 8
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowRewardsModal(true)}
+                    className="relative h-12 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-2 flex items-end cursor-pointer bg-sky-900"
+                  >
+                    <img src="/assets/themes/ocean.jpg" alt="Océano" className="absolute inset-0 w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                    <span className="relative z-10 text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
+                      <FaUmbrellaBeach size={9} className="text-[#7dd3fc] shrink-0" /> Océano · 11
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={_handleShareReferral}
+                className="px-4 py-2.5 rounded-xl bg-accent text-accent-contrast font-extrabold text-xs hover:brightness-110 transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <FaShareNodes size={12} />
+                <span>Invitar (+1.000 XP)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowRewardsModal(true)}
+                className="px-3.5 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-text-primary font-bold text-xs transition-all flex items-center justify-center cursor-pointer"
+              >
+                Probar temas
               </button>
             </div>
           </div>
@@ -1608,6 +1711,11 @@ const Dashboard = ({ setView }) => {
           onClose={() => setShowExerciseLibrary(false)} 
         />
       )}
+
+      <RewardsModal
+        isOpen={showRewardsModal}
+        onClose={() => setShowRewardsModal(false)}
+      />
     </div>
   );
 };
