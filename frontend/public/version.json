@@ -1,21 +1,21 @@
 {
-  "version": "7.16.51",
-  "releaseNotes": "Actualización v7.16.51: panel unificado de Canales de Recuperación en Retención 72h (crons, bot de asesoría, notificaciones locales Capacitor/Nativa y ganchos Día 2 / Semana 2).",
+  "version": "7.16.52",
+  "releaseNotes": "Actualización v7.16.52: nueva vitrina visual en Apariencia para los temas Galaxia, Desierto y Océano con progreso en vivo, prueba de 10s e invitación directa (+1.000 XP/amigo).",
   "welcome": {
-    "title": "Retención Total Multicanal",
-    "subtitle": "Medición unificada de todas las vías de recuperación y reactivación en Web, Capacitor y App Nativa.",
+    "title": "Vitrina de Temas y +1.000 XP",
+    "subtitle": "Descubre y previsualiza los temas exclusivos Liquid Glass desde Apariencia en Web, Capacitor y App Nativa.",
     "features": [
       {
-        "title": "Todos los Canales en Retención",
-        "description": "Consulta envíos, usuarios alcanzados y tasa de vuelta de Rescate 72h, Nudge 24h, Resumen semanal, Recordatorio de entreno, Rachas, Hábitos y Bot de asesoría."
+        "title": "Vistas Previas Reales en Mis Temas",
+        "description": "Previsualiza Galaxia, Desierto y Océano con su efecto Liquid Glass directamente en Apariencia antes de desbloquearlos."
       },
       {
-        "title": "Telemetría en Capacitor y App Nativa",
-        "description": "Mide programaciones y aperturas directas de notificaciones locales en dispositivos Android/iOS junto a los crons del servidor."
+        "title": "Recompensa +1.000 XP y Progreso Claro",
+        "description": "Consulta cuántos amigos te faltan con barra de progreso y comparte tu invitación al instante desde la propia tarjeta."
       },
       {
-        "title": "Ganchos Día 2 y Semana 2 Medidos",
-        "description": "Registra interacciones reales en Micro-reto activo, Repetir comidas de ayer y Objetivo de la próxima sesión en Web, Capacitor y Nativa."
+        "title": "Prueba Gratuita de 10 Segundos",
+        "description": "Prueba cada variante (claro u oscuro) durante 10 segundos antes de invitar a tus amigos."
       }
     ]
   }

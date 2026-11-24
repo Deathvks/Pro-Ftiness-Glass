@@ -1,9 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 import { 
-  Palette, Sun, Moon, MonitorCog, Smartphone, Check, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, LockOpen, Lock, Info, Droplet, Sparkles, Battery, Gauge, X
+  Palette, Sun, Moon, MonitorCog, Smartphone, Check, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Info, Sparkles, Battery, Gauge, X
 } from 'lucide-react';
-import { FaMeteor } from 'react-icons/fa6'; 
+import {
+  FaMeteor,
+  FaGift,
+  FaShareNodes,
+  FaCopy,
+  FaBolt,
+  FaSun,
+  FaUmbrellaBeach,
+  FaLock,
+  FaLockOpen,
+} from 'react-icons/fa6'; 
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppTheme } from '../hooks/useAppTheme';
@@ -205,13 +217,51 @@ export default function AppearanceScreen({ setView }) {
     return () => mediaQuery.removeEventListener?.('change', updateTouchDevice);
   }, []);
 
-  const isGalaxyUnlocked = (userProfile?.referralCount || 0) >= 5 || userProfile?.role === 'admin';
+  const referralCount = userProfile?.referralCount || 0;
+  const isAdmin = userProfile?.role === 'admin';
+  const baseShareUrl = Capacitor.isNativePlatform()
+    ? (import.meta.env.VITE_WEB_URL || 'https://profitnessglass.es')
+    : (typeof window !== 'undefined' ? window.location.origin : 'https://profitnessglass.es');
+  const referralLink = `${baseShareUrl}/register?ref=${userProfile?.referral_code || ''}`;
+
+  const handleCopyReferral = () => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(referralLink).catch(() => {});
+    }
+    addToast('Enlace de invitación copiado (+1.000 XP por amigo)', 'success');
+  };
+
+  const handleShareReferral = async () => {
+    const shareData = {
+      title: 'Únete a Pro Fitness Glass',
+      text: 'Entrena y lleva tu nutrición conmigo en Pro Fitness Glass. Regístrate gratis con mi enlace:',
+      url: referralLink,
+    };
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Share.share({ ...shareData, dialogTitle: 'Compartir invitación' });
+        return;
+      } catch {
+        // Fallback a copia si el usuario cancela o no hay hoja nativa
+      }
+    } else if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        if (err?.name === 'AbortError') return;
+      }
+    }
+    handleCopyReferral();
+  };
+
+  const isGalaxyUnlocked = referralCount >= 5 || isAdmin;
   const isGalaxyActive = activeTheme === 'galaxy';
 
-  const isDesertUnlocked = (userProfile?.referralCount || 0) >= 8 || userProfile?.role === 'admin';
+  const isDesertUnlocked = referralCount >= 8 || isAdmin;
   const isDesertActive = activeTheme === 'desert' || activeTheme === 'desert-dark';
 
-  const isOceanUnlocked = (userProfile?.referralCount || 0) >= 11 || userProfile?.role === 'admin';
+  const isOceanUnlocked = referralCount >= 11 || isAdmin;
   const isOceanActive = activeTheme === 'ocean' || activeTheme === 'ocean-dark';
 
   
@@ -237,7 +287,7 @@ export default function AppearanceScreen({ setView }) {
       const saved = localStorage.getItem('my_themes_expanded_mobile');
       if (saved !== null) return saved === 'true';
     }
-    return isGalaxyActive || isDesertActive || isOceanActive || isTestingTheme;
+    return true;
   });
 
   const toggleMyThemesMobile = () => {
@@ -460,10 +510,10 @@ export default function AppearanceScreen({ setView }) {
                   )}
                 </div>
                 <p className="text-xs text-text-secondary mt-0.5 hidden lg:block">
-                  Temas exclusivos desbloqueados mediante retos y progreso en la aplicación.
+                  Invita amigos para ganar +1.000 XP cada uno y desbloquear estos 3 temas con vistas previas reales.
                 </p>
                 <p className="text-[11px] text-text-muted mt-0.5 lg:hidden block">
-                  {isMyThemesOpenMobile ? 'Toca para solapar' : '3 temas exclusivos · Toca para desplegar'}
+                  {isMyThemesOpenMobile ? 'Toca para solapar' : '3 temas exclusivos · +1.000 XP/amigo'}
                 </p>
               </div>
             </div>
@@ -472,9 +522,15 @@ export default function AppearanceScreen({ setView }) {
             <div className="flex items-center gap-2 lg:hidden">
               {!isMyThemesOpenMobile && (
                 <div className="flex -space-x-1 items-center mr-1 opacity-90">
-                  <span className="w-5 h-5 rounded-full bg-[#a855f7]/20 flex items-center justify-center text-[10px] ring-1 ring-white/10" title="Galaxia">🌌</span>
-                  <span className="w-5 h-5 rounded-full bg-[#f59e0b]/20 flex items-center justify-center text-[10px] ring-1 ring-white/10" title="Desierto">🏜️</span>
-                  <span className="w-5 h-5 rounded-full bg-[#0ea5e9]/20 flex items-center justify-center text-[10px] ring-1 ring-white/10" title="Océano">🌊</span>
+                  <span className="w-6 h-6 rounded-full bg-[#a855f7]/20 text-[#a855f7] flex items-center justify-center ring-1 ring-[#a855f7]/30" title="Galaxia">
+                    <FaMeteor size={11} />
+                  </span>
+                  <span className="w-6 h-6 rounded-full bg-[#f59e0b]/20 text-[#f59e0b] flex items-center justify-center ring-1 ring-[#f59e0b]/30" title="Desierto">
+                    <FaSun size={11} />
+                  </span>
+                  <span className="w-6 h-6 rounded-full bg-[#0ea5e9]/20 text-[#0ea5e9] flex items-center justify-center ring-1 ring-[#0ea5e9]/30" title="Océano">
+                    <FaUmbrellaBeach size={11} />
+                  </span>
                 </div>
               )}
               <button
@@ -497,52 +553,134 @@ export default function AppearanceScreen({ setView }) {
           {/* Contenido: Desplegable en móvil, Siempre visible en PC */}
           <div className={`${isMyThemesOpenMobile ? 'block' : 'hidden'} lg:block transition-all duration-300 ${isMyThemesOpenMobile ? 'mt-5' : 'mt-4'}`}>
 
-          <div className={`p-4 rounded-[20px] transition-all duration-500 border ${theme === 'galaxy' || isTestingTheme ? 'bg-[#a855f7]/10 border-[#a855f7]/30 shadow-lg shadow-[#a855f7]/20 scale-[1.02]' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`p-2.5 rounded-[14px] ${isGalaxyUnlocked ? 'bg-[#a855f7]/20 text-[#a855f7]' : 'bg-black/10 dark:bg-white/10 text-text-muted'}`}>
-                   <FaMeteor size={22} />
+          {/* Banner de Progreso y Recompensa por Compartir */}
+          <div className="mb-4 p-4 rounded-[22px] bg-accent/10 border border-accent/25 flex flex-col gap-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-2xl bg-accent text-accent-contrast flex items-center justify-center shrink-0 shadow-sm">
+                  <FaGift size={18} />
                 </div>
-                <div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-black text-text-primary">Consigue temas y +1.000 XP</span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent text-[10px] font-black uppercase tracking-wider">
+                      <FaBolt size={10} /> +1.000 XP / amigo
+                    </span>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-text-secondary mt-1 leading-relaxed">
+                    Comparte tu enlace: cada amigo nuevo te suma <strong>1.000 XP</strong> y desbloquea los temas atmosféricos Liquid Glass.
+                  </p>
+                </div>
+              </div>
+              <div className="shrink-0 text-right">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-bg-primary/80 ring-1 ring-black/5 dark:ring-white/10 text-[11px] font-black text-text-primary">
+                  {referralCount} {referralCount === 1 ? 'amigo' : 'amigos'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleShareReferral}
+                className="flex-1 min-w-[170px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-accent text-accent-contrast text-xs font-extrabold shadow-md shadow-accent/20 hover:brightness-110 transition-all cursor-pointer"
+              >
+                <FaShareNodes size={13} />
+                <span>Invitar (+1.000 XP)</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyReferral}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-text-primary text-xs font-bold transition-all cursor-pointer"
+              >
+                <FaCopy size={12} />
+                <span>Copiar enlace</span>
+              </button>
+            </div>
+          </div>
+
+          <div className={`p-4 rounded-[22px] transition-all duration-500 border ${theme === 'galaxy' || isTestingTheme ? 'bg-[#a855f7]/10 border-[#a855f7]/30 shadow-lg shadow-[#a855f7]/20' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
+            {/* Vista previa real Galaxia */}
+            <div
+              className="relative h-24 sm:h-28 rounded-2xl overflow-hidden mb-3.5 ring-1 ring-white/15 flex items-end p-3"
+              style={{
+                background: 'radial-gradient(circle at 20% 20%, rgba(168,85,247,0.45), transparent 55%), radial-gradient(circle at 80% 75%, rgba(59,130,246,0.35), transparent 55%), linear-gradient(135deg, #070314 0%, #1d0b3b 50%, #090d26 100%)'
+              }}
+            >
+              <div className="absolute top-3 left-6 w-1.5 h-1.5 rounded-full bg-white/90 shadow-[0_0_8px_#fff]" />
+              <div className="absolute top-6 right-12 w-1 h-1 rounded-full bg-purple-200/90 shadow-[0_0_6px_#a855f7]" />
+              <div className="absolute bottom-8 left-1/2 w-1.5 h-1.5 rounded-full bg-sky-200/90 shadow-[0_0_8px_#38bdf8]" />
+              <div className="relative z-10 w-full flex items-center justify-between gap-2">
+                <div className="px-2.5 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold flex items-center gap-1.5">
+                  <FaMeteor size={11} className="text-[#c084fc]" />
+                  <span>Liquid Glass · Estelar</span>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
+                  {isGalaxyUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 5)}/5 amigos`}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`p-2.5 rounded-[14px] shrink-0 ${isGalaxyUnlocked ? 'bg-[#a855f7]/20 text-[#a855f7]' : 'bg-black/10 dark:bg-white/10 text-text-muted'}`}>
+                   <FaMeteor size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
                   <div className={`text-sm font-bold ${isGalaxyUnlocked ? 'bg-clip-text text-transparent bg-gradient-to-r from-[#a855f7] to-[#3b82f6]' : 'text-text-primary'}`}>
                     Tema Galaxia
                   </div>
-                  <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1 mt-0.5">
+                  <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1.5 mt-0.5">
                     {isGalaxyUnlocked ? (
-                      <><LockOpen size={12} className="text-green-500" /> Desbloqueado</>
+                      <><FaLockOpen size={11} className="text-green-500" /> Desbloqueado</>
                     ) : (
-                      <><Lock size={12} className="text-text-muted" /> Invita a 5 amigos</>
+                      <><FaLock size={11} className="text-text-muted" /> {Math.max(0, 5 - referralCount)} {5 - referralCount === 1 ? 'amigo más' : 'amigos más'} para desbloquear</>
                     )}
                   </div>
                 </div>
               </div>
               
-              <div>
+              <div className="flex flex-wrap items-center gap-2">
                 {isGalaxyUnlocked ? (
                    <button 
                      onClick={() => handleThemeClick('galaxy')} 
-                     className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${theme === 'galaxy' ? 'bg-[#a855f7] text-white shadow-lg shadow-[#a855f7]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#a855f7]/20 text-[#a855f7]'}`}
+                     className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${theme === 'galaxy' ? 'bg-[#a855f7] text-white shadow-lg shadow-[#a855f7]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#a855f7]/20 text-[#a855f7]'}`}
                    >
                      {theme === 'galaxy' ? 'Activo' : 'Aplicar'}
                    </button>
                 ) : (
-                   <button 
-                     onClick={() => {
-                       if (isIOS()) {
-                         setPendingThemeAction({ type: 'test', payload: { theme: 'galaxy', duration: 10 } });
-                         setShowThemeReloadModal(true);
-                       } else {
-                         startThemeTest('galaxy', 10);
-                       }
-                     }}  
-                     disabled={isTestingTheme} 
-                     className="px-4 py-2 rounded-full text-xs font-bold bg-[#a855f7]/20 text-[#a855f7] hover:bg-[#a855f7]/30 transition-all flex items-center justify-center gap-1.5 disabled:opacity-80 whitespace-nowrap min-w-[110px]"
-                   >
-                     {isTestingTheme ? `Probando ${testTimeLeft}s` : 'Probar 10s'}
-                   </button>
+                   <>
+                     <button 
+                       onClick={() => {
+                         if (isIOS()) {
+                           setPendingThemeAction({ type: 'test', payload: { theme: 'galaxy', duration: 10 } });
+                           setShowThemeReloadModal(true);
+                         } else {
+                           startThemeTest('galaxy', 10);
+                         }
+                       }}  
+                       disabled={isTestingTheme} 
+                       className="px-3.5 py-2 rounded-full text-xs font-bold bg-[#a855f7]/20 text-[#a855f7] hover:bg-[#a855f7]/30 transition-all flex items-center justify-center gap-1.5 disabled:opacity-80 whitespace-nowrap cursor-pointer"
+                     >
+                       {isTestingTheme ? `Probando ${testTimeLeft}s` : 'Probar 10s'}
+                     </button>
+                     <button
+                       type="button"
+                       onClick={handleShareReferral}
+                       className="px-3.5 py-2 rounded-full text-xs font-bold bg-accent text-accent-contrast hover:brightness-110 transition-all inline-flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+                     >
+                       <FaShareNodes size={11} />
+                       <span>Invitar</span>
+                     </button>
+                   </>
                 )}
               </div>
             </div>
+            {!isGalaxyUnlocked && (
+              <div className="mt-3 w-full h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                <div className="h-full rounded-full bg-gradient-to-r from-[#a855f7] to-[#3b82f6] transition-all duration-500" style={{ width: `${Math.min(100, Math.round((referralCount / 5) * 100))}%` }} />
+              </div>
+            )}
             {isGalaxyActive && (
               <p className="text-[10px] sm:text-xs text-[#a855f7] font-bold mt-4 ml-1 flex items-center gap-1.5">
                 <Info size={14} /> El Tema Galaxia usa su propio acento estelar (desactiva el acento manual).
@@ -564,44 +702,64 @@ export default function AppearanceScreen({ setView }) {
             )}
           </div>
 
-          <div className={`mt-4 p-4 rounded-[20px] transition-all duration-500 border ${isDesertActive ? 'bg-[#f59e0b]/10 border-[#f59e0b]/30 shadow-lg shadow-[#f59e0b]/20 scale-[1.02]' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`p-2.5 rounded-[14px] ${isDesertUnlocked ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : 'bg-black/10 dark:bg-white/10 text-text-muted'}`}>
-                   <Sun size={22} />
+          <div className={`mt-4 p-4 rounded-[22px] transition-all duration-500 border ${isDesertActive ? 'bg-[#f59e0b]/10 border-[#f59e0b]/30 shadow-lg shadow-[#f59e0b]/20' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
+            {/* Vista previa real Desierto */}
+            <div className="relative h-24 sm:h-28 rounded-2xl overflow-hidden mb-3.5 ring-1 ring-white/15 flex items-end p-3 bg-[#7c2d12]">
+              <img
+                src="/assets/themes/desert.jpg"
+                alt="Vista previa Tema Desierto"
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-amber-500/15" />
+              <div className="relative z-10 w-full flex items-center justify-between gap-2">
+                <div className="px-2.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-[10px] font-bold flex items-center gap-1.5">
+                  <FaSun size={11} className="text-[#fcd34d]" />
+                  <span>Liquid Glass · Dunas (Claro / Oscuro)</span>
                 </div>
-                <div>
+                <span className="px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
+                  {isDesertUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 8)}/8 amigos`}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`p-2.5 rounded-[14px] shrink-0 ${isDesertUnlocked ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : 'bg-black/10 dark:bg-white/10 text-text-muted'}`}>
+                   <FaSun size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
                   <div className={`text-sm font-bold ${isDesertUnlocked ? 'bg-clip-text text-transparent bg-gradient-to-r from-[#f59e0b] to-[#ea580c]' : 'text-text-primary'}`}>
                     Tema Desierto
                   </div>
-                  <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1 mt-0.5">
+                  <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1.5 mt-0.5">
                     {isDesertUnlocked ? (
-                      <><LockOpen size={12} className="text-green-500" /> Desbloqueado</>
+                      <><FaLockOpen size={11} className="text-green-500" /> Desbloqueado</>
                     ) : (
-                      <><Lock size={12} className="text-text-muted" /> Invita a 8 amigos</>
+                      <><FaLock size={11} className="text-text-muted" /> {Math.max(0, 8 - referralCount)} {8 - referralCount === 1 ? 'amigo más' : 'amigos más'} para desbloquear</>
                     )}
                   </div>
                 </div>
               </div>
               
-              <div>
+              <div className="flex flex-wrap items-center gap-2">
                 {isDesertUnlocked ? (
-                   <div className="flex flex-col sm:flex-row gap-2">
+                   <div className="flex flex-wrap gap-2">
                      <button 
                        onClick={() => handleThemeClick('desert')} 
-                       className={`px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all ${theme === 'desert' ? 'bg-[#f59e0b] text-white shadow-lg shadow-[#f59e0b]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#f59e0b]/20 text-[#b45309] dark:text-[#fcd34d]'}`}
+                       className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer ${theme === 'desert' ? 'bg-[#f59e0b] text-white shadow-lg shadow-[#f59e0b]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#f59e0b]/20 text-[#b45309] dark:text-[#fcd34d]'}`}
                      >
                        Claro
                      </button>
                      <button 
                        onClick={() => handleThemeClick('desert-dark')} 
-                       className={`px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all ${theme === 'desert-dark' ? 'bg-[#f59e0b] text-white shadow-lg shadow-[#f59e0b]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#f59e0b]/20 text-[#b45309] dark:text-[#fcd34d]'}`}
+                       className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer ${theme === 'desert-dark' ? 'bg-[#f59e0b] text-white shadow-lg shadow-[#f59e0b]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#f59e0b]/20 text-[#b45309] dark:text-[#fcd34d]'}`}
                      >
                        Oscuro
                      </button>
                    </div>
                 ) : (
-                   <div className="flex flex-col sm:flex-row gap-2">
+                   <div className="flex flex-wrap gap-2">
                      <button 
                        onClick={() => {
                          if (isIOS()) {
@@ -612,7 +770,7 @@ export default function AppearanceScreen({ setView }) {
                          }
                        }} 
                        disabled={isTestingTheme} 
-                       className="px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all bg-[#f59e0b]/20 text-[#f59e0b] hover:bg-[#f59e0b]/30 disabled:opacity-80"
+                       className="px-3 py-1.5 rounded-full text-[11px] font-bold transition-all bg-[#f59e0b]/20 text-[#f59e0b] hover:bg-[#f59e0b]/30 disabled:opacity-80 cursor-pointer"
                      >
                        {isTestingTheme ? `Probando ${testTimeLeft}s` : 'Probar Claro'}
                      </button>
@@ -626,14 +784,27 @@ export default function AppearanceScreen({ setView }) {
                          }
                        }} 
                        disabled={isTestingTheme} 
-                       className="px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all bg-[#f59e0b]/20 text-[#f59e0b] hover:bg-[#f59e0b]/30 disabled:opacity-80"
+                       className="px-3 py-1.5 rounded-full text-[11px] font-bold transition-all bg-[#f59e0b]/20 text-[#f59e0b] hover:bg-[#f59e0b]/30 disabled:opacity-80 cursor-pointer"
                      >
                        {isTestingTheme ? `Probando ${testTimeLeft}s` : 'Probar Oscuro'}
+                     </button>
+                     <button
+                       type="button"
+                       onClick={handleShareReferral}
+                       className="px-3 py-1.5 rounded-full text-[11px] font-bold bg-accent text-accent-contrast hover:brightness-110 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                     >
+                       <FaShareNodes size={10} />
+                       <span>Invitar</span>
                      </button>
                    </div>
                 )}
               </div>
             </div>
+            {!isDesertUnlocked && (
+              <div className="mt-3 w-full h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                <div className="h-full rounded-full bg-gradient-to-r from-[#f59e0b] to-[#ea580c] transition-all duration-500" style={{ width: `${Math.min(100, Math.round((referralCount / 8) * 100))}%` }} />
+              </div>
+            )}
             {isDesertActive && (
               <p className="text-[10px] sm:text-xs text-[#f59e0b] font-bold mt-4 ml-1 flex items-center gap-1.5">
                 <Info size={14} /> El Tema Desierto usa su propio acento cálido (desactiva el acento manual).
@@ -641,44 +812,64 @@ export default function AppearanceScreen({ setView }) {
             )}
           </div>
 
-          <div className={`mt-4 p-4 rounded-[20px] transition-all duration-500 border ${isOceanActive ? 'bg-[#0ea5e9]/10 border-[#0ea5e9]/30 shadow-lg shadow-[#0ea5e9]/20 scale-[1.02]' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`p-2.5 rounded-[14px] ${isOceanUnlocked ? 'bg-[#0ea5e9]/20 text-[#0ea5e9]' : 'bg-black/10 dark:bg-white/10 text-text-muted'}`}>
-                   <Droplet size={22} />
+          <div className={`mt-4 p-4 rounded-[22px] transition-all duration-500 border ${isOceanActive ? 'bg-[#0ea5e9]/10 border-[#0ea5e9]/30 shadow-lg shadow-[#0ea5e9]/20' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
+            {/* Vista previa real Océano */}
+            <div className="relative h-24 sm:h-28 rounded-2xl overflow-hidden mb-3.5 ring-1 ring-white/15 flex items-end p-3 bg-[#0c4a6e]">
+              <img
+                src="/assets/themes/ocean.jpg"
+                alt="Vista previa Tema Océano"
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-sky-500/15" />
+              <div className="relative z-10 w-full flex items-center justify-between gap-2">
+                <div className="px-2.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-[10px] font-bold flex items-center gap-1.5">
+                  <FaUmbrellaBeach size={11} className="text-[#7dd3fc]" />
+                  <span>Liquid Glass · Océano (Claro / Oscuro)</span>
                 </div>
-                <div>
+                <span className="px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
+                  {isOceanUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 11)}/11 amigos`}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`p-2.5 rounded-[14px] shrink-0 ${isOceanUnlocked ? 'bg-[#0ea5e9]/20 text-[#0ea5e9]' : 'bg-black/10 dark:bg-white/10 text-text-muted'}`}>
+                   <FaUmbrellaBeach size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
                   <div className={`text-sm font-bold ${isOceanUnlocked ? 'bg-clip-text text-transparent bg-gradient-to-r from-[#0ea5e9] to-[#0284c7]' : 'text-text-primary'}`}>
                     Tema Océano
                   </div>
-                  <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1 mt-0.5">
+                  <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1.5 mt-0.5">
                     {isOceanUnlocked ? (
-                      <><LockOpen size={12} className="text-green-500" /> Desbloqueado</>
+                      <><FaLockOpen size={11} className="text-green-500" /> Desbloqueado</>
                     ) : (
-                      <><Lock size={12} className="text-text-muted" /> Invita a 11 amigos</>
+                      <><FaLock size={11} className="text-text-muted" /> {Math.max(0, 11 - referralCount)} {11 - referralCount === 1 ? 'amigo más' : 'amigos más'} para desbloquear</>
                     )}
                   </div>
                 </div>
               </div>
               
-              <div>
+              <div className="flex flex-wrap items-center gap-2">
                 {isOceanUnlocked ? (
-                   <div className="flex flex-col sm:flex-row gap-2">
+                   <div className="flex flex-wrap gap-2">
                      <button 
                        onClick={() => handleThemeClick('ocean')} 
-                       className={`px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all ${theme === 'ocean' ? 'bg-[#0ea5e9] text-white shadow-lg shadow-[#0ea5e9]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#0ea5e9]/20 text-[#0369a1] dark:text-[#7dd3fc]'}`}
+                       className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer ${theme === 'ocean' ? 'bg-[#0ea5e9] text-white shadow-lg shadow-[#0ea5e9]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#0ea5e9]/20 text-[#0369a1] dark:text-[#7dd3fc]'}`}
                      >
                        Claro
                      </button>
                      <button 
                        onClick={() => handleThemeClick('ocean-dark')} 
-                       className={`px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all ${theme === 'ocean-dark' ? 'bg-[#0ea5e9] text-white shadow-lg shadow-[#0ea5e9]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#0ea5e9]/20 text-[#0369a1] dark:text-[#7dd3fc]'}`}
+                       className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer ${theme === 'ocean-dark' ? 'bg-[#0ea5e9] text-white shadow-lg shadow-[#0ea5e9]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#0ea5e9]/20 text-[#0369a1] dark:text-[#7dd3fc]'}`}
                      >
                        Oscuro
                      </button>
                    </div>
                 ) : (
-                   <div className="flex flex-col sm:flex-row gap-2">
+                   <div className="flex flex-wrap gap-2">
                      <button 
                        onClick={() => {
                          if (isIOS()) {
@@ -689,7 +880,7 @@ export default function AppearanceScreen({ setView }) {
                          }
                        }} 
                        disabled={isTestingTheme} 
-                       className="px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all bg-[#0ea5e9]/20 text-[#0ea5e9] hover:bg-[#0ea5e9]/30 disabled:opacity-80"
+                       className="px-3 py-1.5 rounded-full text-[11px] font-bold transition-all bg-[#0ea5e9]/20 text-[#0ea5e9] hover:bg-[#0ea5e9]/30 disabled:opacity-80 cursor-pointer"
                      >
                        {isTestingTheme ? `Probando ${testTimeLeft}s` : 'Probar Claro'}
                      </button>
@@ -703,14 +894,27 @@ export default function AppearanceScreen({ setView }) {
                          }
                        }} 
                        disabled={isTestingTheme} 
-                       className="px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all bg-[#0ea5e9]/20 text-[#0ea5e9] hover:bg-[#0ea5e9]/30 disabled:opacity-80"
+                       className="px-3 py-1.5 rounded-full text-[11px] font-bold transition-all bg-[#0ea5e9]/20 text-[#0ea5e9] hover:bg-[#0ea5e9]/30 disabled:opacity-80 cursor-pointer"
                      >
                        {isTestingTheme ? `Probando ${testTimeLeft}s` : 'Probar Oscuro'}
+                     </button>
+                     <button
+                       type="button"
+                       onClick={handleShareReferral}
+                       className="px-3 py-1.5 rounded-full text-[11px] font-bold bg-accent text-accent-contrast hover:brightness-110 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                     >
+                       <FaShareNodes size={10} />
+                       <span>Invitar</span>
                      </button>
                    </div>
                 )}
               </div>
             </div>
+            {!isOceanUnlocked && (
+              <div className="mt-3 w-full h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                <div className="h-full rounded-full bg-gradient-to-r from-[#0ea5e9] to-[#0284c7] transition-all duration-500" style={{ width: `${Math.min(100, Math.round((referralCount / 11) * 100))}%` }} />
+              </div>
+            )}
             {isOceanActive && (
               <p className="text-[10px] sm:text-xs text-[#0ea5e9] font-bold mt-4 ml-1 flex items-center gap-1.5">
                 <Info size={14} /> El Tema Océano usa su propio acento vibrante (desactiva el acento manual).

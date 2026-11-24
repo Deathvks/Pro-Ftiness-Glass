@@ -1,4 +1,6 @@
 import { FontAwesome5 } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
+import { Image as ExpoImage } from 'expo-image';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
@@ -11,6 +13,7 @@ import {
   TextStyle,
   Modal,
   Platform,
+  Share,
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -121,10 +124,18 @@ const BASE_THEMES = [
 const MeteorIcon = ({ size, color }: { size: number; color: string }) => (
   <FontAwesome5 name="meteor" size={size} color={color} />
 );
+const DesertIcon = ({ size, color }: { size: number; color: string }) => (
+  <FontAwesome5 name="sun" size={size} color={color} solid />
+);
+const OceanIcon = ({ size, color }: { size: number; color: string }) => (
+  <FontAwesome5 name="umbrella-beach" size={size} color={color} />
+);
 
 type SpecialTheme = {
   key: string;
   label: string;
+  previewCaption: string;
+  previewImage: number;
   tint: string;
   requiredReferrals: number;
   icon: React.ComponentType<{ size: number; color: string }>;
@@ -138,6 +149,8 @@ const SPECIAL_THEMES: SpecialTheme[] = [
   {
     key: 'galaxy',
     label: 'Tema Galaxia',
+    previewCaption: 'Liquid Glass · Estelar',
+    previewImage: require('../../assets/images/galaxy.jpg'),
     tint: '#a855f7',
     requiredReferrals: 5,
     icon: MeteorIcon,
@@ -149,9 +162,11 @@ const SPECIAL_THEMES: SpecialTheme[] = [
   {
     key: 'desert',
     label: 'Tema Desierto',
-    tint: '#d2b48c',
+    previewCaption: 'Liquid Glass · Dunas',
+    previewImage: require('../../assets/images/desert.jpg'),
+    tint: '#f59e0b',
     requiredReferrals: 8,
-    icon: Sun,
+    icon: DesertIcon,
     variants: [
       { id: 'desert', label: 'Claro', testLabel: 'Probar Claro' },
       { id: 'desert-dark', label: 'Oscuro', testLabel: 'Probar Oscuro' },
@@ -163,9 +178,11 @@ const SPECIAL_THEMES: SpecialTheme[] = [
   {
     key: 'ocean',
     label: 'Tema Océano',
+    previewCaption: 'Liquid Glass · Océano',
+    previewImage: require('../../assets/images/ocean.jpg'),
     tint: '#0ea5e9',
     requiredReferrals: 11,
-    icon: Droplet,
+    icon: OceanIcon,
     variants: [
       { id: 'ocean', label: 'Claro', testLabel: 'Probar Claro' },
       { id: 'ocean-dark', label: 'Oscuro', testLabel: 'Probar Oscuro' },
@@ -299,6 +316,7 @@ export default function AppearanceScreen() {
   const startThemeTest = useAppStore(state => (state as any).startThemeTest);
   const isAdmin = useAppStore(state => state.userProfile?.role === 'admin');
   const referralCount = useAppStore(state => state.userProfile?.referralCount || 0);
+  const referralCode = useAppStore(state => state.userProfile?.referral_code || '');
   const userLevel = useAppStore(state => state.gamification?.level || state.userProfile?.level || 1);
 
   const colors = useAppColors();
@@ -353,6 +371,29 @@ export default function AppearanceScreen() {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       } catch {}
+    }
+  };
+
+  const referralLink = `https://profitnessglass.es/register?ref=${referralCode}`;
+
+  const handleCopyReferral = async () => {
+    tap();
+    try {
+      await Clipboard.setStringAsync(referralLink);
+      showToast('Enlace copiado (+1.000 XP por amigo)');
+    } catch {}
+  };
+
+  const handleShareReferral = async () => {
+    tap();
+    try {
+      await Share.share({
+        title: 'Únete a Pro Fitness Glass',
+        message: `¡Entrena y lleva tu nutrición conmigo en Pro Fitness Glass! Regístrate gratis con mi enlace: ${referralLink}`,
+        url: referralLink,
+      });
+    } catch {
+      void handleCopyReferral();
     }
   };
 
@@ -505,7 +546,7 @@ export default function AppearanceScreen() {
                   )}
                 </View>
                 <Text style={[styles.myThemesSubtitle, { color: colors.textSecondary }]}>
-                  {isMyThemesOpen ? 'Toca para solapar' : '3 temas exclusivos · Toca para desplegar'}
+                  {isMyThemesOpen ? 'Toca para solapar' : '3 temas exclusivos · +1.000 XP por amigo'}
                 </Text>
               </View>
             </View>
@@ -521,9 +562,68 @@ export default function AppearanceScreen() {
 
           {isMyThemesOpen && (
             <View style={{ marginTop: 16 }}>
-              <Text style={[styles.cardDescription, { color: colors.textSecondary, marginBottom: 14 }]}>
-                Temas exclusivos desbloqueados mediante retos y progreso en la aplicación.
-              </Text>
+              {/* Banner informativo + CTA de invitación */}
+              <View
+                style={[
+                  styles.referralShowcaseBanner,
+                  {
+                    backgroundColor: colors.tint + '18',
+                    borderColor: colors.tint + '40',
+                  },
+                ]}
+              >
+                <View style={styles.referralShowcaseTop}>
+                  <View style={[styles.referralShowcaseIcon, { backgroundColor: colors.tint }]}>
+                    <FontAwesome5 name="gift" size={16} color={getContrastTextColor(colors.tint)} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                      <Text style={[styles.referralShowcaseTitle, { color: colors.text }]}>
+                        Consigue temas y +1.000 XP
+                      </Text>
+                      <View style={[styles.referralXpPill, { backgroundColor: colors.tint + '24' }]}>
+                        <FontAwesome5 name="bolt" size={9} color={colors.tint} />
+                        <Text style={[styles.referralXpPillText, { color: colors.tint }]}>+1.000 XP / amigo</Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.referralShowcaseDesc, { color: colors.textSecondary }]}>
+                      Invita a amigos con tu enlace: ganas 1.000 XP al instante por cada registro y desbloqueas estos temas Liquid Glass ({referralCount} {referralCount === 1 ? 'amigo' : 'amigos'}).
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.referralShowcaseActions}>
+                  <Pressable
+                    onPress={() => void handleShareReferral()}
+                    style={({ pressed }) => [
+                      styles.referralInviteBtn,
+                      {
+                        backgroundColor: colors.tint,
+                        opacity: pressed ? 0.85 : 1,
+                      },
+                    ]}
+                  >
+                    <FontAwesome5 name="share-alt" size={12} color={getContrastTextColor(colors.tint)} />
+                    <Text style={[styles.referralInviteBtnText, { color: getContrastTextColor(colors.tint) }]}>
+                      Invitar (+1.000 XP)
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => void handleCopyReferral()}
+                    style={({ pressed }) => [
+                      styles.referralCopyBtn,
+                      {
+                        backgroundColor: subtleBg,
+                        borderColor: glassBorder,
+                        opacity: pressed ? 0.75 : 1,
+                      },
+                    ]}
+                  >
+                    <FontAwesome5 name="copy" size={12} color={colors.text} />
+                    <Text style={[styles.referralCopyBtnText, { color: colors.text }]}>Copiar</Text>
+                  </Pressable>
+                </View>
+              </View>
 
               {SPECIAL_THEMES.map((st, index) => {
                 const isUnlocked = referralCount >= st.requiredReferrals || isAdmin;
@@ -531,7 +631,9 @@ export default function AppearanceScreen() {
                 const STIcon = st.icon;
                 const pillText = isDark ? st.textDark : st.textLight;
                 const isSingle = st.variants.length === 1;
-                const showButtonsBelow = isMobile && !isSingle;
+                const showButtonsBelow = isMobile || !isUnlocked;
+                const remaining = Math.max(0, st.requiredReferrals - referralCount);
+                const progressPct = Math.min(100, Math.round((referralCount / st.requiredReferrals) * 100));
 
                 const renderVariantButton = (v: typeof st.variants[0], isFullWidth: boolean) => {
                   if (isUnlocked) {
@@ -618,9 +720,38 @@ export default function AppearanceScreen() {
                             backgroundColor: st.tint + '1A',
                             borderColor: st.tint + '4D',
                           }
-                        : { backgroundColor: subtleBg, borderColor: 'transparent' },
+                        : { backgroundColor: subtleBg, borderColor: glassBorder },
                     ]}
                   >
+                    {/* Vista previa visual real del tema */}
+                    <View style={styles.themePreviewBox}>
+                      <ExpoImage
+                        source={st.previewImage}
+                        style={StyleSheet.absoluteFill}
+                        contentFit="cover"
+                        transition={200}
+                      />
+                      <LinearGradient
+                        colors={['rgba(0,0,0,0.08)', 'rgba(0,0,0,0.68)']}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      <View style={styles.themePreviewBottom}>
+                        <View style={styles.themePreviewGlassChip}>
+                          <STIcon size={11} color="#ffffff" />
+                          <Text style={styles.themePreviewGlassChipText} numberOfLines={1}>
+                            {st.previewCaption}
+                          </Text>
+                        </View>
+                        <View style={styles.themePreviewCountPill}>
+                          <Text style={styles.themePreviewCountText}>
+                            {isUnlocked
+                              ? 'Desbloqueado'
+                              : `${Math.min(referralCount, st.requiredReferrals)}/${st.requiredReferrals} amigos`}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+
                     <View style={styles.themeRowInner}>
                       <View style={styles.themeRowLeft}>
                         <View
@@ -635,7 +766,7 @@ export default function AppearanceScreen() {
                             },
                           ]}
                         >
-                          <STIcon size={20} color={isUnlocked ? st.tint : colors.textSecondary} />
+                          <STIcon size={18} color={isUnlocked ? st.tint : colors.textSecondary} />
                         </View>
                         <View style={{ flex: 1, minWidth: 0 }}>
                           <Text
@@ -647,16 +778,16 @@ export default function AppearanceScreen() {
                           <View style={styles.themeRowStatus}>
                             {isUnlocked ? (
                               <>
-                                <LockOpen size={11} color="#22c55e" />
+                                <FontAwesome5 name="lock-open" size={10} color="#22c55e" />
                                 <Text style={[styles.themeRowStatusText, { color: colors.textSecondary }]}>
                                   Desbloqueado
                                 </Text>
                               </>
                             ) : (
                               <>
-                                <Lock size={11} color={colors.textSecondary} />
+                                <FontAwesome5 name="lock" size={10} color={colors.textSecondary} />
                                 <Text style={[styles.themeRowStatusText, { color: colors.textSecondary }]}>
-                                  Invita a {st.requiredReferrals} amigos
+                                  {remaining} {remaining === 1 ? 'amigo más' : 'amigos más'} para desbloquear
                                 </Text>
                               </>
                             )}
@@ -671,9 +802,42 @@ export default function AppearanceScreen() {
                       )}
                     </View>
 
+                    {!isUnlocked && (
+                      <View
+                        style={[
+                          styles.themeProgressTrack,
+                          { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.themeProgressFill,
+                            { width: `${progressPct}%`, backgroundColor: st.tint },
+                          ]}
+                        />
+                      </View>
+                    )}
+
                     {showButtonsBelow && (
                       <View style={styles.variantButtonsRowMobile}>
                         {st.variants.map(v => renderVariantButton(v, true))}
+                        {!isUnlocked && (
+                          <Pressable
+                            onPress={() => void handleShareReferral()}
+                            style={({ pressed }) => [
+                              styles.themeInviteInlineBtn,
+                              {
+                                backgroundColor: colors.tint,
+                                opacity: pressed ? 0.85 : 1,
+                              },
+                            ]}
+                          >
+                            <FontAwesome5 name="share-alt" size={11} color={getContrastTextColor(colors.tint)} />
+                            <Text style={[styles.themeInviteInlineBtnText, { color: getContrastTextColor(colors.tint) }]} numberOfLines={1}>
+                              Invitar
+                            </Text>
+                          </Pressable>
+                        )}
                       </View>
                     )}
 
@@ -1238,6 +1402,148 @@ const styles = StyleSheet.create({
   pillSmallText: {
     fontSize: 10.5,
     fontWeight: '700',
+  },
+
+  referralShowcaseBanner: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 14,
+    gap: 12,
+  },
+  referralShowcaseTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  referralShowcaseIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  referralShowcaseTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  referralXpPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  referralXpPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  referralShowcaseDesc: {
+    fontSize: 11.5,
+    lineHeight: 16,
+    marginTop: 4,
+  },
+  referralShowcaseActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  referralInviteBtn: {
+    flex: 1,
+    minWidth: 150,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+  },
+  referralInviteBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  referralCopyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  referralCopyBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  themePreviewBox: {
+    height: 92,
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginBottom: 12,
+    justifyContent: 'flex-end',
+    padding: 10,
+  },
+  themePreviewBottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  themePreviewGlassChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
+    flexShrink: 1,
+  },
+  themePreviewGlassChipText: {
+    color: '#ffffff',
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  themePreviewCountPill: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  themePreviewCountText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  themeProgressTrack: {
+    height: 5,
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginTop: 10,
+  },
+  themeProgressFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
+  themeInviteInlineBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 14,
+  },
+  themeInviteInlineBtnText: {
+    fontSize: 11.5,
+    fontWeight: '800',
   },
 
   switchRow: {
