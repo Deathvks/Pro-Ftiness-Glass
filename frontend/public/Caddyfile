@@ -76,6 +76,19 @@
         Cache-Control "public, max-age=31536000, immutable"
     }
 
+    # Crawlers sociales/SEO sobre artículos sin HTML prerenderizado en disco -> Open Graph dinámico del backend
+    @newsSocialCrawler {
+        path_regexp newsSlug ^/noticias/([^/]+)/?$
+        not file {path}/index.html
+        header_regexp User-Agent (?i)(WhatsApp|TelegramBot|Twitterbot|facebookexternalhit|Facebot|Discordbot|Slackbot|LinkedInBot|Pinterest|Applebot|vkShare|redditbot|Embedly|SkypeUriPreview|Googlebot|bingbot)
+    }
+    handle @newsSocialCrawler {
+        rewrite * /api/news/og/{re.newsSlug.1}
+        reverse_proxy https://profitnessglass.es {
+            header_up Host profitnessglass.es
+        }
+    }
+
     # Servidor de archivos estáticos y fallback SPA
     handle {
         file_server

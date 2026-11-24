@@ -41,7 +41,13 @@ const ForgotPasswordScreen = ({ showLogin }) => {
                 noIndex={true}
             />
 
-            <div className="auth-container flex flex-col items-center justify-start w-full pt-8 pb-16 px-4 animate-[fade-in_0.5s_ease-out]">
+            <div
+                className="auth-container flex flex-col items-center justify-start w-full px-4 animate-[fade-in_0.5s_ease-out]"
+                style={{
+                    paddingTop: 'calc(2rem + var(--safe-top, env(safe-area-inset-top, 0px)))',
+                    paddingBottom: 'calc(4rem + var(--safe-bottom, env(safe-area-inset-bottom, 0px)))'
+                }}
+            >
                 <div className="w-full max-w-md text-center">
                     
                     {!isSubmitted ? (

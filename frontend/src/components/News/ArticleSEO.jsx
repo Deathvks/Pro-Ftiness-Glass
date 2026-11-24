@@ -95,6 +95,8 @@ export default function ArticleSEO({ article }) {
       <meta property="og:description" content={description} />
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:image" content={image} />
+      <meta property="og:image:secure_url" content={image} />
+      <meta property="og:image:alt" content={article.title} />
       <meta property="og:locale" content="es_ES" />
       <meta property="article:published_time" content={publishedDate} />
       <meta property="article:modified_time" content={modifiedDate} />
@@ -107,6 +109,7 @@ export default function ArticleSEO({ article }) {
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
+      <meta name="twitter:image:alt" content={article.title} />
       <meta name="twitter:domain" content="profitnessglass.es" />
 
       {/* Google Structured Data JSON-LD */}

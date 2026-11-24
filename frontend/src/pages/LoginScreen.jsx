@@ -79,11 +79,11 @@ const SplitLayout = ({ children, onShowPolicy }) => (
         <div className="flex-1 min-h-0 w-full lg:w-[64%] xl:w-[68%] h-full overflow-y-auto overscroll-y-contain relative z-10 bg-bg-primary custom-scrollbar" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
             <div className="pointer-events-none absolute inset-x-0 top-0 h-64 lg:hidden bg-gradient-to-b from-accent/5 to-transparent"></div>
 
-            {/* Contenedor que centra si sobra espacio, baja el padding superior por debajo del Notch de iOS y da amplio padding inferior */}
+            {/* Contenedor con safe-area superior para no quedar bajo el notch ni barra de estado */}
             <div 
-                className="flex flex-col w-full px-4 sm:px-6 lg:px-8 justify-start items-center pt-4 sm:pt-6 lg:pt-8"
+                className="flex flex-col w-full px-4 sm:px-6 lg:px-8 justify-start items-center"
                 style={{ 
-
+                    paddingTop: 'calc(1.5rem + var(--safe-top, env(safe-area-inset-top, 0px)))',
                     paddingBottom: 'calc(5.5rem + var(--safe-bottom, env(safe-area-inset-bottom, 0px)))' 
                 }}
             >
@@ -645,7 +645,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                 <GlassCard className="glass p-6 sm:p-10 rounded-[32px] shadow-2xl">
                     <form onSubmit={handle2FASubmit} className="flex flex-col gap-6">
                         {errors.api && <p className="text-center text-red text-sm">{errors.api}</p>}
-                        <div className="flex justify-between gap-2">
+                        <div className="flex justify-center gap-1.5 sm:gap-2">
                             {otp.map((digit, index) => (
                                 <input
                                     key={index}
@@ -658,7 +658,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                                     onKeyDown={(e) => handleOtpKeyDown(e, index)}
                                     onPaste={handlePaste}
                                     onFocus={(e) => e.target.select()}
-                                    className={`w-11 h-14 sm:w-14 sm:h-16 rounded-[16px] border-2 text-xl sm:text-2xl font-bold text-center outline-none transition-all bg-black/5 dark:bg-white/5 text-text-primary caret-accent ${digit ? 'border-accent shadow-lg shadow-accent/20' : 'border-glass-border focus:border-accent focus:shadow-lg focus:shadow-accent/20'}`}
+                                    className={`flex-1 min-w-0 max-w-[3.25rem] h-13 sm:h-16 rounded-[16px] border-2 text-xl sm:text-2xl font-bold text-center outline-none transition-all bg-black/5 dark:bg-white/5 text-text-primary caret-accent ${digit ? 'border-accent shadow-lg shadow-accent/20' : 'border-glass-border focus:border-accent focus:shadow-lg focus:shadow-accent/20'}`}
                                 />
                             ))}
                         </div>

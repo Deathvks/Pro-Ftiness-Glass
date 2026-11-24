@@ -205,12 +205,12 @@ function injectMeta(html, {
   // Canonical
   output = output.replace(/<link\s+rel=["']canonical["'][\s\S]*?>/i, `<link rel="canonical" href="${safeUrl}" />`);
 
-  // Open Graph
+  // Open Graph (eliminamos duplicados/valores por defecto de index.html antes de inyectar los del artículo)
   output = output.replace(/<meta\s+property=["']og:type["'][\s\S]*?>/i, `<meta property="og:type" content="${type}" />`);
   output = output.replace(/<meta\s+property=["']og:url["'][\s\S]*?>/i, `<meta property="og:url" content="${safeUrl}" />`);
   output = output.replace(/<meta\s+property=["']og:title["'][\s\S]*?>/i, `<meta property="og:title" content="${safeTitle} | Pro Fitness Glass" />`);
   output = output.replace(/<meta\s+property=["']og:description["'][\s\S]*?>/i, `<meta property="og:description" content="${safeDesc}" />`);
-  output = output.replace(/<meta\s+property=["']og:image:alt["'][\s\S]*?>/i, '');
+  output = output.replace(/<meta\s+property=["']og:image:(?:secure_url|type|width|height|alt)["'][\s\S]*?>\s*/gi, '');
   output = output.replace(
     /<meta\s+property=["']og:image["'][\s\S]*?>/i,
     `<meta property="og:image" content="${safeImg}" />\n  <meta property="og:image:secure_url" content="${safeImg}" />\n  <meta property="og:image:width" content="1200" />\n  <meta property="og:image:height" content="630" />\n  <meta property="og:image:alt" content="${safeTitle}" />`
@@ -219,7 +219,11 @@ function injectMeta(html, {
   // Twitter
   output = output.replace(/<meta\s+name=["']twitter:title["'][\s\S]*?>/i, `<meta name="twitter:title" content="${safeTitle} | Pro Fitness Glass" />`);
   output = output.replace(/<meta\s+name=["']twitter:description["'][\s\S]*?>/i, `<meta name="twitter:description" content="${safeDesc}" />`);
-  output = output.replace(/<meta\s+name=["']twitter:image["'][\s\S]*?>/i, `<meta name="twitter:image" content="${safeImg}" />`);
+  output = output.replace(/<meta\s+name=["']twitter:image:alt["'][\s\S]*?>\s*/gi, '');
+  output = output.replace(
+    /<meta\s+name=["']twitter:image["'][\s\S]*?>/i,
+    `<meta name="twitter:image" content="${safeImg}" />\n  <meta name="twitter:image:alt" content="${safeTitle}" />`
+  );
 
   // Inyectar Schema.org específico para Article cumpliendo estándares de Google Rich Results
   if (type === 'article') {

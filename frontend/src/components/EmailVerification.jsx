@@ -122,8 +122,8 @@ const EmailVerification = ({ email, onBack, onSuccess, backButtonText = 'Volver 
   };
 
   return <ModalPortal>
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
-            <div className="w-full max-w-sm text-center">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out] !pt-[calc(1rem+var(--safe-top,env(safe-area-inset-top,0px)))] !pb-[calc(1rem+var(--safe-bottom,env(safe-area-inset-bottom,0px)))]">
+            <div className="w-full max-w-sm text-center my-auto">
                 <div className="mb-8">
                     <div className="mx-auto w-16 h-16 bg-accent rounded-full flex items-center justify-center mb-4">
                         <Mail className="w-8 h-8 text-bg-secondary" />

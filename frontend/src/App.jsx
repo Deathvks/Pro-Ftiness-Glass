@@ -984,10 +984,14 @@ const extractCapacitorDeepLinkPath = (rawUrl) => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
             <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
             <meta property="og:type" content="website" />
-            <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+            {!location.pathname.startsWith('/noticias/') && !location.pathname.startsWith('/share/') && (
+              <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+            )}
             <meta property="og:site_name" content="Pro Fitness Glass" />
             <meta property="twitter:card" content="summary_large_image" />
-            <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
+            {!location.pathname.startsWith('/noticias/') && !location.pathname.startsWith('/share/') && (
+              <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
+            )}
           </Helmet>
 
       {sessionExpired && !isPublicRoute && (

@@ -85,11 +85,11 @@ const SplitLayout = ({ children, onShowPolicy }) => (
         <div className="flex-1 min-h-0 w-full lg:w-[64%] xl:w-[68%] h-full overflow-y-auto overscroll-y-contain relative z-10 bg-bg-primary custom-scrollbar" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
             <div className="pointer-events-none absolute inset-x-0 top-0 h-64 lg:hidden bg-gradient-to-b from-accent/5 to-transparent"></div>
 
-            {/* Contenedor que centra con my-auto si sobra espacio y baja el padding para evitar que se quede a mitad */}
+            {/* Contenedor con safe-area superior para no quedar bajo el notch ni barra de estado */}
             <div 
-                className="flex flex-col w-full px-4 sm:px-6 lg:px-8 justify-start items-center pt-4 sm:pt-6 lg:pt-8"
+                className="flex flex-col w-full px-4 sm:px-6 lg:px-8 justify-start items-center"
                 style={{ 
-
+                    paddingTop: 'calc(1.5rem + var(--safe-top, env(safe-area-inset-top, 0px)))',
                     paddingBottom: 'calc(5.5rem + var(--safe-bottom, env(safe-area-inset-bottom, 0px)))' 
                 }}
             >

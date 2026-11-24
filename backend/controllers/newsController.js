@@ -53,6 +53,81 @@ export async function getEditorialCover(req, res, next) {
   }
 }
 
+const escapeHtmlMeta = (str = '') =>
+  String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+export async function getNewsOpenGraphHtml(req, res, next) {
+  try {
+    const slug = String(req.params.slug || '').trim();
+    if (!slug) return res.sendStatus(404);
+
+    const article = await News.findOne({
+      where: { slug, is_published: true },
+      attributes: ['slug', 'title', 'seo_title', 'summary', 'seo_description', 'image_url', 'category', 'published_at', 'updatedAt'],
+      raw: true,
+    });
+    if (!article) return res.sendStatus(404);
+
+    const baseUrl = (process.env.FRONTEND_URL || 'https://profitnessglass.es').replace(/\/+$/, '');
+    const pageUrl = `${baseUrl}/noticias/${encodeURIComponent(article.slug)}`;
+    const fallbackCover = `${baseUrl}/api/news/cover/${encodeURIComponent(article.slug)}`;
+    const rawImg = article.image_url?.trim();
+    let imageUrl = fallbackCover;
+    if (
+      rawImg &&
+      !/(?:^|\/)entrenamiento\.png(?:[?#]|$)|photo-(?:1550572017-edd951aa8f72|1510519138197-06b8628cbf4f)/i.test(rawImg)
+    ) {
+      if (rawImg.startsWith('http://') || rawImg.startsWith('https://')) {
+        imageUrl = rawImg;
+      } else {
+        imageUrl = `${baseUrl}${rawImg.startsWith('/') ? '' : '/'}${rawImg}`;
+      }
+    }
+
+    const title = escapeHtmlMeta(`${article.seo_title || article.title} | Pro Fitness Glass`);
+    const desc = escapeHtmlMeta(article.seo_description || article.summary || 'Guía de entrenamiento y nutrición en Pro Fitness Glass.');
+    const safeUrl = escapeHtmlMeta(pageUrl);
+    const safeImg = escapeHtmlMeta(imageUrl);
+    const safeAlt = escapeHtmlMeta(article.title || 'Pro Fitness Glass');
+
+    res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
+    return res.type('html').send(`<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>${title}</title>
+  <meta name="description" content="${desc}" />
+  <link rel="canonical" href="${safeUrl}" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Pro Fitness Glass" />
+  <meta property="og:locale" content="es_ES" />
+  <meta property="og:title" content="${title}" />
+  <meta property="og:description" content="${desc}" />
+  <meta property="og:url" content="${safeUrl}" />
+  <meta property="og:image" content="${safeImg}" />
+  <meta property="og:image:secure_url" content="${safeImg}" />
+  <meta property="og:image:alt" content="${safeAlt}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${title}" />
+  <meta name="twitter:description" content="${desc}" />
+  <meta name="twitter:image" content="${safeImg}" />
+  <meta name="twitter:image:alt" content="${safeAlt}" />
+  <meta http-equiv="refresh" content="0;url=${safeUrl}" />
+</head>
+<body>
+  <p><a href="${safeUrl}">${safeAlt}</a></p>
+</body>
+</html>`);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export const getPublicNews = async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);

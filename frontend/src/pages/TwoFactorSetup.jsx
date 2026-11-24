@@ -238,8 +238,8 @@ const TwoFactorSetup = ({ setView }) => {
     const data = content[infoModal];
 
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
-        <div className="relative w-full max-w-md bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] p-6 sm:p-8 shadow-2xl animate-[scale-in_0.2s_ease-out]">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto p-4 !pt-[calc(1rem+var(--safe-top,env(safe-area-inset-top,0px)))] !pb-[calc(1rem+var(--safe-bottom,env(safe-area-inset-bottom,0px)))] bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
+        <div className="relative my-auto w-full max-w-md bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] p-6 sm:p-8 shadow-2xl animate-[scale-in_0.2s_ease-out]">
           <button
             onClick={() => setInfoModal(null)}
             className="absolute top-5 right-5 text-text-secondary hover:text-text-primary transition-colors p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full"
@@ -274,8 +274,8 @@ const TwoFactorSetup = ({ setView }) => {
     if (!showDisableConfirm) return null;
 
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
-        <div className="relative w-full max-w-sm bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] p-6 sm:p-8 shadow-2xl animate-[scale-in_0.2s_ease-out]">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto p-4 !pt-[calc(1rem+var(--safe-top,env(safe-area-inset-top,0px)))] !pb-[calc(1rem+var(--safe-bottom,env(safe-area-inset-bottom,0px)))] bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
+        <div className="relative my-auto w-full max-w-sm bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] p-6 sm:p-8 shadow-2xl animate-[scale-in_0.2s_ease-out]">
 
           <div className="flex flex-col items-center text-center mb-8">
             <div className="w-20 h-20 rounded-[24px] bg-red/10 ring-1 ring-red/30 flex items-center justify-center text-red mb-5 shadow-sm">
