@@ -125,28 +125,39 @@ function markdownToSemanticHtml(md = '') {
   return htmlParts.join('\n');
 }
 
+const isDistOnly = () =>
+  process.argv.includes('--dist-only') || process.env.PRERENDER_DIST_ONLY === '1';
+
 async function fetchArticles() {
   let apiArticles = [];
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
-    const res = await fetch(`${API_URL}/news?limit=100`, {
-      signal: controller.signal,
-      headers: { 'Accept': 'application/json' }
-    });
-    clearTimeout(timeout);
-    if (res.ok) {
+    let page = 1;
+    let totalPages = 1;
+    while (page <= totalPages && page <= 20) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(`${API_URL}/news?page=${page}&limit=30`, {
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json' }
+      });
+      clearTimeout(timeout);
+      if (!res.ok) break;
       const data = await res.json();
       if (Array.isArray(data.news) && data.news.length > 0) {
-        apiArticles = data.news;
-        console.log(`[Prerender] Obtenidos ${data.news.length} artículos desde la API.`);
+        apiArticles.push(...data.news);
       }
+      totalPages = Math.max(1, Number(data.totalPages || 1));
+      if (!Array.isArray(data.news) || data.news.length === 0) break;
+      page++;
+    }
+    if (apiArticles.length > 0) {
+      console.log(`[Prerender] Obtenidos ${apiArticles.length} artículos desde la API.`);
     }
   } catch (err) {
     console.warn('[Prerender] No se pudo consultar la API remota:', err.message);
   }
 
-  // Cargar artículos desde cachedNews.json para combinar y asegurar que NINGÚN artículo falte
+  // Cargar artículos desde cachedNews.json para combinar si la API no devolvió todos
   const cachePath = path.resolve(__dirname, '../src/data/cachedNews.json');
   let cachedArticles = [];
   if (fs.existsSync(cachePath)) {
@@ -160,20 +171,25 @@ async function fetchArticles() {
     }
   }
 
-  // Fusión por slug: primero locales, sobreescritos por API si existen
-  const combinedMap = new Map();
-  cachedArticles.forEach(a => {
-    if (a.slug) combinedMap.set(a.slug, a);
-  });
-  apiArticles.forEach(a => {
-    if (a.slug) {
-      combinedMap.set(a.slug, { ...(combinedMap.get(a.slug) || {}), ...a });
-    }
-  });
+  // Si la API respondió con el listado completo, confiar en sus slugs publicados para poder podar borrados;
+  // en caso contrario (ej. build offline), usar fusión con caché local.
+  const mergedMap = new Map();
+  if (apiArticles.length > 0) {
+    const cachedBySlug = new Map(cachedArticles.filter(a => a.slug).map(a => [a.slug, a]));
+    apiArticles.forEach(a => {
+      if (a.slug) {
+        mergedMap.set(a.slug, { ...(cachedBySlug.get(a.slug) || {}), ...a });
+      }
+    });
+  } else {
+    cachedArticles.forEach(a => {
+      if (a.slug) mergedMap.set(a.slug, a);
+    });
+  }
 
-  const merged = Array.from(combinedMap.values());
+  const merged = Array.from(mergedMap.values());
   console.log(`[Prerender] Total de artículos únicos a prerenderizar: ${merged.length}`);
-  if (merged.length >= cachedArticles.length && apiArticles.length > 0) {
+  if (!isDistOnly() && apiArticles.length > 0) {
     try {
       fs.writeFileSync(cachePath, JSON.stringify(merged, null, 2), 'utf8');
       console.log(`[Prerender] Actualizado cachedNews.json con ${merged.length} noticias.`);
@@ -192,32 +208,44 @@ function injectMeta(html, {
   type = 'article',
   category = 'Fitness',
   datePublished,
-  dateModified
+  dateModified,
+  robots = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'
 }) {
   const safeTitle = escapeHtml(title);
   const safeDesc = escapeHtml(description);
   const safeImg = escapeUrlAttr(image);
   const safeUrl = escapeUrlAttr(url);
+  const isNoIndex = String(robots).toLowerCase().includes('noindex');
 
   let output = html;
 
   // Title
   output = output.replace(/<title>[\s\S]*?<\/title>/i, `<title>${safeTitle} | Pro Fitness Glass</title>`);
 
-  // Meta description
+  // Meta description & robots
   output = output.replace(/<meta\s+name=["']description["'][\s\S]*?>/i, `<meta name="description" content="${safeDesc}" />`);
+  output = output.replace(/<meta\s+name=["']robots["'][\s\S]*?>/i, `<meta name="robots" content="${escapeHtml(robots)}" />`);
 
-  // Canonical y hreflang propios de la página (evitar heredar los de la portada "/")
-  output = output.replace(
-    /<link\s+rel=["']canonical["'][\s\S]*?>/i,
-    `<link rel="canonical" href="${safeUrl}" data-rh="true" />`
-  );
-  for (const lang of ['es', 'x-default']) {
-    const hreflangPattern = `<link\\s+(?=[^>]*\\brel=["']alternate["'])(?=[^>]*\\bhreflang=["']${lang}["'])[^>]*>`;
-    const replacement = `<link rel="alternate" hreflang="${lang}" href="${safeUrl}" data-rh="true" />`;
-    output = new RegExp(hreflangPattern, 'i').test(output)
-      ? output.replace(new RegExp(hreflangPattern, 'gi'), replacement)
-      : output.replace(/<\/head>/i, `  ${replacement}\n</head>`);
+  // Canonical y hreflang propios (si es noindex/404, retirarlos para no apuntar a "/")
+  if (isNoIndex || !url) {
+    output = output.replace(/<link\s+rel=["']canonical["'][\s\S]*?>\s*/gi, '');
+    output = output.replace(/<meta\s+property=["']og:url["'][\s\S]*?>\s*/gi, '');
+    for (const lang of ['es', 'x-default']) {
+      const hreflangPattern = `<link\\s+(?=[^>]*\\brel=["']alternate["'])(?=[^>]*\\bhreflang=["']${lang}["'])[^>]*>\\s*`;
+      output = output.replace(new RegExp(hreflangPattern, 'gi'), '');
+    }
+  } else {
+    output = output.replace(
+      /<link\s+rel=["']canonical["'][\s\S]*?>/i,
+      `<link rel="canonical" href="${safeUrl}" data-rh="true" />`
+    );
+    for (const lang of ['es', 'x-default']) {
+      const hreflangPattern = `<link\\s+(?=[^>]*\\brel=["']alternate["'])(?=[^>]*\\bhreflang=["']${lang}["'])[^>]*>`;
+      const replacement = `<link rel="alternate" hreflang="${lang}" href="${safeUrl}" data-rh="true" />`;
+      output = new RegExp(hreflangPattern, 'i').test(output)
+        ? output.replace(new RegExp(hreflangPattern, 'gi'), replacement)
+        : output.replace(/<\/head>/i, `  ${replacement}\n</head>`);
+    }
   }
 
   // Open Graph (eliminamos duplicados/valores por defecto de index.html antes de inyectar los del artículo)
@@ -316,31 +344,7 @@ ${items}
 </rss>`;
 }
 
-async function main() {
-  if (!fs.existsSync(indexPath)) {
-    console.error('[Prerender] Error: dist/index.html no existe. Ejecuta primero vite build.');
-    return;
-  }
-
-  const baseHtml = fs.readFileSync(indexPath, 'utf8');
-  const articles = await fetchArticles();
-
-  // 1. Generar feed RSS 2.0 y guardarlo en dist/rss.xml y public/rss.xml
-  try {
-    const rssXml = generateRssFeed(articles);
-    fs.writeFileSync(path.join(distDir, 'rss.xml'), rssXml, 'utf8');
-    if (fs.existsSync(publicDir)) {
-      fs.writeFileSync(path.join(publicDir, 'rss.xml'), rssXml, 'utf8');
-    }
-    console.log('[Prerender] Generado dist/rss.xml y public/rss.xml con éxito.');
-  } catch (err) {
-    console.warn('[Prerender] Error generando feed RSS:', err.message);
-  }
-
-  // 2. Prerender de la sección principal /noticias con enlaces a todos los artículos
-  const newsIndexDir = path.join(distDir, 'noticias');
-  if (!fs.existsSync(newsIndexDir)) fs.mkdirSync(newsIndexDir, { recursive: true });
-
+export function buildNewsIndexHtml(baseHtml, articles) {
   const articleCardsHtml = articles.map(a => `
       <article style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.25rem; padding: 1.5rem; transition: transform 0.2s;">
         <span style="display: inline-block; font-size: 0.75rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">${escapeHtml(a.category || 'Fitness')}</span>
@@ -369,73 +373,33 @@ async function main() {
     </section>
   </main>`;
 
-  let newsIndexHtml = injectMeta(baseHtml, {
+  const newsIndexHtml = injectMeta(baseHtml, {
     title: 'Noticias y Guías de Élite de Fitness y Nutrición',
     description: 'Aprende con artículos basados en evidencia científica, optimiza tus comidas y domina tu rendimiento en el gimnasio con Pro Fitness Glass.',
     image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/noticias`,
     type: 'website'
   });
-  newsIndexHtml = injectPrerenderBody(newsIndexHtml, newsBodyHtml, 'NewsListPage');
-  fs.writeFileSync(path.join(newsIndexDir, 'index.html'), newsIndexHtml, 'utf8');
-  console.log('[Prerender] Generado dist/noticias/index.html con lista de artículos semánticos.');
+  return injectPrerenderBody(newsIndexHtml, newsBodyHtml, 'NewsListPage');
+}
 
-  // 3. Prerender de cada artículo individual con su contenido completo en el body
-  console.log(`[Prerender] Procesando ${articles.length} artículos con contenido semántico completo...`);
-
-  // Mapa de caché local para obtener el contenido markdown completo
-  const cachePath = path.resolve(__dirname, '../src/data/cachedNews.json');
-  const cachedMap = new Map();
-  if (fs.existsSync(cachePath)) {
-    try {
-      const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
-      if (Array.isArray(cached)) {
-        cached.forEach(a => { if (a.slug) cachedMap.set(a.slug, a); });
-      }
-    } catch (e) {
-      console.warn('[Prerender] Error leyendo cachedNews.json:', e.message);
-    }
+export function buildArticleHtml(baseHtml, article, contentOverride = '') {
+  const slug = String(article.slug || '').trim();
+  let articleImage = getNewsCoverUrls(article, BASE_URL + '/api').src;
+  if (articleImage && !articleImage.startsWith('http')) {
+    articleImage = `${BASE_URL}${articleImage.startsWith('/') ? '' : '/'}${articleImage}`;
   }
 
-  let count = 0;
-  for (const article of articles) {
-    const slug = (article.slug || '').trim();
-    if (!slug) continue;
-    if (!/^[a-zA-Z0-9_-]+$/.test(slug)) continue;
+  const pubDate = article.published_at || article.createdAt || new Date().toISOString();
+  const pubIso = new Date(pubDate).toISOString();
+  const pubFormatted = new Date(pubDate).toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
 
-    const articleDir = path.join(distDir, 'noticias', slug);
-    if (!fs.existsSync(articleDir)) fs.mkdirSync(articleDir, { recursive: true });
-
-    let articleImage = getNewsCoverUrls(article, BASE_URL + '/api').src;
-    if (!articleImage.startsWith('http')) {
-      articleImage = `${BASE_URL}${articleImage.startsWith('/') ? '' : '/'}${articleImage}`;
-    }
-
-    const pubDate = article.published_at || article.createdAt || new Date().toISOString();
-    const pubIso = new Date(pubDate).toISOString();
-    const pubFormatted = new Date(pubDate).toLocaleDateString('es-ES', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-
-    // Obtener contenido completo desde el artículo, caché local o API remota
-    let content = article.content || cachedMap.get(slug)?.content || '';
-    if (!content) {
-      try {
-        const artRes = await fetch(`${API_URL}/news/article/${slug}`);
-        if (artRes.ok) {
-          const artData = await artRes.json();
-          content = artData.article?.content || artData.news?.content || artData.content || '';
-        }
-      } catch (e) {
-        console.warn(`[Prerender] No se pudo obtener contenido remoto para ${slug}:`, e.message);
-      }
-    }
-
-    const semanticArticleHtml = markdownToSemanticHtml(content);
-
-    const articleBodyHtml = `
+  const semanticArticleHtml = markdownToSemanticHtml(contentOverride || article.content || '');
+  const articleBodyHtml = `
   <article style="padding: 2.5rem 1.5rem; max-width: 860px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.8;">
     <nav style="margin-bottom: 2rem;">
       <a href="/noticias" style="color: #38bdf8; text-decoration: none; font-weight: 700; font-size: 0.95rem;">← Volver a Noticias y Artículos</a>
@@ -461,23 +425,123 @@ async function main() {
     </footer>
   </article>`;
 
-    let articleHtml = injectMeta(baseHtml, {
-      title: article.title,
-      description: article.summary || article.seo_description || 'Guía científica de entrenamiento y nutrición deportiva en Pro Fitness Glass.',
-      image: articleImage,
-      url: `${BASE_URL}/noticias/${slug}`,
-      type: 'article',
-      category: article.category,
-      datePublished: article.published_at || article.createdAt,
-      dateModified: article.updatedAt || article.published_at || article.createdAt
-    });
+  const articleHtml = injectMeta(baseHtml, {
+    title: article.seo_title || article.title,
+    description: article.seo_description || article.summary || 'Guía científica de entrenamiento y nutrición deportiva en Pro Fitness Glass.',
+    image: articleImage,
+    url: `${BASE_URL}/noticias/${slug}`,
+    type: 'article',
+    category: article.category,
+    datePublished: article.published_at || article.createdAt,
+    dateModified: article.updatedAt || article.published_at || article.createdAt
+  });
+  return injectPrerenderBody(articleHtml, articleBodyHtml, 'NewsDetailPage');
+}
 
-    articleHtml = injectPrerenderBody(articleHtml, articleBodyHtml, 'NewsDetailPage');
-    fs.writeFileSync(path.join(articleDir, 'index.html'), articleHtml, 'utf8');
+export function buildNotFoundNewsHtml(baseHtml) {
+  const notFoundBody = `
+  <main style="padding: 4rem 1.5rem; max-width: 720px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center;">
+    <p style="font-size: 0.85rem; font-weight: 800; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem;">Error 404</p>
+    <h1 style="font-size: 2.25rem; font-weight: 900; margin: 0 0 1rem; letter-spacing: -0.02em;">Artículo no encontrado</h1>
+    <p style="font-size: 1.05rem; color: #94a3b8; line-height: 1.6; margin-bottom: 2rem;">El artículo que buscas no existe, ha sido trasladado o ya no está disponible.</p>
+    <a href="/noticias" style="display: inline-block; padding: 0.85rem 1.75rem; border-radius: 9999px; background: #38bdf8; color: #0f172a; font-weight: 800; text-decoration: none; font-size: 0.95rem;">Volver a Noticias y Guías</a>
+  </main>`;
+
+  const notFoundHtml = injectMeta(baseHtml, {
+    title: 'Artículo no encontrado',
+    description: 'El artículo solicitado no está disponible en Pro Fitness Glass.',
+    image: `${BASE_URL}/og-preview.jpg`,
+    url: '',
+    type: 'website',
+    robots: 'noindex, nofollow'
+  });
+  return injectPrerenderBody(notFoundHtml, notFoundBody, 'NewsDetailPage');
+}
+
+export function pruneStaleNewsDirs(validSlugs) {
+  const newsIndexDir = path.join(distDir, 'noticias');
+  if (!fs.existsSync(newsIndexDir)) return 0;
+  let removed = 0;
+  for (const entry of fs.readdirSync(newsIndexDir)) {
+    if (!/^[a-zA-Z0-9_-]+$/.test(entry)) continue;
+    const fullPath = path.join(newsIndexDir, entry);
+    if (fs.statSync(fullPath).isDirectory() && !validSlugs.has(entry)) {
+      fs.rmSync(fullPath, { recursive: true, force: true });
+      removed++;
+    }
+  }
+  return removed;
+}
+
+export async function prerenderNewsArtifacts({ articles, distOnly = isDistOnly() } = {}) {
+  if (!fs.existsSync(indexPath)) {
+    return { skipped: true, reason: 'missing_dist_index' };
+  }
+  const baseHtml = fs.readFileSync(indexPath, 'utf8');
+  const resolvedArticles = Array.isArray(articles) ? articles : await fetchArticles();
+
+  try {
+    const rssXml = generateRssFeed(resolvedArticles);
+    fs.writeFileSync(path.join(distDir, 'rss.xml'), rssXml, 'utf8');
+    if (!distOnly && fs.existsSync(publicDir)) {
+      fs.writeFileSync(path.join(publicDir, 'rss.xml'), rssXml, 'utf8');
+    }
+  } catch (err) {
+    console.warn('[Prerender] Error generando feed RSS:', err.message);
+  }
+
+  const newsIndexDir = path.join(distDir, 'noticias');
+  if (!fs.existsSync(newsIndexDir)) fs.mkdirSync(newsIndexDir, { recursive: true });
+  fs.writeFileSync(path.join(newsIndexDir, 'index.html'), buildNewsIndexHtml(baseHtml, resolvedArticles), 'utf8');
+
+  const cachePath = path.resolve(__dirname, '../src/data/cachedNews.json');
+  const cachedMap = new Map();
+  if (!resolvedArticles.every(a => a.content) && fs.existsSync(cachePath)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+      if (Array.isArray(cached)) cached.forEach(a => { if (a.slug) cachedMap.set(a.slug, a); });
+    } catch {}
+  }
+
+  const validSlugs = new Set();
+  let count = 0;
+  for (const article of resolvedArticles) {
+    const slug = (article.slug || '').trim();
+    if (!slug || !/^[a-zA-Z0-9_-]+$/.test(slug)) continue;
+    validSlugs.add(slug);
+
+    const articleDir = path.join(distDir, 'noticias', slug);
+    if (!fs.existsSync(articleDir)) fs.mkdirSync(articleDir, { recursive: true });
+
+    let content = article.content || cachedMap.get(slug)?.content || '';
+    if (!content) {
+      try {
+        const artRes = await fetch(`${API_URL}/news/article/${slug}`);
+        if (artRes.ok) {
+          const artData = await artRes.json();
+          content = artData.article?.content || artData.news?.content || artData.content || '';
+        }
+      } catch (e) {
+        console.warn(`[Prerender] No se pudo obtener contenido remoto para ${slug}:`, e.message);
+      }
+    }
+
+    fs.writeFileSync(path.join(articleDir, 'index.html'), buildArticleHtml(baseHtml, article, content), 'utf8');
     count++;
   }
 
-  console.log(`[Prerender] ¡Listo! ${count} artículos prerenderizados con contenido semántico completo en dist/noticias/:slug/index.html`);
+  const removed = validSlugs.size > 0 ? pruneStaleNewsDirs(validSlugs) : 0;
+  return { skipped: false, count, removed, baseHtml };
+}
+
+async function main() {
+  const result = await prerenderNewsArtifacts();
+  if (result.skipped) {
+    console.error('[Prerender] Error: dist/index.html no existe. Ejecuta primero vite build.');
+    return;
+  }
+  const { baseHtml, count, removed } = result;
+  console.log(`[Prerender] ¡Listo! ${count} artículos prerenderizados en dist/noticias/:slug/index.html${removed ? ` (${removed} obsoletos eliminados)` : ''}.`);
 
   // 4. Prerender de las Calculadoras Públicas de Gimnasio (/calculadora-1rm y /calculadora-calorias-macros)
   const calc1rmDir = path.join(distDir, 'calculadora-1rm');
@@ -937,6 +1001,12 @@ async function main() {
 
 }
 
-main().catch(err => {
-  console.error('[Prerender] Error:', err);
-});
+const isMainModule =
+  Boolean(process.argv[1]) && path.resolve(process.argv[1]) === __filename;
+
+if (isMainModule) {
+  main().catch(err => {
+    console.error('[Prerender] Error:', err);
+    process.exitCode = 1;
+  });
+}

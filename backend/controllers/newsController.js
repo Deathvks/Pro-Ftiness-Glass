@@ -4,6 +4,7 @@ import { Op } from 'sequelize';
 import models from '../models/index.js';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { coverForPublication, editorialCoverPath, getUsedNewsCoverIdentities, isEditorialCover, renderEditorialCover, selectNewsCover, serializeCoverWrite } from '../services/newsCoverService.js';
+import { scheduleNewsPrerender, serveDynamicNewsHtml } from '../services/newsPrerenderService.js';
 
 import { UAParser } from 'ua-parser-js';
 import jwt from 'jsonwebtoken';
@@ -36,6 +37,8 @@ export const invalidateNewsCache = () => {
   articleSlugCache.clear();
   publicListCache.clear();
 };
+
+export { serveDynamicNewsHtml };
 
 export async function getEditorialCover(req, res, next) {
   try {
@@ -898,6 +901,7 @@ export const createNews = async (req, res) => {
       });
     });
     invalidateNewsCache();
+    scheduleNewsPrerender('createNews');
 
     // Notificar a motores de búsqueda (IndexNow / Bing / Yandex)
     if (newArticle.is_published) {
@@ -974,6 +978,7 @@ export const updateNews = async (req, res) => {
       });
     });
     invalidateNewsCache();
+    scheduleNewsPrerender('updateNews');
 
     return res.json({ message: 'Noticia actualizada con éxito.', article });
   } catch (error) {
@@ -996,6 +1001,7 @@ export const deleteNews = async (req, res) => {
 
     invalidateNewsCache();
     await article.destroy();
+    scheduleNewsPrerender('deleteNews');
     return res.json({ message: 'Noticia eliminada correctamente.' });
   } catch (error) {
     console.error('Error al eliminar noticia:', error);

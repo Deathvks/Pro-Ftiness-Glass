@@ -46,7 +46,8 @@ import chatRoutes from './routes/chat.js';
 import securityRoutes from './routes/securityRoutes.js';
 import newsRoutes from './routes/news.js';
 import emailPreferencesRoutes from './routes/emailPreferences.js';
-import { seedInitialNewsIfEmpty, getSitemapNews, getRSSNews } from './controllers/newsController.js';
+import { seedInitialNewsIfEmpty, getSitemapNews, getRSSNews, serveDynamicNewsHtml } from './controllers/newsController.js';
+import { scheduleNewsPrerender } from './services/newsPrerenderService.js';
 import { checkBlacklist, sniffingDetector } from './middleware/securityMonitor.js';
 import { startCronJobs } from './services/cronService.js';
 import { publicApiOrigin } from './config/mailContacts.js';
@@ -308,6 +309,9 @@ app.get('/f478a2e99b0c41d6832fb91e0a8d5c3f.txt', (req, res) => {
   res.type('text/plain').send('f478a2e99b0c41d6832fb91e0a8d5c3f');
 });
 
+// Rutas HTML dinámicas para /noticias y /noticias/:slug (fallback SEO para artículos nuevos y 404 real)
+app.get(['/noticias', '/noticias/:slug'], serveDynamicNewsHtml);
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
@@ -372,6 +376,7 @@ const isProductionDB = process.env.NODE_ENV === 'production' || !!process.env.MY
     // Retroactively send bot replies for "sin compromiso" users
     chatController.runRetroactiveBotReplies();
     seedInitialNewsIfEmpty();
+    setTimeout(() => scheduleNewsPrerender('startup'), 3000);
   })
   .catch(err => {
     console.error('❌ Database connection failed:', err.message);

@@ -1,6 +1,7 @@
 import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 /* frontend/src/pages/NewsDetailPage.jsx */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   FaChevronLeft,
@@ -302,12 +303,16 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           paddingBottom: 'var(--safe-bottom, env(safe-area-inset-bottom, 0px))'
         }}
       >
+        <Helmet>
+          <title>{isNotFound ? 'Artículo no encontrado | Pro Fitness Glass' : 'Problema de conexión | Pro Fitness Glass'}</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
         <div className={`w-16 h-16 rounded-3xl flex items-center justify-center ${isNotFound ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
           {isNotFound ? <FaBookOpen className="text-3xl" /> : <FaWifi className="text-3xl" />}
         </div>
-        <h2 className="text-2xl font-black text-text-primary">
+        <h1 className="text-2xl font-black text-text-primary">
           {isNotFound ? 'Artículo no encontrado' : 'Problema de conexión'}
-        </h2>
+        </h1>
         <p className="text-text-secondary text-sm max-w-md leading-relaxed px-4">
           {errorMessage}
         </p>

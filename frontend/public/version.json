@@ -1,21 +1,21 @@
 {
-  "version": "7.16.61",
-  "releaseNotes": "Actualización v7.16.61: contenido prerrenderizado de noticias y guías visible sin opacidad ni aria-hidden, y un único H1 semántico por página.",
+  "version": "7.16.62",
+  "releaseNotes": "Actualización v7.16.62: prerrenderizado automático de noticias al publicar, editar o borrar y respuesta 404 noindex para artículos inexistentes.",
   "welcome": {
-    "title": "Renderizado SEO Limpio y Visible",
-    "subtitle": "Mejoramos la accesibilidad y lectura inicial de las noticias y guías antes de hidratar la aplicación.",
+    "title": "Publicación Instantánea y Sin Soft 404",
+    "subtitle": "Las nuevas noticias generan su versión HTML al momento y las URLs inexistentes dejan de devolver Soft 404.",
     "features": [
       {
-        "title": "Contenido Visible Desde el Primer Byte",
-        "description": "Las noticias y guías prerrenderizadas se muestran directamente en flujo visible sin capas ocultas ni aria-hidden."
+        "title": "Prerrender Automático en Vivo",
+        "description": "Cada noticia publicada por cron o panel genera su HTML estático y RSS al instante sin esperar a un build."
       },
       {
-        "title": "Un Único H1 Semántico por Página",
-        "description": "Eliminada la duplicación del título principal en noscript y ajustados los encabezados del cuerpo a H2."
+        "title": "Limpieza de Obsoletos",
+        "description": "Al despublicar o eliminar un artículo se retira también su carpeta estática en dist."
       },
       {
-        "title": "Jerarquía Editorial Consistente",
-        "description": "Misma estructura de títulos entre la versión estática prerrenderizada y la lectura interactiva."
+        "title": "Control Real de 404",
+        "description": "Backend y frontend marcan con noindex (y HTTP 404 en el servidor Express) los slugs que no existen."
       }
     ]
   }

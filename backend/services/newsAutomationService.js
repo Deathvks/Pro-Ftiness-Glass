@@ -491,9 +491,13 @@ Extensión recomendada: 280 a 400 palabras de máxima retención, ultra concisas
       } catch {}
 
       // PASO 8: Notificar indexación inmediata a motores de búsqueda (Bing, Yandex vía IndexNow)
+      // y regenerar prerender estático en dist/noticias sin esperar a un rebuild manual
       this.notifySearchEngines(createdArticle.slug).catch((err) => {
         console.warn('[NewsAutomation] Error notificando IndexNow:', err.message);
       });
+      import('./newsPrerenderService.js')
+        .then(({ scheduleNewsPrerender }) => scheduleNewsPrerender('dailyAutomation'))
+        .catch(() => {});
 
       return {
         success: true,
