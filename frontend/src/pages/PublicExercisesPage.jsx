@@ -20,240 +20,7 @@ import {
   FaStopwatch
 } from 'react-icons/fa6';
 import useAppStore from '../store/useAppStore';
-
-const MUSCLE_GROUPS = ['Todos', 'Pecho', 'Espalda', 'Pierna y Glúteo', 'Hombros', 'Brazos', 'Abdomen y Core'];
-
-const PUBLIC_EXERCISES = [
-  {
-    id: 'press-banca-barra',
-    name: 'Press de Banca Plano con Barra',
-    muscleGroup: 'Pecho',
-    secondaryMuscles: 'Tríceps braquial, Deltoides anterior',
-    equipment: 'Barra olímpica y banco plano',
-    difficulty: 'Intermedio',
-    idealReps: '5 - 8 reps (Fuerza) | 8 - 12 reps (Hipertrofia)',
-    restTime: '2.5 a 3.5 min',
-    technique: [
-      'Túmbate en el banco con los ojos justo debajo de la barra y realiza una retracción escapular (junta los omóplatos hacia atrás y hacia abajo).',
-      'Apoya los pies firmemente en el suelo para generar estabilidad (Leg Drive) y mantén los glúteos siempre en contacto con el banco.',
-      'Baja la barra de forma controlada (2 segundos) hacia la parte inferior del esternón con los codos a unos 45°-60° respecto al torso.',
-      'Empuja la barra de forma explosiva hacia arriba y ligeramente hacia atrás hasta bloquear los codos sin perder la retracción escapular.'
-    ],
-    commonMistake: 'Abrir los codos a 90° en forma de "T", lo que sobrecarga el manguito rotador del hombro y reduce la activación pectoral.'
-  },
-  {
-    id: 'press-inclinado-mancuernas',
-    name: 'Press Inclinado con Mancuernas (30°)',
-    muscleGroup: 'Pecho',
-    secondaryMuscles: 'Deltoides anterior, Tríceps',
-    equipment: 'Mancuernas y banco inclinado a 30°',
-    difficulty: 'Principiante / Intermedio',
-    idealReps: '8 - 12 repeticiones',
-    restTime: '2 a 3 min',
-    technique: [
-      'Ajusta el respaldo del banco a 30° (dos puntos por encima de la horizontal) para enfatizar la porción clavicular (pecho superior) sin que el hombro domine.',
-      'Baja las mancuernas con control permitiendo un estiramiento profundo del pectoral en la parte baja del recorrido.',
-      'Empuja convergiendo ligeramente arriba sin chocar las mancuernas entre sí para mantener la tensión constante.'
-    ],
-    commonMistake: 'Colocar el banco demasiado vertical (45° o 60°), convirtiendo el ejercicio en un press de hombros.'
-  },
-  {
-    id: 'sentadilla-libre-barra',
-    name: 'Sentadilla Libre con Barra (Back Squat)',
-    muscleGroup: 'Pierna y Glúteo',
-    secondaryMuscles: 'Glúteo mayor, Aductores, Erectores espinales, Core',
-    equipment: 'Barra olímpica y Rack / Jaula de potencia',
-    difficulty: 'Intermedio / Avanzado',
-    idealReps: '5 - 8 reps (Fuerza) | 8 - 10 reps (Hipertrofia)',
-    restTime: '3 a 4 min',
-    technique: [
-      'Apoya la barra sobre los trapecios (barra alta) o sobre el deltoides posterior (barra baja) sujetándola con firmeza.',
-      'Toma aire profundamente hacia el abdomen (maniobra de Valsalva) para compactar el core a 360° antes de iniciar el descenso.',
-      'Flexiona rodillas y cadera simultáneamente manteniendo toda la planta del pie anclada al suelo hasta romper el paralelo.',
-      'Empuja el suelo con fuerza manteniendo las rodillas alineadas con la punta de los pies.'
-    ],
-    commonMistake: 'Dejar que las rodillas colapsen hacia adentro (valgo de rodilla) o despegar los talones del suelo al bajar.'
-  },
-  {
-    id: 'sentadilla-bulgara',
-    name: 'Sentadilla Búlgara con Mancuernas',
-    muscleGroup: 'Pierna y Glúteo',
-    secondaryMuscles: 'Cuádriceps, Glúteo mayor y medio, Isquiosurales',
-    equipment: 'Mancuernas y banco o soporte trasero',
-    difficulty: 'Intermedio',
-    idealReps: '8 - 12 reps por pierna',
-    restTime: '90 s entre piernas',
-    technique: [
-      'Apoya el empeine del pie trasero sobre un banco a la altura de tu rodilla y da un paso adelante.',
-      'Para enfatizar cuádriceps: mantén el torso erguido y deja que la rodilla avance. Para enfatizar glúteo: inclina el tronco 20° hacia adelante y baja hacia atrás.',
-      'Desciende hasta que la rodilla trasera quede a pocos centímetros del suelo y sube empujando con el pie delantero.'
-    ],
-    commonMistake: 'Empujar con la pierna trasera apoyada en el banco en lugar de concentrar el 90% de la carga en la pierna delantera.'
-  },
-  {
-    id: 'peso-muerto-rumano',
-    name: 'Peso Muerto Rumano con Barra o Mancuernas (RDL)',
-    muscleGroup: 'Pierna y Glúteo',
-    secondaryMuscles: 'Isquiosurales, Glúteo mayor, Erectores espinales, Dorsal',
-    equipment: 'Barra olímpica o mancuernas pesadas',
-    difficulty: 'Intermedio',
-    idealReps: '6 - 10 repeticiones',
-    restTime: '2.5 a 3 min',
-    technique: [
-      'Inicia de pie con las rodillas ligeramente desbloqueadas (15° de flexión fija durante todo el movimiento).',
-      'Lleva la cadera hacia atrás como si quisieras cerrar una puerta con los glúteos mientras la barra desliza pegada a tus muslos y espinillas.',
-      'Detén la bajada justo cuando tu cadera deje de ir hacia atrás (normalmente a mitad de la espinilla) manteniendo la espalda neutra.',
-      'Extiende la cadera contrayendo glúteos e isquiosurales sin hiperextender la zona lumbar arriba.'
-    ],
-    commonMistake: 'Bajar la barra hasta el suelo doblando la columna lumbar en lugar de detenerse donde termina el rango de cadera.'
-  },
-  {
-    id: 'hip-thrust-barra',
-    name: 'Hip Thrust con Barra (Empuje de Cadera)',
-    muscleGroup: 'Pierna y Glúteo',
-    secondaryMuscles: 'Glúteo mayor, Isquiosurales, Cuádriceps',
-    equipment: 'Barra olímpica, almohadilla y banco estable',
-    difficulty: 'Principiante / Intermedio',
-    idealReps: '8 - 12 repeticiones',
-    restTime: '2 a 3 min',
-    technique: [
-      'Apoya la parte inferior de tus escápulas en el borde del banco y coloca la barra acolchada sobre el pliegue de la cadera.',
-      'Coloca los pies a la anchura de los hombros de modo que al subir las tibias queden totalmente verticales (ángulo de 90° en la rodilla).',
-      'Sube extendiendo la cadera con la mirada al frente (mentón recogido) y realiza una pausa de 1 segundo arriba apretando el glúteo al máximo.'
-    ],
-    commonMistake: 'Arquear la espalda baja mirando al techo en vez de mantener las costillas bajas y realizar retroversión pélvica arriba.'
-  },
-  {
-    id: 'dominadas-pronas-lastradas',
-    name: 'Dominadas Pronas y Jalón al Pecho',
-    muscleGroup: 'Espalda',
-    secondaryMuscles: 'Dorsal ancho, Redondo mayor, Bíceps, Trapecio inferior',
-    equipment: 'Barra de dominadas o Polea alta',
-    difficulty: 'Intermedio',
-    idealReps: '6 - 10 reps (Dominadas) | 8 - 12 reps (Jalón)',
-    restTime: '2 a 3 min',
-    technique: [
-      'Sujeta la barra con un agarre ligeramente superior al ancho de tus hombros.',
-      'Inicia el movimiento deprimiendo las escápulas (alejando los hombros de las orejas) antes de flexionar los codos.',
-      'Tira llevando los codos hacia tus bolsillos traseros hasta que la barra pase la barbilla o toque la parte alta del pecho.'
-    ],
-    commonMistake: 'Tirar exclusivamente con los bíceps encogiendo los hombros hacia las orejas y balanceando las piernas.'
-  },
-  {
-    id: 'remo-con-barra',
-    name: 'Remo con Barra (Pendlay / 45°) y Remo en Polea',
-    muscleGroup: 'Espalda',
-    secondaryMuscles: 'Dorsal ancho, Romboides, Trapecio medio, Deltoides posterior',
-    equipment: 'Barra olímpica o Polea baja (Gironda)',
-    difficulty: 'Intermedio',
-    idealReps: '6 - 10 reps (Barra) | 10 - 12 reps (Polea)',
-    restTime: '2 a 3 min',
-    technique: [
-      'Inclina el torso entre 45° y 75° manteniendo la columna neutra y el abdomen firme.',
-      'Tracciona la barra hacia la boca del estómago o el ombligo dirigiendo los codos hacia atrás.',
-      'Controla la fase excéntrica dejando que las escápulas se abran ligeramente en el estiramiento final.'
-    ],
-    commonMistake: 'Usar demasiado impulso lumbar levantando el torso en cada repetición para mover más peso del que controla la espalda.'
-  },
-  {
-    id: 'press-militar-hombros',
-    name: 'Press Militar con Barra o Mancuernas',
-    muscleGroup: 'Hombros',
-    secondaryMuscles: 'Deltoides anterior y lateral, Tríceps, Trapecio superior',
-    equipment: 'Barra olímpica o Mancuernas',
-    difficulty: 'Intermedio',
-    idealReps: '6 - 10 repeticiones',
-    restTime: '2 a 3 min',
-    technique: [
-      'De pie o sentado con respaldo, coloca los codos ligeramente adelantados respecto al torso (plano escapular, unos 30°).',
-      'Aprieta glúteos y abdomen para evitar arquear en exceso la espalda baja.',
-      'Empuja verticalmente pasando cerca del rostro y mete ligeramente la cabeza al bloquear arriba.'
-    ],
-    commonMistake: 'Abrir los codos totalmente hacia los lados o impulsar la barra con las piernas (Push Press) cuando buscas hipertrofia estricta.'
-  },
-  {
-    id: 'elevaciones-laterales-polea-mancuerna',
-    name: 'Elevaciones Laterales con Mancuernas o Polea',
-    muscleGroup: 'Hombros',
-    secondaryMuscles: 'Deltoides lateral (haz medio)',
-    equipment: 'Mancuernas o Polea baja a la altura de la muñeca',
-    difficulty: 'Principiante',
-    idealReps: '12 - 16 reps controladas',
-    restTime: '90 s a 2 min',
-    technique: [
-      'Mantén una ligerísima flexión de codos fija y eleva los brazos en el plano escapular (15°-20° hacia adelante, no totalmente rectos hacia los lados).',
-      'Piensa en lanzar las manos lejos hacia las paredes laterales, no hacia el techo, para evitar que el trapecio robe el trabajo.',
-      'Sube hasta la altura de los hombros y baja en 2 segundos manteniendo la tensión.'
-    ],
-    commonMistake: 'Elegir mancuernas demasiado pesadas y balancear la cadera en cada repetición.'
-  },
-  {
-    id: 'curl-biceps-inclinado-barra-z',
-    name: 'Curl de Bíceps en Banco Inclinado y Barra Z',
-    muscleGroup: 'Brazos',
-    secondaryMuscles: 'Bíceps braquial (cabeza larga y corta), Braquial',
-    equipment: 'Mancuernas en banco a 45°-60° o Barra Z',
-    difficulty: 'Principiante',
-    idealReps: '8 - 12 repeticiones',
-    restTime: '90 s a 2 min',
-    technique: [
-      'Mantén el hombro fijo y el codo pegado al costado (o ligeramente detrás del torso en banco inclinado para máximo estiramiento de la cabeza larga).',
-      'Flexiona el codo supinando la muñeca (girando el meñique hacia adentro) y baja estirando el brazo por completo en cada repetición.'
-    ],
-    commonMistake: 'Adelantar los codos al subir el peso o acortar la mitad inferior del recorrido.'
-  },
-  {
-    id: 'extension-triceps-polea-katana',
-    name: 'Extensión de Tríceps en Polea Alta y Trasnuca (Overhead)',
-    muscleGroup: 'Brazos',
-    secondaryMuscles: 'Tríceps braquial (cabeza lateral, medial y larga)',
-    equipment: 'Polea con cuerda o barra recta',
-    difficulty: 'Principiante',
-    idealReps: '10 - 15 repeticiones',
-    restTime: '90 s a 2 min',
-    technique: [
-      'Para trabajar las 3 cabezas del tríceps, combina un ejercicio con los codos pegados al cuerpo (extensión en polea alta) y otro con el hombro flexionado por encima de la cabeza (extensión trasnuca para estirar la cabeza larga).',
-      'Mantén los codos fijos como bisagras: solo debe moverse el antebrazo hasta bloquear el codo por completo.'
-    ],
-    commonMistake: 'Mover los hombros y echarse encima de la cuerda usando el pecho y el abdomen.'
-  },
-  {
-    id: 'crunch-polea-rueda-abdominal',
-    name: 'Crunch Abdominal en Polea Alta y Rueda Abdominal',
-    muscleGroup: 'Abdomen y Core',
-    secondaryMuscles: 'Recto abdominal, Oblicuos, Transverso',
-    equipment: 'Polea alta con cuerda o Ab Wheel',
-    difficulty: 'Intermedio',
-    idealReps: '10 - 15 reps con sobrecarga',
-    restTime: '90 segundos',
-    technique: [
-      'El recto abdominal se hipertrofia igual que cualquier otro músculo: necesita sobrecarga progresiva en flexión espinal.',
-      'De rodillas frente a la polea alta, mantén la cadera fija y enrolla tu columna llevando el esternón hacia la pelvis mientras expulsas todo el aire.'
-    ],
-    commonMistake: 'Flexionar la cadera sentándose sobre los talones con la espalda recta en vez de curvar el abdomen.'
-  }
-];
-
-const POPULAR_SPLITS = [
-  {
-    name: 'Rutina Push Pull Legs (Empuje - Tirón - Pierna)',
-    days: '3 o 6 días / semana',
-    goal: 'Hipertrofia y Fuerza Óptima',
-    desc: 'Divide el cuerpo según patrones biomecánicos: Día 1 Empuje (Pecho, Hombro, Tríceps), Día 2 Tirón (Espalda, Bíceps, Deltoides posterior) y Día 3 Pierna completa y Glúteo.'
-  },
-  {
-    name: 'Rutina Torso - Pierna (Upper / Lower)',
-    days: '4 días / semana',
-    goal: 'Máxima Recuperación y Frecuencia 2',
-    desc: 'Entrena cada grupo muscular 2 veces por semana con 3 días completos de descanso. Ideal para progresar en cargas cada semana sin acumular fatiga excesiva.'
-  },
-  {
-    name: 'Rutina Full Body Científica',
-    days: '3 días / semana (L - X - V)',
-    goal: 'Eficiencia, Principiantes e Intermedios',
-    desc: 'Estimula todo el cuerpo en cada sesión priorizando multiarticulares (Sentadilla, Press de Banca, Dominadas, Peso Muerto Rumano y Press Militar).'
-  }
-];
+import { MUSCLE_GROUPS, PUBLIC_EXERCISES, PUBLIC_ROUTINES } from '../data/fitnessCatalog';
 
 export default function PublicExercisesPage({ onBack }) {
   const navigate = useNavigate();
@@ -526,7 +293,9 @@ export default function PublicExercisesPage({ onBack }) {
                 </div>
 
                 <h2 className="text-lg sm:text-2xl font-black text-text-primary mb-1.5 leading-snug break-words">
-                  {ex.name}
+                  <Link to={`/ejercicios/${ex.slug}`} className="hover:text-accent transition-colors">
+                    {ex.name}
+                  </Link>
                 </h2>
                 <p className="text-xs font-semibold text-text-secondary mb-3.5 leading-snug">
                   <span className="text-text-tertiary font-bold">Sinergistas:</span> {ex.secondaryMuscles}
@@ -577,11 +346,11 @@ export default function PublicExercisesPage({ onBack }) {
 
                 <div className="flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-2.5 pt-1">
                   <Link
-                    to="/calculadora-1rm"
+                    to={`/ejercicios/${ex.slug}`}
                     className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-accent/10 border border-black/5 dark:border-white/10 text-xs font-black text-accent transition-colors"
                   >
-                    <FaCalculator className="text-[11px] shrink-0" />
-                    <span>Calcular mi 1RM</span>
+                    <span>Ver ficha completa</span>
+                    <FaArrowRight className="text-[11px] shrink-0" />
                   </Link>
                   <button
                     type="button"
@@ -612,10 +381,10 @@ export default function PublicExercisesPage({ onBack }) {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            {POPULAR_SPLITS.map((split) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            {PUBLIC_ROUTINES.map((split) => (
               <div
-                key={split.name}
+                key={split.slug}
                 className="p-5 sm:p-6 rounded-[24px] sm:rounded-[28px] bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 flex flex-col justify-between"
               >
                 <div>
@@ -626,13 +395,13 @@ export default function PublicExercisesPage({ onBack }) {
                   <p className="text-xs font-bold text-accent mb-2.5">{split.goal}</p>
                   <p className="text-xs sm:text-sm text-text-secondary font-medium leading-relaxed mb-5">{split.desc}</p>
                 </div>
-                <button
-                  onClick={() => navigate(isAuthenticated ? '/routines' : '/register')}
+                <Link
+                  to={`/rutinas/${split.slug}`}
                   className="w-full py-3 px-3 sm:px-4 rounded-2xl bg-accent/15 hover:bg-accent text-accent hover:text-accent-contrast font-black text-[11px] sm:text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
                 >
-                  <span className="truncate">Configurar esta Rutina en la App</span>
+                  <span className="truncate">Ver Rutina Día a Día</span>
                   <FaArrowRight className="text-[11px] shrink-0" />
-                </button>
+                </Link>
               </div>
             ))}
           </div>

@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getNewsCoverUrls } from '../src/utils/newsCover.js';
+import { PUBLIC_EXERCISES, PUBLIC_ROUTINES, findExerciseBySlug } from '../src/data/fitnessCatalog.js';
 import {
   buildNewsArticleSchema,
   buildNewsBreadcrumbSchema,
@@ -840,19 +841,14 @@ async function main() {
     </header>
     <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
       <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Ejercicios Fundamentales por Grupo Muscular</h2>
-      <ul style="padding-left: 1.5rem; color: #e2e8f0;">
-        <li><strong>Pecho:</strong> Press de Banca Plano con Barra y Press Inclinado con Mancuernas a 30°.</li>
-        <li><strong>Pierna y Glúteo:</strong> Sentadilla Libre con Barra, Sentadilla Búlgara, Peso Muerto Rumano y Hip Thrust.</li>
-        <li><strong>Espalda:</strong> Dominadas Pronas Lastradas, Jalón al Pecho y Remo con Barra / Polea.</li>
-        <li><strong>Hombros y Brazos:</strong> Press Militar, Elevaciones Laterales, Curl de Bíceps Inclinado y Extensión de Tríceps en Polea.</li>
+      <ul style="padding-left: 1.5rem; color: #e2e8f0; line-height: 1.9;">
+        ${PUBLIC_EXERCISES.map((ex) => `<li><a href="/ejercicios/${ex.slug}" style="color: #38bdf8; font-weight: 700; text-decoration: none;">${escapeHtml(ex.name)}</a> (${escapeHtml(ex.muscleGroup)}) — ${escapeHtml(ex.idealReps)}</li>`).join('\n        ')}
       </ul>
     </section>
     <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
       <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Rutinas de Gimnasio más Efectivas para Hipertrofia</h2>
-      <ul style="padding-left: 1.5rem; color: #e2e8f0;">
-        <li><strong>Push Pull Legs (Empuje - Tirón - Pierna):</strong> 3 o 6 días/semana dividiendo por patrones biomecánicos para maximizar volumen y recuperación.</li>
-        <li><strong>Torso - Pierna (Upper / Lower):</strong> 4 días/semana con frecuencia 2 por grupo muscular y progresión semanal de cargas.</li>
-        <li><strong>Full Body Científica:</strong> 3 días/semana priorizando multiarticulares básicos para principiantes e intermedios.</li>
+      <ul style="padding-left: 1.5rem; color: #e2e8f0; line-height: 1.9;">
+        ${PUBLIC_ROUTINES.map((r) => `<li><a href="/rutinas/${r.slug}" style="color: #a855f7; font-weight: 700; text-decoration: none;">${escapeHtml(r.name)}</a> (${escapeHtml(r.days)}) — ${escapeHtml(r.goal)}</li>`).join('\n        ')}
       </ul>
     </section>
   </main>`;
@@ -892,6 +888,168 @@ async function main() {
   ejerciciosHtml = injectPrerenderBody(ejerciciosHtml, ejerciciosBody, 'PublicExercisesPage');
   fs.writeFileSync(path.join(ejerciciosDir, 'index.html'), ejerciciosHtml, 'utf8');
   console.log('[Prerender] Generada enciclopedia de ejercicios en dist/ejercicios/index.html.');
+
+  // ==========================================
+  // PRERENDER: Fichas individuales de ejercicios (/ejercicios/:slug)
+  // ==========================================
+  for (const ex of PUBLIC_EXERCISES) {
+    const exDir = path.join(ejerciciosDir, ex.slug);
+    if (!fs.existsSync(exDir)) fs.mkdirSync(exDir, { recursive: true });
+    const exUrl = `${BASE_URL}/ejercicios/${ex.slug}`;
+    const matchingRoutines = PUBLIC_ROUTINES.filter((r) =>
+      r.schedule.some((d) => d.exercises.some((item) => item.slug === ex.slug))
+    );
+    const exBody = `
+  <article style="padding: 3rem 1.5rem; max-width: 860px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/ejercicios" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Todos los Ejercicios</a> |
+      <a href="/rutinas" style="color: #a855f7; text-decoration: none; font-weight: 700;">Rutinas de Gimnasio</a> |
+      <a href="/calculadora-1rm" style="color: #34d399; text-decoration: none; font-weight: 700;">Calculadora 1RM</a>
+    </nav>
+    <header style="margin-bottom: 2rem;">
+      <span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 800; font-size: 0.8rem; text-transform: uppercase;">${escapeHtml(ex.muscleGroup)} · ${escapeHtml(ex.difficulty)}</span>
+      <h1 style="font-size: 2.35rem; font-weight: 900; margin: 0.75rem 0 1rem; letter-spacing: -0.02em;">${escapeHtml(ex.name)}: Técnica, Músculos y Errores</h1>
+      <p style="font-size: 1.1rem; color: #94a3b8;">${escapeHtml(ex.seoDescription)}</p>
+    </header>
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.25rem; padding: 1.5rem; margin-bottom: 1.5rem;">
+      <p><strong>Material:</strong> ${escapeHtml(ex.equipment)} | <strong>Sinergistas:</strong> ${escapeHtml(ex.secondaryMuscles)}</p>
+      <p style="margin-bottom: 0;"><strong>Rango óptimo:</strong> ${escapeHtml(ex.idealReps)} | <strong>Descanso:</strong> ${escapeHtml(ex.restTime)}</p>
+    </section>
+    <section style="margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem;">Cómo hacer ${escapeHtml(ex.shortName)} paso a paso</h2>
+      <ol style="padding-left: 1.5rem; color: #e2e8f0;">
+        ${ex.technique.map((step) => `<li style="margin-bottom: 0.5rem;">${escapeHtml(step)}</li>`).join('\n        ')}
+      </ol>
+    </section>
+    <section style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 1.25rem; padding: 1.25rem; margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.1rem; font-weight: 800; color: #f87171; margin: 0 0 0.5rem;">Error común a evitar</h2>
+      <p style="margin: 0; color: #cbd5e1;">${escapeHtml(ex.commonMistake)}</p>
+    </section>
+    ${matchingRoutines.length > 0 ? `<section><h2 style="font-size: 1.25rem; font-weight: 800;">Rutinas que incluyen ${escapeHtml(ex.shortName)}</h2><ul>${matchingRoutines.map((r) => `<li><a href="/rutinas/${r.slug}" style="color: #a855f7; font-weight: 700;">${escapeHtml(r.name)}</a></li>`).join('')}</ul></section>` : ''}
+  </article>`;
+    const exJsonLd = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Article',
+          headline: ex.name,
+          description: ex.seoDescription,
+          inLanguage: 'es-ES',
+          mainEntityOfPage: { '@type': 'WebPage', '@id': exUrl },
+          author: { '@type': 'Organization', name: 'Equipo Editorial Pro Fitness Glass', url: BASE_URL },
+          publisher: { '@type': 'Organization', name: 'Pro Fitness Glass', logo: { '@type': 'ImageObject', url: `${BASE_URL}/logo.webp` } },
+        },
+        {
+          '@type': 'HowTo',
+          name: `Cómo hacer ${ex.name}`,
+          description: ex.seoDescription,
+          supply: [{ '@type': 'HowToSupply', name: ex.equipment }],
+          step: ex.technique.map((text, idx) => ({ '@type': 'HowToStep', position: idx + 1, text })),
+        },
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Inicio', item: BASE_URL },
+            { '@type': 'ListItem', position: 2, name: 'Ejercicios', item: `${BASE_URL}/ejercicios` },
+            { '@type': 'ListItem', position: 3, name: ex.shortName, item: exUrl },
+          ],
+        },
+      ],
+    };
+    const exHtml = injectMeta(baseHtml, {
+      title: ex.seoTitle,
+      description: ex.seoDescription,
+      image: `${BASE_URL}/og-preview.jpg`,
+      url: exUrl,
+      type: 'article',
+      jsonLdScripts: [exJsonLd],
+    });
+    fs.writeFileSync(path.join(exDir, 'index.html'), injectPrerenderBody(exHtml, exBody, 'PublicExerciseDetailPage'), 'utf8');
+  }
+  console.log(`[Prerender] Generadas ${PUBLIC_EXERCISES.length} fichas individuales en dist/ejercicios/:slug/index.html.`);
+
+  // ==========================================
+  // PRERENDER: Índice y fichas de Rutinas (/rutinas y /rutinas/:slug)
+  // ==========================================
+  const rutinasDir = path.join(distDir, 'rutinas');
+  if (!fs.existsSync(rutinasDir)) fs.mkdirSync(rutinasDir, { recursive: true });
+  const rutinasIndexBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 960px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Volver a Pro Fitness Glass</a> |
+      <a href="/ejercicios" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Guía de Ejercicios</a> |
+      <a href="/calculadora-1rm" style="color: #34d399; text-decoration: none; font-weight: 700;">Calculadora 1RM</a>
+    </nav>
+    <header style="margin-bottom: 2rem; text-align: center;">
+      <h1 style="font-size: 2.35rem; font-weight: 900; margin: 0 0 1rem;">Rutinas de Gimnasio para Hipertrofia y Fuerza</h1>
+      <p style="color: #94a3b8;">Plantillas semanales día a día con ejercicios biomecánicos, series, repeticiones y RIR.</p>
+    </header>
+    <section style="display: grid; gap: 1.25rem;">
+      ${PUBLIC_ROUTINES.map((r) => `<article style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.25rem; padding: 1.5rem;"><span style="color:#a855f7;font-weight:800;font-size:0.8rem;">${escapeHtml(r.days)}</span><h2 style="margin:0.5rem 0;"><a href="/rutinas/${r.slug}" style="color:#f8fafc;text-decoration:none;">${escapeHtml(r.name)}</a></h2><p style="color:#cbd5e1;">${escapeHtml(r.desc)}</p></article>`).join('\n      ')}
+    </section>
+  </main>`;
+  const rutinasIndexHtml = injectMeta(baseHtml, {
+    title: 'Rutinas de Gimnasio para Hipertrofia (PPL, Torso Pierna)',
+    description: 'Explora las mejores rutinas de gimnasio día a día: Push Pull Legs, Torso Pierna 4 días, Full Body y Arnold Split con series, repeticiones y RIR.',
+    image: `${BASE_URL}/og-preview.jpg`,
+    url: `${BASE_URL}/rutinas`,
+    type: 'website',
+    jsonLdScripts: [{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'Rutinas de Gimnasio para Hipertrofia', url: `${BASE_URL}/rutinas`, inLanguage: 'es-ES' }],
+  });
+  fs.writeFileSync(path.join(rutinasDir, 'index.html'), injectPrerenderBody(rutinasIndexHtml, rutinasIndexBody, 'PublicRoutineDetailPage'), 'utf8');
+
+  for (const routine of PUBLIC_ROUTINES) {
+    const rDir = path.join(rutinasDir, routine.slug);
+    if (!fs.existsSync(rDir)) fs.mkdirSync(rDir, { recursive: true });
+    const rUrl = `${BASE_URL}/rutinas/${routine.slug}`;
+    const rBody = `
+  <article style="padding: 3rem 1.5rem; max-width: 860px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/rutinas" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Todas las Rutinas</a> |
+      <a href="/ejercicios" style="color: #34d399; text-decoration: none; font-weight: 700;">Guía de Ejercicios</a> |
+      <a href="/calculadora-calorias-macros" style="color: #34d399; text-decoration: none; font-weight: 700;">Calculadora Macros</a>
+    </nav>
+    <header style="margin-bottom: 2rem;">
+      <span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; background: rgba(168, 85, 247, 0.15); color: #a855f7; font-weight: 800; font-size: 0.8rem; text-transform: uppercase;">${escapeHtml(routine.days)} · ${escapeHtml(routine.level)}</span>
+      <h1 style="font-size: 2.35rem; font-weight: 900; margin: 0.75rem 0 1rem;">${escapeHtml(routine.name)}</h1>
+      <p style="font-size: 1.1rem; color: #94a3b8;">${escapeHtml(routine.desc)}</p>
+      <p style="color: #38bdf8; font-weight: 700;">Volumen semanal: ${escapeHtml(routine.weeklyVolume)}</p>
+    </header>
+    ${routine.schedule.map((day) => `<section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.25rem; padding: 1.5rem; margin-bottom: 1.25rem;"><h2 style="font-size:1.35rem;font-weight:800;margin:0 0 0.75rem;">${escapeHtml(day.dayTitle)}</h2><ul>${day.exercises.map((item) => { const ex = findExerciseBySlug(item.slug); return ex ? `<li style="margin-bottom:0.4rem;"><a href="/ejercicios/${ex.slug}" style="color:#38bdf8;font-weight:700;text-decoration:none;">${escapeHtml(ex.name)}</a> — ${escapeHtml(item.sets)}</li>` : ''; }).join('')}</ul></section>`).join('\n    ')}
+  </article>`;
+    const rJsonLd = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Article',
+          headline: routine.name,
+          description: routine.seoDescription,
+          inLanguage: 'es-ES',
+          mainEntityOfPage: { '@type': 'WebPage', '@id': rUrl },
+          author: { '@type': 'Organization', name: 'Equipo Editorial Pro Fitness Glass', url: BASE_URL },
+          publisher: { '@type': 'Organization', name: 'Pro Fitness Glass', logo: { '@type': 'ImageObject', url: `${BASE_URL}/logo.webp` } },
+        },
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Inicio', item: BASE_URL },
+            { '@type': 'ListItem', position: 2, name: 'Rutinas', item: `${BASE_URL}/rutinas` },
+            { '@type': 'ListItem', position: 3, name: routine.shortName, item: rUrl },
+          ],
+        },
+      ],
+    };
+    const rHtml = injectMeta(baseHtml, {
+      title: routine.seoTitle,
+      description: routine.seoDescription,
+      image: `${BASE_URL}/og-preview.jpg`,
+      url: rUrl,
+      type: 'article',
+      jsonLdScripts: [rJsonLd],
+    });
+    fs.writeFileSync(path.join(rDir, 'index.html'), injectPrerenderBody(rHtml, rBody, 'PublicRoutineDetailPage'), 'utf8');
+  }
+  console.log(`[Prerender] Generadas /rutinas y ${PUBLIC_ROUTINES.length} rutinas individuales en dist/rutinas/:slug/index.html.`);
 
   // ==========================================
   // PRERENDER: /sobre-nosotros (About Us / Quiénes Somos)

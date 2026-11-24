@@ -9,6 +9,9 @@ Allow: /noticias/
 Allow: /calculadora-1rm
 Allow: /calculadora-calorias-macros
 Allow: /ejercicios
+Allow: /ejercicios/
+Allow: /rutinas
+Allow: /rutinas/
 Disallow: /api/
 Disallow: /dashboard
 Disallow: /workout

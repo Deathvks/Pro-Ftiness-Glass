@@ -13,7 +13,7 @@
 
     # Desactivar caché estricto para /, rutas privadas SPA, version.json y service worker
     @noCache {
-        not path /assets/* /icons/* *.png *.webp *.ico *.svg *.jpg *.jpeg *.woff *.woff2 /noticias /noticias/* /calculadora-1rm /calculadora-calorias-macros /ejercicios /sobre-nosotros /faq /mantenimiento /sitemap.xml /rss.xml /feed.xml
+        not path /assets/* /icons/* *.png *.webp *.ico *.svg *.jpg *.jpeg *.woff *.woff2 /noticias /noticias/* /calculadora-1rm /calculadora-calorias-macros /ejercicios /ejercicios/* /rutinas /rutinas/* /sobre-nosotros /faq /mantenimiento /sitemap.xml /rss.xml /feed.xml
     }
     header @noCache {
         Cache-Control "no-cache, no-store, must-revalidate"
@@ -23,7 +23,7 @@
 
     # Caché público corto y revalidable para páginas SEO indexables y feeds (permite bfcache y rastreo limpio)
     @seoPublic {
-        path /noticias /noticias/* /calculadora-1rm /calculadora-calorias-macros /ejercicios /sobre-nosotros /faq /mantenimiento /sitemap.xml /rss.xml /feed.xml
+        path /noticias /noticias/* /calculadora-1rm /calculadora-calorias-macros /ejercicios /ejercicios/* /rutinas /rutinas/* /sobre-nosotros /faq /mantenimiento /sitemap.xml /rss.xml /feed.xml
     }
     header @seoPublic {
         Cache-Control "public, max-age=300, must-revalidate"

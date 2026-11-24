@@ -33,7 +33,7 @@ export const useAppNavigation = (navigateRouter) => {
       '/asesoria', '/noticias', '/calculadora-1rm', '/calculadora-calorias-macros', '/ejercicios', '/sobre-nosotros', '/faq'
     ];
 
-    if (!validPaths.includes(path) && !path.match(/^\/profile\/\d+$/) && !path.startsWith('/share/routine/') && !path.startsWith('/noticias')) {
+    if (!validPaths.includes(path) && !path.match(/^\/profile\/\d+$/) && !path.startsWith('/share/routine/') && !path.startsWith('/noticias') && !path.startsWith('/ejercicios') && !path.startsWith('/rutinas')) {
         return 'not-found';
     }
 
@@ -46,6 +46,8 @@ export const useAppNavigation = (navigateRouter) => {
     if (path === '/settings') return 'settings';
     if (path === '/active-cardio') return 'active-cardio';
     if (path.startsWith('/noticias')) return 'noticias';
+    if (path.startsWith('/ejercicios')) return 'ejercicios';
+    if (path.startsWith('/rutinas')) return 'rutinas';
     if (path === '/privacy' || path === '/cookies' || path === '/politica-cookies' || path === '/politica-de-cookies') return 'privacyPolicy';
     if (path === '/terms') return 'terms';
     if (path === '/aviso-legal' || path === '/legal') return 'legalNotice';

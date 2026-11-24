@@ -117,6 +117,9 @@ const apiClient = async (endpoint, options = {}) => {
                                  currentPath === '/calculadora-1rm' ||
                                  currentPath === '/calculadora-calorias-macros' ||
                                  currentPath === '/ejercicios' ||
+                                 currentPath.startsWith('/ejercicios/') ||
+                                 currentPath === '/rutinas' ||
+                                 currentPath.startsWith('/rutinas/') ||
                                  currentPath === '/sobre-nosotros' ||
                                  currentPath === '/faq' ||
                                  currentPath === '/privacy' ||

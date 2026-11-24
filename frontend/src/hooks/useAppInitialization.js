@@ -17,6 +17,9 @@ export const useAppInitialization = ({ setView, view }) => {
         path === '/calculadora-1rm' ||
         path === '/calculadora-calorias-macros' ||
         path === '/ejercicios' ||
+        path.startsWith('/ejercicios/') ||
+        path === '/rutinas' ||
+        path.startsWith('/rutinas/') ||
         path === '/sobre-nosotros' ||
         path === '/faq' ||
         path === '/privacy' ||
@@ -110,6 +113,9 @@ export const useAppInitialization = ({ setView, view }) => {
           window.location.pathname === '/calculadora-1rm' ||
           window.location.pathname === '/calculadora-calorias-macros' ||
           window.location.pathname === '/ejercicios' ||
+          window.location.pathname.startsWith('/ejercicios/') ||
+          window.location.pathname === '/rutinas' ||
+          window.location.pathname.startsWith('/rutinas/') ||
           window.location.pathname === '/sobre-nosotros' ||
           window.location.pathname === '/faq' ||
           window.location.pathname === '/privacy' ||
@@ -151,6 +157,9 @@ export const useAppInitialization = ({ setView, view }) => {
           window.location.pathname === '/calculadora-1rm' ||
           window.location.pathname === '/calculadora-calorias-macros' ||
           window.location.pathname === '/ejercicios' ||
+          window.location.pathname.startsWith('/ejercicios/') ||
+          window.location.pathname === '/rutinas' ||
+          window.location.pathname.startsWith('/rutinas/') ||
           window.location.pathname === '/sobre-nosotros' ||
           window.location.pathname === '/faq' ||
           window.location.pathname === '/privacy' ||
@@ -176,6 +185,9 @@ export const useAppInitialization = ({ setView, view }) => {
           window.location.pathname === '/calculadora-1rm' ||
           window.location.pathname === '/calculadora-calorias-macros' ||
           window.location.pathname === '/ejercicios' ||
+          window.location.pathname.startsWith('/ejercicios/') ||
+          window.location.pathname === '/rutinas' ||
+          window.location.pathname.startsWith('/rutinas/') ||
           window.location.pathname === '/sobre-nosotros' ||
           window.location.pathname === '/faq' ||
       window.location.pathname === '/privacy' ||

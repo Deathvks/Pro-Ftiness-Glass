@@ -43,6 +43,8 @@ import NewsDetailPage from './pages/NewsDetailPage';
 import OneRMCalculatorPage from './pages/OneRMCalculatorPage';
 import MacroCalculatorPage from './pages/MacroCalculatorPage';
 import PublicExercisesPage from './pages/PublicExercisesPage';
+import PublicExerciseDetailPage from './pages/PublicExerciseDetailPage';
+import PublicRoutineDetailPage from './pages/PublicRoutineDetailPage';
 import AboutUsPage from './pages/AboutUsPage';
 import FAQPage from './pages/FAQPage';
 import MaintenanceInfoPage from './pages/MaintenanceInfoPage';
@@ -93,6 +95,8 @@ const VIEW_CHUNK_LOADERS = {
   calculadora1rm: () => Promise.resolve({ default: OneRMCalculatorPage }),
   calculadoraMacros: () => Promise.resolve({ default: MacroCalculatorPage }),
   ejercicios: () => Promise.resolve({ default: PublicExercisesPage }),
+  ejercicioDetalle: () => Promise.resolve({ default: PublicExerciseDetailPage }),
+  rutinas: () => Promise.resolve({ default: PublicRoutineDetailPage }),
   sobreNosotros: () => Promise.resolve({ default: AboutUsPage }),
   faq: () => Promise.resolve({ default: FAQPage }),
 };
@@ -127,6 +131,8 @@ if (typeof window !== 'undefined' && window.location) {
   if (initialPath === '/calculadora-1rm') preloadViewChunk('calculadora1rm');
   else if (initialPath === '/calculadora-calorias-macros') preloadViewChunk('calculadoraMacros');
   else if (initialPath === '/ejercicios') preloadViewChunk('ejercicios');
+  else if (initialPath.startsWith('/ejercicios/')) preloadViewChunk('ejercicioDetalle');
+  else if (initialPath === '/rutinas' || initialPath.startsWith('/rutinas/')) preloadViewChunk('rutinas');
   else if (initialPath === '/sobre-nosotros') preloadViewChunk('sobreNosotros');
   else if (initialPath === '/faq') preloadViewChunk('faq');
   else if (initialPath === '/noticias') preloadViewChunk('noticias');
@@ -945,7 +951,7 @@ const extractCapacitorDeepLinkPath = (rawUrl) => {
   const seoConfig = useMemo(() => {
     if (isLandingPage) {
         return {
-            title: "Pro Fitness Glass | App de Gimnasio Gratis, Rutinas de Pesas, Diario de Entrenamiento y Nutrición con IA",
+            title: "Pro Fitness Glass | App de Gimnasio Gratis, Rutinas y Nutrición IA",
             description: "Registra tus entrenamientos de gimnasio, aplica sobrecarga progresiva en tus rutinas de hipertrofia y fuerza, calcula tu 1RM y controla calorías y macros con IA gratis.",
             noIndex: false
         };
@@ -962,6 +968,9 @@ const extractCapacitorDeepLinkPath = (rawUrl) => {
     location.pathname === '/calculadora-1rm' ||
     location.pathname === '/calculadora-calorias-macros' ||
     location.pathname === '/ejercicios' ||
+    location.pathname.startsWith('/ejercicios/') ||
+    location.pathname === '/rutinas' ||
+    location.pathname.startsWith('/rutinas/') ||
     location.pathname === '/sobre-nosotros' ||
     location.pathname === '/faq' ||
     location.pathname === '/mantenimiento' ||
@@ -1122,6 +1131,21 @@ const extractCapacitorDeepLinkPath = (rawUrl) => {
                     }
                   }}
                 />
+            </Suspense>
+        } />
+        <Route path="/ejercicios/:slug" element={
+            <Suspense fallback={<NewsLoadingSkeleton isDetail={true} />}>
+                <PublicExerciseDetailPage />
+            </Suspense>
+        } />
+        <Route path="/rutinas" element={
+            <Suspense fallback={<NewsLoadingSkeleton />}>
+                <PublicRoutineDetailPage />
+            </Suspense>
+        } />
+        <Route path="/rutinas/:slug" element={
+            <Suspense fallback={<NewsLoadingSkeleton isDetail={true} />}>
+                <PublicRoutineDetailPage />
             </Suspense>
         } />
         <Route path="/sobre-nosotros" element={

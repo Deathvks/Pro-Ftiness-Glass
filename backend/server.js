@@ -11,7 +11,8 @@ import jwt from 'jsonwebtoken';
 import db from './models/index.js';
 import errorHandler from './middleware/errorHandler.js';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'fs';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { exec } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -228,11 +229,23 @@ const escapeXml = (unsafe = '') => {
     .replace(/'/g, '&apos;');
 };
 
-// Sitemap XML dinámico con todas las noticias indexables en tiempo real
+// Sitemap XML dinámico con todas las páginas, fichas SEO y noticias indexables en tiempo real
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const newsItems = await getSitemapNews();
     const baseUrl = 'https://profitnessglass.es';
+    let catalogUrls = [];
+    const catalogPath = path.resolve(__dirname, '../frontend/src/data/fitnessCatalog.js');
+    if (fs.existsSync(catalogPath)) {
+      try {
+        const { PUBLIC_EXERCISES = [], PUBLIC_ROUTINES = [] } = await import(pathToFileURL(catalogPath).href);
+        catalogUrls = [
+          '  <url><loc>' + baseUrl + '/rutinas</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>',
+          ...PUBLIC_EXERCISES.map(ex => '  <url><loc>' + baseUrl + '/ejercicios/' + encodeURIComponent(ex.slug) + '</loc><changefreq>monthly</changefreq><priority>0.85</priority></url>'),
+          ...PUBLIC_ROUTINES.map(r => '  <url><loc>' + baseUrl + '/rutinas/' + encodeURIComponent(r.slug) + '</loc><changefreq>monthly</changefreq><priority>0.85</priority></url>')
+        ];
+      } catch {}
+    }
     const xml = [
       '<?xml version="1.0" encoding="UTF-8"?>',
       '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
@@ -240,6 +253,7 @@ app.get('/sitemap.xml', async (req, res) => {
       '  <url><loc>' + baseUrl + '/calculadora-1rm</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>',
       '  <url><loc>' + baseUrl + '/calculadora-calorias-macros</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>',
       '  <url><loc>' + baseUrl + '/ejercicios</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>',
+      ...catalogUrls,
       '  <url><loc>' + baseUrl + '/noticias</loc><changefreq>daily</changefreq><priority>0.9</priority></url>',
       '  <url><loc>' + baseUrl + '/sobre-nosotros</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>',
       '  <url><loc>' + baseUrl + '/faq</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>',
