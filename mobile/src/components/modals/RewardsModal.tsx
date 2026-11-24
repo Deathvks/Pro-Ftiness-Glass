@@ -38,6 +38,8 @@ interface RewardItem {
   description: string;
   requiredReferrals: number;
   color: string;
+  textLight: string;
+  textDark: string;
   iconName: string;
   previewImage: number;
   variants: RewardVariant[];
@@ -51,6 +53,8 @@ const REWARDS: RewardItem[] = [
     description: 'Un viaje al espacio con tonos púrpuras oscuros y un fondo estelar inmersivo.',
     requiredReferrals: 3,
     color: '#a855f7',
+    textLight: '#6d28d9',
+    textDark: '#d8b4fe',
     iconName: 'meteor',
     previewImage: require('../../../assets/images/galaxy.jpg'),
     variants: [{ id: 'galaxy', label: 'Usar tema', testLabel: 'Probar 10s' }],
@@ -62,6 +66,8 @@ const REWARDS: RewardItem[] = [
     description: 'Tonos cálidos de arena y atardecer con dunas del desierto en modo claro u oscuro.',
     requiredReferrals: 5,
     color: '#f59e0b',
+    textLight: '#b45309',
+    textDark: '#fde68a',
     iconName: 'sun',
     previewImage: require('../../../assets/images/desert.jpg'),
     variants: [
@@ -76,6 +82,8 @@ const REWARDS: RewardItem[] = [
     description: 'Tonos profundos de agua y azules vibrantes con fondo de playa en claro u oscuro.',
     requiredReferrals: 7,
     color: '#0ea5e9',
+    textLight: '#0369a1',
+    textDark: '#bae6fd',
     iconName: 'umbrella-beach',
     previewImage: require('../../../assets/images/ocean.jpg'),
     variants: [
@@ -280,8 +288,8 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={[styles.rewardTitle, { color: colors.text }]}>{reward.name}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                      <FontAwesome5 name={reward.iconName} size={10} color={reward.color} solid />
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: reward.color }} numberOfLines={1}>
+                      <FontAwesome5 name={reward.iconName} size={10} color={isDark ? reward.textDark : reward.textLight} solid />
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: isDark ? reward.textDark : reward.textLight }} numberOfLines={1}>
                         {reward.previewCaption}
                       </Text>
                     </View>

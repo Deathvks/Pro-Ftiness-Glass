@@ -155,8 +155,8 @@ const SPECIAL_THEMES: SpecialTheme[] = [
     requiredReferrals: 3,
     icon: MeteorIcon,
     variants: [{ id: 'galaxy', label: 'Aplicar', testLabel: 'Probar 10s' }],
-    textLight: '#a855f7',
-    textDark: '#a855f7',
+    textLight: '#6d28d9',
+    textDark: '#d8b4fe',
     info: 'El Tema Galaxia usa su propio acento estelar (desactiva el acento manual).',
   },
   {
@@ -172,7 +172,7 @@ const SPECIAL_THEMES: SpecialTheme[] = [
       { id: 'desert-dark', label: 'Oscuro', testLabel: 'Probar Oscuro' },
     ],
     textLight: '#b45309',
-    textDark: '#fcd34d',
+    textDark: '#fde68a',
     info: 'El Tema Desierto usa su propio acento cálido (desactiva el acento manual).',
   },
   {
@@ -188,7 +188,7 @@ const SPECIAL_THEMES: SpecialTheme[] = [
       { id: 'ocean-dark', label: 'Oscuro', testLabel: 'Probar Oscuro' },
     ],
     textLight: '#0369a1',
-    textDark: '#7dd3fc',
+    textDark: '#bae6fd',
     info: 'El Tema Océano usa su propio acento vibrante (desactiva el acento manual).',
   },
 ];
@@ -530,12 +530,14 @@ export default function AppearanceScreen() {
               <View style={[styles.sectionIconBox, { backgroundColor: subtleBg }]}>
                 <MeteorIcon size={22} color={accentText} />
               </View>
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>Mis Temas</Text>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'nowrap' }}>
+                  <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0, flexShrink: 1 }]} numberOfLines={1}>
+                    Mis Temas
+                  </Text>
                   {isSpecialActive && (
-                    <View style={[styles.activeThemePill, { backgroundColor: colors.tint + '20' }]}>
-                      <Text style={[styles.activeThemePillText, { color: colors.tint }]}>
+                    <View style={[styles.activeThemePill, { backgroundColor: colors.tint + '20', flexShrink: 0 }]}>
+                      <Text style={[styles.activeThemePillText, { color: colors.tint }]} numberOfLines={1}>
                         {activeTheme.startsWith('galaxy')
                           ? 'Galaxia'
                           : activeTheme.startsWith('desert')
@@ -762,12 +764,12 @@ export default function AppearanceScreen() {
                         </View>
                         <View style={{ flex: 1, minWidth: 0 }}>
                           <Text
-                            style={[styles.themeRowTitle, { color: isUnlocked ? st.tint : colors.text }]}
+                            style={[styles.themeRowTitle, { color: colors.text }]}
                             numberOfLines={1}
                           >
                             {st.label}
                           </Text>
-                          <Text style={{ fontSize: 10.5, fontWeight: '700', color: st.tint, marginTop: 1 }} numberOfLines={1}>
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: isDark ? st.textDark : st.textLight, marginTop: 1 }} numberOfLines={1}>
                             {st.previewCaption}
                           </Text>
                           <View style={styles.themeRowStatus}>

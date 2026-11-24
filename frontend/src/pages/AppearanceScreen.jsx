@@ -37,7 +37,14 @@ const GalaxyEffectsWarningModal = ({ onConfirm, onCancel }) => {
           className="relative mt-auto w-full max-w-sm rounded-t-[32px] rounded-b-none border border-glass-border bg-bg-primary p-6 pt-3 pb-[calc(1.5rem+var(--safe-bottom))] text-center shadow-2xl animate-[slide-up_0.3s_ease-out] sm:mt-0 sm:rounded-[32px] sm:p-8 sm:animate-[scale-in_0.3s_ease-out]"
           onClick={event => event.stopPropagation()}
         >
-          <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-black/10 dark:bg-white/20 sm:hidden" aria-hidden="true" />
+          <button
+            type="button"
+            onClick={onCancel}
+            aria-label="Cerrar aviso"
+            className="w-full py-2 -mt-1 mb-2 flex justify-center sm:hidden cursor-pointer"
+          >
+            <span className="h-1.5 w-12 rounded-full bg-black/20 dark:bg-white/25 block" />
+          </button>
           <button type="button" onClick={onCancel} aria-label="Cerrar" className="absolute right-4 top-4 rounded-full p-2 text-text-secondary transition hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/5 sm:right-5 sm:top-5">
             <X size={20} />
           </button>
@@ -178,8 +185,8 @@ const AccentButton = ({ opt, isLocked, isSelected, onClick }) => (
         </span>
       )}
       {isLocked && (
-        <span className="absolute inset-0 flex items-center justify-center text-black/40 dark:text-black/60 pointer-events-none drop-shadow-sm">
-          <Lock size={16} strokeWidth={2.5} />
+        <span className="absolute inset-0 flex items-center justify-center text-black/45 dark:text-black/65 pointer-events-none drop-shadow-sm">
+          <FaLock size={14} />
         </span>
       )}
     </div>
@@ -496,15 +503,15 @@ export default function AppearanceScreen({ setView }) {
             }}
             className="flex items-center justify-between cursor-pointer select-none lg:cursor-default"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
               <div className="p-2.5 rounded-[16px] bg-black/5 dark:bg-white/5 text-accent shrink-0">
-                <FaMeteor size={24} strokeWidth={2.5} />
+                <FaMeteor size={22} />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">Mis Temas</h2>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-nowrap min-w-0">
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight whitespace-nowrap">Mis Temas</h2>
                   {(isGalaxyActive || isDesertActive || isOceanActive) && (
-                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 text-accent tracking-wider">
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 text-accent tracking-wider whitespace-nowrap shrink-0">
                       {isGalaxyActive ? 'Galaxia' : isDesertActive ? 'Desierto' : 'Océano'}
                     </span>
                   )}
@@ -512,16 +519,16 @@ export default function AppearanceScreen({ setView }) {
                 <p className="text-xs text-text-secondary mt-0.5 hidden lg:block">
                   Invita amigos para ganar +1.000 XP cada uno y desbloquear estos 3 temas con vistas previas reales.
                 </p>
-                <p className="text-[11px] text-text-muted mt-0.5 lg:hidden block">
+                <p className="text-[11px] text-text-muted mt-0.5 lg:hidden block truncate">
                   {isMyThemesOpenMobile ? 'Toca para solapar' : '3 temas exclusivos · +1.000 XP/amigo'}
                 </p>
               </div>
             </div>
 
             {/* Controles móviles para desplegar/solapar */}
-            <div className="flex items-center gap-2 lg:hidden">
-              {!isMyThemesOpenMobile && (
-                <div className="flex -space-x-1 items-center mr-1 opacity-90">
+            <div className="flex items-center gap-2 lg:hidden shrink-0">
+              {!isMyThemesOpenMobile && !(isGalaxyActive || isDesertActive || isOceanActive) && (
+                <div className="hidden xs:flex sm:flex -space-x-1 items-center mr-1 opacity-90">
                   <span className="w-6 h-6 rounded-full bg-[#a855f7]/20 text-[#a855f7] flex items-center justify-center ring-1 ring-[#a855f7]/30" title="Galaxia">
                     <FaMeteor size={11} />
                   </span>
@@ -623,10 +630,10 @@ export default function AppearanceScreen({ setView }) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`text-sm font-bold ${isGalaxyUnlocked ? 'bg-clip-text text-transparent bg-gradient-to-r from-[#a855f7] to-[#3b82f6]' : 'text-text-primary'}`}>
+                    <span className="text-sm font-extrabold text-text-primary antialiased">
                       Tema Galaxia
                     </span>
-                    <span className="text-[10px] font-bold text-[#a855f7]">Liquid Glass · Estelar</span>
+                    <span className="text-[11px] font-bold text-[#6d28d9] dark:text-[#d8b4fe] antialiased">Liquid Glass · Estelar</span>
                   </div>
                   <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1.5 mt-0.5">
                     {isGalaxyUnlocked ? (
@@ -723,10 +730,10 @@ export default function AppearanceScreen({ setView }) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`text-sm font-bold ${isDesertUnlocked ? 'bg-clip-text text-transparent bg-gradient-to-r from-[#f59e0b] to-[#ea580c]' : 'text-text-primary'}`}>
+                    <span className="text-sm font-extrabold text-text-primary antialiased">
                       Tema Desierto
                     </span>
-                    <span className="text-[10px] font-bold text-[#f59e0b]">Liquid Glass · Dunas (Claro / Oscuro)</span>
+                    <span className="text-[11px] font-bold text-[#b45309] dark:text-[#fde68a] antialiased">Liquid Glass · Dunas (Claro / Oscuro)</span>
                   </div>
                   <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1.5 mt-0.5">
                     {isDesertUnlocked ? (
@@ -831,10 +838,10 @@ export default function AppearanceScreen({ setView }) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`text-sm font-bold ${isOceanUnlocked ? 'bg-clip-text text-transparent bg-gradient-to-r from-[#0ea5e9] to-[#0284c7]' : 'text-text-primary'}`}>
+                    <span className="text-sm font-extrabold text-text-primary antialiased">
                       Tema Océano
                     </span>
-                    <span className="text-[10px] font-bold text-[#0ea5e9]">Liquid Glass · Océano (Claro / Oscuro)</span>
+                    <span className="text-[11px] font-bold text-[#0369a1] dark:text-[#bae6fd] antialiased">Liquid Glass · Océano (Claro / Oscuro)</span>
                   </div>
                   <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1.5 mt-0.5">
                     {isOceanUnlocked ? (

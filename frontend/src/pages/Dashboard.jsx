@@ -1660,8 +1660,22 @@ const Dashboard = ({ setView }) => {
 
       {/* MODAL REINICIO IOS ANTES DE PROBAR */}
       {showIosReloadModal && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]">
-          <div className="bg-bg-primary ring-1 ring-glass-border p-6 sm:p-8 rounded-[32px] max-w-sm w-full shadow-2xl animate-[slide-up_0.3s_ease-out]">
+        <div
+          className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-[fade-in_0.2s_ease-out]"
+          onClick={() => setShowIosReloadModal(false)}
+        >
+          <div
+            className="bg-bg-primary ring-1 ring-glass-border px-6 pb-[calc(1.5rem+var(--safe-bottom,env(safe-area-inset-bottom,0px)))] pt-3 sm:p-8 rounded-t-[32px] rounded-b-none sm:rounded-[32px] max-w-sm w-full shadow-2xl animate-[slide-up_0.28s_cubic-bezier(0.32,0.72,0,1)] sm:animate-[scale-in_0.2s_ease-out]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowIosReloadModal(false)}
+              aria-label="Cerrar"
+              className="w-full py-2 -mt-1 mb-3 flex justify-center sm:hidden cursor-pointer"
+            >
+              <span className="w-12 h-1.5 rounded-full bg-black/20 dark:bg-white/25 block" />
+            </button>
             <div className="flex items-center gap-3 mb-4">
               <TriangleAlert className="text-accent" size={28} />
               <h3 className="text-xl font-black text-text-primary tracking-tight">
@@ -1681,7 +1695,7 @@ const Dashboard = ({ setView }) => {
               <button
                 onClick={() => {
                   setShowIosReloadModal(false);
-                  startThemeTest(10, true);
+                  startThemeTest('galaxy', 10, true);
                 }}
                 className="flex-1 py-3.5 rounded-[20px] font-bold text-accent-contrast bg-accent hover:bg-accent/90 transition-transform active:scale-95 shadow-lg shadow-accent/20"
               >

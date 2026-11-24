@@ -46,7 +46,14 @@ const ConfirmationModal = ({
         onClick={(e) => e.stopPropagation()}>
 
         {/* Drag handle for mobile */}
-        <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
+        <button
+          type="button"
+          onClick={onCancel}
+          aria-label="Cerrar confirmación"
+          className="w-full py-2 -mt-3 mb-3 flex justify-center sm:hidden cursor-pointer shrink-0"
+        >
+          <span className="w-12 h-1.5 bg-black/20 dark:bg-white/25 rounded-full block" />
+        </button>
         
         <p className="text-lg mb-6 text-text-primary">{message}</p>
 

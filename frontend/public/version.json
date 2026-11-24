@@ -1,21 +1,21 @@
 {
-  "version": "7.16.56",
-  "releaseNotes": "Actualización v7.16.56: el modal de Recompensas ahora abre desde abajo en móvil con la barra superior gris para deslizar y cerrar, y bajamos los requisitos de invitación (Galaxia 3, Desierto 5 y Océano 7).",
+  "version": "7.16.57",
+  "releaseNotes": "Actualización v7.16.57: corregido el error de renderizado con Lock en Apariencia, textos más nítidos sin desenfoque en Galaxia/Desierto/Océano, cabecera Mis Temas en una sola línea en móvil y modales de prueba desde abajo.",
   "welcome": {
-    "title": "Recompensas Más Cerca y Bottom Sheet Móvil",
-    "subtitle": "Desbloquea los temas exclusivos con menos invitaciones y disfruta el nuevo modal deslizable desde abajo.",
+    "title": "Apariencia Más Nítida y Sin Errores",
+    "subtitle": "Corregimos el fallo en Apariencia, mejoramos la nitidez del texto y pulimos la cabecera Mis Temas y los modales móviles.",
     "features": [
       {
-        "title": "Nuevos Requisitos: 3, 5 y 7 Amigos",
-        "description": "Tema Galaxia pasa a 3 amigos, Desierto a 5 y Océano a 7 en Web, Capacitor y Nativo (+1.000 XP cada uno)."
+        "title": "Error de Icono Solucionado en Apariencia",
+        "description": "Reemplazado el candado por FaLock de FontAwesome para evitar fallos en los acentos bloqueados."
       },
       {
-        "title": "Modal de Recompensas Desde Abajo",
-        "description": "Abre como hoja inferior nativa en móvil con barra gris superior para pulsar o deslizar y cerrar."
+        "title": "Textos Nítidos y Cabecera En Una Línea",
+        "description": "Eliminado el degradado borroso en Tema Galaxia/Desierto/Océano y evitado el salto de línea al solapar Mis Temas."
       },
       {
-        "title": "Vistas Previas Despejadas",
-        "description": "Sigue probando los temas 10s en vivo y viendo tu progreso al instante."
+        "title": "Modales Móviles Desde Abajo",
+        "description": "Tanto Recompensas como el aviso iOS de prueba abren desde abajo con barra gris superior interactiva."
       }
     ]
   }

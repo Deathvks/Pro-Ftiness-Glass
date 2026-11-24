@@ -30,6 +30,7 @@ const REWARDS = [
     requiredReferrals: 3,
     icon: FaMeteor,
     accentHex: '#a855f7',
+    captionColorClass: 'text-[#6d28d9] dark:text-[#d8b4fe]',
     variants: [{ id: 'galaxy', label: 'Usar tema', testLabel: 'Probar 10s' }],
   },
   {
@@ -40,6 +41,7 @@ const REWARDS = [
     requiredReferrals: 5,
     icon: FaSun,
     accentHex: '#f59e0b',
+    captionColorClass: 'text-[#b45309] dark:text-[#fde68a]',
     imageUrl: '/assets/themes/desert.jpg',
     variants: [
       { id: 'desert', label: 'Claro', testLabel: 'Probar Claro' },
@@ -54,6 +56,7 @@ const REWARDS = [
     requiredReferrals: 7,
     icon: FaUmbrellaBeach,
     accentHex: '#0ea5e9',
+    captionColorClass: 'text-[#0369a1] dark:text-[#bae6fd]',
     imageUrl: '/assets/themes/ocean.jpg',
     variants: [
       { id: 'ocean', label: 'Claro', testLabel: 'Probar Claro' },
@@ -301,8 +304,8 @@ export default function RewardsModal({ isOpen, onClose }) {
 
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <div className="min-w-0">
-                        <h3 className="font-extrabold text-sm sm:text-base text-text-primary">{reward.name}</h3>
-                        <p className="text-[11px] font-bold flex items-center gap-1.5 mt-0.5" style={{ color: reward.accentHex }}>
+                        <h3 className="font-extrabold text-sm sm:text-base text-text-primary antialiased">{reward.name}</h3>
+                        <p className={`text-[11px] font-bold flex items-center gap-1.5 mt-0.5 antialiased ${reward.captionColorClass}`}>
                           <RewardIcon size={10} />
                           <span>{reward.previewCaption}</span>
                         </p>
