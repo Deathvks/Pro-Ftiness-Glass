@@ -103,6 +103,8 @@ export async function getNewsOpenGraphHtml(req, res, next) {
   <title>${title}</title>
   <meta name="description" content="${desc}" />
   <link rel="canonical" href="${safeUrl}" />
+  <link rel="alternate" hreflang="es" href="${safeUrl}" />
+  <link rel="alternate" hreflang="x-default" href="${safeUrl}" />
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="Pro Fitness Glass" />
   <meta property="og:locale" content="es_ES" />

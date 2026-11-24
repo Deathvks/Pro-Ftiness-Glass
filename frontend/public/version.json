@@ -1,21 +1,21 @@
 {
-  "version": "7.16.59",
-  "releaseNotes": "Actualización v7.16.59: botón de cerrar (X) subido por encima del contenido en la tarjeta de temas del Dashboard para que el título se muestre despejado a ancho completo.",
+  "version": "7.16.60",
+  "releaseNotes": "Actualización v7.16.60: corregidas las etiquetas hreflang en noticias y páginas públicas para apuntar a su propia URL canónica.",
   "welcome": {
-    "title": "Tarjeta de Temas Más Despejada",
-    "subtitle": "Subimos el botón de cerrar por encima del título para evitar saltos de línea innecesarios en móvil.",
+    "title": "Mejoras de SEO en Noticias y Web",
+    "subtitle": "Corregimos la configuración hreflang de los artículos y páginas públicas para optimizar su indexación.",
     "features": [
       {
-        "title": "Botón X Arriba Sin Molestar",
-        "description": "El botón de cerrar y la insignia +1.000 XP ocupan la fila superior dejando el texto libre debajo."
+        "title": "Hreflang Propio por Artículo",
+        "description": "Cada noticia y guía declara su propia URL en hreflang es y x-default en lugar de apuntar a la portada."
       },
       {
-        "title": "Vistas Previas en Inicio",
-        "description": "Galaxia (3), Desierto (5) y Océano (7) siguen accesibles con un toque desde Inicio."
+        "title": "Prerender y Navegación Coherentes",
+        "description": "Sincronización entre el HTML estático prerrenderizado y la navegación dinámica en el navegador."
       },
       {
-        "title": "Consistente en Web y Capacitor",
-        "description": "Mismo diseño limpio que en React Native."
+        "title": "Metadatos Open Graph Consistentes",
+        "description": "Etiquetas alternativas unificadas también en las vistas previas de enlaces compartidos."
       }
     ]
   }

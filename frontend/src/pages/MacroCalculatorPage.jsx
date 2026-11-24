@@ -192,6 +192,8 @@ export default function MacroCalculatorPage({ onBack }) {
           content="calculadora calorias y macros, calculadora deficit calorico, calcular tdee gimnasio, gramos de proteina por kilo, macros para volumen muscular, mifflin st jeor calculadora, dieta hipertrofia"
         />
         <link rel="canonical" href="https://profitnessglass.es/calculadora-calorias-macros" />
+        <link rel="alternate" hrefLang="es" href="https://profitnessglass.es/calculadora-calorias-macros" />
+        <link rel="alternate" hrefLang="x-default" href="https://profitnessglass.es/calculadora-calorias-macros" />
         <meta property="og:title" content="Calculadora de Calorías, Macros y Déficit Calórico — Pro Fitness Glass" />
         <meta
           property="og:description"

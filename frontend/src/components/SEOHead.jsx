@@ -33,6 +33,8 @@ export default function SEOHead({ title, description, route, noIndex = false }) 
             )}
 
             <link rel="canonical" href={canonicalUrl} />
+            {!noIndex && <link rel="alternate" hrefLang="es" href={canonicalUrl} />}
+            {!noIndex && <link rel="alternate" hrefLang="x-default" href={canonicalUrl} />}
             <meta property="og:url" content={canonicalUrl} />
         </Helmet>
     );

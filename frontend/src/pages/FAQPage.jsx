@@ -233,6 +233,8 @@ export default function FAQPage() {
           content="faq pro fitness glass, preguntas frecuentes gimnasio app, pro fitness glass gratis o pago, como funciona pro fitness glass, descargar pro fitness glass android, tracker fitness gratis"
         />
         <link rel="canonical" href="https://profitnessglass.es/faq" />
+        <link rel="alternate" hrefLang="es" href="https://profitnessglass.es/faq" />
+        <link rel="alternate" hrefLang="x-default" href="https://profitnessglass.es/faq" />
         <meta property="og:title" content="Preguntas Frecuentes (FAQ) — Pro Fitness Glass" />
         <meta
           property="og:description"

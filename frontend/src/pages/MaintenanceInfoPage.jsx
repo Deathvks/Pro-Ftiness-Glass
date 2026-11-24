@@ -45,6 +45,8 @@ export default function MaintenanceInfoPage() {
           content="La migración técnica al dominio oficial profitnessglass.es ha finalizado con éxito. Tus datos están 100% seguros y la plataforma ahora ofrece mayor velocidad y estabilidad."
         />
         <link rel="canonical" href="https://profitnessglass.es/mantenimiento" />
+        <link rel="alternate" hrefLang="es" href="https://profitnessglass.es/mantenimiento" />
+        <link rel="alternate" hrefLang="x-default" href="https://profitnessglass.es/mantenimiento" />
         <meta property="og:title" content="Migración y Mantenimiento Completados con Éxito — Pro Fitness Glass" />
         <meta
           property="og:description"

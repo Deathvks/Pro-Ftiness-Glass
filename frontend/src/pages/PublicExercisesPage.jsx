@@ -320,6 +320,8 @@ export default function PublicExercisesPage({ onBack }) {
           content="ejercicios de gimnasio, mejores ejercicios pecho, ejercicios espalda gym, sentadilla bulgara tecnica, press de banca tecnica, rutina push pull legs, rutina torso pierna 4 dias, hipertrofia muscular"
         />
         <link rel="canonical" href="https://profitnessglass.es/ejercicios" />
+        <link rel="alternate" hrefLang="es" href="https://profitnessglass.es/ejercicios" />
+        <link rel="alternate" hrefLang="x-default" href="https://profitnessglass.es/ejercicios" />
         <meta property="og:title" content="Guía de Ejercicios de Gimnasio y Rutinas de Hipertrofia — Pro Fitness Glass" />
         <meta
           property="og:description"

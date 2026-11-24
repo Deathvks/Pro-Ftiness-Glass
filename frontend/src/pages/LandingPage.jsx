@@ -454,6 +454,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     content="Registra tus entrenamientos de gimnasio, aplica sobrecarga progresiva en tus rutinas de hipertrofia y fuerza, calcula tu 1RM y controla calorías y macros con IA gratis."
                 />
                 <link rel="canonical" href="https://profitnessglass.es/" />
+                <link rel="alternate" hrefLang="es" href="https://profitnessglass.es/" />
+                <link rel="alternate" hrefLang="x-default" href="https://profitnessglass.es/" />
             </Helmet>
 
             {/* Fondo de cristal eliminado por optimización de rendimiento */}

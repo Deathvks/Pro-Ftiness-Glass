@@ -171,6 +171,8 @@ export default function OneRMCalculatorPage({ onBack }) {
           content="calculadora 1rm, calcular repeticion maxima, 1rm press banca, 1rm sentadilla, 1rm peso muerto, porcentajes 1rm hipertrofia, formula epley brzycki, fuerza gimnasio, sobrecarga progresiva"
         />
         <link rel="canonical" href="https://profitnessglass.es/calculadora-1rm" />
+        <link rel="alternate" hrefLang="es" href="https://profitnessglass.es/calculadora-1rm" />
+        <link rel="alternate" hrefLang="x-default" href="https://profitnessglass.es/calculadora-1rm" />
         <meta property="og:title" content="Calculadora de 1RM y Porcentajes de Fuerza para Gimnasio — Pro Fitness Glass" />
         <meta
           property="og:description"

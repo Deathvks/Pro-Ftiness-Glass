@@ -137,6 +137,8 @@ export default function AboutUsPage() {
           content="que es pro fitness glass, quienes somos pro fitness glass, app gimnasio gratis, mejor app fitness gratuita, tracker gimnasio sobrecarga progresiva, app pesas sin suscripcion, dylan jesus suarez falcon, synapse ia fitness"
         />
         <link rel="canonical" href="https://profitnessglass.es/sobre-nosotros" />
+        <link rel="alternate" hrefLang="es" href="https://profitnessglass.es/sobre-nosotros" />
+        <link rel="alternate" hrefLang="x-default" href="https://profitnessglass.es/sobre-nosotros" />
         <meta property="og:title" content="¿Qué es Pro Fitness Glass? — Quiénes Somos y Misión" />
         <meta
           property="og:description"

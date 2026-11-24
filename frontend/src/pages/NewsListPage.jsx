@@ -385,6 +385,8 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
             content="Descubre artículos científicos sobre hipertrofia, suplementación, nutrición deportiva y novedades de Pro Fitness Glass."
           />
           <link rel="canonical" href={`${BASE_URL}/noticias`} />
+          <link rel="alternate" hrefLang="es" href={`${BASE_URL}/noticias`} />
+          <link rel="alternate" hrefLang="x-default" href={`${BASE_URL}/noticias`} />
           <meta name="robots" content="index, follow" />
           <meta property="og:title" content="Noticias y Artículos de Fitness y Nutrición | Pro Fitness Glass" />
           <meta property="og:description" content="Guías científicas, suplementación y estrategias de nutrición deportiva contrastadas por la ciencia." />

@@ -202,8 +202,18 @@ function injectMeta(html, {
   // Meta description
   output = output.replace(/<meta\s+name=["']description["'][\s\S]*?>/i, `<meta name="description" content="${safeDesc}" />`);
 
-  // Canonical
-  output = output.replace(/<link\s+rel=["']canonical["'][\s\S]*?>/i, `<link rel="canonical" href="${safeUrl}" />`);
+  // Canonical y hreflang propios de la página (evitar heredar los de la portada "/")
+  output = output.replace(
+    /<link\s+rel=["']canonical["'][\s\S]*?>/i,
+    `<link rel="canonical" href="${safeUrl}" data-rh="true" />`
+  );
+  for (const lang of ['es', 'x-default']) {
+    const hreflangPattern = `<link\\s+(?=[^>]*\\brel=["']alternate["'])(?=[^>]*\\bhreflang=["']${lang}["'])[^>]*>`;
+    const replacement = `<link rel="alternate" hreflang="${lang}" href="${safeUrl}" data-rh="true" />`;
+    output = new RegExp(hreflangPattern, 'i').test(output)
+      ? output.replace(new RegExp(hreflangPattern, 'gi'), replacement)
+      : output.replace(/<\/head>/i, `  ${replacement}\n</head>`);
+  }
 
   // Open Graph (eliminamos duplicados/valores por defecto de index.html antes de inyectar los del artículo)
   output = output.replace(/<meta\s+property=["']og:type["'][\s\S]*?>/i, `<meta property="og:type" content="${type}" />`);

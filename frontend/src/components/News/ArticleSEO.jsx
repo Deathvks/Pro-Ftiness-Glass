@@ -86,6 +86,8 @@ export default function ArticleSEO({ article }) {
       <title>{title}</title>
       <meta name="description" content={description} />
       <link rel="canonical" href={canonicalUrl} />
+      <link rel="alternate" hrefLang="es" href={canonicalUrl} />
+      <link rel="alternate" hrefLang="x-default" href={canonicalUrl} />
       <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
 
       {/* Open Graph (Facebook, WhatsApp, LinkedIn) */}
