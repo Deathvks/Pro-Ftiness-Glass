@@ -1,21 +1,21 @@
 {
-  "version": "7.16.60",
-  "releaseNotes": "Actualización v7.16.60: corregidas las etiquetas hreflang en noticias y páginas públicas para apuntar a su propia URL canónica.",
+  "version": "7.16.61",
+  "releaseNotes": "Actualización v7.16.61: contenido prerrenderizado de noticias y guías visible sin opacidad ni aria-hidden, y un único H1 semántico por página.",
   "welcome": {
-    "title": "Mejoras de SEO en Noticias y Web",
-    "subtitle": "Corregimos la configuración hreflang de los artículos y páginas públicas para optimizar su indexación.",
+    "title": "Renderizado SEO Limpio y Visible",
+    "subtitle": "Mejoramos la accesibilidad y lectura inicial de las noticias y guías antes de hidratar la aplicación.",
     "features": [
       {
-        "title": "Hreflang Propio por Artículo",
-        "description": "Cada noticia y guía declara su propia URL en hreflang es y x-default en lugar de apuntar a la portada."
+        "title": "Contenido Visible Desde el Primer Byte",
+        "description": "Las noticias y guías prerrenderizadas se muestran directamente en flujo visible sin capas ocultas ni aria-hidden."
       },
       {
-        "title": "Prerender y Navegación Coherentes",
-        "description": "Sincronización entre el HTML estático prerrenderizado y la navegación dinámica en el navegador."
+        "title": "Un Único H1 Semántico por Página",
+        "description": "Eliminada la duplicación del título principal en noscript y ajustados los encabezados del cuerpo a H2."
       },
       {
-        "title": "Metadatos Open Graph Consistentes",
-        "description": "Etiquetas alternativas unificadas también en las vistas previas de enlaces compartidos."
+        "title": "Jerarquía Editorial Consistente",
+        "description": "Misma estructura de títulos entre la versión estática prerrenderizada y la lectura interactiva."
       }
     ]
   }

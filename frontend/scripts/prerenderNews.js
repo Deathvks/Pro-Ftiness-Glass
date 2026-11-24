@@ -62,7 +62,12 @@ function markdownToSemanticHtml(md = '') {
       continue;
     }
 
-    // Encabezados
+    // Encabezados (downgrade de # a <h2> para preservar un único <h1> por página)
+    if (line.startsWith('#### ')) {
+      if (inList) { htmlParts.push('</ul>'); inList = false; }
+      htmlParts.push(`<h4 style="font-size: 1.15rem; font-weight: 700; margin: 1.25rem 0 0.5rem; color: #cbd5e1;">${formatInlineMarkdown(line.slice(5))}</h4>`);
+      continue;
+    }
     if (line.startsWith('### ')) {
       if (inList) { htmlParts.push('</ul>'); inList = false; }
       htmlParts.push(`<h3 style="font-size: 1.35rem; font-weight: 800; margin: 1.5rem 0 0.5rem; color: #f8fafc;">${formatInlineMarkdown(line.slice(4))}</h3>`);
@@ -75,7 +80,7 @@ function markdownToSemanticHtml(md = '') {
     }
     if (line.startsWith('# ')) {
       if (inList) { htmlParts.push('</ul>'); inList = false; }
-      htmlParts.push(`<h1 style="font-size: 2.2rem; font-weight: 900; margin: 2.5rem 0 1rem; color: #f8fafc;">${formatInlineMarkdown(line.slice(2))}</h1>`);
+      htmlParts.push(`<h2 style="font-size: 1.75rem; font-weight: 900; margin: 2rem 0 0.75rem; color: #f8fafc;">${formatInlineMarkdown(line.slice(2))}</h2>`);
       continue;
     }
 
@@ -256,14 +261,20 @@ function findChunkHref(prefix) {
 }
 
 function injectPrerenderBody(html, seoBodyHtml, chunkPrefix = null) {
-  // Conservamos .app-splash-screen visible para evitar FOUC (parpadeo sin CSS al recargar)
-  // e inyectamos el HTML semántico SEO oculto visualmente dentro de #root + visible en <noscript>.
-  const hiddenSeoBlock = `<div data-seo-prerender="true" style="position:fixed;inset:0;z-index:-1;opacity:0;pointer-events:none;overflow:hidden;max-height:100vh;" aria-hidden="true">${seoBodyHtml}</div>`;
+  // Sustituimos el splash de #root por el HTML semántico visible y desplazable (sin opacity: 0 ni aria-hidden)
+  // y eliminamos la copia duplicada de <noscript> para mantener un único <h1> real en la página.
+  const visibleSeoBlock = `<div data-seo-prerender="true" style="position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;background-color:#0f172a;color:#f8fafc;">${seoBodyHtml}</div>`;
   let output = html.replace(
-    /(<div id="root">[\s\S]*?)(<\/div>\s*<noscript>)/i,
-    `$1\n    ${hiddenSeoBlock}\n  $2`
+    /<div id="root">[\s\S]*<\/div>\s*<noscript>[\s\S]*?<\/noscript>/i,
+    `<div id="root">\n    ${visibleSeoBlock}\n  </div>`
   );
-  output = output.replace(/<noscript>[\s\S]*?<\/noscript>/i, `<noscript>${seoBodyHtml}</noscript>`);
+  if (output === html) {
+    output = html.replace(
+      /(<div id="root">)[\s\S]*?(<\/div>\s*<script)/i,
+      `$1\n    ${visibleSeoBlock}\n  $2`
+    );
+    output = output.replace(/<noscript>[\s\S]*?<\/noscript>/i, '');
+  }
   if (chunkPrefix) {
     const chunkHref = findChunkHref(chunkPrefix);
     if (chunkHref && !output.includes(chunkHref)) {
