@@ -1223,7 +1223,7 @@ const Dashboard = ({ setView }) => {
                   <button
                     type="button"
                     onClick={() => setShowRewardsModal(true)}
-                    className="relative h-12 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-2 flex items-end cursor-pointer"
+                    className="relative h-14 sm:h-16 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-1.5 sm:p-2 flex items-end cursor-pointer"
                     style={{ background: 'radial-gradient(circle at 25% 25%, rgba(168,85,247,0.5), transparent 60%), linear-gradient(135deg, #070314, #1d0b3b)' }}
                   >
                     <span className="text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
@@ -1233,10 +1233,10 @@ const Dashboard = ({ setView }) => {
                   <button
                     type="button"
                     onClick={() => setShowRewardsModal(true)}
-                    className="relative h-12 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-2 flex items-end cursor-pointer bg-amber-900"
+                    className="relative h-14 sm:h-16 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-1.5 sm:p-2 flex items-end cursor-pointer bg-amber-900"
                   >
                     <img src="/assets/themes/desert.jpg" alt="Desierto" className="absolute inset-0 w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     <span className="relative z-10 text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
                       <FaSun size={9} className="text-[#fcd34d] shrink-0" /> Desierto · 8
                     </span>
@@ -1244,10 +1244,10 @@ const Dashboard = ({ setView }) => {
                   <button
                     type="button"
                     onClick={() => setShowRewardsModal(true)}
-                    className="relative h-12 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-2 flex items-end cursor-pointer bg-sky-900"
+                    className="relative h-14 sm:h-16 rounded-xl overflow-hidden ring-1 ring-white/15 text-left p-1.5 sm:p-2 flex items-end cursor-pointer bg-sky-900"
                   >
                     <img src="/assets/themes/ocean.jpg" alt="Océano" className="absolute inset-0 w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     <span className="relative z-10 text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
                       <FaUmbrellaBeach size={9} className="text-[#7dd3fc] shrink-0" /> Océano · 11
                     </span>

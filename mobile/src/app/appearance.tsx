@@ -732,23 +732,15 @@ export default function AppearanceScreen() {
                         transition={200}
                       />
                       <LinearGradient
-                        colors={['rgba(0,0,0,0.08)', 'rgba(0,0,0,0.68)']}
+                        colors={['rgba(0,0,0,0.04)', 'rgba(0,0,0,0.3)']}
                         style={StyleSheet.absoluteFill}
                       />
-                      <View style={styles.themePreviewBottom}>
-                        <View style={styles.themePreviewGlassChip}>
-                          <STIcon size={11} color="#ffffff" />
-                          <Text style={styles.themePreviewGlassChipText} numberOfLines={1}>
-                            {st.previewCaption}
-                          </Text>
-                        </View>
-                        <View style={styles.themePreviewCountPill}>
-                          <Text style={styles.themePreviewCountText}>
-                            {isUnlocked
-                              ? 'Desbloqueado'
-                              : `${Math.min(referralCount, st.requiredReferrals)}/${st.requiredReferrals} amigos`}
-                          </Text>
-                        </View>
+                      <View style={styles.themePreviewCountPill}>
+                        <Text style={styles.themePreviewCountText}>
+                          {isUnlocked
+                            ? 'Desbloqueado'
+                            : `${Math.min(referralCount, st.requiredReferrals)}/${st.requiredReferrals}`}
+                        </Text>
                       </View>
                     </View>
 
@@ -774,6 +766,9 @@ export default function AppearanceScreen() {
                             numberOfLines={1}
                           >
                             {st.label}
+                          </Text>
+                          <Text style={{ fontSize: 10.5, fontWeight: '700', color: st.tint, marginTop: 1 }} numberOfLines={1}>
+                            {st.previewCaption}
                           </Text>
                           <View style={styles.themeRowStatus}>
                             {isUnlocked ? (
@@ -1479,38 +1474,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   themePreviewBox: {
-    height: 92,
+    height: 112,
     borderRadius: 14,
     overflow: 'hidden',
     marginBottom: 12,
-    justifyContent: 'flex-end',
-    padding: 10,
-  },
-  themePreviewBottom: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  themePreviewGlassChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
-    flexShrink: 1,
-  },
-  themePreviewGlassChipText: {
-    color: '#ffffff',
-    fontSize: 10.5,
-    fontWeight: '700',
   },
   themePreviewCountPill: {
-    paddingHorizontal: 9,
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
     backgroundColor: 'rgba(0,0,0,0.55)',

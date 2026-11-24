@@ -253,7 +253,7 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
                   !isGroupActive && getAppleSheetCardStyle(isDark, 20),
                 ]}
               >
-                {/* Preview real sin escala de grises */}
+                {/* Preview real despejado */}
                 <View style={styles.previewBanner}>
                   <ExpoImage
                     source={reward.previewImage}
@@ -262,31 +262,31 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
                     transition={200}
                   />
                   <LinearGradient
-                    colors={['rgba(0,0,0,0.08)', 'rgba(0,0,0,0.68)']}
+                    colors={['rgba(0,0,0,0.04)', 'rgba(0,0,0,0.3)']}
                     style={StyleSheet.absoluteFill}
                   />
-                  <View style={styles.previewOverlayRow}>
-                    <View style={styles.previewGlassChip}>
-                      <FontAwesome5 name={reward.iconName} size={10} color={reward.color} solid />
-                      <Text style={styles.previewGlassChipText} numberOfLines={1}>
-                        {reward.previewCaption}
-                      </Text>
-                    </View>
-                    <View style={styles.previewLockPill}>
-                      <FontAwesome5
-                        name={isUnlocked ? 'lock-open' : 'lock'}
-                        size={9}
-                        color={isUnlocked ? '#34d399' : '#e2e8f0'}
-                      />
-                      <Text style={styles.previewLockText}>
-                        {isUnlocked ? 'Desbloqueado' : `${referralCount}/${reward.requiredReferrals}`}
-                      </Text>
-                    </View>
+                  <View style={styles.previewLockPill}>
+                    <FontAwesome5
+                      name={isUnlocked ? 'lock-open' : 'lock'}
+                      size={9}
+                      color={isUnlocked ? '#34d399' : '#e2e8f0'}
+                    />
+                    <Text style={styles.previewLockText}>
+                      {isUnlocked ? 'Desbloqueado' : `${referralCount}/${reward.requiredReferrals}`}
+                    </Text>
                   </View>
                 </View>
 
                 <View style={styles.rewardTitleRow}>
-                  <Text style={[styles.rewardTitle, { color: colors.text }]}>{reward.name}</Text>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={[styles.rewardTitle, { color: colors.text }]}>{reward.name}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 }}>
+                      <FontAwesome5 name={reward.iconName} size={10} color={reward.color} solid />
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: reward.color }} numberOfLines={1}>
+                        {reward.previewCaption}
+                      </Text>
+                    </View>
+                  </View>
                   {!isUnlocked && (
                     <Text style={[styles.remainingText, { color: colors.textSecondary }]}>
                       Faltan {remaining}
@@ -501,41 +501,19 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
   },
   previewBanner: {
-    height: 86,
+    height: 108,
     borderRadius: 14,
     overflow: 'hidden',
     marginBottom: 10,
-    justifyContent: 'flex-end',
-    padding: 9,
-  },
-  previewOverlayRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  previewGlassChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 9,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
-    flexShrink: 1,
-  },
-  previewGlassChipText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '700',
   },
   previewLockPill: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: 9,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
     backgroundColor: 'rgba(0,0,0,0.55)',

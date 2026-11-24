@@ -208,9 +208,9 @@ export default function RewardsModal({ isOpen, onClose }) {
                         : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/10'
                     }`}
                   >
-                    {/* Preview real */}
+                    {/* Preview real despejado */}
                     <div
-                      className="relative h-24 rounded-2xl overflow-hidden mb-3 ring-1 ring-white/15 flex items-end p-2.5"
+                      className="relative h-28 sm:h-32 rounded-2xl overflow-hidden mb-3 ring-1 ring-white/15"
                       style={
                         reward.imageUrl
                           ? undefined
@@ -227,34 +227,34 @@ export default function RewardsModal({ isOpen, onClose }) {
                             alt={`Vista previa ${reward.name}`}
                             className="absolute inset-0 w-full h-full object-cover"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/15" />
                         </>
                       ) : (
                         <>
-                          <div className="absolute top-2.5 left-5 w-1.5 h-1.5 rounded-full bg-white/90 shadow-[0_0_8px_#fff]" />
-                          <div className="absolute top-5 right-10 w-1 h-1 rounded-full bg-purple-200/90 shadow-[0_0_6px_#a855f7]" />
-                          <div className="absolute bottom-7 left-1/2 w-1.5 h-1.5 rounded-full bg-sky-200/90 shadow-[0_0_8px_#38bdf8]" />
+                          <div className="absolute top-3 left-6 w-1.5 h-1.5 rounded-full bg-white/90 shadow-[0_0_8px_#fff]" />
+                          <div className="absolute top-6 right-12 w-1 h-1 rounded-full bg-purple-200/90 shadow-[0_0_6px_#a855f7]" />
+                          <div className="absolute bottom-6 left-1/2 w-1.5 h-1.5 rounded-full bg-sky-200/90 shadow-[0_0_8px_#38bdf8]" />
                         </>
                       )}
 
-                      <div className="relative z-10 w-full flex items-center justify-between gap-2">
-                        <div className="px-2.5 py-1 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-[10px] font-bold flex items-center gap-1.5">
-                          <RewardIcon size={11} style={{ color: reward.accentHex }} />
-                          <span>{reward.previewCaption}</span>
-                        </div>
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/55 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
-                          {isUnlocked ? (
-                            <FaLockOpen size={10} className="text-emerald-400" />
-                          ) : (
-                            <FaLock size={10} className="text-white/80" />
-                          )}
-                          {isUnlocked ? 'Desbloqueado' : `${referralCount}/${reward.requiredReferrals}`}
-                        </span>
-                      </div>
+                      <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
+                        {isUnlocked ? (
+                          <FaLockOpen size={9} className="text-emerald-400" />
+                        ) : (
+                          <FaLock size={9} className="text-white/80" />
+                        )}
+                        {isUnlocked ? 'Desbloqueado' : `${referralCount}/${reward.requiredReferrals}`}
+                      </span>
                     </div>
 
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <h3 className="font-extrabold text-sm sm:text-base text-text-primary">{reward.name}</h3>
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="min-w-0">
+                        <h3 className="font-extrabold text-sm sm:text-base text-text-primary">{reward.name}</h3>
+                        <p className="text-[11px] font-bold flex items-center gap-1.5 mt-0.5" style={{ color: reward.accentHex }}>
+                          <RewardIcon size={10} />
+                          <span>{reward.previewCaption}</span>
+                        </p>
+                      </div>
                       {!isUnlocked && (
                         <span className="text-[11px] font-bold text-text-muted shrink-0">
                           Faltan {remaining}

@@ -602,23 +602,18 @@ export default function AppearanceScreen({ setView }) {
           <div className={`p-4 rounded-[22px] transition-all duration-500 border ${theme === 'galaxy' || isTestingTheme ? 'bg-[#a855f7]/10 border-[#a855f7]/30 shadow-lg shadow-[#a855f7]/20' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
             {/* Vista previa real Galaxia */}
             <div
-              className="relative h-24 sm:h-28 rounded-2xl overflow-hidden mb-3.5 ring-1 ring-white/15 flex items-end p-3"
+              className="relative h-28 sm:h-32 rounded-2xl overflow-hidden mb-3.5 ring-1 ring-white/15"
               style={{
                 background: 'radial-gradient(circle at 20% 20%, rgba(168,85,247,0.45), transparent 55%), radial-gradient(circle at 80% 75%, rgba(59,130,246,0.35), transparent 55%), linear-gradient(135deg, #070314 0%, #1d0b3b 50%, #090d26 100%)'
               }}
             >
               <div className="absolute top-3 left-6 w-1.5 h-1.5 rounded-full bg-white/90 shadow-[0_0_8px_#fff]" />
               <div className="absolute top-6 right-12 w-1 h-1 rounded-full bg-purple-200/90 shadow-[0_0_6px_#a855f7]" />
-              <div className="absolute bottom-8 left-1/2 w-1.5 h-1.5 rounded-full bg-sky-200/90 shadow-[0_0_8px_#38bdf8]" />
-              <div className="relative z-10 w-full flex items-center justify-between gap-2">
-                <div className="px-2.5 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold flex items-center gap-1.5">
-                  <FaMeteor size={11} className="text-[#c084fc]" />
-                  <span>Liquid Glass · Estelar</span>
-                </div>
-                <span className="px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
-                  {isGalaxyUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 5)}/5 amigos`}
-                </span>
-              </div>
+              <div className="absolute bottom-6 left-1/2 w-1.5 h-1.5 rounded-full bg-sky-200/90 shadow-[0_0_8px_#38bdf8]" />
+              <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
+                {isGalaxyUnlocked ? <FaLockOpen size={9} className="text-emerald-400" /> : <FaLock size={9} className="text-white/80" />}
+                {isGalaxyUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 5)}/5`}
+              </span>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -627,8 +622,11 @@ export default function AppearanceScreen({ setView }) {
                    <FaMeteor size={20} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className={`text-sm font-bold ${isGalaxyUnlocked ? 'bg-clip-text text-transparent bg-gradient-to-r from-[#a855f7] to-[#3b82f6]' : 'text-text-primary'}`}>
-                    Tema Galaxia
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`text-sm font-bold ${isGalaxyUnlocked ? 'bg-clip-text text-transparent bg-gradient-to-r from-[#a855f7] to-[#3b82f6]' : 'text-text-primary'}`}>
+                      Tema Galaxia
+                    </span>
+                    <span className="text-[10px] font-bold text-[#a855f7]">Liquid Glass · Estelar</span>
                   </div>
                   <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1.5 mt-0.5">
                     {isGalaxyUnlocked ? (
@@ -704,23 +702,18 @@ export default function AppearanceScreen({ setView }) {
 
           <div className={`mt-4 p-4 rounded-[22px] transition-all duration-500 border ${isDesertActive ? 'bg-[#f59e0b]/10 border-[#f59e0b]/30 shadow-lg shadow-[#f59e0b]/20' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
             {/* Vista previa real Desierto */}
-            <div className="relative h-24 sm:h-28 rounded-2xl overflow-hidden mb-3.5 ring-1 ring-white/15 flex items-end p-3 bg-[#7c2d12]">
+            <div className="relative h-28 sm:h-32 rounded-2xl overflow-hidden mb-3.5 ring-1 ring-white/15 bg-[#7c2d12]">
               <img
                 src="/assets/themes/desert.jpg"
                 alt="Vista previa Tema Desierto"
                 loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-amber-500/15" />
-              <div className="relative z-10 w-full flex items-center justify-between gap-2">
-                <div className="px-2.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-[10px] font-bold flex items-center gap-1.5">
-                  <FaSun size={11} className="text-[#fcd34d]" />
-                  <span>Liquid Glass · Dunas (Claro / Oscuro)</span>
-                </div>
-                <span className="px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
-                  {isDesertUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 8)}/8 amigos`}
-                </span>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
+              <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
+                {isDesertUnlocked ? <FaLockOpen size={9} className="text-emerald-400" /> : <FaLock size={9} className="text-white/80" />}
+                {isDesertUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 8)}/8`}
+              </span>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -729,8 +722,11 @@ export default function AppearanceScreen({ setView }) {
                    <FaSun size={20} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className={`text-sm font-bold ${isDesertUnlocked ? 'bg-clip-text text-transparent bg-gradient-to-r from-[#f59e0b] to-[#ea580c]' : 'text-text-primary'}`}>
-                    Tema Desierto
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`text-sm font-bold ${isDesertUnlocked ? 'bg-clip-text text-transparent bg-gradient-to-r from-[#f59e0b] to-[#ea580c]' : 'text-text-primary'}`}>
+                      Tema Desierto
+                    </span>
+                    <span className="text-[10px] font-bold text-[#f59e0b]">Liquid Glass · Dunas (Claro / Oscuro)</span>
                   </div>
                   <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1.5 mt-0.5">
                     {isDesertUnlocked ? (
@@ -814,23 +810,18 @@ export default function AppearanceScreen({ setView }) {
 
           <div className={`mt-4 p-4 rounded-[22px] transition-all duration-500 border ${isOceanActive ? 'bg-[#0ea5e9]/10 border-[#0ea5e9]/30 shadow-lg shadow-[#0ea5e9]/20' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
             {/* Vista previa real Océano */}
-            <div className="relative h-24 sm:h-28 rounded-2xl overflow-hidden mb-3.5 ring-1 ring-white/15 flex items-end p-3 bg-[#0c4a6e]">
+            <div className="relative h-28 sm:h-32 rounded-2xl overflow-hidden mb-3.5 ring-1 ring-white/15 bg-[#0c4a6e]">
               <img
                 src="/assets/themes/ocean.jpg"
                 alt="Vista previa Tema Océano"
                 loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-sky-500/15" />
-              <div className="relative z-10 w-full flex items-center justify-between gap-2">
-                <div className="px-2.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-[10px] font-bold flex items-center gap-1.5">
-                  <FaUmbrellaBeach size={11} className="text-[#7dd3fc]" />
-                  <span>Liquid Glass · Océano (Claro / Oscuro)</span>
-                </div>
-                <span className="px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
-                  {isOceanUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 11)}/11 amigos`}
-                </span>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
+              <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
+                {isOceanUnlocked ? <FaLockOpen size={9} className="text-emerald-400" /> : <FaLock size={9} className="text-white/80" />}
+                {isOceanUnlocked ? 'Desbloqueado' : `${Math.min(referralCount, 11)}/11`}
+              </span>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -839,8 +830,11 @@ export default function AppearanceScreen({ setView }) {
                    <FaUmbrellaBeach size={20} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className={`text-sm font-bold ${isOceanUnlocked ? 'bg-clip-text text-transparent bg-gradient-to-r from-[#0ea5e9] to-[#0284c7]' : 'text-text-primary'}`}>
-                    Tema Océano
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`text-sm font-bold ${isOceanUnlocked ? 'bg-clip-text text-transparent bg-gradient-to-r from-[#0ea5e9] to-[#0284c7]' : 'text-text-primary'}`}>
+                      Tema Océano
+                    </span>
+                    <span className="text-[10px] font-bold text-[#0ea5e9]">Liquid Glass · Océano (Claro / Oscuro)</span>
                   </div>
                   <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1.5 mt-0.5">
                     {isOceanUnlocked ? (
