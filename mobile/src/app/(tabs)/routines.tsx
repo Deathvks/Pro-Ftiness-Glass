@@ -31,6 +31,7 @@ import { getAppleCardSurfaceStyle, getUnselectedControlColors, shouldUseContentG
 import GlobalHeader from '@/components/GlobalHeader';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { ExpressiveFloatingToolbar } from '@/components/ui/ExpressiveUI';
 import { TourTarget } from '@/components/tutorials/TourTarget';
 import { RoutinesTabs } from '@/components/routines/RoutinesTabs';
 import { FolderList } from '@/components/routines/FolderList';
@@ -461,82 +462,127 @@ export default function RoutinesScreen() {
       {/* 4. CONTENIDO DE PESTAÑA: MIS RUTINAS */}
       {activeTab === 'myRoutines' && (
         <>
-          {/* BOTONES DE ACCIÓN (DEBAJO DE LAS PESTAÑAS, IGUAL QUE EN EL FRONTEND) */}
+          {/* BOTONES DE ACCIÓN (Toolbar Expressive en Android / Botones Liquid Glass en iOS y fallback) */}
           <TourTarget id="#routines-actions">
-          <View style={styles.actionButtonsContainer}>
-            {/* Fila 1: Crear Rutina (destacado) + IA */}
-            <View style={styles.actionRow1}>
-              <GlassButton
-                noShadow={true}
-                theme={theme}
-                color={isIOS ? colors.tint + '28' : colors.tint}
-                onPress={handleCreateRoutineClick}
-                style={styles.createRoutineBtn}
-              >
-                <View style={styles.createRoutineInner}>
-                  <Plus size={18} color={createBtnForeground} style={{ marginRight: 6 }} strokeWidth={2.5} />
-                  <Text
-                    style={[styles.createRoutineBtnText, { color: createBtnForeground }]}
-                    numberOfLines={1}
-                  >
-                    Crear Rutina
-                  </Text>
-                </View>
-              </GlassButton>
+            <ExpressiveFloatingToolbar
+              style={{ marginBottom: 18 }}
+              actions={[
+                {
+                  key: 'ai',
+                  icon: <Sparkles size={19} color={colors.tint} />,
+                  onPress: () => {
+                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                    setShowAIGenerator(true);
+                  },
+                },
+                {
+                  key: 'csv',
+                  icon: <FileSpreadsheet size={19} color={colors.text} />,
+                  onPress: () => {
+                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                    setShowDataTransferModal(true);
+                  },
+                },
+                {
+                  key: 'wall',
+                  icon: <Globe size={19} color={colors.textSecondary} />,
+                  onPress: () => {
+                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                    setShowPrivacyModal(true);
+                  },
+                },
+                ...(routines.length > 0
+                  ? [
+                      {
+                        key: 'trash',
+                        icon: <Trash2 size={19} color="#ef4444" />,
+                        tintColor: '#ef4444',
+                        onPress: handleDeleteAll,
+                      },
+                    ]
+                  : []),
+              ]}
+              fab={{
+                icon: <Plus size={22} color={createBtnForeground} strokeWidth={2.6} />,
+                onPress: handleCreateRoutineClick,
+              }}
+              fallback={
+                <View style={styles.actionButtonsContainer}>
+                  {/* Fila 1: Crear Rutina (destacado) + IA */}
+                  <View style={styles.actionRow1}>
+                    <GlassButton
+                      noShadow={true}
+                      theme={theme}
+                      color={isIOS ? colors.tint + '28' : colors.tint}
+                      onPress={handleCreateRoutineClick}
+                      style={styles.createRoutineBtn}
+                    >
+                      <View style={styles.createRoutineInner}>
+                        <Plus size={18} color={createBtnForeground} style={{ marginRight: 6 }} strokeWidth={2.5} />
+                        <Text
+                          style={[styles.createRoutineBtnText, { color: createBtnForeground }]}
+                          numberOfLines={1}
+                        >
+                          Crear Rutina
+                        </Text>
+                      </View>
+                    </GlassButton>
 
-              <GlassButton
-                noShadow={true}
-                theme={theme}
-                color={colors.tint + '20'}
-                onPress={() => setShowAIGenerator(true)}
-                style={styles.aiBtn}
-              >
-                <View style={styles.aiBtnInner}>
-                  <Sparkles size={16} color={colors.tint} style={{ marginRight: 6 }} />
-                  <Text style={[styles.aiBtnText, { color: colors.tint }]}>IA</Text>
-                </View>
-              </GlassButton>
-            </View>
+                    <GlassButton
+                      noShadow={true}
+                      theme={theme}
+                      color={colors.tint + '20'}
+                      onPress={() => setShowAIGenerator(true)}
+                      style={styles.aiBtn}
+                    >
+                      <View style={styles.aiBtnInner}>
+                        <Sparkles size={16} color={colors.tint} style={{ marginRight: 6 }} />
+                        <Text style={[styles.aiBtnText, { color: colors.tint }]}>IA</Text>
+                      </View>
+                    </GlassButton>
+                  </View>
 
-            {/* Fila 2: Importar CSV + Muro + Papelera */}
-            <View style={styles.actionRow2}>
-              <GlassButton
-                noShadow={true}
-                theme={theme}
-                onPress={() => setShowDataTransferModal(true)}
-                style={styles.toolBtn}
-              >
-                <View style={styles.toolBtnInner}>
-                  <FileSpreadsheet size={15} color={colors.tint} style={{ marginRight: 6 }} />
-                  <Text style={[styles.toolBtnText, { color: colors.text }]}>Importar CSV</Text>
-                </View>
-              </GlassButton>
+                  {/* Fila 2: Importar CSV + Muro + Papelera */}
+                  <View style={styles.actionRow2}>
+                    <GlassButton
+                      noShadow={true}
+                      theme={theme}
+                      onPress={() => setShowDataTransferModal(true)}
+                      style={styles.toolBtn}
+                    >
+                      <View style={styles.toolBtnInner}>
+                        <FileSpreadsheet size={15} color={colors.tint} style={{ marginRight: 6 }} />
+                        <Text style={[styles.toolBtnText, { color: colors.text }]}>Importar CSV</Text>
+                      </View>
+                    </GlassButton>
 
-              <GlassButton
-                noShadow={true}
-                theme={theme}
-                onPress={() => setShowPrivacyModal(true)}
-                style={styles.toolBtn}
-              >
-                <View style={styles.toolBtnInner}>
-                  <Globe size={15} color={colors.textSecondary} style={{ marginRight: 6 }} />
-                  <Text style={[styles.toolBtnText, { color: colors.text }]}>Muro</Text>
-                </View>
-              </GlassButton>
+                    <GlassButton
+                      noShadow={true}
+                      theme={theme}
+                      onPress={() => setShowPrivacyModal(true)}
+                      style={styles.toolBtn}
+                    >
+                      <View style={styles.toolBtnInner}>
+                        <Globe size={15} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                        <Text style={[styles.toolBtnText, { color: colors.text }]}>Muro</Text>
+                      </View>
+                    </GlassButton>
 
-              {routines.length > 0 && (
-                <GlassButton
-                  noShadow={true}
-                  theme={theme}
-                  color="rgba(239, 68, 68, 0.12)"
-                  onPress={handleDeleteAll}
-                  style={styles.trashBtn}
-                >
-                  <Trash2 size={16} color="#ef4444" />
-                </GlassButton>
-              )}
-            </View>
-          </View>
+                    {routines.length > 0 && (
+                      <GlassButton
+                        noShadow={true}
+                        theme={theme}
+                        color="rgba(239, 68, 68, 0.12)"
+                        onPress={handleDeleteAll}
+                        style={styles.trashBtn}
+                      >
+                        <Trash2 size={16} color="#ef4444" />
+                      </GlassButton>
+                    )}
+                  </View>
+                </View>
+              }
+            />
           </TourTarget>
 
           {/* BANNER "VER TU PROGRESO" */}

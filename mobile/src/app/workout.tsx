@@ -14,13 +14,15 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { Activity, Maximize2 } from 'lucide-react-native';
+import { Activity, Calculator, CheckCheck, Maximize2, Pause, Play, Timer } from 'lucide-react-native';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import ThemeBackground from '@/components/ThemeBackground';
 import { getAppleCardSurfaceStyle, getThemeBaseBackground } from '@/constants/theme';
 import { getThemedModalCardColor } from '@/components/ui/ModalThemeBackground';
+import { ExpressiveFloatingToolbar } from '@/components/ui/ExpressiveUI';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import { calculateCalories, groupWorkoutExercises } from '@/utils/workoutHelpers';
 
 // Subcomponentes modularizados con paridad 1:1 frente al Frontend
@@ -73,6 +75,10 @@ export default function WorkoutScreen() {
   const togglePauseWorkout = useAppStore(state => state.togglePauseWorkout);
   const stopWorkout = useAppStore(state => state.stopWorkout);
   const updateActiveWorkoutSet = useAppStore(state => state.updateActiveWorkoutSet);
+  const applyCoachStrategyToExercise = useAppStore(
+    state => (state as any).applyCoachStrategyToExercise
+  );
+  const showToast = useAppStore(state => (state as any).showToast);
   const addDropset = useAppStore(state => state.addDropset);
   const removeDropset = useAppStore(state => state.removeDropset);
   const toggleWarmupSet = useAppStore(state => state.toggleWarmupSet);
@@ -581,16 +587,52 @@ export default function WorkoutScreen() {
       <SmartExerciseCoachModal
         visible={Boolean(coachExercise)}
         exercise={coachExercise}
+        currentRoutineId={activeWorkout?.routine_id || activeWorkout?.routineId || activeWorkout?.id || null}
+        currentRoutineName={activeWorkout?.routine_name || activeWorkout?.routineName || activeWorkout?.name || null}
         onClose={() => setCoachExercise(null)}
+        onApplyStrategy={(strategy) => {
+          if (coachExercise) {
+            const exIndex = (activeWorkout.exercises || []).findIndex(
+              (e: any) => e.id === coachExercise.id || e.name === coachExercise.name
+            );
+            if (exIndex !== -1 && applyCoachStrategyToExercise) {
+              applyCoachStrategyToExercise(exIndex, strategy);
+              if (strategy.perSetPlan && strategy.perSetPlan.length > 0) {
+                const setsDesc = strategy.perSetPlan.map((s: any) => `${s.weight}kg`).join(' / ');
+                showToast?.(`Estrategia aplicada: ${strategy.title} (${setsDesc})`);
+              } else {
+                const parts: string[] = [];
+                if (strategy.suggestedSets) parts.push(`${strategy.suggestedSets} series`);
+                if (strategy.suggestedWeight !== null && strategy.suggestedWeight !== undefined) {
+                  const w = parseFloat(String(strategy.suggestedWeight));
+                  parts.push(w > 0 ? `${w} kg (todas las series)` : 'Peso corporal');
+                }
+                if (strategy.suggestedReps !== null && strategy.suggestedReps !== undefined) {
+                  parts.push(`${strategy.suggestedReps} reps`);
+                }
+                showToast?.(`Estrategia aplicada: ${parts.join(', ')}`);
+              }
+            }
+          }
+          setCoachExercise(null);
+        }}
         onApplyWeight={(suggestedWeight) => {
           if (coachExercise) {
             const actualIndex = (activeWorkout.exercises || []).findIndex(
-              (e: any) => e.id === coachExercise.id
+              (e: any) => e.id === coachExercise.id || e.name === coachExercise.name
             );
-            if (actualIndex !== -1 && updateActiveWorkoutSet) {
+            if (actualIndex !== -1 && applyCoachStrategyToExercise) {
+              applyCoachStrategyToExercise(actualIndex, { suggestedWeight });
+              showToast?.(`Peso objetivo aplicado: ${suggestedWeight} kg`);
+            } else if (actualIndex !== -1 && updateActiveWorkoutSet) {
               updateActiveWorkoutSet(actualIndex, 0, 'weight_kg', String(suggestedWeight));
             }
           }
+          setCoachExercise(null);
+        }}
+        onNavigateAsesoria={() => {
+          setCoachExercise(null);
+          router.push('/asesoria' as any);
         }}
       />
 
@@ -602,6 +644,59 @@ export default function WorkoutScreen() {
           onAddExercises={handleSubstituteSelect}
         />
       )}
+
+      {/* Barra Flotante Expressive en Android durante el entrenamiento */}
+      <ExpressiveFloatingToolbar
+        style={{
+          position: 'absolute',
+          left: 16,
+          right: 16,
+          bottom: Math.max(insets.bottom, 12) + 8,
+        }}
+        actions={[
+          {
+            key: 'rest',
+            icon: <Timer size={20} color={colors.tint} />,
+            onPress: () => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+              openRestModal(90);
+            },
+          },
+          {
+            key: 'calc',
+            icon: <Calculator size={20} color={colors.text} />,
+            onPress: () => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+              setShowCalculator(true);
+            },
+          },
+          {
+            key: 'heatmap',
+            icon: <Activity size={20} color={colors.text} />,
+            onPress: () => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+              setShowHeatmap(true);
+            },
+          },
+          {
+            key: 'finish',
+            icon: <CheckCheck size={20} color="#22c55e" />,
+            tintColor: '#22c55e',
+            onPress: handleFinishClick,
+          },
+        ]}
+        fab={{
+          icon: isTimerRunning ? (
+            <Pause size={21} color={getContrastTextColor(colors.tint)} fill={getContrastTextColor(colors.tint)} />
+          ) : (
+            <Play size={21} color={getContrastTextColor(colors.tint)} fill={getContrastTextColor(colors.tint)} />
+          ),
+          onPress: () => {
+            try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
+            togglePauseWorkout();
+          },
+        }}
+      />
     </View>
   );
 }

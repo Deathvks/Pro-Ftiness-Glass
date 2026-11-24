@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import { ArrowLeft, ArrowRight, Copy, Share2, ThumbsUp } from 'lucide-react-native';
-import { ActivityIndicator, Linking, Platform, Pressable, Share, StyleSheet, Text, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { Linking, Platform, Pressable, Share, StyleSheet, Text, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
+import { ExpressiveLoadingIndicator } from '@/components/ui/ExpressiveUI';
 import NewsMarkdown from '@/components/news/NewsMarkdown';
 import { ArticleSEO } from '@/components/news/ArticleSEO';
 import { AdSenseSlot } from '@/components/news/AdSenseSlot';
@@ -14,7 +16,7 @@ import { DEFAULT_AUTHOR, NewsAction, NewsAuthor, NewsCard, NewsCover, NewsMeta, 
 import { useAppColors } from '@/hooks/useAppColors';
 import { useNewsResource } from '@/hooks/useNewsResource';
 import { useToast } from '@/hooks/useToast';
-import { getNewsArticle, NEWS_SITE_URL, reactToNews, recordNewsView, resolveNewsLink, type NewsArticle, type NewsDetail } from '@/services/newsService';
+import { getNewsArticle, NEWS_SITE_URL, reactToNews, recordNewsView, resolveNewsImage, resolveNewsLink, type NewsArticle, type NewsDetail } from '@/services/newsService';
 import useAppStore from '@/store/useAppStore';
 import { getContrastTextColor } from '@/utils/colorUtils';
 
@@ -67,7 +69,7 @@ function ArticleScreen({ slug }: { slug: string }) {
     >
       <View style={styles.container}>
         {data ? <ArticleReader key={data.article.id} data={data} /> : loading ? (
-          <ActivityIndicator accessibilityLabel="Cargando artículo" color={colors.tint} style={{ marginTop: 32 }} />
+          <ExpressiveLoadingIndicator accessibilityLabel="Cargando artículo" color={colors.tint} style={{ marginTop: 32 }} />
         ) : (
           <NewsSurface><View style={styles.panel}>
             <Text accessibilityRole="alert" style={[styles.sectionTitle, { color: colors.text }]}>
@@ -98,6 +100,19 @@ function ArticleReader({ data }: { data: NewsDetail }) {
   const pageUrl = `${NEWS_SITE_URL}/noticias/${encodeURIComponent(article.slug)}`;
   const tags = [...new Set((article.tags ?? '').split(',').map(tag => tag.trim()).filter(Boolean))];
   const author = article.author_name || DEFAULT_AUTHOR;
+
+  useEffect(() => {
+    const urls = Array.from(
+      new Set(
+        [article.image_url, ...(relatedNews || []).map(item => item.image_url)]
+          .map(value => resolveNewsImage(value))
+          .filter((uri): uri is string => Boolean(uri))
+      )
+    );
+    if (urls.length > 0) {
+      void Image.prefetch(urls, 'memory-disk').catch(() => false);
+    }
+  }, [article.image_url, relatedNews]);
 
   useEffect(() => {
     let active = true;

@@ -12,6 +12,7 @@ import {
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
+import { ExpressiveSwitch, isExpressiveAndroidAvailable } from '@/components/ui/ExpressiveUI';
 
 interface LiquidGlassSwitchProps {
   value: boolean;
@@ -52,6 +53,21 @@ export const LiquidGlassSwitch: React.FC<LiquidGlassSwitchProps> = ({
     }).start();
   }, [value, switchAnim]);
 
+  const triggerToggle = (newValue: boolean) => {
+    if (disabled) return;
+    try {
+      const hapticsActive = useAppStore.getState().hapticsEnabled !== false;
+      if (hapticsActive || newValue) {
+        if (newValue) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        } else {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+      }
+    } catch {}
+    onValueChange(newValue);
+  };
+
   // En iOS usamos el UISwitch nativo del sistema (que en iOS 26 incluye el efecto Liquid Glass nativo real)
   if (Platform.OS === 'ios') {
     return (
@@ -90,23 +106,7 @@ export const LiquidGlassSwitch: React.FC<LiquidGlassSwitchProps> = ({
   };
 
   const handlePress = () => {
-    if (disabled) return;
-    const newValue = !value;
-
-    // Disparar feedback táctil físico
-    try {
-      const hapticsActive = useAppStore.getState().hapticsEnabled !== false;
-      if (hapticsActive || newValue) {
-        if (newValue) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        } else {
-          // Si se desactiva, un clic háptico sutil de desconexión
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-      }
-    } catch {}
-
-    onValueChange(newValue);
+    triggerToggle(!value);
   };
 
   // Interpolación de posición del thumb
@@ -145,7 +145,7 @@ export const LiquidGlassSwitch: React.FC<LiquidGlassSwitchProps> = ({
     ? 'rgba(255, 255, 255, 0.65)'
     : 'rgba(0, 0, 0, 0.14)';
 
-  return (
+  const androidOrWebFallback = (
     <Pressable
       onPress={handlePress}
       onPressIn={handlePressIn}
@@ -234,6 +234,23 @@ export const LiquidGlassSwitch: React.FC<LiquidGlassSwitchProps> = ({
       </View>
     </Pressable>
   );
+
+  // En Android nativo usamos Switch de Jetpack Compose (Material 3 Expressive) con nuestros colores
+  if (Platform.OS === 'android' && isExpressiveAndroidAvailable()) {
+    return (
+      <ExpressiveSwitch
+        value={Boolean(value)}
+        onValueChange={triggerToggle}
+        tintColor={tintColor}
+        isDark={isDark}
+        disabled={disabled}
+        fallback={androidOrWebFallback}
+        style={style}
+      />
+    );
+  }
+
+  return androidOrWebFallback;
 };
 
 const styles = StyleSheet.create({

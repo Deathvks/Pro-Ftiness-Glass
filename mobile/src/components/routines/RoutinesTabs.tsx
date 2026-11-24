@@ -1,13 +1,15 @@
 /* mobile/src/components/routines/RoutinesTabs.tsx */
 import React, { useCallback, useRef } from 'react';
-import { ScrollView, Text, StyleSheet, Platform, type ScrollViewInstance } from 'react-native';
+import { ScrollView, Text, StyleSheet, Platform, View, type ScrollViewInstance } from 'react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { BookCopy, Compass, Dumbbell, Flame } from 'lucide-react-native';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { ExpressiveSegmentedRow, isExpressiveAndroidAvailable } from '@/components/ui/ExpressiveUI';
 import { getContrastTextColor } from '@/utils/routineHelpers';
 import { TourTarget } from '@/components/tutorials/TourTarget';
 import { useRegisterTourHorizontalScroll } from '@/components/tutorials/tourRegistry';
+import * as Haptics from 'expo-haptics';
 
 export type TabKey = 'myRoutines' | 'explore' | 'manualExercises' | 'quickCardio';
 
@@ -40,7 +42,7 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
     { key: 'manualExercises', label: 'Ejercicios Manuales', icon: Dumbbell },
   ];
 
-  return (
+  const legacyTabs = (
     <ScrollView
       ref={scrollRef}
       horizontal
@@ -132,6 +134,68 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
       </GlassButton>
     </ScrollView>
   );
+
+  if (!isExpressiveAndroidAvailable()) {
+    return legacyTabs;
+  }
+
+  const expressiveOptions = tabs.map((t) => ({
+    key: t.key,
+    label: t.key === 'manualExercises' ? (tabs.length >= 3 ? 'Manuales' : 'Ejercicios') : t.label,
+  }));
+
+  return (
+    <View style={{ gap: 10 }}>
+      <TourTarget id="#tutorial-routines-manual-exercises-tab">
+        <ExpressiveSegmentedRow
+          options={expressiveOptions}
+          selectedKey={activeTab === 'quickCardio' ? 'myRoutines' : activeTab}
+          onSelect={(nextKey) => {
+            try {
+              Haptics.selectionAsync();
+            } catch {}
+            onChangeTab(nextKey as TabKey);
+          }}
+          fallback={legacyTabs}
+        />
+      </TourTarget>
+
+      <GlassButton
+        onPress={() => {
+          if (onQuickCardio) onQuickCardio();
+          else onChangeTab('quickCardio');
+        }}
+        theme={theme}
+        noShadow={true}
+        color={activeTab === 'quickCardio' ? accentColor : undefined}
+        style={[
+          styles.quickCardioExpressiveBtn,
+          {
+            borderColor: activeTab === 'quickCardio'
+              ? accentColor
+              : isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+          },
+        ]}
+      >
+        <Flame
+          size={16}
+          color={activeTab === 'quickCardio' ? getContrastTextColor(accentColor) : colors.tint}
+          style={{ marginRight: 6 }}
+        />
+        <Text
+          style={[
+            styles.tabText,
+            {
+              color: activeTab === 'quickCardio' ? getContrastTextColor(accentColor) : colors.text,
+              fontWeight: '700',
+            },
+          ]}
+        >
+          Cardio Rápido & GPS
+        </Text>
+      </GlassButton>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -153,5 +217,13 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 14,
-  }
+  },
+  quickCardioExpressiveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 42,
+    borderRadius: 20,
+    borderCurve: 'continuous',
+  },
 });

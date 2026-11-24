@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -146,6 +146,13 @@ function GlassSurface({
   );
 }
 
+const GOAL_LABELS: Record<string, string> = {
+  lose: 'Bajar peso',
+  recomp: 'Recomposición',
+  gain: 'Subir peso',
+  maintain: 'Mantener',
+};
+
 // Icon mapper helper
 function renderSectionIcon(name: string, size = 20, color = '#ffffff') {
   switch (name) {
@@ -181,7 +188,32 @@ export default function SettingsScreen() {
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const userProfile = useAppStore(state => state.userProfile);
+  const bodyWeightLog = useAppStore(state => state.bodyWeightLog);
   const setUserProfile = useAppStore(state => state.setUserProfile);
+
+  const latestWeight = useMemo(() => {
+    if (Array.isArray(bodyWeightLog) && bodyWeightLog.length > 0) {
+      const sorted = [...bodyWeightLog].sort(
+        (a: any, b: any) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime()
+      );
+      const w = parseFloat(String(sorted[0]?.weight_kg ?? ''));
+      if (!isNaN(w) && w > 0) return w;
+    }
+    const profileW = parseFloat(String(userProfile?.weight ?? ''));
+    return !isNaN(profileW) && profileW > 0 ? profileW : null;
+  }, [bodyWeightLog, userProfile?.weight]);
+
+  const formattedGoal = useMemo(() => {
+    const rawGoal = String(userProfile?.goal || '').trim().toLowerCase();
+    return GOAL_LABELS[rawGoal] || 'Salud';
+  }, [userProfile?.goal]);
+
+  const roleBadgeLabel = useMemo(() => {
+    const rawRole = String(userProfile?.role || '').toLowerCase();
+    if (rawRole === 'admin') return 'ADMIN';
+    if (rawRole === 'trainer' || rawRole === 'entrenador') return 'COACH';
+    return 'ATLETA';
+  }, [userProfile?.role]);
   const handleLogout = useAppStore(state => state.handleLogout);
 
   const hapticsEnabled = useAppStore(state => state.hapticsEnabled);
@@ -1419,7 +1451,7 @@ export default function SettingsScreen() {
                       </View>
                       <View style={[styles.badgePill, { backgroundColor: colors.tint + '18' }]}>
                         <Text style={[styles.badgePillText, { color: colors.tint }]}>
-                          {(userProfile?.role || 'user').toUpperCase()}
+                          {roleBadgeLabel}
                         </Text>
                       </View>
                     </View>
@@ -1427,20 +1459,20 @@ export default function SettingsScreen() {
                     <View style={styles.metricsGrid}>
                       <View style={[styles.metricItem, { backgroundColor: subtleItemBg }]}>
                         <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>PESO</Text>
-                        <Text style={[styles.metricValue, { color: colors.text }]}>
-                          {userProfile?.weight ? `${userProfile.weight} kg` : '--'}
+                        <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>
+                          {latestWeight !== null ? `${latestWeight} kg` : '--'}
                         </Text>
                       </View>
                       <View style={[styles.metricItem, { backgroundColor: subtleItemBg }]}>
                         <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>ALTURA</Text>
-                        <Text style={[styles.metricValue, { color: colors.text }]}>
+                        <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>
                           {userProfile?.height ? `${userProfile.height} cm` : '--'}
                         </Text>
                       </View>
                       <View style={[styles.metricItem, { backgroundColor: subtleItemBg }]}>
                         <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>OBJETIVO</Text>
-                        <Text style={[styles.metricValue, { color: colors.tint, fontSize: 11 }]} numberOfLines={1}>
-                          {userProfile?.goal ? userProfile.goal.toUpperCase() : 'SALUD'}
+                        <Text style={[styles.metricValue, { color: colors.tint, fontSize: 12 }]} numberOfLines={1} adjustsFontSizeToFit>
+                          {formattedGoal}
                         </Text>
                       </View>
                     </View>
@@ -2504,13 +2536,14 @@ const styles = StyleSheet.create({
   },
   metricsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    alignItems: 'stretch',
     gap: 8,
   },
   metricItem: {
+    flex: 1,
+    minWidth: 0,
     paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',

@@ -4,13 +4,13 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   ScrollView,
   Modal,
   Pressable,
 } from 'react-native';
 import { GlassView } from 'expo-glass-effect';
 import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
+import { ExpressiveLoadingIndicator } from '@/components/ui/ExpressiveUI';
 import {
   Trophy,
   Calendar as CalendarIcon,
@@ -135,7 +135,7 @@ export function RecordsProgressView() {
       {/* Content */}
       {loading ? (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={colors.tint} />
+          <ExpressiveLoadingIndicator size="large" color={colors.tint} accessibilityLabel="Cargando récords" />
         </View>
       ) : records.length === 0 ? (
         <View

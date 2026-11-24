@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import Svg, { Polygon } from 'react-native-svg';
 import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
+import { ExpressiveSegmentedRow } from '@/components/ui/ExpressiveUI';
 import { Lightbulb, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -168,28 +169,44 @@ export function MuscleHeatmapView() {
 
   return (
     <View style={styles.container}>
-      {/* Model View Switcher */}
+      {/* Model View Switcher (M3 Expressive Segmented on Android, toggle fallback on iOS/Web) */}
       <View style={styles.viewToggleWrap}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={toggleModelType}
-          style={[
-            styles.viewToggleBtn,
-            {
-              backgroundColor: isDark
-                ? 'rgba(255, 255, 255, 0.08)'
-                : 'rgba(0, 0, 0, 0.05)',
-              borderColor: isDark
-                ? 'rgba(255, 255, 255, 0.12)'
-                : 'rgba(0, 0, 0, 0.08)',
-            },
+        <ExpressiveSegmentedRow
+          options={[
+            { key: 'anterior', label: 'Frontal' },
+            { key: 'posterior', label: 'Posterior' },
           ]}
-        >
-          <RotateCw size={15} color={colors.tint} />
-          <Text style={[styles.viewToggleText, { color: colors.text }]}>
-            Ver {modelType === 'anterior' ? 'Posterior (Espalda)' : 'Anterior (Frontal)'}
-          </Text>
-        </TouchableOpacity>
+          selectedKey={modelType}
+          onSelect={(next) => {
+            if (next === modelType) return;
+            try {
+              Haptics.selectionAsync();
+            } catch {}
+            setModelType(next);
+          }}
+          fallback={
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={toggleModelType}
+              style={[
+                styles.viewToggleBtn,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(0, 0, 0, 0.05)',
+                  borderColor: isDark
+                    ? 'rgba(255, 255, 255, 0.12)'
+                    : 'rgba(0, 0, 0, 0.08)',
+                },
+              ]}
+            >
+              <RotateCw size={15} color={colors.tint} />
+              <Text style={[styles.viewToggleText, { color: colors.text }]}>
+                Ver {modelType === 'anterior' ? 'Posterior (Espalda)' : 'Anterior (Frontal)'}
+              </Text>
+            </TouchableOpacity>
+          }
+        />
       </View>
 
       {/* Selected Muscle Indicator Toast */}

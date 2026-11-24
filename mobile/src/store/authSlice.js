@@ -1,7 +1,10 @@
 import '@/utils/localStoragePolyfill';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as authService from '../services/authService';
 import * as userService from '../services/userService';
 import { APP_VERSION, CURRENT_WELCOME_TITLE, hasSeenCurrentWelcome } from '../config/version';
+
+let welcomeDismissedInSession = false;
 
 // Esta función se encarga de limpiar el almacenamiento local relacionado con la sesión.
 const clearAuthStorage = () => {
@@ -331,23 +334,37 @@ export const createAuthSlice = (set, get) => ({
     },
 
     // Comprueba si se debe mostrar el modal de bienvenida
-    checkWelcomeModal: () => {
-        const lastSeenVersion = localStorage.getItem('lastSeenVersion');
-        const lastSeenTitle = localStorage.getItem('lastSeenWelcomeTitle');
-        if (lastSeenVersion === APP_VERSION) return;
-        if (!hasSeenCurrentWelcome(lastSeenTitle, CURRENT_WELCOME_TITLE)) {
-            set({ showWelcomeModal: true });
+    checkWelcomeModal: async () => {
+        if (welcomeDismissedInSession) return;
+        let lastSeenVersion = localStorage.getItem('lastSeenVersion');
+        let lastSeenTitle = localStorage.getItem('lastSeenWelcomeTitle');
+        try {
+            const pairs = await AsyncStorage.multiGet(['lastSeenVersion', 'lastSeenWelcomeTitle']);
+            const map = Object.fromEntries(pairs);
+            lastSeenVersion = map.lastSeenVersion || lastSeenVersion;
+            lastSeenTitle = map.lastSeenWelcomeTitle || lastSeenTitle;
+        } catch {}
+        if (lastSeenVersion === APP_VERSION || hasSeenCurrentWelcome(lastSeenTitle, CURRENT_WELCOME_TITLE)) {
+            welcomeDismissedInSession = true;
+            return;
         }
+        set({ showWelcomeModal: true });
     },
 
     // Cierra el modal de bienvenida
     closeWelcomeModal: () => {
+        welcomeDismissedInSession = true;
         const remoteData = get().welcomeRemoteData;
         const titleToSave = remoteData?.welcome?.title || CURRENT_WELCOME_TITLE;
         const remoteVersion = remoteData?.version || APP_VERSION;
-        localStorage.setItem('lastSeenVersion', APP_VERSION);
+        localStorage.setItem('lastSeenVersion', String(APP_VERSION));
         localStorage.setItem('lastSeenWelcomeTitle', String(titleToSave));
         localStorage.setItem('lastSeenRemoteVersion', String(remoteVersion));
+        AsyncStorage.multiSet([
+            ['lastSeenVersion', String(APP_VERSION)],
+            ['lastSeenWelcomeTitle', String(titleToSave)],
+            ['lastSeenRemoteVersion', String(remoteVersion)],
+        ]).catch(() => {});
         set({
             showWelcomeModal: false,
             welcomeRemoteData: null,

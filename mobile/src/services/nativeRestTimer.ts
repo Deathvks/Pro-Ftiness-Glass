@@ -74,10 +74,28 @@ export const notifyRestCompleteFallback = async () => {
   });
 };
 
+const ACCENT_HEX_MAP: Record<string, string> = {
+  green: '#22c55e', blue: '#3b82f6', violet: '#8b5cf6', amber: '#f59e0b',
+  rose: '#f43f5e', teal: '#14b8a6', cyan: '#06b6d4', orange: '#f97316',
+  lime: '#84cc16', fuchsia: '#d946ef', emerald: '#10b981', indigo: '#6366f1',
+  purple: '#a855f7', pink: '#ec4899', red: '#ef4444', yellow: '#eab308',
+  sky: '#0ea5e9', slate: '#64748b', zinc: '#71717a', stone: '#78716c', neutral: '#737373',
+};
+
+const resolveStoredAccentHex = () => {
+  try {
+    const accent = (typeof localStorage !== 'undefined' ? localStorage.getItem('accent') : null) || 'green';
+    return ACCENT_HEX_MAP[accent] || '#22c55e';
+  } catch {
+    return '#22c55e';
+  }
+};
+
 export const initNativeTimerSync = (store: any): (() => void) => {
-  if (Platform.OS === 'web' || !NativeTimer) return () => {};
+  if (Platform.OS === 'web') return () => {};
 
   const syncFromNative = async () => {
+    if (!NativeTimer) return;
     const deadline = store.getState().restTimerEndTime;
     if (!deadline) return;
     try {
@@ -89,15 +107,6 @@ export const initNativeTimerSync = (store: any): (() => void) => {
       if (!endTimeMs) {
         if (skippedEndTimeMs === deadline) {
           state.stopRestTimer({ notifyNative: false });
-        } else if (deadline > Date.now() + 1000) {
-          void startNativeRestTimer(deadline, {
-            title: state.activeWorkout?.routineName
-              ? `Descanso · ${state.activeWorkout.routineName}`
-              : 'Descanso entre series',
-            sound: state.restSoundEnabled ?? true,
-            vibrate: state.hapticsEnabled ?? true,
-            userId: state.userProfile?.id,
-          });
         }
       } else if (Math.abs(endTimeMs - deadline) >= 1000) {
         state.addRestTime(Math.round((endTimeMs - deadline) / 1000), endTimeMs);
@@ -105,26 +114,55 @@ export const initNativeTimerSync = (store: any): (() => void) => {
     } catch {}
   };
 
-  const eventSub = DeviceEventEmitter.addListener('nativeTimerAction', (data: any) => {
-    const state = store.getState();
-    if (!state.isResting || state.isRestTimerPaused || state.restTimerEndTime !== data?.endTimeMs) return;
-    if (data.action === 'addTime') {
-      state.addRestTime(data.seconds, data.newEndTimeMs);
-    } else if (data.action === 'skip' || data.action === 'complete') {
-      state.stopRestTimer({ notifyNative: false });
+  const eventSub = NativeTimer
+    ? DeviceEventEmitter.addListener('nativeTimerAction', (data: any) => {
+        const state = store.getState();
+        if (!state.isResting || state.isRestTimerPaused || state.restTimerEndTime !== data?.endTimeMs) return;
+        if (data.action === 'addTime') {
+          state.addRestTime(data.seconds, data.newEndTimeMs);
+        } else if (data.action === 'skip' || data.action === 'complete') {
+          state.stopRestTimer({ notifyNative: false });
+        }
+      })
+    : null;
+
+  const syncOnForeground = async () => {
+    await syncFromNative();
+    if (AppState.currentState === 'active') {
+      await stopNativeRestTimer();
     }
-  });
+  };
+
+  const launchOnMinimize = () => {
+    const state = store.getState();
+    if (!state.isResting || state.isRestTimerPaused) return;
+    const deadline = Number(state.restTimerEndTime || 0);
+    if (!deadline || deadline <= Date.now() + 500) return;
+
+    const routineName = state.activeWorkout?.routineName;
+    void startNativeRestTimer(deadline, {
+      title: routineName ? `Descanso · ${routineName}` : 'Descanso entre series',
+      color: resolveStoredAccentHex(),
+      sound: state.restSoundEnabled ?? true,
+      vibrate: state.hapticsEnabled ?? true,
+      userId: state.userProfile?.id,
+    });
+  };
 
   const appStateSub = AppState.addEventListener('change', (nextState) => {
     if (nextState === 'active') {
-      void syncFromNative();
+      void syncOnForeground();
+    } else if (nextState === 'background') {
+      launchOnMinimize();
     }
   });
 
-  void syncFromNative();
+  if (AppState.currentState === 'active') {
+    void syncOnForeground();
+  }
 
   return () => {
-    eventSub.remove();
+    eventSub?.remove();
     appStateSub.remove();
   };
 };

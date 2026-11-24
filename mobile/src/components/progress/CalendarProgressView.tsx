@@ -315,6 +315,9 @@ export function CalendarProgressView({ clientHistory }: { clientHistory?: { work
                     Haptics.selectionAsync();
                   } catch {}
                   setSelectedDateStr(dayStr);
+                  if (dayLogs.length > 0) {
+                    setShowDetailModal(true);
+                  }
                 }}
                 style={[
                   styles.dayCell,

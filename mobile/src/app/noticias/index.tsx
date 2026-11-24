@@ -1,13 +1,15 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Search, TrendingUp, X } from 'lucide-react-native';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
+import { ExpressiveLoadingIndicator } from '@/components/ui/ExpressiveUI';
 import { NewsAction, NewsCard, NewsCover, NewsSurface } from '@/components/news/NewsUI';
 import { useAppColors } from '@/hooks/useAppColors';
 import { useNewsResource } from '@/hooks/useNewsResource';
-import { DEFAULT_NEWS_QUERY, listNews, NEWS_CATEGORIES, type NewsArticle, type NewsQuery } from '@/services/newsService';
+import { DEFAULT_NEWS_QUERY, listNews, NEWS_CATEGORIES, resolveNewsImage, type NewsArticle, type NewsQuery } from '@/services/newsService';
 import useAppStore from '@/store/useAppStore';
 import { getContrastTextColor } from '@/utils/colorUtils';
 
@@ -30,6 +32,20 @@ export default function NewsIndex() {
   const popular = query.page === 1 && query.category === 'Todas' && !query.search ? data?.popularNews ?? [] : [];
   const rows = featured ? data?.news.slice(1) : data?.news;
   const pageCount = data?.totalPages ?? 0;
+
+  useEffect(() => {
+    if (!data) return;
+    const urls = Array.from(
+      new Set(
+        [...(data.news || []), ...(data.popularNews || [])]
+          .map(item => resolveNewsImage(item.image_url))
+          .filter((uri): uri is string => Boolean(uri))
+      )
+    );
+    if (urls.length > 0) {
+      void Image.prefetch(urls, 'memory-disk').catch(() => false);
+    }
+  }, [data]);
 
   function updateQuery(change: Partial<NewsQuery>) {
     const next = { ...query, ...change };
@@ -97,7 +113,7 @@ export default function NewsIndex() {
           <NewsSearch key={query.search} search={query.search} onSearch={search => updateQuery({ search, page: 1 })} />
         </View>
 
-        {loading && <ActivityIndicator accessibilityLabel="Cargando noticias" color={colors.tint} />}
+        {loading && <ExpressiveLoadingIndicator accessibilityLabel="Cargando noticias" color={colors.tint} />}
         {!!error && <NewsSurface><View style={styles.notice}>
           <Text accessibilityRole="alert" style={[styles.sectionTitle, { color: colors.text }]}>{data ? 'No se pudieron actualizar las noticias' : 'No se pudieron cargar las noticias'}</Text>
           <NewsAction label="Reintentar" onPress={reload} />

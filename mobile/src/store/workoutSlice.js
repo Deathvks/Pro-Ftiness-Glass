@@ -1,4 +1,5 @@
 /* frontend/src/store/workoutSlice.js */
+import { AppState } from 'react-native';
 import * as workoutService from '../services/workoutService';
 import {
   ensureTimerNotificationPermission,
@@ -17,6 +18,7 @@ const stopNativeTimer = () => {
 };
 
 const launchNativeTimer = (endTimeMs, get) => {
+  if (AppState?.currentState === 'active') return;
   const state = get();
   const routineName = state.activeWorkout?.routineName;
   void startNativeRestTimer(endTimeMs, {
@@ -506,6 +508,119 @@ export const createWorkoutSlice = (set, get) => ({
     });
 
     targetExercise.sets = targetExercise.setsDone.length;
+
+    const newState = {
+      activeWorkout: { ...session, exercises: newExercises },
+    };
+    set(newState);
+    setWorkoutInStorage({ ...get(), ...newState });
+  },
+
+  applyCoachStrategyToExercise: (exIndex, strategy) => {
+    const session = get().activeWorkout;
+    if (!session || !session.exercises || !session.exercises[exIndex]) return;
+
+    const newExercises = JSON.parse(JSON.stringify(session.exercises));
+    const targetExercise = newExercises[exIndex];
+    if (!targetExercise) return;
+
+    const { suggestedSets, suggestedWeight, suggestedReps, perSetPlan } = strategy || {};
+
+    const targetSetsCount = parseInt(
+      suggestedSets || (Array.isArray(perSetPlan) ? perSetPlan.length : null),
+      10
+    );
+    if (!isNaN(targetSetsCount) && targetSetsCount > 0) {
+      const currentSets = targetExercise.setsDone || [];
+      if (currentSets.length > targetSetsCount) {
+        targetExercise.setsDone = currentSets.slice(0, targetSetsCount);
+      } else if (currentSets.length < targetSetsCount) {
+        while (targetExercise.setsDone.length < targetSetsCount) {
+          const newIdx = targetExercise.setsDone.length;
+          const planSet = perSetPlan && perSetPlan[newIdx] ? perSetPlan[newIdx] : null;
+          targetExercise.setsDone.push({
+            set_number: targetExercise.setsDone.length + 1,
+            reps:
+              planSet?.reps !== undefined && planSet?.reps !== null
+                ? String(planSet.reps)
+                : suggestedReps !== null && suggestedReps !== undefined
+                  ? String(suggestedReps)
+                  : '',
+            weight_kg:
+              planSet?.weight !== undefined && planSet?.weight !== null
+                ? String(planSet.weight)
+                : suggestedWeight !== null && suggestedWeight !== undefined
+                  ? String(suggestedWeight)
+                  : '',
+            is_dropset: false,
+            is_warmup: false,
+            rir: null,
+          });
+        }
+      }
+
+      let nonDropsetCount = 0;
+      targetExercise.setsDone.forEach((s) => {
+        if (!s.is_dropset) {
+          nonDropsetCount++;
+          s.set_number = nonDropsetCount;
+        }
+      });
+      targetExercise.sets = targetSetsCount;
+    }
+
+    if (targetExercise.setsDone && targetExercise.setsDone.length > 0) {
+      if (perSetPlan && Array.isArray(perSetPlan) && perSetPlan.length > 0) {
+        let workingIdx = 0;
+        targetExercise.setsDone.forEach((set) => {
+          if (set.is_warmup || set.is_dropset) return;
+          const planSet = perSetPlan[workingIdx] || perSetPlan[perSetPlan.length - 1];
+          if (planSet) {
+            if (planSet.weight !== null && planSet.weight !== undefined) {
+              set.weight_kg = planSet.weight;
+            }
+            if (planSet.reps !== null && planSet.reps !== undefined) {
+              set.reps = planSet.reps;
+            }
+          }
+          workingIdx++;
+        });
+      } else {
+        let appliedWeightCount = 0;
+        let appliedRepsCount = 0;
+
+        targetExercise.setsDone.forEach((set) => {
+          if (set.is_warmup) return;
+          if (suggestedWeight !== null && suggestedWeight !== undefined) {
+            if (set.weight_kg === '' || set.weight_kg === null || set.weight_kg === undefined) {
+              set.weight_kg = suggestedWeight;
+              appliedWeightCount++;
+            }
+          }
+          if (suggestedReps !== null && suggestedReps !== undefined) {
+            if (set.reps === '' || set.reps === null || set.reps === undefined) {
+              set.reps = suggestedReps;
+              appliedRepsCount++;
+            }
+          }
+        });
+
+        if (appliedWeightCount === 0 && suggestedWeight !== null && suggestedWeight !== undefined) {
+          targetExercise.setsDone.forEach((set) => {
+            if (!set.is_warmup) {
+              set.weight_kg = suggestedWeight;
+            }
+          });
+        }
+        if (appliedRepsCount === 0 && suggestedReps !== null && suggestedReps !== undefined) {
+          targetExercise.setsDone.forEach((set) => {
+            if (!set.is_warmup) {
+              set.reps = suggestedReps;
+            }
+          });
+        }
+      }
+    }
 
     const newState = {
       activeWorkout: { ...session, exercises: newExercises },

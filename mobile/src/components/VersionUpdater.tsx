@@ -74,8 +74,12 @@ export function VersionUpdater() {
         return;
       }
 
-      if (isAuthenticated && data.welcome?.title) {
-        const remoteKey = `${data.version}::${data.welcome.title}`;
+      const remoteWelcome = Platform.OS === 'web'
+        ? data.welcome
+        : data.mobileWelcome || (!isRemoteNewer(data.version, APP_VERSION) ? data.welcome : null);
+
+      if (isAuthenticated && remoteWelcome?.title) {
+        const remoteKey = `${data.version}::${remoteWelcome.title}`;
         if (shownRemoteWelcomeRef.current === remoteKey) return;
 
         const pairs = await AsyncStorage.multiGet([
@@ -90,10 +94,14 @@ export function VersionUpdater() {
         const storedRemoteVersion =
           storedMap.lastSeenRemoteVersion ||
           (typeof localStorage !== 'undefined' ? localStorage.getItem('lastSeenRemoteVersion') : null);
+        const storedAppVersion =
+          storedMap.lastSeenVersion ||
+          (typeof localStorage !== 'undefined' ? localStorage.getItem('lastSeenVersion') : null);
 
         if (
           storedRemoteVersion === String(data.version) ||
-          hasSeenCurrentWelcome(storedTitle, data.welcome.title)
+          (String(data.version) === String(APP_VERSION) && storedAppVersion === String(APP_VERSION)) ||
+          hasSeenCurrentWelcome(storedTitle, remoteWelcome.title)
         ) {
           shownRemoteWelcomeRef.current = remoteKey;
           return;
@@ -102,7 +110,7 @@ export function VersionUpdater() {
         shownRemoteWelcomeRef.current = remoteKey;
         useAppStore.setState({
           showWelcomeModal: true,
-          welcomeRemoteData: data,
+          welcomeRemoteData: data.mobileWelcome ? { ...data, welcome: data.mobileWelcome } : data,
           welcomeRemoteVersion: APP_VERSION,
         } as any);
       }

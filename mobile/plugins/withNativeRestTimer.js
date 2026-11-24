@@ -64,8 +64,9 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 public class NativeTimerModule extends ReactContextBaseJavaModule {
-    public static final String CHANNEL_ID = "native_timer_channel_v16";
+    public static final String CHANNEL_ID = "native_timer_channel_v17";
     public static final String COMPLETE_CHANNEL_ID = "native_timer_complete_v2";
+    public static final String ACTION_ADD_15 = "${pkg}.ACTION_ADD_15";
     public static final String ACTION_ADD_TIME = "${pkg}.ACTION_ADD_TIME";
     public static final String ACTION_SKIP = "${pkg}.ACTION_SKIP";
 
@@ -184,7 +185,6 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         createNotificationChannels(context, manager);
 
         int appIconId = context.getApplicationInfo().icon;
-        Bitmap largeIcon = BitmapFactory.decodeResource(context.getResources(), appIconId);
         int smallIconId = context.getResources().getIdentifier("ic_notification", "drawable", context.getPackageName());
         if (smallIconId == 0) smallIconId = appIconId;
 
@@ -200,6 +200,10 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         scheduleCompletionAlarm(context, endTimeMs, contentPendingIntent);
         manager.cancel(COMPLETE_NOTIFICATION_ID);
 
+        Intent add15Intent = new Intent(context, NativeTimerActionReceiver.class);
+        add15Intent.setAction(ACTION_ADD_15);
+        PendingIntent add15PendingIntent = PendingIntent.getBroadcast(context, 103, add15Intent, pendingFlags);
+
         Intent addTimeIntent = new Intent(context, NativeTimerActionReceiver.class);
         addTimeIntent.setAction(ACTION_ADD_TIME);
         PendingIntent addTimePendingIntent = PendingIntent.getBroadcast(context, 101, addTimeIntent, pendingFlags);
@@ -208,14 +212,29 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         skipIntent.setAction(ACTION_SKIP);
         PendingIntent skipPendingIntent = PendingIntent.getBroadcast(context, 102, skipIntent, pendingFlags);
 
-        // Cronómetro nativo de sistema: se muestra en pantalla de bloqueo en Android 8-16 sin bloqueo de vistas custom
+        String safeTitle = title.length() > 36 ? title.substring(0, 35) + "…" : title;
+        long remainingMs = Math.max(0L, endTimeMs - System.currentTimeMillis());
+        long totalSeconds = Math.max(1L, (remainingMs + 999L) / 1000L);
+        long mins = totalSeconds / 60L;
+        long secs = totalSeconds % 60L;
+        String durationLabel = String.format(java.util.Locale.getDefault(), "%d:%02d", mins, secs);
+        String finishClock = android.text.format.DateFormat.getTimeFormat(context).format(new java.util.Date(endTimeMs));
+        String collapsedText = "Descanso " + durationLabel + " · Termina " + finishClock;
+        String expandedText = "Tiempo programado: " + durationLabel + " (hasta las " + finishClock + ").\\n"
+                + "Amplía el descanso con +15s / +30s o pulsa Saltar para seguir entrenando.";
+
+        NotificationCompat.BigTextStyle expandedStyle = new NotificationCompat.BigTextStyle()
+                .setBigContentTitle(safeTitle)
+                .bigText(expandedText)
+                .setSummaryText("Toca para volver");
+
+        // Cronómetro nativo sin subText ni largeIcon para evitar recortes horizontales y permitir expansión completa
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(smallIconId)
                 .setColor(accentColor)
-                .setLargeIcon(largeIcon)
-                .setContentTitle(title)
-                .setContentText("Descanso activo · Pulsa para volver")
-                .setSubText("Entrenamiento")
+                .setContentTitle(safeTitle)
+                .setContentText(collapsedText)
+                .setStyle(expandedStyle)
                 .setWhen(endTimeMs)
                 .setShowWhen(true)
                 .setUsesChronometer(true)
@@ -223,9 +242,10 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setLocalOnly(true)
-                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .addAction(0, "+15s", add15PendingIntent)
                 .addAction(0, "+30s", addTimePendingIntent)
                 .addAction(0, "Saltar", skipPendingIntent);
 
@@ -257,6 +277,9 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager != null) {
             manager.cancel(ACTIVE_NOTIFICATION_ID);
+            if (skippedEndTimeMs == 0L) {
+                manager.cancel(COMPLETE_NOTIFICATION_ID);
+            }
         }
         cancelCompletionAlarm(context);
     }
@@ -486,7 +509,9 @@ public class NativeTimerActionReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (intent == null || intent.getAction() == null) return;
         String action = intent.getAction();
-        if (NativeTimerModule.ACTION_ADD_TIME.equals(action)) {
+        if (NativeTimerModule.ACTION_ADD_15.equals(action)) {
+            NativeTimerModule.handleAddTimeFromBroadcast(context, 15);
+        } else if (NativeTimerModule.ACTION_ADD_TIME.equals(action)) {
             NativeTimerModule.handleAddTimeFromBroadcast(context, 30);
         } else if (NativeTimerModule.ACTION_SKIP.equals(action)) {
             NativeTimerModule.handleSkipFromBroadcast(context);
@@ -614,6 +639,7 @@ const withNativeRestTimer = (config) => {
       'intent-filter': [
         {
           action: [
+            { $: { 'android:name': `${pkg}.ACTION_ADD_15` } },
             { $: { 'android:name': `${pkg}.ACTION_ADD_TIME` } },
             { $: { 'android:name': `${pkg}.ACTION_SKIP` } },
           ],

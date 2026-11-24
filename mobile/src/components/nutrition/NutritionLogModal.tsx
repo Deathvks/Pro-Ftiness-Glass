@@ -11,7 +11,6 @@ import {
   Image,
   ActivityIndicator,
   Alert,
-  Switch,
   KeyboardAvoidingView,
   Keyboard,
   Platform,
@@ -37,6 +36,7 @@ import {
 import { BarcodeScannerModal } from './BarcodeScannerModal';
 import { GlassView } from 'expo-glass-effect';
 import { LiquidCloseButton } from '@/components/ui/GlassButton';
+import { LiquidGlassSwitch } from '@/components/ui/LiquidGlassSwitch';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
@@ -1167,7 +1167,9 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                   <>
                     {/* ==================== TABS SWITCHER ==================== */}
                     {!logToEdit && (
-                      <View
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
                         style={[
                           styles.tabNav,
                           {
@@ -1175,6 +1177,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                             borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
                           },
                         ]}
+                        contentContainerStyle={styles.tabNavContent}
                       >
                         <TouchableOpacity
                           onPress={() => {
@@ -1197,6 +1200,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                             strokeWidth={2.5}
                           />
                           <Text
+                            numberOfLines={1}
                             style={[
                               styles.tabText,
                               {
@@ -1224,15 +1228,15 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                         >
                           <ScanBarcode
                             size={14}
-                            color={colors.tint}
+                            color={colors.textSecondary}
                             strokeWidth={2.5}
                           />
                           <Text
+                            numberOfLines={1}
                             style={[
                               styles.tabText,
                               {
-                                color: colors.tint,
-                                fontWeight: '700',
+                                color: colors.textSecondary,
                               },
                             ]}
                           >
@@ -1260,6 +1264,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                             strokeWidth={2.5}
                           />
                           <Text
+                            numberOfLines={1}
                             style={[
                               styles.tabText,
                               {
@@ -1295,6 +1300,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                             strokeWidth={2.5}
                           />
                           <Text
+                            numberOfLines={1}
                             style={[
                               styles.tabText,
                               {
@@ -1330,6 +1336,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                             strokeWidth={2.5}
                           />
                           <Text
+                            numberOfLines={1}
                             style={[
                               styles.tabText,
                               {
@@ -1343,7 +1350,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                             Manual
                           </Text>
                         </TouchableOpacity>
-                      </View>
+                      </ScrollView>
                     )}
 
                     {/* SEARCH INPUT BAR (ENTER-ONLY) */}
@@ -1891,10 +1898,12 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                               <Text style={[styles.per100gText, { color: colors.textSecondary }]}>
                                 Valores por 100g
                               </Text>
-                              <Switch
+                              <LiquidGlassSwitch
+                                accessibilityLabel="Valores por 100g"
                                 value={isPer100g}
                                 onValueChange={setIsPer100g}
-                                trackColor={{ false: isDark ? '#333' : '#ccc', true: colors.tint }}
+                                tintColor={colors.tint}
+                                isDark={isDark}
                               />
                             </View>
                           </View>
@@ -2323,23 +2332,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   tabNav: {
-    flexDirection: 'row',
+    flexGrow: 0,
     borderRadius: 18,
-    padding: 3,
     borderWidth: 1,
-    marginBottom: 12,
+    marginBottom: 14,
+  },
+  tabNavContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 4,
+    gap: 8,
+    minWidth: '100%',
   },
   tabItem: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4.5,
-    paddingVertical: 7.5,
-    borderRadius: 15,
+    gap: 6,
+    paddingVertical: 8.5,
+    paddingHorizontal: 13,
+    borderRadius: 14,
+    flexShrink: 0,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   tabBody: {

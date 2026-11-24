@@ -28,7 +28,17 @@ export function NewsCover({ article, featured = false, badges = true }: { articl
   const uri = resolveNewsImage(article.image_url);
   return <View style={[styles.cover, { aspectRatio: featured ? 1.6 : 16 / 9, backgroundColor: colors.tabBar }]}>
     <Newspaper size={34} color={colors.textMuted} strokeWidth={1.5} />
-    {!!uri && <Image source={{ uri }} recyclingKey={uri} contentFit="cover" transition={150} style={StyleSheet.absoluteFill} />}
+    {!!uri && (
+      <Image
+        source={{ uri }}
+        recyclingKey={uri}
+        cachePolicy="memory-disk"
+        priority={featured ? 'high' : 'normal'}
+        contentFit="cover"
+        transition={80}
+        style={StyleSheet.absoluteFill}
+      />
+    )}
     {featured && <LinearGradient colors={['#00000040', '#00000000', '#00000038']} style={StyleSheet.absoluteFill} pointerEvents="none" />}
     {badges && <View style={styles.coverTags}>
       {featured && <View style={[styles.categoryPill, styles.featuredPill, { backgroundColor: colors.tint }]}>

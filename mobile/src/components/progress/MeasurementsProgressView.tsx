@@ -47,11 +47,28 @@ export function MeasurementsProgressView() {
 
   return (
     <View style={styles.container}>
-      {/* Top Action & Zone Pills */}
-      <View style={styles.topRow}>
+      {/* Top Action & Full-Width Zone Selector Bar */}
+      <View style={styles.topControls}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => {
+            try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            } catch {}
+            setShowModal(true);
+          }}
+          style={[styles.addBtn, { backgroundColor: colors.tint }]}
+        >
+          <Plus size={18} color={accentContrastText} strokeWidth={2.5} />
+          <Text style={[styles.addBtnText, { color: accentContrastText }]}>
+            Registrar Medida
+          </Text>
+        </TouchableOpacity>
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={styles.zonesScrollView}
           contentContainerStyle={styles.zonesScroll}
         >
           {MEASUREMENT_TYPES.map(type => {
@@ -72,13 +89,13 @@ export function MeasurementsProgressView() {
                     backgroundColor: isSelected
                       ? colors.tint
                       : isDark
-                      ? 'rgba(255, 255, 255, 0.06)'
-                      : 'rgba(0, 0, 0, 0.04)',
+                      ? 'rgba(255, 255, 255, 0.08)'
+                      : 'rgba(0, 0, 0, 0.05)',
                     borderColor: isSelected
                       ? colors.tint
                       : isDark
-                      ? 'rgba(255, 255, 255, 0.1)'
-                      : 'rgba(0, 0, 0, 0.06)',
+                      ? 'rgba(255, 255, 255, 0.14)'
+                      : 'rgba(0, 0, 0, 0.1)',
                   },
                 ]}
               >
@@ -97,22 +114,6 @@ export function MeasurementsProgressView() {
             );
           })}
         </ScrollView>
-
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => {
-            try {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            } catch {}
-            setShowModal(true);
-          }}
-          style={[styles.addBtn, { backgroundColor: colors.tint }]}
-        >
-          <Plus size={18} color={accentContrastText} strokeWidth={2.5} />
-          <Text style={[styles.addBtnText, { color: accentContrastText }]}>
-            Registrar Medida
-          </Text>
-        </TouchableOpacity>
       </View>
 
       {/* Chart */}
@@ -135,38 +136,41 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     gap: 16,
   },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  topControls: {
+    gap: 12,
+  },
+  zonesScrollView: {
+    width: '100%',
   },
   zonesScroll: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    paddingVertical: 2,
     paddingRight: 8,
   },
   zonePill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 20,
     borderWidth: 1,
   },
   zonePillText: {
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: -0.2,
   },
   addBtn: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderRadius: 18,
-    flexShrink: 0,
   },
   addBtnText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '800',
   },
 });

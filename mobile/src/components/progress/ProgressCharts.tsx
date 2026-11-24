@@ -142,6 +142,11 @@ export function ChartBase({
   );
 }
 
+const formatTickValue = (val: number) => {
+  const rounded = Math.round(val * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+};
+
 // ==========================================
 // 1. Gráfica de Peso Corporal (Apple Health)
 // ==========================================
@@ -182,28 +187,33 @@ export function BodyWeightChart({
   const { width: windowWidth } = useWindowDimensions();
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const chartWidth = containerWidth > 0 ? containerWidth : Math.max(windowWidth - 64, 220);
-  const chartHeight = 180;
-  const paddingX = 24;
-  const paddingY = 28;
+  const chartHeight = 176;
+  const padLeft = 44;
+  const padRight = 14;
+  const padTop = 14;
+  const padBottom = 14;
 
   // Path generator for SVG area
   const svgPaths = useMemo(() => {
     if (!filteredData || filteredData.length === 0) return null;
 
     const weights = filteredData.map(d => d['Peso (kg)']);
-    const minVal = Math.min(...weights) - 1;
-    const maxVal = Math.max(...weights) + 1;
+    const rawMin = Math.min(...weights);
+    const rawMax = Math.max(...weights);
+    const padRange = Math.max((rawMax - rawMin) * 0.15, 0.8);
+    const minVal = Math.max(0, rawMin - padRange);
+    const maxVal = rawMax + padRange;
     const valRange = maxVal - minVal || 1;
+    const plotW = Math.max(chartWidth - padLeft - padRight, 40);
+    const plotH = Math.max(chartHeight - padTop - padBottom, 40);
 
     const points = filteredData.map((d, index) => {
       const x =
         filteredData.length === 1
-          ? chartWidth / 2
-          : paddingX + (index / (filteredData.length - 1)) * (chartWidth - paddingX * 2);
+          ? padLeft + plotW / 2
+          : padLeft + (index / (filteredData.length - 1)) * plotW;
       const y =
-        chartHeight -
-        paddingY -
-        ((d['Peso (kg)'] - minVal) / valRange) * (chartHeight - paddingY * 2);
+        padTop + plotH - ((d['Peso (kg)'] - minVal) / valRange) * plotH;
       return { x, y, weight: d['Peso (kg)'], timestamp: d.timestamp };
     });
 
@@ -215,19 +225,23 @@ export function BodyWeightChart({
     // Build closed area path
     const firstX = points[0].x;
     const lastX = points[points.length - 1].x;
-    const bottomY = chartHeight - paddingY;
+    const bottomY = padTop + plotH;
     const areaD = `${lineD} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
 
     // Average Y line
     let avgY = null;
     if (stats?.avg) {
-      avgY =
-        chartHeight -
-        paddingY -
-        ((stats.avg - minVal) / valRange) * (chartHeight - paddingY * 2);
+      avgY = padTop + plotH - ((stats.avg - minVal) / valRange) * plotH;
     }
 
-    return { points, lineD, areaD, avgY, minVal, maxVal };
+    const midVal = (minVal + maxVal) / 2;
+    const ticks = [
+      { value: maxVal, y: padTop },
+      { value: midVal, y: padTop + plotH / 2 },
+      { value: minVal, y: padTop + plotH },
+    ];
+
+    return { points, lineD, areaD, avgY, ticks, plotW, bottomY };
   }, [filteredData, chartWidth, chartHeight, stats?.avg]);
 
   return (
@@ -237,6 +251,24 @@ export function BodyWeightChart({
       periods={['7D', '1M', '3M', '6M', '1A', 'Todo']}
       activePeriod={period}
       onPeriodChange={setPeriod}
+      headerExtra={
+        stats ? (
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#10b981' }]} />
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>
+                Peso (kg)
+              </Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDash, { borderColor: '#10b981' }]} />
+              <Text style={[styles.legendText, { color: '#10b981' }]}>
+                Media: {stats.avg} kg
+              </Text>
+            </View>
+          </View>
+        ) : undefined
+      }
       kpis={
         stats
           ? [
@@ -303,50 +335,55 @@ export function BodyWeightChart({
               setContainerWidth(w);
             }
           }}
-          style={{ width: '100%', height: chartHeight, alignItems: 'center' }}
+          style={{ width: '100%' }}
         >
           <Svg width={chartWidth} height={chartHeight}>
             <Defs>
               <LinearGradient id="pesoGrad" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0%" stopColor="#10b981" stopOpacity="0.45" />
+                <Stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
                 <Stop offset="70%" stopColor="#10b981" stopOpacity="0.08" />
                 <Stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
               </LinearGradient>
             </Defs>
 
-            {/* Average Reference Line */}
-            {svgPaths.avgY !== null && (
-              <>
+            {/* Y-Axis Gridlines & Labels (left gutter prevents overlaps) */}
+            {svgPaths.ticks.map((tick, idx) => (
+              <React.Fragment key={`bw-tick-${idx}`}>
                 <Line
-                  x1={paddingX}
-                  y1={svgPaths.avgY}
-                  x2={chartWidth - paddingX}
-                  y2={svgPaths.avgY}
-                  stroke="#10b981"
-                  strokeWidth={1.5}
-                  strokeDasharray="4 4"
-                  opacity={0.5}
-                />
-                <Rect
-                  x={paddingX + 4}
-                  y={svgPaths.avgY - 10}
-                  width={80}
-                  height={18}
-                  rx={9}
-                  fill="#064e3b"
-                  opacity={0.8}
+                  x1={padLeft}
+                  y1={tick.y}
+                  x2={chartWidth - padRight}
+                  y2={tick.y}
+                  stroke={colors.border}
+                  strokeWidth={1}
+                  strokeDasharray="3 3"
+                  opacity={0.45}
                 />
                 <SvgText
-                  x={paddingX + 44}
-                  y={svgPaths.avgY + 3}
+                  x={padLeft - 6}
+                  y={tick.y + 3.5}
                   fontSize={10}
-                  fontWeight="bold"
-                  fill="#6ee7b7"
-                  textAnchor="middle"
+                  fontWeight="600"
+                  fill={colors.textSecondary}
+                  textAnchor="end"
                 >
-                  {`Media: ${stats?.avg}kg`}
+                  {formatTickValue(tick.value)}
                 </SvgText>
-              </>
+              </React.Fragment>
+            ))}
+
+            {/* Average Reference Line */}
+            {svgPaths.avgY !== null && (
+              <Line
+                x1={padLeft}
+                y1={svgPaths.avgY}
+                x2={chartWidth - padRight}
+                y2={svgPaths.avgY}
+                stroke="#10b981"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+                opacity={0.65}
+              />
             )}
 
             {/* Filled Area */}
@@ -357,38 +394,54 @@ export function BodyWeightChart({
               d={svgPaths.lineD}
               fill="none"
               stroke="#10b981"
-              strokeWidth={3}
+              strokeWidth={2.5}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
 
             {/* Points */}
-            {svgPaths.points.map((pt, idx) => (
-              <Circle
-                key={idx}
-                cx={pt.x}
-                cy={pt.y}
-                r={4}
-                fill="#10b981"
-                stroke="#ffffff"
-                strokeWidth={1.5}
-              />
-            ))}
+            {svgPaths.points.map((pt, idx) => {
+              const dense = svgPaths.points.length > 18;
+              const isEdge = idx === 0 || idx === svgPaths.points.length - 1;
+              if (dense && !isEdge && idx % 2 !== 0) return null;
+              return (
+                <Circle
+                  key={idx}
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={dense ? 2.8 : 4}
+                  fill="#10b981"
+                  stroke="#ffffff"
+                  strokeWidth={dense ? 1 : 1.5}
+                />
+              );
+            })}
           </Svg>
 
           {/* Date Range Labels */}
-          <View style={[styles.axisRow, { paddingHorizontal: paddingX }]}>
+          <View
+            style={[
+              styles.axisRow,
+              {
+                paddingLeft: padLeft,
+                paddingRight: padRight,
+                justifyContent: svgPaths.points.length === 1 ? 'center' : 'space-between',
+              },
+            ]}
+          >
             <Text style={[styles.axisText, { color: colors.textSecondary }]}>
               {new Date(svgPaths.points[0].timestamp).toLocaleDateString('es-ES', {
                 month: 'short',
                 day: 'numeric',
               })}
             </Text>
-            <Text style={[styles.axisText, { color: colors.textSecondary }]}>
-              {new Date(
-                svgPaths.points[svgPaths.points.length - 1].timestamp
-              ).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
-            </Text>
+            {svgPaths.points.length > 1 && (
+              <Text style={[styles.axisText, { color: colors.textSecondary }]}>
+                {new Date(
+                  svgPaths.points[svgPaths.points.length - 1].timestamp
+                ).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
+              </Text>
+            )}
           </View>
         </View>
       )}
@@ -447,8 +500,10 @@ export function ExerciseChart({
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const chartWidth = containerWidth > 0 ? containerWidth : Math.max(windowWidth - 64, 220);
   const chartHeight = 180;
-  const paddingX = 24;
-  const paddingY = 28;
+  const padLeft = 44;
+  const padRight = 14;
+  const padTop = 14;
+  const padBottom = 14;
 
   const svgPaths = useMemo(() => {
     if (!filteredData || filteredData.length === 0) return null;
@@ -457,33 +512,34 @@ export function ExerciseChart({
       d['Peso Máximo (kg)'] || 0,
       d['1RM Estimado (kg)'] || 0,
     ]);
-    const minVal = Math.max(Math.min(...allValues) - 2, 0);
-    const maxVal = Math.max(...allValues) + 5;
+    if (allTimePR > 0) allValues.push(allTimePR);
+
+    const rawMin = Math.min(...allValues);
+    const rawMax = Math.max(...allValues);
+    const padRange = Math.max((rawMax - rawMin) * 0.14, 2);
+    const minVal = Math.max(rawMin - padRange, 0);
+    const maxVal = rawMax + padRange;
     const valRange = maxVal - minVal || 1;
+    const plotW = Math.max(chartWidth - padLeft - padRight, 40);
+    const plotH = Math.max(chartHeight - padTop - padBottom, 40);
 
     const pointsMax = filteredData.map((d, index) => {
       const x =
         filteredData.length === 1
-          ? chartWidth / 2
-          : paddingX + (index / (filteredData.length - 1)) * (chartWidth - paddingX * 2);
+          ? padLeft + plotW / 2
+          : padLeft + (index / (filteredData.length - 1)) * plotW;
       const y =
-        chartHeight -
-        paddingY -
-        (((d['Peso Máximo (kg)'] || 0) - minVal) / valRange) *
-          (chartHeight - paddingY * 2);
+        padTop + plotH - (((d['Peso Máximo (kg)'] || 0) - minVal) / valRange) * plotH;
       return { x, y, val: d['Peso Máximo (kg)'], date: d.date };
     });
 
     const points1RM = filteredData.map((d, index) => {
       const x =
         filteredData.length === 1
-          ? chartWidth / 2
-          : paddingX + (index / (filteredData.length - 1)) * (chartWidth - paddingX * 2);
+          ? padLeft + plotW / 2
+          : padLeft + (index / (filteredData.length - 1)) * plotW;
       const y =
-        chartHeight -
-        paddingY -
-        (((d['1RM Estimado (kg)'] || 0) - minVal) / valRange) *
-          (chartHeight - paddingY * 2);
+        padTop + plotH - (((d['1RM Estimado (kg)'] || 0) - minVal) / valRange) * plotH;
       return { x, y, val: d['1RM Estimado (kg)'], date: d.date };
     });
 
@@ -497,13 +553,17 @@ export function ExerciseChart({
 
     let prY = null;
     if (allTimePR > 0) {
-      prY =
-        chartHeight -
-        paddingY -
-        ((allTimePR - minVal) / valRange) * (chartHeight - paddingY * 2);
+      prY = padTop + plotH - ((allTimePR - minVal) / valRange) * plotH;
     }
 
-    return { pointsMax, points1RM, lineMaxD, line1RMD, prY };
+    const midVal = (minVal + maxVal) / 2;
+    const ticks = [
+      { value: maxVal, y: padTop },
+      { value: midVal, y: padTop + plotH / 2 },
+      { value: minVal, y: padTop + plotH },
+    ];
+
+    return { pointsMax, points1RM, lineMaxD, line1RMD, prY, ticks };
   }, [filteredData, chartWidth, chartHeight, allTimePR]);
 
   return (
@@ -522,17 +582,19 @@ export function ExerciseChart({
             </Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#f43f5e' }]} />
+            <View style={[styles.legendDash, { borderColor: '#f43f5e' }]} />
             <Text style={[styles.legendText, { color: colors.textSecondary }]}>
               1RM Estimado
             </Text>
           </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#f59e0b' }]} />
-            <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-              PR
-            </Text>
-          </View>
+          {allTimePR > 0 && (
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#f59e0b' }]} />
+              <Text style={[styles.legendText, { color: '#f59e0b' }]}>
+                PR: {allTimePR} kg
+              </Text>
+            </View>
+          )}
         </View>
       }
       kpis={
@@ -597,42 +659,47 @@ export function ExerciseChart({
               setContainerWidth(w);
             }
           }}
-          style={{ width: '100%', height: chartHeight, alignItems: 'center' }}
+          style={{ width: '100%' }}
         >
           <Svg width={chartWidth} height={chartHeight}>
-            {/* PR Reference Line */}
-            {svgPaths.prY !== null && (
-              <>
+            {/* Y-Axis Gridlines & Labels (left gutter prevents overlaps) */}
+            {svgPaths.ticks.map((tick, idx) => (
+              <React.Fragment key={`ex-tick-${idx}`}>
                 <Line
-                  x1={paddingX}
-                  y1={svgPaths.prY}
-                  x2={chartWidth - paddingX}
-                  y2={svgPaths.prY}
-                  stroke="#f59e0b"
-                  strokeWidth={1.5}
-                  strokeDasharray="4 4"
-                  opacity={0.6}
-                />
-                <Rect
-                  x={paddingX + 4}
-                  y={svgPaths.prY - 10}
-                  width={65}
-                  height={18}
-                  rx={9}
-                  fill="#78350f"
-                  opacity={0.85}
+                  x1={padLeft}
+                  y1={tick.y}
+                  x2={chartWidth - padRight}
+                  y2={tick.y}
+                  stroke={colors.border}
+                  strokeWidth={1}
+                  strokeDasharray="3 3"
+                  opacity={0.45}
                 />
                 <SvgText
-                  x={paddingX + 36}
-                  y={svgPaths.prY + 3}
+                  x={padLeft - 6}
+                  y={tick.y + 3.5}
                   fontSize={10}
-                  fontWeight="bold"
-                  fill="#fde68a"
-                  textAnchor="middle"
+                  fontWeight="600"
+                  fill={colors.textSecondary}
+                  textAnchor="end"
                 >
-                  {`PR: ${allTimePR}kg`}
+                  {formatTickValue(tick.value)}
                 </SvgText>
-              </>
+              </React.Fragment>
+            ))}
+
+            {/* PR Reference Line */}
+            {svgPaths.prY !== null && (
+              <Line
+                x1={padLeft}
+                y1={svgPaths.prY}
+                x2={chartWidth - padRight}
+                y2={svgPaths.prY}
+                stroke="#f59e0b"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+                opacity={0.7}
+              />
             )}
 
             {/* 1RM Line (Dashed rose) */}
@@ -650,41 +717,68 @@ export function ExerciseChart({
               d={svgPaths.lineMaxD}
               fill="none"
               stroke="#818cf8"
-              strokeWidth={3}
+              strokeWidth={2.5}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
 
+            {/* Points for 1RM when sparse enough */}
+            {svgPaths.points1RM.length <= 12 &&
+              svgPaths.points1RM.map((pt, idx) => (
+                <Circle
+                  key={`1rm-${idx}`}
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={2.8}
+                  fill="#f43f5e"
+                  opacity={0.85}
+                />
+              ))}
+
             {/* Points for Real Weight */}
             {svgPaths.pointsMax.map((pt, idx) => {
               const isPR = pt.val === allTimePR && allTimePR > 0;
+              const dense = svgPaths.pointsMax.length > 18;
+              const isEdge = idx === 0 || idx === svgPaths.pointsMax.length - 1;
+              if (dense && !isPR && !isEdge && idx % 2 !== 0) return null;
               return (
                 <Circle
                   key={idx}
                   cx={pt.x}
                   cy={pt.y}
-                  r={isPR ? 6 : 4}
+                  r={isPR ? 5.5 : dense ? 2.8 : 4}
                   fill={isPR ? '#fbbf24' : '#818cf8'}
                   stroke="#ffffff"
-                  strokeWidth={isPR ? 2 : 1.5}
+                  strokeWidth={isPR ? 2 : dense ? 1 : 1.5}
                 />
               );
             })}
           </Svg>
 
           {/* Dates */}
-          <View style={[styles.axisRow, { paddingHorizontal: paddingX }]}>
+          <View
+            style={[
+              styles.axisRow,
+              {
+                paddingLeft: padLeft,
+                paddingRight: padRight,
+                justifyContent: svgPaths.pointsMax.length === 1 ? 'center' : 'space-between',
+              },
+            ]}
+          >
             <Text style={[styles.axisText, { color: colors.textSecondary }]}>
               {new Date(svgPaths.pointsMax[0].date).toLocaleDateString('es-ES', {
                 month: 'short',
                 day: 'numeric',
               })}
             </Text>
-            <Text style={[styles.axisText, { color: colors.textSecondary }]}>
-              {new Date(
-                svgPaths.pointsMax[svgPaths.pointsMax.length - 1].date
-              ).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
-            </Text>
+            {svgPaths.pointsMax.length > 1 && (
+              <Text style={[styles.axisText, { color: colors.textSecondary }]}>
+                {new Date(
+                  svgPaths.pointsMax[svgPaths.pointsMax.length - 1].date
+                ).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
+              </Text>
+            )}
           </View>
         </View>
       )}
@@ -766,6 +860,13 @@ export function NutritionCharts({
 
   // Calories Bar Chart Calculations
   const maxCalories = Math.max(...(chartData?.map(d => d.Calorías) || [0]), 2500);
+  const maxMacroTotal = Math.max(
+    ...(chartData?.map(d => (d.Proteínas || 0) + (d.Carbs || 0) + (d.Grasas || 0)) || [0]),
+    250
+  );
+  const maxWaterMl = Math.max(...(chartData?.map(d => d.Agua || 0) || [0]), 3000);
+  const barStep = 24;
+  const nutritionSvgWidth = Math.max(chartData.length * barStep + 36, chartWidth);
 
   return (
     <View style={{ gap: 20 }}>
@@ -793,9 +894,9 @@ export function NutritionCharts({
         }
       >
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={{ width: Math.max(chartData.length * 20 + 32, chartWidth), height: chartHeight }}>
+          <View style={{ width: nutritionSvgWidth, height: chartHeight }}>
             <Svg
-              width={Math.max(chartData.length * 20 + 32, chartWidth)}
+              width={nutritionSvgWidth}
               height={chartHeight}
             >
               <Defs>
@@ -807,8 +908,8 @@ export function NutritionCharts({
 
               {/* Bars */}
               {chartData.map((d, idx) => {
-                const barWidth = 12;
-                const barX = paddingX + idx * 20;
+                const barWidth = 13;
+                const barX = paddingX + idx * barStep;
                 const barHeight = Math.max(
                   ((d.Calorías || 0) / maxCalories) * (chartHeight - paddingY * 2),
                   0
@@ -903,20 +1004,18 @@ export function NutritionCharts({
         }
       >
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={{ width: Math.max(chartData.length * 20 + 32, chartWidth), height: chartHeight }}>
+          <View style={{ width: nutritionSvgWidth, height: chartHeight }}>
             <Svg
-              width={Math.max(chartData.length * 20 + 32, chartWidth)}
+              width={nutritionSvgWidth}
               height={chartHeight}
             >
               {chartData.map((d, idx) => {
-                const totalGrams = (d.Proteínas || 0) + (d.Carbs || 0) + (d.Grasas || 0);
-                const maxTotal = 400;
-                const barWidth = 12;
-                const barX = paddingX + idx * 20;
+                const barWidth = 13;
+                const barX = paddingX + idx * barStep;
 
-                const pH = ((d.Proteínas || 0) / maxTotal) * (chartHeight - paddingY * 2);
-                const cH = ((d.Carbs || 0) / maxTotal) * (chartHeight - paddingY * 2);
-                const gH = ((d.Grasas || 0) / maxTotal) * (chartHeight - paddingY * 2);
+                const pH = ((d.Proteínas || 0) / maxMacroTotal) * (chartHeight - paddingY * 2);
+                const cH = ((d.Carbs || 0) / maxMacroTotal) * (chartHeight - paddingY * 2);
+                const gH = ((d.Grasas || 0) / maxMacroTotal) * (chartHeight - paddingY * 2);
 
                 const pY = chartHeight - paddingY - pH;
                 const cY = pY - cH;
@@ -997,9 +1096,9 @@ export function NutritionCharts({
         }
       >
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={{ width: Math.max(chartData.length * 20 + 32, chartWidth), height: chartHeight }}>
+          <View style={{ width: nutritionSvgWidth, height: chartHeight }}>
             <Svg
-              width={Math.max(chartData.length * 20 + 32, chartWidth)}
+              width={nutritionSvgWidth}
               height={chartHeight}
             >
               <Defs>
@@ -1012,9 +1111,9 @@ export function NutritionCharts({
               {/* 2000 ml goal line */}
               <Line
                 x1={0}
-                y1={chartHeight - paddingY - (2000 / 3500) * (chartHeight - paddingY * 2)}
-                x2={Math.max(chartData.length * 20 + 32, chartWidth)}
-                y2={chartHeight - paddingY - (2000 / 3500) * (chartHeight - paddingY * 2)}
+                y1={chartHeight - paddingY - (2000 / maxWaterMl) * (chartHeight - paddingY * 2)}
+                x2={nutritionSvgWidth}
+                y2={chartHeight - paddingY - (2000 / maxWaterMl) * (chartHeight - paddingY * 2)}
                 stroke="#38bdf8"
                 strokeWidth={1}
                 strokeDasharray="3 3"
@@ -1023,10 +1122,10 @@ export function NutritionCharts({
 
               {/* Water Bars */}
               {chartData.map((d, idx) => {
-                const barWidth = 12;
-                const barX = paddingX + idx * 20;
+                const barWidth = 13;
+                const barX = paddingX + idx * barStep;
                 const barHeight = Math.max(
-                  ((d.Agua || 0) / 3500) * (chartHeight - paddingY * 2),
+                  ((d.Agua || 0) / maxWaterMl) * (chartHeight - paddingY * 2),
                   0
                 );
                 const barY = chartHeight - paddingY - barHeight;
@@ -1100,27 +1199,32 @@ export function MeasurementChart({
   const { width: windowWidth } = useWindowDimensions();
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const chartWidth = containerWidth > 0 ? containerWidth : Math.max(windowWidth - 64, 220);
-  const chartHeight = 180;
-  const paddingX = 24;
-  const paddingY = 28;
+  const chartHeight = 176;
+  const padLeft = 44;
+  const padRight = 14;
+  const padTop = 14;
+  const padBottom = 14;
 
   const svgPaths = useMemo(() => {
     if (!filteredData || filteredData.length === 0) return null;
 
     const values = filteredData.map(d => d.value);
-    const minVal = Math.min(...values) - 1;
-    const maxVal = Math.max(...values) + 1;
+    const rawMin = Math.min(...values);
+    const rawMax = Math.max(...values);
+    const padRange = Math.max((rawMax - rawMin) * 0.15, 0.8);
+    const minVal = Math.max(0, rawMin - padRange);
+    const maxVal = rawMax + padRange;
     const valRange = maxVal - minVal || 1;
+    const plotW = Math.max(chartWidth - padLeft - padRight, 40);
+    const plotH = Math.max(chartHeight - padTop - padBottom, 40);
 
     const points = filteredData.map((d, index) => {
       const x =
         filteredData.length === 1
-          ? chartWidth / 2
-          : paddingX + (index / (filteredData.length - 1)) * (chartWidth - paddingX * 2);
+          ? padLeft + plotW / 2
+          : padLeft + (index / (filteredData.length - 1)) * plotW;
       const y =
-        chartHeight -
-        paddingY -
-        ((d.value - minVal) / valRange) * (chartHeight - paddingY * 2);
+        padTop + plotH - ((d.value - minVal) / valRange) * plotH;
       return { x, y, value: d.value, timestamp: d.timestamp };
     });
 
@@ -1130,10 +1234,17 @@ export function MeasurementChart({
 
     const firstX = points[0].x;
     const lastX = points[points.length - 1].x;
-    const bottomY = chartHeight - paddingY;
+    const bottomY = padTop + plotH;
     const areaD = `${lineD} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
 
-    return { points, lineD, areaD };
+    const midVal = (minVal + maxVal) / 2;
+    const ticks = [
+      { value: maxVal, y: padTop },
+      { value: midVal, y: padTop + plotH / 2 },
+      { value: minVal, y: padTop + plotH },
+    ];
+
+    return { points, lineD, areaD, ticks };
   }, [filteredData, chartWidth, chartHeight]);
 
   return (
@@ -1185,7 +1296,7 @@ export function MeasurementChart({
               setContainerWidth(w);
             }
           }}
-          style={{ width: '100%', height: chartHeight, alignItems: 'center' }}
+          style={{ width: '100%' }}
         >
           <Svg width={chartWidth} height={chartHeight}>
             <Defs>
@@ -1195,41 +1306,82 @@ export function MeasurementChart({
               </LinearGradient>
             </Defs>
 
+            {svgPaths.ticks.map((tick, idx) => (
+              <React.Fragment key={`m-tick-${idx}`}>
+                <Line
+                  x1={padLeft}
+                  y1={tick.y}
+                  x2={chartWidth - padRight}
+                  y2={tick.y}
+                  stroke={colors.border}
+                  strokeWidth={1}
+                  strokeDasharray="3 3"
+                  opacity={0.45}
+                />
+                <SvgText
+                  x={padLeft - 6}
+                  y={tick.y + 3.5}
+                  fontSize={10}
+                  fontWeight="600"
+                  fill={colors.textSecondary}
+                  textAnchor="end"
+                >
+                  {formatTickValue(tick.value)}
+                </SvgText>
+              </React.Fragment>
+            ))}
+
             <Path d={svgPaths.areaD} fill="url(#medidaGrad)" />
             <Path
               d={svgPaths.lineD}
               fill="none"
               stroke="#a855f7"
-              strokeWidth={3}
+              strokeWidth={2.5}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
 
-            {svgPaths.points.map((pt, idx) => (
-              <Circle
-                key={idx}
-                cx={pt.x}
-                cy={pt.y}
-                r={4}
-                fill="#a855f7"
-                stroke="#ffffff"
-                strokeWidth={1.5}
-              />
-            ))}
+            {svgPaths.points.map((pt, idx) => {
+              const dense = svgPaths.points.length > 18;
+              const isEdge = idx === 0 || idx === svgPaths.points.length - 1;
+              if (dense && !isEdge && idx % 2 !== 0) return null;
+              return (
+                <Circle
+                  key={idx}
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={dense ? 2.8 : 4}
+                  fill="#a855f7"
+                  stroke="#ffffff"
+                  strokeWidth={dense ? 1 : 1.5}
+                />
+              );
+            })}
           </Svg>
 
-          <View style={[styles.axisRow, { paddingHorizontal: paddingX }]}>
+          <View
+            style={[
+              styles.axisRow,
+              {
+                paddingLeft: padLeft,
+                paddingRight: padRight,
+                justifyContent: svgPaths.points.length === 1 ? 'center' : 'space-between',
+              },
+            ]}
+          >
             <Text style={[styles.axisText, { color: colors.textSecondary }]}>
               {new Date(svgPaths.points[0].timestamp).toLocaleDateString('es-ES', {
                 month: 'short',
                 day: 'numeric',
               })}
             </Text>
-            <Text style={[styles.axisText, { color: colors.textSecondary }]}>
-              {new Date(
-                svgPaths.points[svgPaths.points.length - 1].timestamp
-              ).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
-            </Text>
+            {svgPaths.points.length > 1 && (
+              <Text style={[styles.axisText, { color: colors.textSecondary }]}>
+                {new Date(
+                  svgPaths.points[svgPaths.points.length - 1].timestamp
+                ).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
+              </Text>
+            )}
           </View>
         </View>
       )}
@@ -1279,7 +1431,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   chartCanvas: {
-    alignItems: 'center',
+    width: '100%',
+    alignItems: 'stretch',
     justifyContent: 'center',
   },
   emptyContainer: {
@@ -1305,9 +1458,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   axisRow: {
+    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 4,
+    marginTop: 2,
   },
   axisText: {
     fontSize: 10,
@@ -1315,6 +1469,7 @@ const styles = StyleSheet.create({
   },
   legendRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 12,
     paddingVertical: 4,
@@ -1322,12 +1477,18 @@ const styles = StyleSheet.create({
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   legendDot: {
     width: 7,
     height: 7,
     borderRadius: 4,
+  },
+  legendDash: {
+    width: 12,
+    height: 0,
+    borderTopWidth: 2,
+    borderStyle: 'dashed',
   },
   legendText: {
     fontSize: 10,

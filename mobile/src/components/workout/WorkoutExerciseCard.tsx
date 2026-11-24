@@ -79,8 +79,7 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const [mediaAspectRatio, setMediaAspectRatio] = useState<number>(9 / 16);
-  const [isPortraitMedia, setIsPortraitMedia] = useState<boolean>(true);
+  const [mediaAspectRatio, setMediaAspectRatio] = useState<number>(4 / 3);
 
   const addWarmupSets = useAppStore(state => state.addWarmupSets);
   const setExerciseReminder = useAppStore(state => state.setExerciseReminder);
@@ -228,15 +227,15 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
       />
 
       <View style={styles.cardInner}>
-        {/* 1. Imagen / Vídeo grande centrado arriba con acceso directo */}
+        {/* 1. GIFs / imágenes limpias a ancho móvil (como en Frontend, sin textos encima) */}
         <View
           style={[
             styles.mediaHeroContainer,
-            isPortraitMedia
-              ? { width: 220, maxWidth: '100%', aspectRatio: mediaAspectRatio, alignSelf: 'center' }
-              : { width: '100%', aspectRatio: mediaAspectRatio },
             {
-              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.35)' : 'rgba(0, 0, 0, 0.04)',
+              width: '100%',
+              aspectRatio: mediaAspectRatio,
+              maxHeight: 260,
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
               borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
             },
           ]}
@@ -248,10 +247,15 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
             }}
             getImageUrl={getImageUrl}
             fitMode="contain"
-            onMediaAspectRatio={(ratio, isPortrait) => {
-              const clamped = Math.max(9 / 16, Math.min(16 / 9, ratio));
+            forceImageMode={true}
+            showImageCounter={false}
+            previewColors={{
+              background: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
+              placeholder: colors.textSecondary,
+            }}
+            onMediaAspectRatio={ratio => {
+              const clamped = Math.max(1, Math.min(16 / 9, ratio));
               setMediaAspectRatio(clamped);
-              setIsPortraitMedia(isPortrait || ratio <= 1.05);
             }}
             onPress={() => {
               try {
@@ -260,26 +264,6 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
               onSetSelectedExercise && onSetSelectedExercise(exercise);
             }}
           />
-
-          {/* Badge Liquid Glass flotante en la esquina superior para ver técnica y vídeo */}
-          <TouchableOpacity
-            activeOpacity={0.82}
-            onPress={() => {
-              try {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              } catch {}
-              onSetSelectedExercise && onSetSelectedExercise(exercise);
-            }}
-            style={styles.floatingMediaDetailBadge}
-          >
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFill}
-            />
-            <Info size={12} color="#ffffff" strokeWidth={2.5} style={{ marginRight: 5 }} />
-            <Text style={styles.floatingMediaDetailText}>Técnica y Vídeo</Text>
-          </TouchableOpacity>
         </View>
 
         {/* 2. Recordatorio Activo / Meta si existe (idéntico al Frontend) */}
@@ -838,9 +822,9 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   mediaHeroContainer: {
-    width: 220,
-    maxWidth: '100%',
-    aspectRatio: 9 / 16,
+    width: '100%',
+    minHeight: 190,
+    maxHeight: 260,
     alignSelf: 'center',
     borderRadius: 24,
     borderWidth: 1,
@@ -849,32 +833,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-  },
-  floatingMediaDetailBadge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 999,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.32)',
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  floatingMediaDetailText: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.3,
   },
   titleRowTouchable: {
     flexDirection: 'row',

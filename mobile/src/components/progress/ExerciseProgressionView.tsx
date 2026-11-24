@@ -1,19 +1,17 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Modal,
   TextInput,
   ScrollView,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { GlassView } from 'expo-glass-effect';
 import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
-import { BookOpen, ChevronDown, Search, Dumbbell, TrendingUp, Check } from 'lucide-react-native';
-import { LiquidCloseButton } from '@/components/ui/GlassButton';
+import { BookOpen, ChevronDown, Search, Dumbbell, TrendingUp, Check, X } from 'lucide-react-native';
+import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
+import { getThemedModalBorderColor } from '@/components/ui/ModalThemeBackground';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -41,16 +39,13 @@ export function ExerciseProgressionView() {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [workoutLog]);
 
-  const [selectedExercise, setSelectedExercise] = useState<string>('');
+  const [chosenExercise, setChosenExercise] = useState<string>('');
   const [showPicker, setShowPicker] = useState<boolean>(false);
   const [showHistory, setShowHistory] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  useEffect(() => {
-    if (executedExercises.length > 0 && !selectedExercise) {
-      setSelectedExercise(executedExercises[0]);
-    }
-  }, [executedExercises, selectedExercise]);
+  const selectedExercise = chosenExercise || executedExercises[0] || '';
+  const setSelectedExercise = setChosenExercise;
 
   // Build progression data for the selected exercise
   const exerciseProgressData = useMemo(() => {
@@ -203,108 +198,110 @@ export function ExerciseProgressionView() {
         </>
       )}
 
-      {/* Exercise Picker Modal */}
-      <Modal visible={showPicker} transparent animationType="fade" onRequestClose={() => setShowPicker(false)}>
-        <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-          <View style={styles.pickerOverlay}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowPicker(false)} />
-            <View
+      {/* Exercise Picker Modal (Bottom Sheet Tematizado) */}
+      <SwipeableBottomSheet
+        visible={showPicker}
+        onClose={() => setShowPicker(false)}
+        isDark={isDark}
+        scrollable
+        avoidKeyboard
+        maxHeight="84%"
+      >
+        <View style={styles.sheetWrap}>
+          <View style={styles.pickerHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.pickerTitle, { color: colors.text }]}>
+                Selecciona un ejercicio
+              </Text>
+              <Text style={[styles.pickerSubtitle, { color: colors.textSecondary }]}>
+                {executedExercises.length} {executedExercises.length === 1 ? 'ejercicio registrado' : 'ejercicios registrados'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setShowPicker(false)}
+              accessibilityLabel="Cerrar selector"
               style={[
-                styles.pickerCard,
+                styles.pickerCloseBtn,
                 {
-                  borderColor: isDark
-                    ? 'rgba(255, 255, 255, 0.15)'
-                    : 'rgba(0, 0, 0, 0.1)',
+                  borderColor: getThemedModalBorderColor(theme),
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
                 },
               ]}
             >
-              <ContentCardBackdrop
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-              />
-
-              <View style={styles.pickerHeader}>
-                <Text style={[styles.pickerTitle, { color: colors.text }]}>
-                  Selecciona un ejercicio
-                </Text>
-                <LiquidCloseButton
-                  onPress={() => setShowPicker(false)}
-                  iconSize={20}
-                  iconColor={colors.textSecondary}
-                  style={styles.pickerCloseBtn}
-                />
-              </View>
-
-              <View
-                style={[
-                  styles.searchBar,
-                  {
-                    backgroundColor: isDark
-                      ? 'rgba(255, 255, 255, 0.08)'
-                      : 'rgba(0, 0, 0, 0.05)',
-                  },
-                ]}
-              >
-                <Search size={18} color={colors.textSecondary} />
-                <TextInput
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  placeholder="Buscar en historial..."
-                  placeholderTextColor={colors.textSecondary}
-                  style={[styles.searchInput, { color: colors.text }]}
-                  clearButtonMode="while-editing"
-                />
-              </View>
-
-              <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={false}>
-                {filteredOptions.map(ex => {
-                  const isSelected = selectedExercise === ex;
-                  return (
-                    <TouchableOpacity
-                      key={ex}
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        try {
-                          Haptics.selectionAsync();
-                        } catch {}
-                        setSelectedExercise(ex);
-                        setShowPicker(false);
-                      }}
-                      style={[
-                        styles.optionItem,
-                        isSelected && {
-                          backgroundColor: colors.tint + '18',
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.optionText,
-                          {
-                            color: isSelected ? colors.tint : colors.text,
-                            fontWeight: isSelected ? '800' : '500',
-                            flex: 1,
-                          },
-                        ]}
-                      >
-                        {ex}
-                      </Text>
-                      {isSelected && <Check size={18} color={colors.tint} strokeWidth={2.5} />}
-                    </TouchableOpacity>
-                  );
-                })}
-                {filteredOptions.length === 0 && (
-                  <View style={styles.emptySearch}>
-                    <Text style={[styles.emptySearchText, { color: colors.textSecondary }]}>
-                      No se encontraron ejercicios ejecutados
-                    </Text>
-                  </View>
-                )}
-              </ScrollView>
-            </View>
+              <X size={18} color={colors.text} />
+            </TouchableOpacity>
           </View>
-        </GlassView>
-      </Modal>
+
+          <View
+            style={[
+              styles.searchBar,
+              getAppleSheetCardStyle(theme, 16),
+              { borderWidth: 1, borderColor: getThemedModalBorderColor(theme) },
+            ]}
+          >
+            <Search size={17} color={colors.textSecondary} />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Buscar en historial..."
+              placeholderTextColor={colors.textSecondary}
+              style={[styles.searchInput, { color: colors.text }]}
+              clearButtonMode="while-editing"
+            />
+          </View>
+
+          <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            {filteredOptions.map(ex => {
+              const isSelected = selectedExercise === ex;
+              return (
+                <TouchableOpacity
+                  key={ex}
+                  activeOpacity={0.75}
+                  onPress={() => {
+                    try {
+                      Haptics.selectionAsync();
+                    } catch {}
+                    setSelectedExercise(ex);
+                    setShowPicker(false);
+                  }}
+                  style={[
+                    styles.optionItem,
+                    getAppleSheetCardStyle(theme, 16),
+                    {
+                      borderWidth: 1,
+                      borderColor: isSelected ? colors.tint + '66' : getThemedModalBorderColor(theme),
+                    },
+                    isSelected && {
+                      backgroundColor: colors.tint + '1F',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.optionText,
+                      {
+                        color: isSelected ? colors.tint : colors.text,
+                        fontWeight: isSelected ? '800' : '600',
+                        flex: 1,
+                      },
+                    ]}
+                  >
+                    {ex}
+                  </Text>
+                  {isSelected && <Check size={18} color={colors.tint} strokeWidth={2.5} />}
+                </TouchableOpacity>
+              );
+            })}
+            {filteredOptions.length === 0 && (
+              <View style={styles.emptySearch}>
+                <Text style={[styles.emptySearchText, { color: colors.textSecondary }]}>
+                  No se encontraron ejercicios ejecutados
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </SwipeableBottomSheet>
 
       {/* History Modal */}
       <ExerciseHistoryModal
@@ -351,33 +348,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pickerOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-  },
-  pickerCard: {
-    width: '100%',
-    maxHeight: '75%',
-    borderRadius: 32,
-    borderWidth: 1,
-    overflow: 'hidden',
-    padding: 20,
+  sheetWrap: {
+    flexShrink: 1,
+    paddingHorizontal: 18,
+    paddingTop: 4,
+    paddingBottom: 10,
   },
   pickerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 14,
+    gap: 10,
   },
   pickerTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
   },
+  pickerSubtitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
   pickerCloseBtn: {
-    padding: 4,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchBar: {
     flexDirection: 'row',
@@ -394,7 +393,7 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   optionsList: {
-    maxHeight: 320,
+    maxHeight: 400,
   },
   optionItem: {
     flexDirection: 'row',
@@ -402,8 +401,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 14,
-    borderRadius: 14,
-    marginBottom: 4,
+    borderRadius: 16,
+    marginBottom: 8,
   },
   optionText: {
     fontSize: 14,

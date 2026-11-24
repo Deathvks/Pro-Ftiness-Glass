@@ -1,11 +1,12 @@
 import { useEffect, useEffectEvent, useRef, useState, type ComponentType, type ReactNode } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
 import { Search, type LucideProps } from 'lucide-react-native';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
 import { LiquidCloseButton } from '@/components/ui/GlassButton';
+import { LiquidGlassSwitch } from '@/components/ui/LiquidGlassSwitch';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import { getAppleCardSurfaceStyle, getThemeSurfaceMode, shouldUseContentGlass } from '@/constants/theme';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -104,10 +105,19 @@ export function AdminChoices<T extends string | number>({ options, value, onChan
 }
 
 export function AdminToggle({ label, value, onChange }: { label: string; value: boolean; onChange: (next: boolean) => void }) {
+  const colors = useAppColors();
+  const theme = useAppStore(state => state.theme);
+  const isDark = getThemeSurfaceMode(theme) !== 'light';
   return (
     <View style={styles.toggle}>
       <View style={{ flex: 1 }}><AdminText>{label}</AdminText></View>
-      <Switch accessibilityLabel={label} value={value} onValueChange={onChange} />
+      <LiquidGlassSwitch
+        accessibilityLabel={label}
+        value={value}
+        onValueChange={onChange}
+        tintColor={colors.tint}
+        isDark={isDark}
+      />
     </View>
   );
 }

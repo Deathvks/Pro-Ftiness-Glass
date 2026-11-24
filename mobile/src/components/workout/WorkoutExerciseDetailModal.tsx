@@ -511,6 +511,7 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                     fitMode="contain"
                     playYouTube={mediaMode === 'video'}
                     forceImageMode={mediaMode === 'images'}
+                    showImageCounter={false}
                   />
                 )}
               </View>
