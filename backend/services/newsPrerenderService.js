@@ -102,7 +102,7 @@ export async function serveDynamicNewsHtml(req, res, next) {
       if (!mod?.buildNewsIndexHtml || !baseHtml) {
         return res.status(200).json({ count: articles.length });
       }
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
       return res.status(200).type('html').send(mod.buildNewsIndexHtml(baseHtml, articles));
     }
 
@@ -125,7 +125,7 @@ export async function serveDynamicNewsHtml(req, res, next) {
     if (!mod?.buildArticleHtml || !baseHtml) {
       return res.redirect(302, `/noticias/${encodeURIComponent(article.slug)}`);
     }
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
     return res.status(200).type('html').send(mod.buildArticleHtml(baseHtml, article, article.content));
   } catch (err) {
     return next(err);

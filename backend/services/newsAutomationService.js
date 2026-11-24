@@ -528,7 +528,7 @@ Extensión recomendada: 280 a 400 palabras de máxima retención, ultra concisas
   }
 
   /**
-   * Notifica a los motores de búsqueda (Bing, Yandex, etc.) mediante el protocolo IndexNow
+   * Notifica a IndexNow (Bing, Yandex, etc.) y a Google WebSub (PubSubHubbub vía RSS)
    */
   async notifySearchEngines(slug) {
     const baseUrl = 'https://profitnessglass.es';
@@ -538,25 +538,43 @@ Extensión recomendada: 280 a 400 palabras de máxima retención, ultra concisas
     const keyLocation = `${baseUrl}/${key}.txt`;
 
     try {
-      this.addLog(`📡 Notificando a motores de búsqueda (IndexNow / Bing) sobre "${slug}"...`, 'info');
-      const response = await fetch('https://api.indexnow.org/indexnow', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({
-          host,
-          key,
-          keyLocation,
-          urlList: [articleUrl, `${baseUrl}/calculadora-1rm`, `${baseUrl}/calculadora-calorias-macros`, `${baseUrl}/ejercicios`, `${baseUrl}/sitemap.xml`, `${baseUrl}/rss.xml`]
+      this.addLog(`📡 Notificando a motores de búsqueda (IndexNow / Bing + WebSub Google RSS) sobre "${slug}"...`, 'info');
+      const [indexNowRes, webSubRes] = await Promise.allSettled([
+        fetch('https://api.indexnow.org/indexnow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({
+            host,
+            key,
+            keyLocation,
+            urlList: [articleUrl, `${baseUrl}/calculadora-1rm`, `${baseUrl}/calculadora-calorias-macros`, `${baseUrl}/ejercicios`, `${baseUrl}/sitemap.xml`, `${baseUrl}/rss.xml`]
+          })
+        }),
+        fetch('https://pubsubhubbub.appspot.com/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8' },
+          body: new URLSearchParams({
+            'hub.mode': 'publish',
+            'hub.url': `${baseUrl}/rss.xml`
+          }).toString()
         })
-      });
+      ]);
 
-      if (response.ok || response.status === 200 || response.status === 202) {
-        this.addLog(`✅ Motores de búsqueda notificados vía IndexNow (HTTP ${response.status}).`, 'success');
+      if (indexNowRes.status === 'fulfilled' && (indexNowRes.value.ok || indexNowRes.value.status === 200 || indexNowRes.value.status === 202)) {
+        this.addLog(`✅ IndexNow notificado (HTTP ${indexNowRes.value.status}).`, 'success');
       } else {
-        this.addLog(`⚠️ IndexNow respondió con estado HTTP ${response.status}.`, 'warn');
+        const msg = indexNowRes.status === 'fulfilled' ? `HTTP ${indexNowRes.value.status}` : indexNowRes.reason?.message;
+        this.addLog(`⚠️ IndexNow respondió: ${msg}.`, 'warn');
+      }
+
+      if (webSubRes.status === 'fulfilled' && (webSubRes.value.ok || webSubRes.value.status === 204 || webSubRes.value.status === 200)) {
+        this.addLog(`✅ Hub WebSub (Google RSS) notificado (HTTP ${webSubRes.value.status}).`, 'success');
+      } else {
+        const msg = webSubRes.status === 'fulfilled' ? `HTTP ${webSubRes.value.status}` : webSubRes.reason?.message;
+        this.addLog(`⚠️ WebSub respondió: ${msg}.`, 'warn');
       }
     } catch (err) {
-      this.addLog(`⚠️ No se pudo enviar notificación IndexNow: ${err.message}`, 'warn');
+      this.addLog(`⚠️ No se pudo enviar notificación a buscadores: ${err.message}`, 'warn');
     }
   }
 

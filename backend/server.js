@@ -245,9 +245,10 @@ app.get('/sitemap.xml', async (req, res) => {
       '  <url><loc>' + baseUrl + '/privacy</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>',
       '  <url><loc>' + baseUrl + '/terms</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>',
       '  <url><loc>' + baseUrl + '/aviso-legal</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>',
-      ...newsItems.map(item => '  <url><loc>' + baseUrl + '/noticias/' + encodeURIComponent(item.slug || '') + '</loc><lastmod>' + new Date(item.updatedAt || item.published_at).toISOString().split('T')[0] + '</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>'),
+      ...newsItems.map(item => '  <url><loc>' + baseUrl + '/noticias/' + encodeURIComponent(item.slug || '') + '</loc><lastmod>' + new Date(item.updatedAt || item.published_at).toISOString() + '</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>'),
       '</urlset>'
     ].join('\n');
+    res.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
     res.header('Content-Type', 'application/xml; charset=utf-8');
     res.send(xml);
   } catch (e) {
@@ -292,10 +293,12 @@ app.get(['/rss.xml', '/feed.xml'], async (req, res) => {
     <language>es-ES</language>
     <lastBuildDate>${lastBuildDate}</lastBuildDate>
     <atom:link href="${baseUrl}/rss.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://pubsubhubbub.appspot.com/" rel="hub" />
 ${itemsXml}
   </channel>
 </rss>`;
 
+    res.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
     res.header('Content-Type', 'application/xml; charset=utf-8');
     res.send(rss);
   } catch (e) {

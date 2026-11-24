@@ -1,21 +1,21 @@
 {
-  "version": "7.16.63",
-  "releaseNotes": "Actualización v7.16.63: unificados los esquemas JSON-LD (Article, BreadcrumbList, CollectionPage y autor Organization/Person) entre el prerenderizado del servidor, el cliente web y mobile.",
+  "version": "7.16.64",
+  "releaseNotes": "Actualización v7.16.64: notificación WebSub para Google en RSS al publicar, lastmod ISO completo en sitemap y caché público revalidable en páginas SEO.",
   "welcome": {
-    "title": "Datos Estructurados Unificados",
-    "subtitle": "El servidor prerrenderizado y la app cliente generan ahora exactamente el mismo Schema.org para Google.",
+    "title": "Indexación Más Rápida y Mejor Caché SEO",
+    "subtitle": "Añadimos WebSub para acelerar el descubrimiento RSS en Google y retiramos no-store de las páginas públicas indexables.",
     "features": [
       {
-        "title": "Schema Article y BreadcrumbList Idénticos",
-        "description": "Prerenderizado y Helmet comparten la misma definición única con inLanguage, keywords y migas de pan."
+        "title": "WebSub PubSubHubbub en RSS",
+        "description": "Cada noticia nueva notifica al hub oficial de Google además de IndexNow para acelerar su rastreo."
       },
       {
-        "title": "Autor Organization o Person Inteligente",
-        "description": "Distingue automáticamente entre redacción editorial y autores individuales según las directrices de Google."
+        "title": "Caché Público Revalidable",
+        "description": "Las noticias, guías y calculadoras permiten bfcache y caché de rastreadores manteniendo frescura."
       },
       {
-        "title": "CollectionPage en el Índice de Noticias",
-        "description": "Añadido también al HTML inicial de /noticias y sincronizado con mobile web."
+        "title": "Sitemap con Fecha y Hora Exacta",
+        "description": "Cada entrada de /sitemap.xml informa lastmod en ISO-8601 completo."
       }
     ]
   }

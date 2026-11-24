@@ -232,6 +232,16 @@ function injectMeta(html, {
   output = output.replace(/<meta\s+name=["']description["'][\s\S]*?>/i, `<meta name="description" content="${safeDesc}" />`);
   output = output.replace(/<meta\s+name=["']robots["'][\s\S]*?>/i, `<meta name="robots" content="${escapeHtml(robots)}" />`);
 
+  // Permitir caché público revalidable en páginas SEO indexables (evitar no-store de index.html)
+  if (!isNoIndex) {
+    output = output.replace(
+      /<meta\s+http-equiv=["']Cache-Control["'][\s\S]*?>/i,
+      `<meta http-equiv="Cache-Control" content="public, max-age=300, must-revalidate" />`
+    );
+    output = output.replace(/<meta\s+http-equiv=["']Pragma["'][\s\S]*?>\s*/gi, '');
+    output = output.replace(/<meta\s+http-equiv=["']Expires["'][\s\S]*?>\s*/gi, '');
+  }
+
   // Canonical y hreflang propios (si es noindex/404, retirarlos para no apuntar a "/")
   if (isNoIndex || !url) {
     output = output.replace(/<link\s+rel=["']canonical["'][\s\S]*?>\s*/gi, '');
@@ -360,6 +370,7 @@ function generateRssFeed(articles) {
     <language>es-ES</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <atom:link href="${BASE_URL}/rss.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://pubsubhubbub.appspot.com/" rel="hub" />
 ${items}
   </channel>
 </rss>`;
