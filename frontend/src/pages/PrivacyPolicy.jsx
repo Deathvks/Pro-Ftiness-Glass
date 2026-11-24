@@ -76,7 +76,7 @@ const PrivacyPolicy = ({ onBack }) => {
       <SEOHead 
         title={isCookiesView ? "Política de Cookies y Almacenamiento Local - Pro Fitness Glass" : "Política de Privacidad y Eliminación de Datos - Pro Fitness Glass"} 
         description={isCookiesView ? "Conoce el inventario completo de cookies técnicas y almacenamiento local de Pro Fitness Glass conforme al Art. 22.2 LSSI-CE y la AEPD." : "Conoce cómo protegemos tus datos y los pasos para solicitar la eliminación de tu cuenta."}
-        route={isCookiesView ? "cookies" : "privacy-policy"} 
+        route={isCookiesView ? "cookies" : "privacy"} 
       />
 
       <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] sm:mt-0" style={{ paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 1rem)' }}>

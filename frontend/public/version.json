@@ -1,21 +1,21 @@
 {
-  "version": "7.16.64",
-  "releaseNotes": "Actualización v7.16.64: notificación WebSub para Google en RSS al publicar, lastmod ISO completo en sitemap y caché público revalidable en páginas SEO.",
+  "version": "7.16.65",
+  "releaseNotes": "Actualización v7.16.65: optimización SEO integral de la web (sitemap ampliado con FAQ y Sobre Nosotros, Rich Results sin duplicados en calculadoras y guía de ejercicios, títulos optimizados y prerender de rutas legales).",
   "welcome": {
-    "title": "Indexación Más Rápida y Mejor Caché SEO",
-    "subtitle": "Añadimos WebSub para acelerar el descubrimiento RSS en Google y retiramos no-store de las páginas públicas indexables.",
+    "title": "SEO Completo en Toda la Web",
+    "subtitle": "Optimizamos calculadoras, guía de ejercicios, FAQ, Sobre Nosotros, páginas legales y el sitemap general.",
     "features": [
       {
-        "title": "WebSub PubSubHubbub en RSS",
-        "description": "Cada noticia nueva notifica al hub oficial de Google además de IndexNow para acelerar su rastreo."
+        "title": "Rich Snippets en Calculadoras y Ejercicios",
+        "description": "WebApplication, FAQPage, CollectionPage e ItemList limpios desde el primer HTML sin duplicar esquemas de portada."
       },
       {
-        "title": "Caché Público Revalidable",
-        "description": "Las noticias, guías y calculadoras permiten bfcache y caché de rastreadores manteniendo frescura."
+        "title": "Sitemap y Rutas Legales Completas",
+        "description": "Añadidas /sobre-nosotros y /faq al sitemap y prerrenderizadas /privacy, /terms y /aviso-legal con su canonical propio."
       },
       {
-        "title": "Sitemap con Fecha y Hora Exacta",
-        "description": "Cada entrada de /sitemap.xml informa lastmod en ISO-8601 completo."
+        "title": "Títulos Más Concisos en Buscadores",
+        "description": "Eliminadas repeticiones de marca y acortados los encabezados para mejorar el CTR en Google."
       }
     ]
   }

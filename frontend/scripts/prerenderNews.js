@@ -218,6 +218,7 @@ function injectMeta(html, {
   jsonLdScripts = []
 }) {
   const safeTitle = escapeHtml(title);
+  const fullTitle = /pro fitness glass/i.test(safeTitle) ? safeTitle : `${safeTitle} | Pro Fitness Glass`;
   const safeDesc = escapeHtml(description);
   const safeImg = escapeUrlAttr(image);
   const safeUrl = escapeUrlAttr(url);
@@ -225,8 +226,36 @@ function injectMeta(html, {
 
   let output = html;
 
-  // Title
-  output = output.replace(/<title>[\s\S]*?<\/title>/i, `<title>${safeTitle} | Pro Fitness Glass</title>`);
+  // Title (evitar duplicar "| Pro Fitness Glass" si el título ya incluye la marca)
+  output = output.replace(/<title>[\s\S]*?<\/title>/i, `<title>${fullTitle}</title>`);
+
+  // En subpáginas prerrenderizadas, sustituir el @graph de portada (FAQPage + SoftwareApplication)
+  // por únicamente Organization + WebSite para evitar duplicados o conflictos de Rich Results.
+  const baseEntityJsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': `${BASE_URL}/#organization`,
+        name: 'Pro Fitness Glass',
+        url: `${BASE_URL}/`,
+        logo: { '@type': 'ImageObject', url: `${BASE_URL}/logo.webp` },
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${BASE_URL}/#website`,
+        url: `${BASE_URL}/`,
+        name: 'Pro Fitness Glass',
+        inLanguage: 'es-ES',
+      },
+    ],
+  });
+  output = output.replace(
+    /<script\s+id=["']pfg-home-jsonld["']\s+type=["']application\/ld\+json["'][\s\S]*?<\/script>/i,
+    isNoIndex
+      ? ''
+      : `<script id="pfg-home-jsonld" type="application/ld+json">${baseEntityJsonLd}</script>`
+  );
 
   // Meta description & robots
   output = output.replace(/<meta\s+name=["']description["'][\s\S]*?>/i, `<meta name="description" content="${safeDesc}" />`);
@@ -267,7 +296,7 @@ function injectMeta(html, {
   // Open Graph (eliminamos duplicados/valores por defecto de index.html antes de inyectar los del artículo)
   output = output.replace(/<meta\s+property=["']og:type["'][\s\S]*?>/i, `<meta property="og:type" content="${type}" />`);
   output = output.replace(/<meta\s+property=["']og:url["'][\s\S]*?>/i, `<meta property="og:url" content="${safeUrl}" />`);
-  output = output.replace(/<meta\s+property=["']og:title["'][\s\S]*?>/i, `<meta property="og:title" content="${safeTitle} | Pro Fitness Glass" />`);
+  output = output.replace(/<meta\s+property=["']og:title["'][\s\S]*?>/i, `<meta property="og:title" content="${fullTitle}" />`);
   output = output.replace(/<meta\s+property=["']og:description["'][\s\S]*?>/i, `<meta property="og:description" content="${safeDesc}" />`);
   output = output.replace(/<meta\s+property=["']og:image:(?:secure_url|type|width|height|alt)["'][\s\S]*?>\s*/gi, '');
   output = output.replace(
@@ -276,7 +305,7 @@ function injectMeta(html, {
   );
 
   // Twitter
-  output = output.replace(/<meta\s+name=["']twitter:title["'][\s\S]*?>/i, `<meta name="twitter:title" content="${safeTitle} | Pro Fitness Glass" />`);
+  output = output.replace(/<meta\s+name=["']twitter:title["'][\s\S]*?>/i, `<meta name="twitter:title" content="${fullTitle}" />`);
   output = output.replace(/<meta\s+name=["']twitter:description["'][\s\S]*?>/i, `<meta name="twitter:description" content="${safeDesc}" />`);
   output = output.replace(/<meta\s+name=["']twitter:image:alt["'][\s\S]*?>\s*/gi, '');
   output = output.replace(
@@ -630,14 +659,67 @@ async function main() {
       <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem;">¿Cómo calcular el 1RM con las fórmulas de Epley y Brzycki?</h2>
       <p style="color: #cbd5e1;">La fórmula de <strong>Epley</strong> estima tu 1RM multiplicando el peso levantado por <code>(1 + repeticiones / 30)</code>, mientras que la ecuación de <strong>Brzycki</strong> utiliza <code>Peso × (36 / (37 - repeticiones))</code>. Para obtener la máxima precisión en el gimnasio, utiliza una serie llevada cerca del fallo muscular entre 3 y 10 repeticiones.</p>
     </section>
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Preguntas Frecuentes sobre el 1RM</h2>
+      <h3 style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin: 1rem 0 0.25rem;">¿Qué es el 1RM en el gimnasio y para qué sirve?</h3>
+      <p style="color: #cbd5e1; margin: 0 0 1rem;">El 1RM (Una Repetición Máxima) es el peso máximo que puedes levantar una sola vez con técnica correcta en un ejercicio como Press de Banca, Sentadilla o Peso Muerto. Sirve para programar tus cargas de hipertrofia (70%-85% del 1RM) y medir tu sobrecarga progresiva.</p>
+      <h3 style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin: 1rem 0 0.25rem;">¿Con qué porcentaje del 1RM debo entrenar para ganar masa muscular?</h3>
+      <p style="color: #cbd5e1; margin: 0;">La zona óptima de hipertrofia miofibrilar se sitúa entre el 70% y el 85% de tu 1RM (series de 6 a 12 repeticiones cercanas al fallo muscular, dejando RIR 1-2).</p>
+    </section>
   </main>`;
 
+  const calc1rmJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebApplication',
+        name: 'Calculadora de 1RM (Repetición Máxima) — Pro Fitness Glass',
+        url: `${BASE_URL}/calculadora-1rm`,
+        applicationCategory: 'HealthApplication',
+        operatingSystem: 'Web, Android, iOS',
+        inLanguage: 'es-ES',
+        description: 'Calculadora gratuita de 1RM (Repetición Máxima) para Press de Banca, Sentadilla, Peso Muerto y Press Militar con fórmulas Epley, Brzycki y Lander.',
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' }
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: '¿Qué es el 1RM en el gimnasio y para qué sirve?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'El 1RM (Una Repetición Máxima) es el peso máximo que puedes levantar una sola vez con técnica correcta en un ejercicio como Press de Banca, Sentadilla o Peso Muerto. Sirve para programar tus cargas de hipertrofia (70%-85% del 1RM) y medir tu sobrecarga progresiva.'
+            }
+          },
+          {
+            '@type': 'Question',
+            name: '¿Cuál es la fórmula más precisa para calcular el 1RM?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Las ecuaciones científicas más validadas son Epley (Peso × (1 + Reps/30)) y Brzycki (Peso × (36 / (37 - Reps))). Pro Fitness Glass combina Epley, Brzycki y Lander para obtener una media precisa.'
+            }
+          },
+          {
+            '@type': 'Question',
+            name: '¿Con qué porcentaje del 1RM debo entrenar para ganar masa muscular (hipertrofia)?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'La literatura científica sitúa la zona óptima de hipertrofia miofibrilar entre el 70% y el 85% de tu 1RM (series de 6 a 12 repeticiones cercanas al fallo muscular, dejando RIR 1-2).'
+            }
+          }
+        ]
+      }
+    ]
+  };
+
   let calc1rmHtml = injectMeta(baseHtml, {
-    title: 'Calculadora de 1RM (Repetición Máxima) para Gimnasio y Pesas',
-    description: 'Calcula gratis tu 1RM (Repetición Máxima) en Press de Banca, Sentadilla, Peso Muerto y Press Militar con las fórmulas de Epley, Brzycki y Lander y descubre tus porcentajes de hipertrofia y fuerza.',
+    title: 'Calculadora de 1RM (Repetición Máxima) y Porcentajes',
+    description: 'Calcula gratis tu 1RM (Repetición Máxima) en Press de Banca, Sentadilla, Peso Muerto y Press Militar con las fórmulas de Epley, Brzycki y Lander.',
     image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/calculadora-1rm`,
-    type: 'website'
+    type: 'website',
+    jsonLdScripts: [calc1rmJsonLd]
   });
   calc1rmHtml = injectPrerenderBody(calc1rmHtml, calc1rmBody, 'OneRMCalculatorPage');
   fs.writeFileSync(path.join(calc1rmDir, 'index.html'), calc1rmHtml, 'utf8');
@@ -674,14 +756,59 @@ async function main() {
         <li><strong>Creatina Monohidrato (0.1 g/kg):</strong> Suplemento con mayor respaldo científico para ganar fuerza explosiva y retención intracelular.</li>
       </ul>
     </section>
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Preguntas Frecuentes sobre Calorías y Macros</h2>
+      <h3 style="font-size: 1.15rem; font-weight: 800; color: #34d399; margin: 1rem 0 0.25rem;">¿Cuántos gramos de proteína al día necesito para ganar músculo o definir?</h3>
+      <p style="color: #cbd5e1; margin: 0 0 1rem;">La evidencia científica sitúa la ingesta óptima entre 1.8 g y 2.2 g de proteína por kilogramo de peso corporal al día para deportistas de fuerza.</p>
+      <h3 style="font-size: 1.15rem; font-weight: 800; color: #34d399; margin: 1rem 0 0.25rem;">¿Qué déficit calórico es mejor para perder grasa sin perder músculo?</h3>
+      <p style="color: #cbd5e1; margin: 0;">Un déficit moderado de 350 a 500 kcal por debajo de tu TDEE, combinado con entrenamiento de fuerza y suficiente proteína.</p>
+    </section>
   </main>`;
 
+  const calcMacrosJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebApplication',
+        name: 'Calculadora de Calorías, Macros y Déficit Calórico — Pro Fitness Glass',
+        url: `${BASE_URL}/calculadora-calorias-macros`,
+        applicationCategory: 'HealthApplication',
+        operatingSystem: 'Web, Android, iOS',
+        inLanguage: 'es-ES',
+        description: 'Calculadora gratuita de calorías diarias (TDEE), metabolismo basal (Mifflin-St Jeor) y macros para definición o volumen.',
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' }
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: '¿Cuántos gramos de proteína al día necesito para ganar masa muscular o definir?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'La evidencia científica recomienda entre 1.8 g y 2.2 g de proteína por kilogramo de peso corporal al día para personas que entrenan fuerza en el gimnasio.'
+            }
+          },
+          {
+            '@type': 'Question',
+            name: '¿Qué déficit calórico es mejor para perder grasa sin perder músculo?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Un déficit calórico moderado de entre 350 y 500 kcal por debajo de tu gasto energético diario total (TDEE), combinado con entrenamiento de pesas y alta ingesta proteica.'
+            }
+          }
+        ]
+      }
+    ]
+  };
+
   let calcMacrosHtml = injectMeta(baseHtml, {
-    title: 'Calculadora de Calorías, Macros y Déficit Calórico para Gimnasio',
-    description: 'Calcula gratis tus calorías diarias (TDEE), tasa metabólica basal (Mifflin-St Jeor) y reparto exacto de proteínas, carbohidratos y grasas para perder grasa o ganar masa muscular.',
+    title: 'Calculadora de Calorías, Macros y Déficit Calórico',
+    description: 'Calcula gratis tus calorías diarias (TDEE), TMB (Mifflin-St Jeor) y reparto exacto de proteínas, carbohidratos y grasas para definición o volumen.',
     image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/calculadora-calorias-macros`,
-    type: 'website'
+    type: 'website',
+    jsonLdScripts: [calcMacrosJsonLd]
   });
   calcMacrosHtml = injectPrerenderBody(calcMacrosHtml, calcMacrosBody, 'MacroCalculatorPage');
   fs.writeFileSync(path.join(calcMacrosDir, 'index.html'), calcMacrosHtml, 'utf8');
@@ -720,14 +847,47 @@ async function main() {
         <li><strong>Hombros y Brazos:</strong> Press Militar, Elevaciones Laterales, Curl de Bíceps Inclinado y Extensión de Tríceps en Polea.</li>
       </ul>
     </section>
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Rutinas de Gimnasio más Efectivas para Hipertrofia</h2>
+      <ul style="padding-left: 1.5rem; color: #e2e8f0;">
+        <li><strong>Push Pull Legs (Empuje - Tirón - Pierna):</strong> 3 o 6 días/semana dividiendo por patrones biomecánicos para maximizar volumen y recuperación.</li>
+        <li><strong>Torso - Pierna (Upper / Lower):</strong> 4 días/semana con frecuencia 2 por grupo muscular y progresión semanal de cargas.</li>
+        <li><strong>Full Body Científica:</strong> 3 días/semana priorizando multiarticulares básicos para principiantes e intermedios.</li>
+      </ul>
+    </section>
   </main>`;
 
+  const ejerciciosJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        name: 'Guía de Ejercicios de Gimnasio y Rutinas de Hipertrofia | Pro Fitness Glass',
+        url: `${BASE_URL}/ejercicios`,
+        description: 'Enciclopedia gratuita de ejercicios de gimnasio por grupo muscular con técnica biomecánica y rutinas Push Pull Legs, Torso Pierna y Full Body.',
+        inLanguage: 'es-ES'
+      },
+      {
+        '@type': 'ItemList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Press de Banca Plano e Inclinado (Pecho)' },
+          { '@type': 'ListItem', position: 2, name: 'Sentadilla Libre y Sentadilla Búlgara (Cuádriceps y Glúteo)' },
+          { '@type': 'ListItem', position: 3, name: 'Peso Muerto Rumano y Hip Thrust (Isquios y Glúteo)' },
+          { '@type': 'ListItem', position: 4, name: 'Dominadas, Jalón al Pecho y Remo con Barra (Espalda)' },
+          { '@type': 'ListItem', position: 5, name: 'Press Militar y Elevaciones Laterales (Hombros)' },
+          { '@type': 'ListItem', position: 6, name: 'Curl Inclinado y Extensión de Tríceps en Polea (Brazos)' }
+        ]
+      }
+    ]
+  };
+
   let ejerciciosHtml = injectMeta(baseHtml, {
-    title: 'Ejercicios de Gimnasio y Rutinas de Hipertrofia (Guía Técnica)',
-    description: 'Aprende la técnica correcta de los mejores ejercicios de gimnasio para pecho, espalda, piernas, glúteos, hombros y brazos, junto con las mejores rutinas Push Pull Legs y Torso Pierna.',
+    title: 'Ejercicios de Gimnasio y Rutinas de Hipertrofia',
+    description: 'Técnica correcta de ejercicios de gimnasio para pecho, espalda, piernas, glúteos, hombros y brazos, con rutinas Push Pull Legs y Torso Pierna.',
     image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/ejercicios`,
-    type: 'website'
+    type: 'website',
+    jsonLdScripts: [ejerciciosJsonLd]
   });
   ejerciciosHtml = injectPrerenderBody(ejerciciosHtml, ejerciciosBody, 'PublicExercisesPage');
   fs.writeFileSync(path.join(ejerciciosDir, 'index.html'), ejerciciosHtml, 'utf8');
@@ -840,8 +1000,8 @@ async function main() {
   </main>`;
 
   let sobreNosotrosHtml = injectMeta(baseHtml, {
-    title: '¿Qué es Pro Fitness Glass? — Quiénes Somos, Misión y App de Gimnasio 100% Gratis',
-    description: 'Conoce la historia, tecnología y filosofía 100% gratuita detrás de Pro Fitness Glass, la app de entrenamiento de gimnasio, hipertrofia y nutrición con diseño Glassmorphism e IA.',
+    title: '¿Qué es Pro Fitness Glass? — Quiénes Somos y Misión',
+    description: 'Conoce la historia, tecnología y filosofía 100% gratuita detrás de Pro Fitness Glass, la app de gimnasio, hipertrofia y nutrición con IA.',
     image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/sobre-nosotros`,
     type: 'website'
@@ -967,8 +1127,8 @@ async function main() {
   </main>`;
 
   let faqHtml = injectMeta(baseHtml, {
-    title: 'Preguntas Frecuentes (FAQ) sobre Pro Fitness Glass | Todo lo que Necesitas Saber',
-    description: 'Respuestas oficiales a todas las dudas sobre Pro Fitness Glass: gratuidad, rutinas ilimitadas, app Android en Play Store, IA Synapse, cálculo de 1RM y sincronización en la nube.',
+    title: 'Preguntas Frecuentes (FAQ) sobre Pro Fitness Glass',
+    description: 'Respuestas oficiales sobre Pro Fitness Glass: gratuidad total, rutinas ilimitadas, app Android, IA Synapse, cálculo de 1RM y macros.',
     image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/faq`,
     type: 'website'
@@ -1036,8 +1196,8 @@ async function main() {
   </main>`;
 
   let mantenimientoHtml = injectMeta(baseHtml, {
-    title: 'Migración y Mantenimiento Completados con Éxito — Pro Fitness Glass',
-    description: 'La migración técnica al dominio oficial profitnessglass.es ha finalizado con éxito. Tus datos están 100% seguros y la plataforma ahora ofrece mayor velocidad y estabilidad.',
+    title: 'Estado y Migración Oficial — Pro Fitness Glass',
+    description: 'La migración técnica al dominio oficial profitnessglass.es ha finalizado con éxito. Tus datos están 100% seguros y la plataforma ofrece mayor velocidad.',
     image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/mantenimiento`,
     type: 'website'
@@ -1047,6 +1207,78 @@ async function main() {
   mantenimientoHtml = injectPrerenderBody(mantenimientoHtml, mantenimientoBody, 'MaintenanceInfoPage');
   fs.writeFileSync(path.join(mantenimientoDir, 'index.html'), mantenimientoHtml, 'utf8');
   console.log('[Prerender] Generada página Mantenimiento en dist/mantenimiento/index.html.');
+
+  // ==========================================
+  // PRERENDER: Páginas legales (/privacy, /terms, /aviso-legal)
+  // ==========================================
+  const legalPages = [
+    {
+      slug: 'privacy',
+      chunk: 'PrivacyPolicy',
+      title: 'Política de Privacidad y Eliminación de Datos — Pro Fitness Glass',
+      h1: 'Política de Privacidad y Protección de Datos',
+      description: 'Cómo protege Pro Fitness Glass tus datos de entrenamiento y salud bajo RGPD y LOPDGDD, y cómo exportar o eliminar tu cuenta al instante.',
+      summary: 'En Pro Fitness Glass tus rutinas, marcas personales y datos de cuenta están protegidos conforme al RGPD y LOPDGDD. Nunca vendemos ni compartimos tus datos con terceros y puedes exportarlos o borrarlos en cualquier momento.',
+    },
+    {
+      slug: 'terms',
+      chunk: 'TermsPage',
+      title: 'Términos del Servicio y Condiciones de Uso — Pro Fitness Glass',
+      h1: 'Términos del Servicio',
+      description: 'Condiciones de uso, edad mínima legal de 14 años (Art. 8 RGPD y Art. 7 LOPDGDD), responsabilidad y derechos de uso en Pro Fitness Glass.',
+      summary: 'Consulta las condiciones contractuales de uso de Pro Fitness Glass, el acceso gratuito a nuestras herramientas de entrenamiento y nutrición y tus derechos como usuario en España y la Unión Europea.',
+    },
+    {
+      slug: 'aviso-legal',
+      chunk: 'LegalNoticePage',
+      title: 'Aviso Legal (LSSI-CE) — Pro Fitness Glass',
+      h1: 'Aviso Legal e Información General',
+      description: 'Datos de identificación del titular, propiedad intelectual y régimen de responsabilidad de Pro Fitness Glass conforme al Art. 10 de la Ley 34/2002 (LSSI-CE).',
+      summary: 'Información oficial del prestador de servicios, titularidad de Pro Fitness Glass (Dylan Jesús Suárez Falcón), contacto oficial (soporte@profitnessglass.es) y cumplimiento normativo LSSI-CE.',
+    },
+  ];
+
+  for (const page of legalPages) {
+    const pageDir = path.join(distDir, page.slug);
+    if (!fs.existsSync(pageDir)) fs.mkdirSync(pageDir, { recursive: true });
+    const pageUrl = `${BASE_URL}/${page.slug}`;
+    const pageBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 860px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Volver a Pro Fitness Glass</a> |
+      <a href="/privacy" style="color: #34d399; text-decoration: none; font-weight: 700;">Privacidad</a> |
+      <a href="/terms" style="color: #34d399; text-decoration: none; font-weight: 700;">Términos</a> |
+      <a href="/aviso-legal" style="color: #34d399; text-decoration: none; font-weight: 700;">Aviso Legal</a>
+    </nav>
+    <header style="margin-bottom: 2rem;">
+      <h1 style="font-size: 2.25rem; font-weight: 900; margin: 0 0 1rem; letter-spacing: -0.02em;">${escapeHtml(page.h1)}</h1>
+      <p style="font-size: 1.05rem; color: #94a3b8;">${escapeHtml(page.summary)}</p>
+    </header>
+  </main>`;
+    const pageHtml = injectMeta(baseHtml, {
+      title: page.title,
+      description: page.description,
+      image: `${BASE_URL}/og-preview.jpg`,
+      url: pageUrl,
+      type: 'website',
+      jsonLdScripts: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          name: page.h1,
+          description: page.description,
+          url: pageUrl,
+          inLanguage: 'es-ES',
+        },
+      ],
+    });
+    fs.writeFileSync(
+      path.join(pageDir, 'index.html'),
+      injectPrerenderBody(pageHtml, pageBody, page.chunk),
+      'utf8'
+    );
+  }
+  console.log('[Prerender] Generadas páginas legales (/privacy, /terms, /aviso-legal).');
 
 }
 

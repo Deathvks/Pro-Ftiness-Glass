@@ -448,7 +448,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
     return (
         <div className="landing-page absolute inset-0 z-[100] bg-bg-primary overflow-hidden">
             <Helmet>
-                <title>Pro Fitness Glass | App de Gimnasio Gratis, Rutinas de Pesas, Diario de Entrenamiento y Nutrición con IA</title>
+                <title>Pro Fitness Glass | App de Gimnasio Gratis, Rutinas y Nutrición IA</title>
                 <meta
                     name="description"
                     content="Registra tus entrenamientos de gimnasio, aplica sobrecarga progresiva en tus rutinas de hipertrofia y fuerza, calcula tu 1RM y controla calorías y macros con IA gratis."
