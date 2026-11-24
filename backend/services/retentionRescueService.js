@@ -173,6 +173,7 @@ const loadEmailRescuePayload = async (userId) => {
 export const getRetentionRescueOverview = async () => {
   const now = new Date();
   const nowMs = now.getTime();
+  const thirtyDaysAgo = new Date(nowMs - 30 * 24 * 60 * 60 * 1000);
 
   // 1. Consultas agregadas ultrarrápidas con GROUP BY (evita N*8 subconsultas correlacionadas y bloqueos de CPU en MySQL)
   const [
@@ -183,6 +184,10 @@ export const getRetentionRescueOverview = async () => {
     pushStats,
     personalRecords,
     rescueLogs,
+    channelNotifications,
+    botMessages,
+    botReplyMessages,
+    retentionClientEvents,
   ] = await Promise.all([
     db.User.findAll({
       where: {
@@ -255,6 +260,67 @@ export const getRetentionRescueOverview = async () => {
           limit: 250,
         }).catch(() => [])
       : Promise.resolve([]),
+    db.Notification
+      ? db.Notification.findAll({
+          attributes: ['user_id', 'type', 'title', 'created_at'],
+          where: {
+            created_at: { [Op.gte]: thirtyDaysAgo },
+            [Op.or]: [
+              { type: { [Op.in]: ['early_nudge_24h', 'weekly_email_recap', 'training_reminder'] } },
+              {
+                title: {
+                  [Op.in]: [
+                    '🔥 ¡Tu racha está en peligro!',
+                    '💔 Racha perdida',
+                    '¡No olvides tus metas!',
+                    '💊 Tu creatina',
+                    'Registro de Progreso Mensual',
+                  ],
+                },
+              },
+            ],
+          },
+          order: [['created_at', 'DESC']],
+          raw: true,
+        }).catch(() => [])
+      : Promise.resolve([]),
+    db.Message
+      ? db.Message.findAll({
+          attributes: ['id', 'sender_id', 'receiver_id', 'bot_reminder_level', 'bot_push_status', 'bot_email_status', 'created_at'],
+          where: {
+            created_at: { [Op.gte]: thirtyDaysAgo },
+            bot_reminder_level: { [Op.gt]: 0 },
+          },
+          order: [['created_at', 'DESC']],
+          raw: true,
+        }).catch(() => [])
+      : Promise.resolve([]),
+    db.Message
+      ? db.Message.findAll({
+          attributes: ['sender_id', 'created_at'],
+          where: {
+            created_at: { [Op.gte]: thirtyDaysAgo },
+            [Op.or]: [
+              { attachment_type: null },
+              { attachment_type: { [Op.ne]: 'bot_reply' } },
+            ],
+            bot_reminder_level: { [Op.or]: [null, 0] },
+          },
+          order: [['created_at', 'DESC']],
+          raw: true,
+        }).catch(() => [])
+      : Promise.resolve([]),
+    db.PushDeliveryLog
+      ? db.PushDeliveryLog.findAll({
+          attributes: ['user_id', 'title', 'status', 'body', 'error_message', 'created_at'],
+          where: {
+            type: 'retention_event',
+            created_at: { [Op.gte]: thirtyDaysAgo },
+          },
+          order: [['created_at', 'DESC']],
+          raw: true,
+        }).catch(() => [])
+      : Promise.resolve([]),
   ]);
 
   const routineMap = new Map(routineStats.map(r => [Number(r.user_id), r]));
@@ -287,6 +353,8 @@ export const getRetentionRescueOverview = async () => {
   const eligibleInactiveUsers = [];
   const upcomingUsers = [];
   const userLastActivityMap = new Map();
+  const userLastLoggedMap = new Map();
+  const userLastWorkoutMap = new Map();
 
   for (const plain of users) {
     const uid = Number(plain.id);
@@ -311,6 +379,12 @@ export const getRetentionRescueOverview = async () => {
     );
     const lastOverallActivityAt = new Date(Math.max(...allActivityDates.map(d => d.getTime())));
     userLastActivityMap.set(uid, lastOverallActivityAt);
+    if (logDates.length > 0) {
+      userLastLoggedMap.set(uid, lastLoggedActionAt);
+    }
+    if (lastWorkoutDate && !Number.isNaN(lastWorkoutDate.getTime())) {
+      userLastWorkoutMap.set(uid, lastWorkoutDate);
+    }
 
     const accountAgeHours = Math.max(0, (nowMs - createdAt.getTime()) / 3600000);
     const accountAgeDays = Math.floor(accountAgeHours / 24);
@@ -476,6 +550,289 @@ export const getRetentionRescueOverview = async () => {
   const emailErrorCount = formattedLogs.filter(l => l.email_status === 'error').length;
   const recoveredCount = formattedLogs.filter(l => l.recovered).length;
 
+  // Analítica unificada de todos los canales de retención (Web, Capacitor y App Nativa)
+  const summarizeUserChannel = (rows, {
+    getUserId = row => Number(row.user_id),
+    getTimestamp = row => row.created_at || row.sent_at,
+    recoveryGraceMs = 5 * 60 * 1000,
+    activityMap = userLastActivityMap,
+  } = {}) => {
+    const latestTouchByUser = new Map();
+    let totalEvents = 0;
+
+    for (const row of rows) {
+      const uid = getUserId(row);
+      const ts = getTimestamp(row) ? new Date(getTimestamp(row)).getTime() : NaN;
+      if (!uid || Number.isNaN(ts)) continue;
+      totalEvents += 1;
+      const prev = latestTouchByUser.get(uid);
+      if (!prev || ts > prev) {
+        latestTouchByUser.set(uid, ts);
+      }
+    }
+
+    let recoveredUsers = 0;
+    for (const [uid, touchMs] of latestTouchByUser.entries()) {
+      const act = activityMap.get(uid);
+      if (act && act.getTime() > touchMs + recoveryGraceMs) {
+        recoveredUsers += 1;
+      }
+    }
+
+    const uniqueUsers = latestTouchByUser.size;
+    return {
+      totalEvents,
+      uniqueUsers,
+      recoveredUsers,
+      recoveryRate: uniqueUsers > 0 ? Math.round((recoveredUsers / uniqueUsers) * 100) : 0,
+      latestTouchByUser,
+    };
+  };
+
+  const countConvertedAfter = (latestTouchByUser, activityMap, graceMs = 5 * 60 * 1000) => {
+    let count = 0;
+    for (const [uid, touchMs] of latestTouchByUser.entries()) {
+      const act = activityMap.get(uid);
+      if (act && act.getTime() > touchMs + graceMs) count += 1;
+    }
+    return count;
+  };
+
+  const rescueChannelStats = summarizeUserChannel(formattedLogs, {
+    getTimestamp: l => l.sent_at,
+  });
+  const earlyNudgeRows = channelNotifications.filter(n => n.type === 'early_nudge_24h');
+  const earlyNudgeStats = summarizeUserChannel(earlyNudgeRows);
+  const earlyNudgeConverted = countConvertedAfter(earlyNudgeStats.latestTouchByUser, userLastLoggedMap);
+
+  const weeklyRecapRows = channelNotifications.filter(n => n.type === 'weekly_email_recap');
+  const weeklyRecapStats = summarizeUserChannel(weeklyRecapRows);
+
+  const trainingReminderRows = channelNotifications.filter(n => n.type === 'training_reminder');
+  const trainingReminderStats = summarizeUserChannel(trainingReminderRows);
+  const trainingReminderWorkouts = countConvertedAfter(trainingReminderStats.latestTouchByUser, userLastWorkoutMap);
+
+  const streakDangerRows = channelNotifications.filter(n => n.title === '🔥 ¡Tu racha está en peligro!');
+  const streakLostRows = channelNotifications.filter(n => n.title === '💔 Racha perdida');
+  const streakAlertStats = summarizeUserChannel([...streakDangerRows, ...streakLostRows]);
+
+  const habitMacrosRows = channelNotifications.filter(n => n.title === '¡No olvides tus metas!');
+  const habitCreatineRows = channelNotifications.filter(n => n.title === '💊 Tu creatina');
+  const habitWeightRows = channelNotifications.filter(n => n.title === 'Registro de Progreso Mensual');
+  const habitReminderStats = summarizeUserChannel([
+    ...habitMacrosRows,
+    ...habitCreatineRows,
+    ...habitWeightRows,
+  ]);
+
+  // Bot de asesoría: considera recuperado si el prospecto respondió o tuvo actividad tras el aviso
+  const latestReplyByUser = new Map();
+  for (const msg of botReplyMessages) {
+    const uid = Number(msg.sender_id);
+    const ts = msg.created_at ? new Date(msg.created_at).getTime() : NaN;
+    if (!uid || Number.isNaN(ts)) continue;
+    const prev = latestReplyByUser.get(uid);
+    if (!prev || ts > prev) latestReplyByUser.set(uid, ts);
+  }
+  const botTouchMap = new Map();
+  let botEmailSent = 0;
+  let botPushSent = 0;
+  for (const msg of botMessages) {
+    const uid = Number(msg.receiver_id);
+    const ts = msg.created_at ? new Date(msg.created_at).getTime() : NaN;
+    if (!uid || Number.isNaN(ts)) continue;
+    if (msg.bot_email_status === 'ok') botEmailSent += 1;
+    if (msg.bot_push_status === 'ok') botPushSent += 1;
+    const prev = botTouchMap.get(uid);
+    if (!prev || ts > prev) botTouchMap.set(uid, ts);
+  }
+  let botRepliedUsers = 0;
+  let botRecoveredUsers = 0;
+  for (const [uid, touchMs] of botTouchMap.entries()) {
+    const replyMs = latestReplyByUser.get(uid);
+    const appAct = userLastActivityMap.get(uid)?.getTime();
+    const didReply = Boolean(replyMs && replyMs > touchMs);
+    const didAppReturn = Boolean(appAct && appAct > touchMs + 5 * 60 * 1000);
+    if (didReply) botRepliedUsers += 1;
+    if (didReply || didAppReturn) botRecoveredUsers += 1;
+  }
+
+  // Telemetría móvil local (Capacitor / Nativa) + Ganchos Día 2 / Semana 2
+  const localCapEvents = retentionClientEvents.filter(
+    e => e.title === 'local_capacitor_engagement' || e.title === 'local_capacitor_daily'
+  );
+  const localCapOpened = localCapEvents.filter(e => e.status === 'opened');
+  const localCapScheduled = localCapEvents.filter(e => e.status === 'scheduled');
+  const localCapStats = summarizeUserChannel(localCapOpened.length > 0 ? localCapOpened : localCapScheduled);
+
+  const localNativeEvents = retentionClientEvents.filter(
+    e => e.title === 'local_native_engagement' || e.title === 'local_native_daily'
+  );
+  const localNativeOpened = localNativeEvents.filter(e => e.status === 'opened');
+  const localNativeScheduled = localNativeEvents.filter(e => e.status === 'scheduled');
+  const localNativeStats = summarizeUserChannel(localNativeOpened.length > 0 ? localNativeOpened : localNativeScheduled);
+
+  const hookEvents = retentionClientEvents.filter(e =>
+    e.title === 'hook_micro_challenge' ||
+    e.title === 'hook_repeat_yesterday' ||
+    e.title === 'hook_next_session_target'
+  );
+  const hookStats = summarizeUserChannel(hookEvents, {
+    activityMap: userLastLoggedMap,
+    recoveryGraceMs: 0,
+  });
+  const countPlatforms = (rows) => ({
+    web: rows.filter(r => r.error_message === 'web').length,
+    capacitor: rows.filter(r => r.error_message === 'capacitor').length,
+    native: rows.filter(r => r.error_message === 'native').length,
+  });
+
+  const recoveryChannels = [
+    {
+      key: 'rescue_72h',
+      label: 'Rescate +72h personalizado',
+      category: 'automated',
+      platforms: ['web', 'capacitor', 'native'],
+      scheduleLabel: 'Cada hora :25 (≥72h)',
+      windowLabel: `Últimos ${formattedLogs.length} envíos`,
+      sentCount: rescueChannelStats.totalEvents,
+      uniqueUsers: rescueChannelStats.uniqueUsers,
+      recoveredUsers: rescueChannelStats.recoveredUsers,
+      recoveryRate: rescueChannelStats.recoveryRate,
+      detailText: `${emailSentCount} emails · ${formattedLogs.filter(l => l.push_status === 'success').length} push`,
+    },
+    {
+      key: 'early_nudge_24h',
+      label: 'Nudge temprano 24h',
+      category: 'automated',
+      platforms: ['web', 'capacitor', 'native'],
+      scheduleLabel: 'Cada hora :35 (24–36h)',
+      windowLabel: 'Últimos 30 días',
+      sentCount: earlyNudgeStats.totalEvents,
+      uniqueUsers: earlyNudgeStats.uniqueUsers,
+      recoveredUsers: earlyNudgeStats.recoveredUsers,
+      recoveryRate: earlyNudgeStats.recoveryRate,
+      detailText: `${earlyNudgeConverted} registraron entreno o comida tras aviso`,
+    },
+    {
+      key: 'weekly_email_recap',
+      label: 'Resumen semanal por correo',
+      category: 'automated',
+      platforms: ['web', 'capacitor', 'native'],
+      scheduleLabel: 'Domingos 19:00 locales',
+      windowLabel: 'Últimos 30 días',
+      sentCount: weeklyRecapStats.totalEvents,
+      uniqueUsers: weeklyRecapStats.uniqueUsers,
+      recoveredUsers: weeklyRecapStats.recoveredUsers,
+      recoveryRate: weeklyRecapStats.recoveryRate,
+      detailText: `${weeklyRecapStats.uniqueUsers} usuarios con consentimiento verificado`,
+    },
+    {
+      key: 'training_reminder',
+      label: 'Recordatorio de entreno',
+      category: 'automated',
+      platforms: ['web', 'capacitor', 'native'],
+      scheduleLabel: 'Hora preferida (:05)',
+      windowLabel: 'Últimos 30 días',
+      sentCount: trainingReminderStats.totalEvents,
+      uniqueUsers: trainingReminderStats.uniqueUsers,
+      recoveredUsers: trainingReminderStats.recoveredUsers,
+      recoveryRate: trainingReminderStats.recoveryRate,
+      detailText: `${trainingReminderWorkouts} completaron entreno tras aviso`,
+    },
+    {
+      key: 'streak_alerts',
+      label: 'Streak Wars y racha perdida',
+      category: 'automated',
+      platforms: ['web', 'capacitor', 'native'],
+      scheduleLabel: '20:00 riesgo · :30 pérdida',
+      windowLabel: 'Últimos 30 días',
+      sentCount: streakAlertStats.totalEvents,
+      uniqueUsers: streakAlertStats.uniqueUsers,
+      recoveredUsers: streakAlertStats.recoveredUsers,
+      recoveryRate: streakAlertStats.recoveryRate,
+      detailText: `${streakDangerRows.length} en peligro · ${streakLostRows.length} rachas perdidas`,
+    },
+    {
+      key: 'habit_reminders',
+      label: 'Hábitos (Macros, Creatina, Peso)',
+      category: 'automated',
+      platforms: ['web', 'capacitor', 'native'],
+      scheduleLabel: '10:00 / 20:00 / Día 1 mes',
+      windowLabel: 'Últimos 30 días',
+      sentCount: habitReminderStats.totalEvents,
+      uniqueUsers: habitReminderStats.uniqueUsers,
+      recoveredUsers: habitReminderStats.recoveredUsers,
+      recoveryRate: habitReminderStats.recoveryRate,
+      detailText: `${habitMacrosRows.length} macros · ${habitCreatineRows.length} creatina · ${habitWeightRows.length} peso`,
+    },
+    {
+      key: 'advisor_bot',
+      label: 'Bot de chats de asesoría',
+      category: 'messaging',
+      platforms: ['web', 'capacitor', 'native'],
+      scheduleLabel: '9:00–21:00 (N1 72h · N2 48h · N3 24h)',
+      windowLabel: 'Últimos 30 días',
+      sentCount: botMessages.length,
+      uniqueUsers: botTouchMap.size,
+      recoveredUsers: botRecoveredUsers,
+      recoveryRate: botTouchMap.size > 0 ? Math.round((botRecoveredUsers / botTouchMap.size) * 100) : 0,
+      detailText: `${botRepliedUsers} respuestas · ${botEmailSent} emails · ${botPushSent} push`,
+    },
+    {
+      key: 'local_capacitor',
+      label: 'Notificaciones locales Capacitor',
+      category: 'mobile_local',
+      platforms: ['capacitor'],
+      scheduleLabel: 'Dispositivo (14:00 / 20:00 + 1–3d)',
+      windowLabel: 'Últimos 30 días',
+      sentCount: localCapScheduled.length,
+      uniqueUsers: localCapStats.uniqueUsers,
+      recoveredUsers: localCapStats.recoveredUsers,
+      recoveryRate: localCapStats.recoveryRate,
+      detailText: `${localCapScheduled.length} programaciones · ${localCapOpened.length} aperturas directas`,
+    },
+    {
+      key: 'local_native',
+      label: 'Notificaciones locales App Nativa',
+      category: 'mobile_local',
+      platforms: ['native'],
+      scheduleLabel: 'Dispositivo (10:00 / 14:30 + 1–3d)',
+      windowLabel: 'Últimos 30 días',
+      sentCount: localNativeScheduled.length,
+      uniqueUsers: localNativeStats.uniqueUsers,
+      recoveredUsers: localNativeStats.recoveredUsers,
+      recoveryRate: localNativeStats.recoveryRate,
+      detailText: `${localNativeScheduled.length} programaciones · ${localNativeOpened.length} aperturas directas`,
+    },
+    {
+      key: 'in_app_hooks',
+      label: 'Ganchos Día 2 y Semana 2',
+      category: 'in_app',
+      platforms: ['web', 'capacitor', 'native'],
+      scheduleLabel: 'Micro-reto · Repetir ayer · Próx. objetivo',
+      windowLabel: 'Últimos 30 días',
+      sentCount: hookEvents.length,
+      uniqueUsers: hookStats.uniqueUsers,
+      recoveredUsers: hookStats.recoveredUsers,
+      recoveryRate: hookStats.recoveryRate,
+      detailText: (() => {
+        const p = countPlatforms(hookEvents);
+        const microCount = hookEvents.filter(e => e.title === 'hook_micro_challenge').length;
+        const repeatCount = hookEvents.filter(e => e.title === 'hook_repeat_yesterday').length;
+        const targetCount = hookEvents.filter(e => e.title === 'hook_next_session_target').length;
+        return `${microCount} micro-reto · ${repeatCount} repetir ayer · ${targetCount} próx. objetivo (W:${p.web} · C:${p.capacitor} · N:${p.native})`;
+      })(),
+    },
+  ];
+
+  const channelsSummary = {
+    totalChannels: recoveryChannels.length,
+    totalTouches30d: recoveryChannels.reduce((acc, ch) => acc + ch.sentCount, 0),
+    activeChannelsCount: recoveryChannels.filter(ch => ch.sentCount > 0).length,
+    totalRecoveredAcrossChannels: recoveryChannels.reduce((acc, ch) => acc + ch.recoveredUsers, 0),
+  };
+
   return {
     summary: {
       totalInactive72h: eligibleInactiveUsers.length,
@@ -495,7 +852,9 @@ export const getRetentionRescueOverview = async () => {
       emailSkippedCount,
       emailErrorCount,
       recoveredCount,
+      channelsSummary,
     },
+    recoveryChannels,
     eligibleInactiveUsers,
     upcomingUsers,
     historyLogs: formattedLogs,

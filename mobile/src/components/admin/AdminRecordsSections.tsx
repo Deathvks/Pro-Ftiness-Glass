@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Image, Linking, View } from 'react-native';
-import { Activity, Clock, Cpu, Database, FileCheck, FileWarning, HardDrive, Radio, RefreshCw, Send, Star, UserCheck, Users, Zap } from 'lucide-react-native';
+import { Activity, Clock, Cpu, Database, FileCheck, FileWarning, HardDrive, Layers, Radio, RefreshCw, Send, Star, UserCheck, Users, Zap } from 'lucide-react-native';
 import apiClient, { BACKEND_BASE_URL } from '@/services/apiClient';
 import { adminWrite } from '@/services/adminService';
 import { AdminButton, AdminCard, AdminInput, AdminLoad, AdminMetrics, AdminRecords, AdminText, adminDate, adminSearch, confirmAdmin, styles, useAdminAction } from './AdminUI';
@@ -153,25 +153,34 @@ function ResourceCard({ icon: Icon, title, percent, detail, children }: { icon: 
 
 type RetentionUser = { id: number; username?: string; name?: string; email?: string; inactiveHours: number; hoursRemaining?: number; estimatedAutoSendAt?: string; previewTitle?: string; previewMessage?: string; isEarlyCohort?: boolean; alreadyRescuedInCurrentCycle?: boolean };
 type RetentionLog = { id: number; user_id: number; username?: string; sent_at: string; overall_status: string; email_status: string; push_status: string; recovered: boolean; title?: string; message?: string };
+type RecoveryChannel = { key: string; label: string; category: string; platforms?: string[]; scheduleLabel: string; windowLabel: string; sentCount: number; uniqueUsers: number; recoveredUsers: number; recoveryRate: number; detailText?: string };
 type RetentionData = {
-  summary: { totalInactive72h: number; pendingToRescueCount: number; earlyCohortPendingCount: number; upcomingCount: number; totalSentCount: number; recoveredCount: number };
+  summary: {
+    totalInactive72h: number; pendingToRescueCount: number; emailEligibleInactiveCount?: number; pendingEmailSendCount?: number;
+    upcomingEmailSendCount?: number; emailAuthorizedTotal?: number; earlyCohortPendingCount: number; upcomingCount: number;
+    totalSentCount: number; recoveredCount: number;
+    channelsSummary?: { totalChannels: number; totalTouches30d: number; activeChannelsCount: number; totalRecoveredAcrossChannels: number };
+  };
+  recoveryChannels?: RecoveryChannel[];
   eligibleInactiveUsers: RetentionUser[]; upcomingUsers: RetentionUser[]; historyLogs: RetentionLog[];
 };
+
+const channelCategoryOptions = [['all', 'Todos'], ['automated', 'Crons'], ['messaging', 'Bot Asesoría'], ['mobile_local', 'Local Móvil'], ['in_app', 'Día 2 / Sem. 2']] as const;
 
 export function AdminRetention() {
   const [tab, setTab] = useState('pending');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const { busy, run } = useAdminAction();
-  return <AdminLoad<RetentionData> load={loadRetention}>{({ summary, eligibleInactiveUsers, upcomingUsers, historyLogs }, reload) => {
+  return <AdminLoad<RetentionData> load={loadRetention}>{({ summary, recoveryChannels = [], eligibleInactiveUsers, upcomingUsers, historyLogs }, reload) => {
     const send = (payload: { userId?: number; onlyEarlyCohort?: boolean }, message: string) =>
       confirmAdmin('Enviar rescate', message, () => void run(() => adminWrite('/admin/retention-rescue/send', 'POST', payload), 'Envío procesado.', reload), 'Enviar');
     return <>
       <AdminTiles tiles={[
-        { label: 'Pendientes de rescate', value: summary.pendingToRescueCount, icon: Clock, detail: `${summary.totalInactive72h} inactivos`, color: '#f59e0b' },
-        { label: 'Próximos', value: summary.upcomingCount, icon: Activity, color: '#0ea5e9' },
-        { label: 'Envíos realizados', value: summary.totalSentCount, icon: Send, color: '#a855f7' },
-        { label: 'Recuperados', value: summary.recoveredCount, icon: UserCheck, color: '#22c55e' },
+        { label: 'Pendientes de rescate', value: summary.pendingToRescueCount, icon: Clock, detail: `${summary.totalInactive72h} inactivos · ${summary.emailEligibleInactiveCount ?? 0} con email`, color: '#f59e0b' },
+        { label: 'Próximos', value: summary.upcomingCount, icon: Activity, detail: `${summary.upcomingEmailSendCount ?? 0} email · ${summary.emailAuthorizedTotal ?? 0} total`, color: '#0ea5e9' },
+        { label: 'Envíos 72h', value: summary.totalSentCount, icon: Send, detail: `${summary.recoveredCount} recuperados`, color: '#a855f7' },
+        { label: 'Canales (30d)', value: summary.channelsSummary?.totalRecoveredAcrossChannels ?? summary.recoveredCount, icon: Layers, detail: `${summary.channelsSummary?.activeChannelsCount ?? recoveryChannels.length} canales · ${summary.channelsSummary?.totalTouches30d ?? 0} toques`, color: '#22c55e' },
       ]} />
       <AdminCard title="Retención a las 72 horas">
         <View style={styles.actions}>
@@ -181,13 +190,24 @@ export function AdminRetention() {
         </View>
       </AdminCard>
       <AdminCard>
-        <AdminSegments options={[[ 'pending', 'Inactivos'], ['history', 'Historial'], ['upcoming', 'Próximos']]} value={tab} onChange={value => { setTab(value); setFilter('all'); }} />
-        <AdminInput search label="Buscar usuario" value={search} onChangeText={setSearch} />
-        {tab !== 'upcoming' && <AdminSelect label={tab === 'history' ? 'Estado del envío' : 'Cohorte'} value={filter} onChange={setFilter}
+        <AdminSegments options={[['pending', 'Inactivos'], ['channels', 'Canales'], ['history', 'Historial'], ['upcoming', 'Próximos']]} value={tab} onChange={value => { setTab(value); setFilter('all'); }} />
+        <AdminInput search label={tab === 'channels' ? 'Buscar canal' : 'Buscar usuario'} value={search} onChangeText={setSearch} />
+        {tab === 'channels' && <AdminSelect label="Tipo de canal" value={filter} onChange={setFilter} options={channelCategoryOptions} />}
+        {tab !== 'upcoming' && tab !== 'channels' && <AdminSelect label={tab === 'history' ? 'Estado del envío' : 'Cohorte'} value={filter} onChange={setFilter}
           options={tab === 'history' ? [[ 'all', 'Todos'], ['success', 'Correctos'], ['error', 'Con errores'], ['recovered', 'Recuperados']]
             : [[ 'all', 'Todos'], ['pending', 'Pendientes de envío'], ['early', 'Altas recientes'], ['sent', 'Ya rescatados']]} />}
       </AdminCard>
-      {tab === 'history' ? <AdminRecords key={'history' + filter + search} items={historyLogs.filter(row => (filter === 'all' || (filter === 'recovered' ? row.recovered : filter === 'error' ? row.overall_status !== 'success' : row.overall_status === filter)) && adminSearch(search, row.username, row.user_id))} keyFor={row => String(row.id)} render={row => (
+      {tab === 'channels' ? <AdminRecords key={'channels' + filter + search} items={recoveryChannels.filter(ch => (filter === 'all' || ch.category === filter) && adminSearch(search, ch.label, ch.scheduleLabel, ch.detailText))} keyFor={ch => ch.key} render={ch => (
+        <AdminCard title={ch.label}>
+          <View style={styles.toggle}>
+            <View style={{ flex: 1 }}><AdminText secondary>{ch.scheduleLabel} · {ch.windowLabel}</AdminText></View>
+            <AdminBadge tone={ch.recoveryRate >= 35 ? 'positive' : ch.recoveryRate > 0 ? 'accent' : 'neutral'}>{ch.recoveryRate}% vuelta</AdminBadge>
+          </View>
+          <AdminMeter label="Tasa de recuperación" value={ch.recoveryRate} color={ch.recoveryRate >= 35 ? '#22c55e' : undefined} />
+          <AdminMetrics entries={[['Toques', ch.sentCount], ['Usuarios', ch.uniqueUsers], ['Vuelven', ch.recoveredUsers]]} />
+          {!!ch.detailText && <AdminText secondary>{ch.detailText}</AdminText>}
+        </AdminCard>
+      )} /> : tab === 'history' ? <AdminRecords key={'history' + filter + search} items={historyLogs.filter(row => (filter === 'all' || (filter === 'recovered' ? row.recovered : filter === 'error' ? row.overall_status !== 'success' : row.overall_status === filter)) && adminSearch(search, row.username, row.user_id))} keyFor={row => String(row.id)} render={row => (
         <AdminCard title={row.username || `Usuario #${row.user_id}`}>
           <AdminText secondary>{adminDate(row.sent_at)} · {row.overall_status}{row.recovered ? ' · Recuperado' : ''}</AdminText>
           <AdminMetrics entries={[[ 'Correo', row.email_status], ['Push', row.push_status]]} />

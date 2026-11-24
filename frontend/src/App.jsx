@@ -17,7 +17,9 @@ import { useAppTheme } from './hooks/useAppTheme';
 import { useWorkoutTimer } from './hooks/useWorkoutTimer';
 import { useAppInitialization } from './hooks/useAppInitialization';
 import { cancelLocalReminders, localReminderKey, useLocalNotifications } from './hooks/useLocalNotifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { PushNotifications } from '@capacitor/push-notifications';
+import { trackRetentionEvent } from './services/notificationService';
 import { getPushTarget } from './config/pushRoutes';
 
 import AuthScreens from './components/AuthScreens';
@@ -457,7 +459,26 @@ const extractCapacitorDeepLinkPath = (rawUrl) => {
       }
       navigateInternal(target?.view ?? 'notifications', target?.options);
     });
-    return () => { void listener.then(handle => handle.remove()).catch(() => {}); };
+    const localListener = LocalNotifications.addListener('localNotificationActionPerformed', ({ notification }) => {
+      const extra = notification?.extra || {};
+      const channel = extra.retentionChannel || (Number(notification?.id) >= 2000 ? 'local_capacitor_engagement' : 'local_capacitor_daily');
+      void trackRetentionEvent({
+        channel,
+        action: 'opened',
+        platform: 'capacitor',
+        detail: notification?.title || channel,
+      });
+      const target = getPushTarget(extra.url || '/hub', window.location.origin);
+      if (!useAppStore.getState().isAuthenticated) {
+        navigate('/login', { state: { from: target?.path ?? '/hub' } });
+        return;
+      }
+      navigateInternal(target?.view ?? 'hub', target?.options);
+    });
+    return () => {
+      void listener.then(handle => handle.remove()).catch(() => {});
+      void localListener.then(handle => handle.remove()).catch(() => {});
+    };
   }, [navigate, navigateInternal]);
 
   useEffect(() => {

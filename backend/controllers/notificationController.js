@@ -323,6 +323,53 @@ const deleteAllNotifications = async (req, res, next) => {
   }
 };
 
+const RETENTION_EVENT_CHANNELS = new Set([
+  'local_capacitor_engagement',
+  'local_capacitor_daily',
+  'local_native_engagement',
+  'local_native_daily',
+  'hook_micro_challenge',
+  'hook_repeat_yesterday',
+  'hook_next_session_target',
+]);
+const RETENTION_EVENT_ACTIONS = new Set(['scheduled', 'opened', 'clicked', 'completed', 'shown']);
+const RETENTION_EVENT_PLATFORMS = new Set(['web', 'capacitor', 'native']);
+
+const recordRetentionEvent = async (req, res) => {
+  const { channel, action, platform, detail } = req.body ?? {};
+  if (!RETENTION_EVENT_CHANNELS.has(channel) || !RETENTION_EVENT_ACTIONS.has(action)) {
+    return res.status(400).json({ error: 'Evento de retención no válido.' });
+  }
+
+  const rawHeaderPlatform = String(req.headers['x-app-platform'] || '').toLowerCase();
+  const fallbackPlatform = rawHeaderPlatform === 'native'
+    ? 'native'
+    : rawHeaderPlatform === 'capacitor'
+      ? 'capacitor'
+      : 'web';
+  const resolvedPlatform = RETENTION_EVENT_PLATFORMS.has(platform) ? platform : fallbackPlatform;
+  const cleanDetail = typeof detail === 'string' && detail.trim()
+    ? detail.trim().slice(0, 200)
+    : channel;
+
+  try {
+    if (db.PushDeliveryLog) {
+      await db.PushDeliveryLog.create({
+        user_id: req.user.userId,
+        title: channel,
+        body: cleanDetail,
+        type: 'retention_event',
+        status: action,
+        error_message: resolvedPlatform,
+      });
+    }
+    return res.status(204).send();
+  } catch (error) {
+    console.warn('[RetentionEvent] Error registrando evento:', error.message);
+    return res.status(204).send();
+  }
+};
+
 export default {
   // Push
   getVapidKey,
@@ -331,6 +378,7 @@ export default {
   subscriptionStatus,
   getPushPreferences,
   updatePushPreferences,
+  recordRetentionEvent,
   // Internas
   create,
   getNotifications,

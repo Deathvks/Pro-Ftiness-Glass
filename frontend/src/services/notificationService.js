@@ -130,3 +130,11 @@ export const deleteAllNotifications = () => {
     method: 'DELETE',
   });
 };
+
+export const trackRetentionEvent = ({ channel, action, platform, detail } = {}) => {
+  if (!channel || !action) return Promise.resolve();
+  return apiClient('/notifications/retention-event', {
+    method: 'POST',
+    body: JSON.stringify({ channel, action, platform, detail }),
+  }).catch(() => {});
+};

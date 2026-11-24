@@ -97,3 +97,15 @@ export const deleteAllNotifications = () => {
     method: 'DELETE',
   });
 };
+
+/**
+ * Registra eventos de retención/enganche del cliente (locales o in-app).
+ * @param {{ channel?: string; action?: string; platform?: string; detail?: string }} [params]
+ */
+export const trackRetentionEvent = ({ channel, action, platform = 'native', detail } = {}) => {
+  if (!channel || !action) return Promise.resolve();
+  return apiClient('/notifications/retention-event', {
+    method: 'POST',
+    body: JSON.stringify({ channel, action, platform, detail }),
+  }).catch(() => {});
+};

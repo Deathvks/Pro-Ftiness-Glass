@@ -18,6 +18,8 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  Layers,
+  Smartphone,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -145,9 +147,10 @@ export default function AdminRetentionRescue() {
   const [isSendingBatch, setIsSendingBatch] = useState(false);
   const [sendingUserId, setSendingUserId] = useState(null);
 
-  const [subTab, setSubTab] = useState('inactive'); // 'inactive' | 'history' | 'upcoming'
+  const [subTab, setSubTab] = useState('inactive'); // 'inactive' | 'channels' | 'history' | 'upcoming'
   const [cohortFilter, setCohortFilter] = useState('pending'); // 'all' | 'pending' | 'sent' | 'early_14d' | 'veteran'
   const [historyFilter, setHistoryFilter] = useState('all'); // 'all' | 'success' | 'error' | 'recovered'
+  const [channelFilter, setChannelFilter] = useState('all'); // 'all' | 'automated' | 'messaging' | 'mobile_local' | 'in_app'
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
 
@@ -169,7 +172,7 @@ export default function AdminRetentionRescue() {
 
   useEffect(() => {
     setPage(1);
-  }, [subTab, cohortFilter, historyFilter, searchQuery]);
+  }, [subTab, cohortFilter, historyFilter, channelFilter, searchQuery]);
 
   const handleSendSingleUser = async (userId, username) => {
     if (sendingUserId || isSendingBatch) return;
@@ -231,7 +234,30 @@ export default function AdminRetentionRescue() {
     emailSkippedCount: 0,
     emailErrorCount: 0,
     recoveredCount: 0,
+    channelsSummary: {
+      totalChannels: 0,
+      totalTouches30d: 0,
+      activeChannelsCount: 0,
+      totalRecoveredAcrossChannels: 0,
+    },
   };
+
+  const recoveryChannels = useMemo(
+    () => (Array.isArray(data?.recoveryChannels) ? data.recoveryChannels : []),
+    [data?.recoveryChannels]
+  );
+
+  const filteredChannels = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return recoveryChannels.filter((ch) => {
+      if (channelFilter !== 'all' && ch.category !== channelFilter) return false;
+      if (q) {
+        const hay = `${ch.label || ''} ${ch.scheduleLabel || ''} ${ch.detailText || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [recoveryChannels, channelFilter, searchQuery]);
 
   const filteredInactive = useMemo(() => {
     const list = Array.isArray(data?.eligibleInactiveUsers) ? data.eligibleInactiveUsers : [];
@@ -301,7 +327,7 @@ export default function AdminRetentionRescue() {
       ? filteredHistory
       : filteredUpcoming;
 
-  const totalPages = Math.max(1, Math.ceil(activeList.length / ITEMS_PER_PAGE));
+  const totalPages = subTab === 'channels' ? 1 : Math.max(1, Math.ceil(activeList.length / ITEMS_PER_PAGE));
   const paginatedItems = activeList.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   return (
@@ -536,6 +562,19 @@ export default function AdminRetentionRescue() {
             <Calendar size={15} />
             <span>Próximos en Cumplir Margen ({summary.upcomingCount})</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setSubTab('channels')}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-extrabold whitespace-nowrap flex-shrink-0 transition-all cursor-pointer ${
+              subTab === 'channels'
+                ? 'bg-accent text-accent-contrast shadow-md shadow-accent/20'
+                : 'bg-bg-primary/70 text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <Layers size={15} />
+            <span>Canales de Recuperación ({recoveryChannels.length})</span>
+          </button>
         </div>
 
         {/* Buscador */}
@@ -610,11 +649,124 @@ export default function AdminRetentionRescue() {
         </div>
       )}
 
+      {subTab === 'channels' && (
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
+            <div className="text-xs text-text-secondary leading-relaxed">
+              <span className="font-extrabold text-text-primary">Cobertura unificada (Web · Capacitor · App Nativa): </span>
+              {summary.channelsSummary?.totalTouches30d || 0} toques en {summary.channelsSummary?.activeChannelsCount || 0}/{summary.channelsSummary?.totalChannels || recoveryChannels.length} canales activos ({summary.channelsSummary?.totalRecoveredAcrossChannels || 0} recuperaciones atribuidas).
+            </div>
+            <div className="flex overflow-x-auto no-scrollbar items-center gap-1.5 py-0.5 shrink-0">
+              {[
+                { id: 'all', label: `Todos (${recoveryChannels.length})` },
+                { id: 'automated', label: 'Crons' },
+                { id: 'messaging', label: 'Bot Asesoría' },
+                { id: 'mobile_local', label: 'Local Móvil' },
+                { id: 'in_app', label: 'Día 2 / Sem. 2' },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setChannelFilter(f.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap flex-shrink-0 transition-all cursor-pointer border ${
+                    channelFilter === f.id
+                      ? 'bg-accent/15 text-accent border-accent/40'
+                      : 'bg-bg-primary/60 text-text-secondary border-transparent hover:text-text-primary'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Contenido Principal */}
       {isLoading ? (
         <div className="flex justify-center py-16">
           <Spinner size={32} />
         </div>
+      ) : subTab === 'channels' ? (
+        filteredChannels.length === 0 ? (
+          <div className="text-center py-14 px-4 rounded-[28px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
+            <Layers size={36} className="mx-auto text-text-muted mb-3 opacity-60" />
+            <p className="text-base sm:text-lg font-extrabold text-text-primary">
+              No hay canales que coincidan con ese filtro
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+            {filteredChannels.map((ch) => {
+              const rate = Number(ch.recoveryRate) || 0;
+              const rateTone =
+                rate >= 35
+                  ? 'text-emerald-500 bg-emerald-500/15 border-emerald-500/30'
+                  : rate > 0
+                  ? 'text-sky-400 bg-sky-500/15 border-sky-500/30'
+                  : 'text-text-muted bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10';
+
+              return (
+                <div
+                  key={ch.key}
+                  className="rounded-3xl p-4 sm:p-5 bg-bg-primary/60 dark:bg-white/[0.03] ring-1 ring-black/5 dark:ring-white/10 flex flex-col justify-between gap-4"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="text-sm sm:text-base font-black text-text-primary truncate">{ch.label}</h3>
+                        <p className="text-[11px] font-bold text-text-muted truncate">{ch.scheduleLabel}</p>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black border shrink-0 ${rateTone}`}>
+                        {rate}% vuelta
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {(ch.platforms || []).map((plat) => (
+                        <span
+                          key={plat}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-text-secondary"
+                        >
+                          {(plat === 'native' || plat === 'capacitor') && <Smartphone size={10} />}
+                          {plat === 'web' ? 'Web' : plat === 'capacitor' ? 'Capacitor' : 'Nativa'}
+                        </span>
+                      ))}
+                      <span className="text-[10px] font-bold text-text-muted ml-auto">{ch.windowLabel}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-2xl p-2 bg-black/5 dark:bg-white/5">
+                      <div className="text-base sm:text-lg font-black text-text-primary">{ch.sentCount}</div>
+                      <div className="text-[10px] font-bold text-text-muted uppercase">Toques</div>
+                    </div>
+                    <div className="rounded-2xl p-2 bg-black/5 dark:bg-white/5">
+                      <div className="text-base sm:text-lg font-black text-text-primary">{ch.uniqueUsers}</div>
+                      <div className="text-[10px] font-bold text-text-muted uppercase">Usuarios</div>
+                    </div>
+                    <div className="rounded-2xl p-2 bg-emerald-500/10">
+                      <div className="text-base sm:text-lg font-black text-emerald-500">{ch.recoveredUsers}</div>
+                      <div className="text-[10px] font-bold text-emerald-500 uppercase">Vuelven</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="w-full h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-accent transition-all duration-500"
+                        style={{ width: `${Math.min(100, Math.max(0, rate))}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] font-semibold text-text-secondary leading-snug">
+                      {ch.detailText}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
       ) : paginatedItems.length === 0 ? (
         <div className="text-center py-14 px-4 rounded-[28px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
           <Clock size={36} className="mx-auto text-text-muted mb-3 opacity-60" />

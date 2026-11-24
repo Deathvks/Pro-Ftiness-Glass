@@ -12,6 +12,7 @@ import { installHapticsInterceptor } from '@/utils/haptics';
 import { loadCardioSession, syncPendingCardio } from '@/utils/cardio';
 import { resolveDeepLink } from '@/utils/deepLinking';
 import { syncPushOnAppStart } from '@/services/nativeNotifications';
+import { trackRetentionEvent } from '@/services/notificationService';
 import { initNativeTimerSync } from '@/services/nativeRestTimer';
 import { useRestTimerCompletion } from '@/hooks/useRestTimerCompletion';
 import { initSocket } from '@/services/socket';
@@ -343,12 +344,24 @@ export default function RootLayout() {
   }, [isReady, isAuthenticated, userProfile?.id]);
 
   // Listeners nativos de notificaciones recibidas y pulsadas
+  const trackedResponseIdsRef = useRef(new Set<string>());
   useEffect(() => {
     if (!isReady || Platform.OS === 'web') return;
 
     const navigateFromNotification = (response: Notifications.NotificationResponse | null) => {
       if (!response || !useAppStore.getState().isAuthenticated) return;
-      const rawUrl = response.notification?.request?.content?.data?.url;
+      const reqId = response.notification?.request?.identifier;
+      const rawData = response.notification?.request?.content?.data as Record<string, any> | undefined;
+      if (rawData?.retentionChannel && reqId && !trackedResponseIdsRef.current.has(reqId)) {
+        trackedResponseIdsRef.current.add(reqId);
+        void trackRetentionEvent({
+          channel: String(rawData.retentionChannel),
+          action: 'opened',
+          platform: 'native',
+          detail: String(response.notification?.request?.content?.title || rawData.retentionChannel),
+        });
+      }
+      const rawUrl = rawData?.url;
       const target = typeof rawUrl === 'string' && rawUrl.startsWith('/') ? rawUrl : '/notifications';
       try {
         router.push(target as any);

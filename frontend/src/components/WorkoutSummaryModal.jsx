@@ -20,6 +20,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
+import { trackRetentionEvent } from '../services/notificationService';
 import WorkoutShareCard from './WorkoutShareCard';
 import ScaleToFit from './ScaleToFit';
 import Spinner from './Spinner';
@@ -102,6 +103,22 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false, showRe
       document.body.style.overflow = '';
     };
   }, []);
+
+  const hasTrackedTargetRef = useRef(false);
+  useEffect(() => {
+    const detailsList = enrichedDetails.length > 0 ? enrichedDetails : (workoutData?.details || []);
+    const hasCompletedReps = Array.isArray(detailsList) && detailsList.some((ex) =>
+      Array.isArray(ex?.setsDone) && ex.setsDone.some((s) => (parseInt(s?.reps, 10) || 0) > 0)
+    );
+    if (!workoutData || !hasCompletedReps || hasTrackedTargetRef.current) return;
+    hasTrackedTargetRef.current = true;
+    void trackRetentionEvent({
+      channel: 'hook_next_session_target',
+      action: 'shown',
+      platform: Capacitor.isNativePlatform() ? 'capacitor' : 'web',
+      detail: workoutData?.routineName || 'next_session_target',
+    });
+  }, [workoutData, enrichedDetails]);
 
   useEffect(() => {
     const resolveAccentColor = () => {

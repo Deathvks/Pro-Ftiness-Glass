@@ -767,10 +767,10 @@ export const getCronJobs = async (req, res, next) => {
       {
         id: 3,
         name: 'Entrenamiento (Recordatorio)',
-        schedule: '10:00 (Hora Local)',
+        schedule: 'Hora personalizada (10:00 por defecto)',
         frequency: 'Cada Día',
         pushTitle: '¡Es hora de moverse!',
-        description: 'Recuerda a los usuarios entrenar si tienen rutina asignada y no lo han hecho.',
+        description: 'Recuerda entrenar en la hora elegida por cada usuario si aún no ha registrado sesión hoy.',
         status: 'active'
       },
       {

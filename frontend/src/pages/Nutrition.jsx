@@ -16,7 +16,9 @@ const NutritionTourGuide = React.lazy(() => import('../components/NutritionTourG
 const SmartNutritionCoachModal = React.lazy(() => import('../components/nutrition/SmartNutritionCoachModal'));
 import { generateSmartNutritionCoachPlan } from '../utils/smartNutritionCoach';
 import { useToast } from '../hooks/useToast';
+import { Capacitor } from '@capacitor/core';
 import * as nutritionService from '../services/nutritionService';
+import { trackRetentionEvent } from '../services/notificationService';
 import PromoBanner from '../components/PromoBanner';
 import CustomSelect from '../components/CustomSelect';
 import DatePicker from '../components/DatePicker';
@@ -609,6 +611,12 @@ const Nutrition = ({ setView, navParams }) => {
                     ? (MEAL_TYPE_LABELS[mealType]?.toLowerCase() || mealType)
                     : 'el día completo';
                 addToast(`Listo: ${copiedCount} alimentos copiados de ayer a ${label}.`, 'success');
+                void trackRetentionEvent({
+                    channel: 'hook_repeat_yesterday',
+                    action: 'completed',
+                    platform: Capacitor.isNativePlatform() ? 'capacitor' : 'web',
+                    detail: `${mealType || 'full_day'}:${copiedCount}`,
+                });
             } else {
                 addToast('No se pudieron copiar los alimentos de ayer.', 'error');
             }

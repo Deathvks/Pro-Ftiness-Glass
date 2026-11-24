@@ -25,6 +25,7 @@ router.get(
 router.get('/push-preferences', authenticateToken, notificationController.getPushPreferences);
 router.put('/push-preferences', authenticateToken, notificationController.updatePushPreferences);
 router.post('/subscription-status', authenticateToken, notificationController.subscriptionStatus);
+router.post('/retention-event', authenticateToken, notificationController.recordRetentionEvent);
 
 /**
  * @route   POST /api/notifications/subscribe

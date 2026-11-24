@@ -64,6 +64,7 @@ import { enrichGymWithMedia } from '@/utils/gymMedia';
 import { Image as ExpoImage } from 'expo-image';
 import * as nutritionService from '@/services/nutritionService';
 import * as userService from '@/services/userService';
+import { trackRetentionEvent } from '@/services/notificationService';
 import apiClient from '@/services/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -1069,6 +1070,12 @@ export default function Dashboard() {
             <TouchableOpacity
               onPress={() => {
                 const id = activeMicroChallenge.id || '';
+                void trackRetentionEvent({
+                  channel: 'hook_micro_challenge',
+                  action: 'clicked',
+                  platform: 'native',
+                  detail: id || activeMicroChallenge.title,
+                });
                 if (id.startsWith('nutri_') || ['daily_5_meals', 'daily_calories', 'daily_protein', 'daily_water'].includes(id)) {
                   router.push('/(tabs)/nutrition' as any);
                 } else if (id.startsWith('social_')) {

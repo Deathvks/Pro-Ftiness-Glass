@@ -1,21 +1,21 @@
 {
-  "version": "7.16.50",
-  "releaseNotes": "Actualización v7.16.50: sincronizado el conteo de correos autorizados entre Admin Usuarios y Retención 72h, e invalidación automática de permisos obsoletos al cambiar de correo.",
+  "version": "7.16.51",
+  "releaseNotes": "Actualización v7.16.51: panel unificado de Canales de Recuperación en Retención 72h (crons, bot de asesoría, notificaciones locales Capacitor/Nativa y ganchos Día 2 / Semana 2).",
   "welcome": {
-    "title": "Admin y Retención 72h Sincronizados",
-    "subtitle": "Unificada la validación real de consentimientos de correo entre el panel de usuarios y la retención a las 72h.",
+    "title": "Retención Total Multicanal",
+    "subtitle": "Medición unificada de todas las vías de recuperación y reactivación en Web, Capacitor y App Nativa.",
     "features": [
       {
-        "title": "Métrica de Correo Unificada",
-        "description": "Admin Usuarios valida ahora verificación de correo y evento criptográfico igual que Retención 72h, mostrando además cuántos usuarios son elegibles para avisos de entreno."
+        "title": "Todos los Canales en Retención",
+        "description": "Consulta envíos, usuarios alcanzados y tasa de vuelta de Rescate 72h, Nudge 24h, Resumen semanal, Recordatorio de entreno, Rachas, Hábitos y Bot de asesoría."
       },
       {
-        "title": "Desglose Claro en Retención 72h",
-        "description": "La tarjeta de correo autorizado distingue claramente los inactivos ≥72h, los próximos (<72h) y el total autorizado en la plataforma."
+        "title": "Telemetría en Capacitor y App Nativa",
+        "description": "Mide programaciones y aperturas directas de notificaciones locales en dispositivos Android/iOS junto a los crons del servidor."
       },
       {
-        "title": "Consentimiento Limpio al Cambiar de Email",
-        "description": "Si un usuario cambia su dirección de correo, se revocan automáticamente consentimientos vinculados al email anterior para evitar falsos positivos."
+        "title": "Ganchos Día 2 y Semana 2 Medidos",
+        "description": "Registra interacciones reales en Micro-reto activo, Repetir comidas de ayer y Objetivo de la próxima sesión en Web, Capacitor y Nativa."
       }
     ]
   }

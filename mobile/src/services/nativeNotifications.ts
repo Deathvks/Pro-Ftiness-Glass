@@ -212,7 +212,7 @@ export const scheduleLocalReminders = async (userId?: string | number | null) =>
         title: '🔥 ¡Buenos días!',
         body: 'Planifica tu entrenamiento y alimentación de hoy en Pro Fitness Glass.',
         sound: true,
-        data: { url: '/(tabs)' },
+        data: { url: '/(tabs)', retentionChannel: 'local_native_daily' },
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -228,7 +228,7 @@ export const scheduleLocalReminders = async (userId?: string | number | null) =>
         title: '🥗 Control Nutricional',
         body: 'No olvides registrar tus comidas para mantener tu objetivo diario.',
         sound: true,
-        data: { url: '/(tabs)/nutrition' },
+        data: { url: '/(tabs)/nutrition', retentionChannel: 'local_native_daily' },
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -247,7 +247,7 @@ export const scheduleLocalReminders = async (userId?: string | number | null) =>
           title: msg.title,
           body: msg.body,
           sound: true,
-          data: { url: '/(tabs)' },
+          data: { url: '/(tabs)', retentionChannel: 'local_native_engagement' },
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -258,6 +258,18 @@ export const scheduleLocalReminders = async (userId?: string | number | null) =>
     }
 
     safeSetStorage(reminderSyncKey(userId), String(Date.now()));
+    void notificationService.trackRetentionEvent({
+      channel: 'local_native_daily',
+      action: 'scheduled',
+      platform: 'native',
+      detail: '2_daily_reminders',
+    });
+    void notificationService.trackRetentionEvent({
+      channel: 'local_native_engagement',
+      action: 'scheduled',
+      platform: 'native',
+      detail: `${ENGAGEMENT_IDS.length}d_engagement_batch`,
+    });
   } catch (err) {
     console.warn('[Notifications] Error programando recordatorios locales:', err);
   }

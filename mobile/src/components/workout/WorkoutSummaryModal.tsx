@@ -33,7 +33,7 @@ import { getContrastTextColor } from '@/utils/colorUtils';
 import * as userService from '@/services/userService';
 import { EMAIL_CONSENT_VERSION } from '@/config/emailConsent';
 import { registerDeviceForPushNotifications } from '@/services/nativeNotifications';
-import { updatePushPreferences } from '@/services/notificationService';
+import { trackRetentionEvent, updatePushPreferences } from '@/services/notificationService';
 import { WorkoutShareCard } from '@/components/workout/WorkoutShareCard';
 import { ModalThemeBackground, getThemedModalBorderColor, getThemedModalSurfaceColor } from '@/components/ui/ModalThemeBackground';
 
@@ -65,6 +65,26 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
       userProfile?.id &&
       !(userProfile.email_marketing_consent && userProfile.push_notifications)
   );
+
+  const hasTrackedTargetRef = useRef(false);
+  useEffect(() => {
+    if (!visible || !workoutData) {
+      hasTrackedTargetRef.current = false;
+      return;
+    }
+    const detailsList = workoutData?.details || [];
+    const hasCompletedReps = Array.isArray(detailsList) && detailsList.some((ex: any) =>
+      Array.isArray(ex?.setsDone) && ex.setsDone.some((s: any) => (parseInt(s?.reps, 10) || 0) > 0)
+    );
+    if (!hasCompletedReps || hasTrackedTargetRef.current) return;
+    hasTrackedTargetRef.current = true;
+    void trackRetentionEvent({
+      channel: 'hook_next_session_target',
+      action: 'shown',
+      platform: 'native',
+      detail: workoutData?.routineName || 'next_session_target',
+    });
+  }, [visible, workoutData]);
 
   useEffect(() => {
     if (!reminderEligible || !userProfile?.id) return undefined;

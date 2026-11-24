@@ -52,6 +52,7 @@ import { MealCopyModal } from '@/components/nutrition/MealCopyModal';
 
 // Services & Utils
 import * as nutritionService from '@/services/nutritionService';
+import { trackRetentionEvent } from '@/services/notificationService';
 import { generateSmartNutritionCoachPlan } from '@/utils/smartNutritionCoach';
 
 export default function NutritionScreen() {
@@ -189,6 +190,12 @@ export default function NutritionScreen() {
         if (fetchInitialData) fetchInitialData();
         const label = mealType ? mealLabels[mealType].toLowerCase() : 'el día completo';
         useAppStore.getState().showToast?.(`Copiados ${copiedCount} alimentos de ayer a ${label}.`);
+        void trackRetentionEvent({
+          channel: 'hook_repeat_yesterday',
+          action: 'completed',
+          platform: 'native',
+          detail: `${mealType || 'full_day'}:${copiedCount}`,
+        });
       } else {
         Alert.alert('Error', 'No se pudieron copiar los alimentos de ayer.');
       }

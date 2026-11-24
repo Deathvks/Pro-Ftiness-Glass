@@ -51,6 +51,7 @@ import ExerciseSearch from '../components/RoutineEditor/ExerciseSearch';
 import LevelBadge from '../components/LevelBadge';
 import * as nutritionService from '../services/nutritionService';
 import * as userService from '../services/userService';
+import { trackRetentionEvent } from '../services/notificationService';
 import apiClient from '../services/apiClient';
 import { useToast } from '../hooks/useToast';
 import { useLocalNotifications } from '../hooks/useLocalNotifications';
@@ -1131,6 +1132,12 @@ const Dashboard = ({ setView }) => {
                 type="button"
                 onClick={() => {
                   const id = activeMicroChallenge.id || '';
+                  void trackRetentionEvent({
+                    channel: 'hook_micro_challenge',
+                    action: 'clicked',
+                    platform: Capacitor.isNativePlatform() ? 'capacitor' : 'web',
+                    detail: id || activeMicroChallenge.title,
+                  });
                   if (id.startsWith('nutri_') || ['daily_5_meals', 'daily_calories', 'daily_protein', 'daily_water'].includes(id)) {
                     setView('nutrition');
                   } else if (id.startsWith('social_')) {

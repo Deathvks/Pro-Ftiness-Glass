@@ -2,9 +2,23 @@
 import { useCallback } from 'react';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { trackRetentionEvent } from '../services/notificationService';
 
 // Registramos el plugin nativo que creamos en Android
 const NativeTimer = registerPlugin('NativeTimer');
+
+const LOCAL_RETENTION_TRACK_PREFIX = 'pfg_local_retention_sync:';
+const reportLocalScheduledOnce = (channel, detail) => {
+  try {
+    const key = `${LOCAL_RETENTION_TRACK_PREFIX}${channel}`;
+    const last = Number(localStorage.getItem(key) || 0);
+    if (Date.now() - last < 12 * 60 * 60 * 1000) return;
+    localStorage.setItem(key, String(Date.now()));
+    void trackRetentionEvent({ channel, action: 'scheduled', platform: 'capacitor', detail });
+  } catch {
+    // No bloquear por storage restringido
+  }
+};
 
 const ENGAGEMENT_MESSAGES = [
   { title: '💧 Hidratación', body: '¿Has bebido suficiente agua hoy? Registra tu consumo.' },
@@ -125,11 +139,12 @@ export const useLocalNotifications = () => {
           schedule: { at: scheduleDate },
           sound: 'beep.wav',
           actionTypeId: '',
-          extra: null
+          extra: { retentionChannel: 'local_capacitor_engagement', url: '/routines' }
         });
       }
 
       await LocalNotifications.schedule({ notifications });
+      reportLocalScheduledOnce('local_capacitor_engagement', '3d_engagement_batch');
     } catch (error) {
       console.warn('Error programando engagement:', error);
     }
@@ -152,6 +167,7 @@ export const useLocalNotifications = () => {
           body: 'Aún no has hecho login diario. ¡Entra y recoge tu XP!',
           id: ID_LOGIN_REMINDER,
           schedule: { at: xpDate },
+          extra: { retentionChannel: 'local_capacitor_daily', url: '/hub' },
         });
       }
 
@@ -171,6 +187,7 @@ export const useLocalNotifications = () => {
           body: 'Registra tus comidas para no perder de vista tus objetivos calóricos.',
           id: ID_MEAL_REMINDER,
           schedule: { at: mealDate },
+          extra: { retentionChannel: 'local_capacitor_daily', url: '/nutrition' },
         });
       }
 
@@ -179,6 +196,7 @@ export const useLocalNotifications = () => {
           notifications: notifications.map(n => ({ id: n.id })) 
         });
         await LocalNotifications.schedule({ notifications });
+        reportLocalScheduledOnce('local_capacitor_daily', `${notifications.length}_daily_reminders`);
       }
     } catch (error) {
       console.warn('Error programando recordatorios diarios:', error);
