@@ -1,21 +1,21 @@
 {
-  "version": "7.16.52",
-  "releaseNotes": "Actualización v7.16.52: nueva vitrina visual en Apariencia para los temas Galaxia, Desierto y Océano con progreso en vivo, prueba de 10s e invitación directa (+1.000 XP/amigo).",
+  "version": "7.16.53",
+  "releaseNotes": "Actualización v7.16.53: modal de Recompensas renovado en Web, Capacitor y Nativo con vistas previas reales, insignia +1.000 XP/amigo, prueba en vivo de 10s y botón directo para compartir.",
   "welcome": {
-    "title": "Vitrina de Temas y +1.000 XP",
-    "subtitle": "Descubre y previsualiza los temas exclusivos Liquid Glass desde Apariencia en Web, Capacitor y App Nativa.",
+    "title": "Modal de Recompensas Interactivo",
+    "subtitle": "Previsualiza los temas Galaxia, Desierto y Océano desde Recompensas, pruébalos 10s e invita con un toque.",
     "features": [
       {
-        "title": "Vistas Previas Reales en Mis Temas",
-        "description": "Previsualiza Galaxia, Desierto y Océano con su efecto Liquid Glass directamente en Apariencia antes de desbloquearlos."
+        "title": "Vistas Previas en Vivo en Recompensas",
+        "description": "Cada tema muestra ahora su aspecto real Liquid Glass con tu progreso exacto de amigos."
       },
       {
-        "title": "Recompensa +1.000 XP y Progreso Claro",
-        "description": "Consulta cuántos amigos te faltan con barra de progreso y comparte tu invitación al instante desde la propia tarjeta."
+        "title": "Prueba de 10s Sin Salir del Modal",
+        "description": "Prueba Galaxia, Desierto y Océano (claro u oscuro) en vivo antes de compartir tu invitación."
       },
       {
-        "title": "Prueba Gratuita de 10 Segundos",
-        "description": "Prueba cada variante (claro u oscuro) durante 10 segundos antes de invitar a tus amigos."
+        "title": "Compartir y +1.000 XP Siempre Visibles",
+        "description": "Insignia destacada de +1.000 XP por amigo y barra inferior fija para compartir o copiar tu enlace al instante."
       }
     ]
   }

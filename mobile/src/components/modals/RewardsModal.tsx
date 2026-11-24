@@ -6,8 +6,12 @@ import {
   TouchableOpacity,
   ScrollView,
   Platform,
+  Share,
 } from 'react-native';
-import { Trophy, Gift, Check, Lock, Palette } from 'lucide-react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
+import { Image as ExpoImage } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
@@ -21,52 +25,86 @@ interface RewardsModalProps {
   onClose: () => void;
 }
 
+interface RewardVariant {
+  id: string;
+  label: string;
+  testLabel: string;
+}
+
 interface RewardItem {
   id: string;
   name: string;
+  previewCaption: string;
   description: string;
   requiredReferrals: number;
   color: string;
+  iconName: string;
+  previewImage: number;
+  variants: RewardVariant[];
 }
 
 const REWARDS: RewardItem[] = [
   {
     id: 'galaxy',
     name: 'Tema Galaxia',
+    previewCaption: 'Liquid Glass · Estelar',
     description: 'Un viaje al espacio con tonos púrpuras oscuros y un fondo estelar inmersivo.',
     requiredReferrals: 5,
     color: '#a855f7',
+    iconName: 'meteor',
+    previewImage: require('../../../assets/images/galaxy.jpg'),
+    variants: [{ id: 'galaxy', label: 'Usar tema', testLabel: 'Probar 10s' }],
   },
   {
     id: 'desert',
     name: 'Tema Desierto',
-    description: 'Tonos cálidos de arena y atardecer con un fondo de dunas del desierto.',
+    previewCaption: 'Liquid Glass · Dunas',
+    description: 'Tonos cálidos de arena y atardecer con dunas del desierto en modo claro u oscuro.',
     requiredReferrals: 8,
-    color: '#f97316',
+    color: '#f59e0b',
+    iconName: 'sun',
+    previewImage: require('../../../assets/images/desert.jpg'),
+    variants: [
+      { id: 'desert', label: 'Claro', testLabel: 'Probar Claro' },
+      { id: 'desert-dark', label: 'Oscuro', testLabel: 'Probar Oscuro' },
+    ],
   },
   {
     id: 'ocean',
     name: 'Tema Océano',
-    description: 'Tonos profundos de agua y azules vibrantes con un fondo inmersivo de playa.',
+    previewCaption: 'Liquid Glass · Océano',
+    description: 'Tonos profundos de agua y azules vibrantes con fondo de playa en claro u oscuro.',
     requiredReferrals: 11,
-    color: '#3b82f6',
+    color: '#0ea5e9',
+    iconName: 'umbrella-beach',
+    previewImage: require('../../../assets/images/ocean.jpg'),
+    variants: [
+      { id: 'ocean', label: 'Claro', testLabel: 'Probar Claro' },
+      { id: 'ocean-dark', label: 'Oscuro', testLabel: 'Probar Oscuro' },
+    ],
   },
 ];
 
 export function RewardsModal({ visible, onClose }: RewardsModalProps) {
   const theme = useAppStore(state => state.theme) || 'oled';
   const setTheme = useAppStore(state => state.setTheme);
+  const startThemeTest = useAppStore(state => (state as any).startThemeTest);
+  const themeTest = useAppStore(state => state.themeTest);
   const userProfile = useAppStore(state => state.userProfile);
   const colors = useAppColors();
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
   const tintContrastText = getContrastTextColor(colors.tint);
+  const isTestingTheme = Boolean(themeTest?.name);
 
   if (!visible) return null;
 
   const referralCount = userProfile?.referralCount || 0;
   const isAdmin = userProfile?.role === 'admin';
+  const referralCode = userProfile?.referral_code || '';
+  const referralLink = `https://profitnessglass.es/register?ref=${referralCode}`;
+  const nextReward = REWARDS.find(r => referralCount < r.requiredReferrals);
 
   const handleApplyTheme = (themeId: string) => {
     try {
@@ -77,14 +115,44 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
     onClose();
   };
 
+  const handleTestTheme = (themeId: string) => {
+    if (isTestingTheme) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    startThemeTest?.(themeId, 10);
+    useAppStore.getState().showToast?.('Probando tema en vivo durante 10s');
+  };
+
+  const handleCopyReferral = async () => {
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await Clipboard.setStringAsync(referralLink);
+      useAppStore.getState().showToast?.('Enlace copiado (+1.000 XP por amigo)');
+    } catch {}
+  };
+
+  const handleShareReferral = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await Share.share({
+        title: 'Únete a Pro Fitness Glass',
+        message: `¡Entrena y lleva tu nutrición conmigo en Pro Fitness Glass! Regístrate gratis con mi enlace: ${referralLink}`,
+        url: referralLink,
+      });
+    } catch {
+      void handleCopyReferral();
+    }
+  };
+
   return (
     <SwipeableBottomSheet
-      scrollable
+      scrollable={false}
       visible={visible}
       onClose={onClose}
       isDark={isDark}
       backgroundColor={colors.card}
-      maxHeight="86%"
+      maxHeight="88%"
     >
       {/* Header */}
       <View
@@ -93,11 +161,19 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
           { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' },
         ]}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
           <View style={[styles.iconWrap, { backgroundColor: colors.tint + '20' }]}>
-            <Gift size={22} color={colors.tint} />
+            <FontAwesome5 name="gift" size={18} color={colors.tint} />
           </View>
-          <Text style={[styles.title, { color: colors.text }]}>Recompensas</Text>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+              <Text style={[styles.title, { color: colors.text }]}>Recompensas</Text>
+              <View style={[styles.xpPill, { backgroundColor: colors.tint + '22' }]}>
+                <FontAwesome5 name="bolt" size={9} color={colors.tint} />
+                <Text style={[styles.xpPillText, { color: colors.tint }]}>+1.000 XP / amigo</Text>
+              </View>
+            </View>
+          </View>
         </View>
         <LiquidCloseButton
           onPress={onClose}
@@ -108,12 +184,12 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
       </View>
 
       <ScrollView
+        style={{ flexShrink: 1 }}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.description, { color: colors.textSecondary }]}>
-          Invita a tus amigos a registrarse con tu código y desbloquea temas exclusivos de
-          personalización para toda la aplicación.
+          Cada amigo que se registre con tu enlace te suma 1.000 XP al instante y desbloquea estos temas inmersivos Liquid Glass.
         </Text>
 
         {/* Contador de Amigos Invitados */}
@@ -128,23 +204,33 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
             getAppleSheetCardStyle(isDark, 20),
           ]}
         >
-          <View>
-            <Text style={styles.counterLabel}>Amigos Invitados</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 2 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.counterLabel}>Amigos invitados</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
               <Text style={[styles.counterValue, { color: colors.text }]}>{referralCount}</Text>
-              {isAdmin && (
+              {isAdmin ? (
                 <Text style={[styles.adminTag, { color: colors.tint }]}>· Acceso Admin</Text>
+              ) : nextReward ? (
+                <Text style={[styles.nextTag, { color: colors.textSecondary }]}>
+                  · Faltan {nextReward.requiredReferrals - referralCount} para {nextReward.name.replace('Tema ', '')}
+                </Text>
+              ) : (
+                <Text style={[styles.nextTag, { color: '#10b981' }]}>· Todos desbloqueados</Text>
               )}
             </View>
           </View>
-          <Trophy size={32} color="#f59e0b" style={{ opacity: 0.9 }} />
+          <View style={[styles.trophyBox, { backgroundColor: '#f59e0b20' }]}>
+            <FontAwesome5 name="trophy" size={20} color="#f59e0b" />
+          </View>
         </View>
 
-        {/* Lista de Recompensas */}
+        {/* Lista de Recompensas con vistas previas reales */}
         <View style={styles.rewardsList}>
           {REWARDS.map(reward => {
             const isUnlocked = isAdmin || referralCount >= reward.requiredReferrals;
-            const isActive = theme === reward.id;
+            const isGroupActive = reward.variants.some(v => v.id === theme);
+            const remaining = Math.max(0, reward.requiredReferrals - referralCount);
+            const progressPct = Math.min(100, Math.round((referralCount / reward.requiredReferrals) * 100));
 
             return (
               <View
@@ -152,129 +238,172 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
                 style={[
                   styles.rewardCard,
                   {
-                    backgroundColor: isUnlocked
-                      ? isActive
-                        ? colors.tint + '12'
-                        : isDark
-                          ? 'rgba(255, 255, 255, 0.04)'
-                          : 'rgba(0, 0, 0, 0.03)'
-                      : isDark
-                        ? 'rgba(255, 255, 255, 0.02)'
-                        : 'rgba(0, 0, 0, 0.02)',
-                    borderColor: isUnlocked
-                      ? isActive
-                        ? colors.tint + '40'
-                        : isDark
-                          ? 'rgba(255, 255, 255, 0.08)'
-                          : 'rgba(0, 0, 0, 0.06)'
+                    backgroundColor: isGroupActive
+                      ? colors.tint + '12'
                       : isDark
                         ? 'rgba(255, 255, 255, 0.04)'
                         : 'rgba(0, 0, 0, 0.03)',
-                    borderWidth: isIOS && !isActive ? 0 : 1,
-                    opacity: isUnlocked ? 1 : 0.65,
+                    borderColor: isGroupActive
+                      ? colors.tint + '40'
+                      : isDark
+                        ? 'rgba(255, 255, 255, 0.08)'
+                        : 'rgba(0, 0, 0, 0.06)',
+                    borderWidth: isIOS && !isGroupActive ? 0 : 1,
                   },
-                  !isActive && getAppleSheetCardStyle(isDark, 20),
+                  !isGroupActive && getAppleSheetCardStyle(isDark, 20),
                 ]}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+                {/* Preview real sin escala de grises */}
+                <View style={styles.previewBanner}>
+                  <ExpoImage
+                    source={reward.previewImage}
+                    style={StyleSheet.absoluteFill}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                  <LinearGradient
+                    colors={['rgba(0,0,0,0.08)', 'rgba(0,0,0,0.68)']}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={styles.previewOverlayRow}>
+                    <View style={styles.previewGlassChip}>
+                      <FontAwesome5 name={reward.iconName} size={10} color={reward.color} solid />
+                      <Text style={styles.previewGlassChipText} numberOfLines={1}>
+                        {reward.previewCaption}
+                      </Text>
+                    </View>
+                    <View style={styles.previewLockPill}>
+                      <FontAwesome5
+                        name={isUnlocked ? 'lock-open' : 'lock'}
+                        size={9}
+                        color={isUnlocked ? '#34d399' : '#e2e8f0'}
+                      />
+                      <Text style={styles.previewLockText}>
+                        {isUnlocked ? 'Desbloqueado' : `${referralCount}/${reward.requiredReferrals}`}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.rewardTitleRow}>
+                  <Text style={[styles.rewardTitle, { color: colors.text }]}>{reward.name}</Text>
+                  {!isUnlocked && (
+                    <Text style={[styles.remainingText, { color: colors.textSecondary }]}>
+                      Faltan {remaining}
+                    </Text>
+                  )}
+                </View>
+
+                <Text style={[styles.rewardDesc, { color: colors.textSecondary }]}>
+                  {reward.description}
+                </Text>
+
+                {!isUnlocked && (
                   <View
                     style={[
-                      styles.rewardIconBox,
-                      {
-                        backgroundColor: reward.color + '20',
-                      },
+                      styles.progressTrack,
+                      { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' },
                     ]}
                   >
-                    <Palette size={22} color={reward.color} />
-                  </View>
-
-                  <View style={{ flex: 1 }}>
                     <View
-                      style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: 4,
-                      }}
-                    >
-                      <Text style={[styles.rewardTitle, { color: colors.text }]}>
-                        {reward.name}
-                      </Text>
-                      <View
-                        style={[
-                          styles.lockBadge,
-                          {
-                            backgroundColor: isUnlocked
-                              ? '#10b98120'
-                              : isDark
-                                ? 'rgba(255, 255, 255, 0.08)'
-                                : 'rgba(0, 0, 0, 0.06)',
-                          },
-                        ]}
-                      >
-                        {isUnlocked ? (
-                          <Check size={12} color="#10b981" strokeWidth={3} />
-                        ) : (
-                          <Lock size={12} color={colors.textSecondary} />
-                        )}
-                        <Text
+                      style={[
+                        styles.progressFill,
+                        { width: `${progressPct}%`, backgroundColor: reward.color },
+                      ]}
+                    />
+                  </View>
+                )}
+
+                <View style={styles.buttonsRow}>
+                  {isUnlocked
+                    ? reward.variants.map(v => {
+                        const isVariantActive = theme === v.id;
+                        return (
+                          <TouchableOpacity
+                            key={v.id}
+                            onPress={() => handleApplyTheme(v.id)}
+                            disabled={isVariantActive}
+                            activeOpacity={0.75}
+                            style={[
+                              styles.variantBtn,
+                              {
+                                backgroundColor: isVariantActive
+                                  ? colors.tint
+                                  : isDark
+                                    ? 'rgba(255, 255, 255, 0.08)'
+                                    : 'rgba(0, 0, 0, 0.06)',
+                              },
+                            ]}
+                          >
+                            {isVariantActive && (
+                              <FontAwesome5 name="check" size={10} color={tintContrastText} />
+                            )}
+                            <Text
+                              style={[
+                                styles.variantBtnText,
+                                { color: isVariantActive ? tintContrastText : colors.text },
+                              ]}
+                            >
+                              {isVariantActive ? 'Tema activo' : v.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })
+                    : reward.variants.map(v => (
+                        <TouchableOpacity
+                          key={v.id}
+                          onPress={() => handleTestTheme(v.id)}
+                          disabled={isTestingTheme}
+                          activeOpacity={0.75}
                           style={[
-                            styles.lockBadgeText,
+                            styles.variantBtn,
                             {
-                              color: isUnlocked ? '#10b981' : colors.textSecondary,
+                              backgroundColor: reward.color + '24',
+                              opacity: isTestingTheme ? 0.8 : 1,
                             },
                           ]}
                         >
-                          {isUnlocked
-                            ? 'Desbloqueado'
-                            : `${referralCount}/${reward.requiredReferrals}`}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <Text style={[styles.rewardDesc, { color: colors.textSecondary }]}>
-                      {reward.description}
-                    </Text>
-
-                    {isUnlocked && (
-                      <TouchableOpacity
-                        onPress={() => handleApplyTheme(reward.id)}
-                        disabled={isActive}
-                        activeOpacity={0.7}
-                        style={[
-                          styles.applyBtn,
-                          {
-                            backgroundColor: isActive
-                              ? colors.tint
-                              : isDark
-                                ? 'rgba(255, 255, 255, 0.08)'
-                                : 'rgba(0, 0, 0, 0.06)',
-                            borderWidth: isIOS ? 0 : 1,
-                            borderColor: isActive
-                              ? colors.tint
-                              : isDark
-                                ? 'rgba(255, 255, 255, 0.12)'
-                                : 'rgba(0, 0, 0, 0.08)',
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.applyBtnText,
-                            { color: isActive ? tintContrastText : colors.text },
-                          ]}
-                        >
-                          {isActive ? '✓ Tema Activo' : 'Usar este Tema'}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
+                          <Text style={[styles.variantBtnText, { color: reward.color }]}>
+                            {isTestingTheme ? `Probando ${themeTest?.timeLeft ?? 10}s` : v.testLabel}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
                 </View>
               </View>
             );
           })}
         </View>
       </ScrollView>
+
+      {/* Footer fijo con Compartir enlace */}
+      <View
+        style={[
+          styles.footerBar,
+          { borderTopColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={() => void handleShareReferral()}
+          activeOpacity={0.8}
+          style={[styles.sharePrimaryBtn, { backgroundColor: colors.tint }]}
+        >
+          <FontAwesome5 name="share-alt" size={13} color={tintContrastText} />
+          <Text style={[styles.sharePrimaryBtnText, { color: tintContrastText }]}>
+            Compartir enlace (+1.000 XP)
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => void handleCopyReferral()}
+          activeOpacity={0.8}
+          style={[
+            styles.copySecondaryBtn,
+            { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
+          ]}
+        >
+          <FontAwesome5 name="copy" size={13} color={colors.text} />
+          <Text style={[styles.copySecondaryBtnText, { color: colors.text }]}>Copiar</Text>
+        </TouchableOpacity>
+      </View>
     </SwipeableBottomSheet>
   );
 }
@@ -301,6 +430,18 @@ const styles = StyleSheet.create({
     fontWeight: Platform.OS === 'ios' ? '700' : '800',
     letterSpacing: -0.3,
   },
+  xpPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  xpPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
   closeBtn: {
     width: 34,
     height: 34,
@@ -310,19 +451,20 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    gap: 16,
+    gap: 14,
   },
   description: {
-    fontSize: 13.5,
+    fontSize: 13,
     lineHeight: 19,
   },
   referralCounterBox: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: 15,
     borderRadius: 20,
     borderCurve: 'continuous',
+    gap: 10,
   },
   counterLabel: {
     fontSize: 10,
@@ -332,57 +474,163 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   counterValue: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '800',
   },
   adminTag: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '700',
   },
-  rewardsList: {
-    gap: 12,
+  nextTag: {
+    fontSize: 11.5,
+    fontWeight: '600',
   },
-  rewardCard: {
-    padding: 16,
-    borderRadius: 20,
-    borderCurve: 'continuous',
-  },
-  rewardIconBox: {
+  trophyBox: {
     width: 44,
     height: 44,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  rewardsList: {
+    gap: 12,
+  },
+  rewardCard: {
+    padding: 14,
+    borderRadius: 20,
+    borderCurve: 'continuous',
+  },
+  previewBanner: {
+    height: 86,
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginBottom: 10,
+    justifyContent: 'flex-end',
+    padding: 9,
+  },
+  previewOverlayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  previewGlassChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 9,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
+    flexShrink: 1,
+  },
+  previewGlassChipText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  previewLockPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  previewLockText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  rewardTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 4,
+  },
   rewardTitle: {
     fontSize: 15,
     fontWeight: '700',
     letterSpacing: -0.2,
   },
-  lockBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  lockBadgeText: {
-    fontSize: 10.5,
+  remainingText: {
+    fontSize: 11,
     fontWeight: '700',
   },
   rewardDesc: {
-    fontSize: 12.5,
+    fontSize: 12,
     lineHeight: 17,
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  applyBtn: {
-    paddingVertical: 10,
-    borderRadius: 12,
+  progressTrack: {
+    height: 5,
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
+  buttonsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  variantBtn: {
+    flex: 1,
+    minWidth: 105,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
+    borderRadius: 12,
   },
-  applyBtnText: {
+  variantBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  footerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 18,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  sharePrimaryBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+  },
+  sharePrimaryBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  copySecondaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+  },
+  copySecondaryBtnText: {
     fontSize: 13,
     fontWeight: '700',
   },
