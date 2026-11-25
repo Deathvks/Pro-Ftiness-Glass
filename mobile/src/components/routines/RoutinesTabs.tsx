@@ -78,6 +78,7 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
               style={{ marginRight: 6 }}
             />
             <Text
+              numberOfLines={1}
               style={[
                 styles.tabText,
                 {
@@ -121,6 +122,7 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
           style={{ marginRight: 6 }}
         />
         <Text
+          numberOfLines={1}
           style={[
             styles.tabText,
             {
@@ -183,6 +185,7 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
           style={{ marginRight: 6 }}
         />
         <Text
+          numberOfLines={1}
           style={[
             styles.tabText,
             {
@@ -222,8 +225,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 42,
-    borderRadius: 20,
+    width: '100%',
+    paddingHorizontal: 18,
+    height: 44,
+    borderRadius: 22,
     borderCurve: 'continuous',
   },
 });

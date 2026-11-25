@@ -148,7 +148,8 @@ export default function ProfileScreen() {
 
   const [username, setUsername] = useState(userProfile?.username || '');
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
-  const [avatarTimestamp, setAvatarTimestamp] = useState<number>(Date.now());
+  const [avatarTimestamp, setAvatarTimestamp] = useState<number>(0);
+  const [avatarLoadError, setAvatarLoadError] = useState<boolean>(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const isPickingRef = useRef(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -193,17 +194,37 @@ export default function ProfileScreen() {
     return getUserRoleRingConfig(userProfile, userProfile);
   }, [userProfile]);
 
-  // URL final de imagen con cache-busting dinámico
+  // URL final de imagen alineada con GlobalHeader / SocialUserAvatar (+ cache-busting solo tras subir foto nueva)
   const displayImageUri = useMemo(() => {
     if (selectedImageUri) return selectedImageUri;
-    const raw = userProfile?.profile_image_url;
-    if (!raw) return null;
-    if (raw.startsWith('http') || raw.startsWith('blob:')) {
-      return `${raw}${raw.includes('?') ? '&' : '?'}t=${avatarTimestamp}`;
+    const rawCandidate = [
+      userProfile?.profile_image_url,
+      userProfile?.avatar,
+      userProfile?.profile_image,
+      userProfile?.avatar_url,
+    ].find((v) => typeof v === 'string' && v.trim().length > 0 && v !== 'null');
+    if (!rawCandidate) return null;
+    const raw = String(rawCandidate).trim();
+    const resolved =
+      raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('blob:') || raw.startsWith('file://') || raw.startsWith('data:')
+        ? raw
+        : `${BACKEND_BASE_URL}${raw.startsWith('/') ? '' : '/'}${raw}`;
+    if (avatarTimestamp > 0 && !resolved.startsWith('blob:') && !resolved.startsWith('file:') && !resolved.startsWith('data:')) {
+      return `${resolved}${resolved.includes('?') ? '&' : '?'}t=${avatarTimestamp}`;
     }
-    const sep = raw.startsWith('/') ? '' : '/';
-    return `${BACKEND_BASE_URL}${sep}${raw}?t=${avatarTimestamp}`;
-  }, [selectedImageUri, userProfile?.profile_image_url, avatarTimestamp]);
+    return resolved;
+  }, [
+    selectedImageUri,
+    userProfile?.profile_image_url,
+    userProfile?.avatar,
+    userProfile?.profile_image,
+    userProfile?.avatar_url,
+    avatarTimestamp,
+  ]);
+
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [displayImageUri]);
 
   // Subir y guardar foto de perfil inmediatamente
   const uploadAndSaveAvatar = async (imageUri: string) => {
@@ -387,8 +408,14 @@ export default function ProfileScreen() {
             disabled={isUploadingAvatar}
           >
             <UserRoleAvatarRing user={userProfile} size={120}>
-              {displayImageUri ? (
-                <Image source={{ uri: displayImageUri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+              {displayImageUri && !avatarLoadError ? (
+                <Image
+                  source={{ uri: displayImageUri }}
+                  style={StyleSheet.absoluteFill}
+                  contentFit="cover"
+                  transition={200}
+                  onError={() => setAvatarLoadError(true)}
+                />
               ) : (
                 <User size={46} color={colors.textSecondary} strokeWidth={1.8} style={{ opacity: 0.6 }} />
               )}
@@ -551,7 +578,11 @@ export default function ProfileScreen() {
                 try {
                   Haptics.selectionAsync();
                 } catch {}
-                router.push('/(tabs)/social');
+                if (userProfile?.id) {
+                  router.push(`/public-profile/${userProfile.id}` as any);
+                } else {
+                  router.push('/(tabs)/social');
+                }
               }}
               activeOpacity={0.7}
               style={styles.rowItemTouchable}
@@ -560,7 +591,7 @@ export default function ProfileScreen() {
                 <View style={[styles.iconSquircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
                   <LayoutTemplate size={18} color={colors.text} strokeWidth={2} />
                 </View>
-                <Text style={[styles.rowLabel, { color: colors.text }]}>Ver mi perfil en comunidad</Text>
+                <Text style={[styles.rowLabel, { color: colors.text }]}>Ver mi perfil público</Text>
               </View>
               <ChevronRight size={18} color={colors.textSecondary} />
             </TouchableOpacity>

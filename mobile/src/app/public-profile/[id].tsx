@@ -833,117 +833,131 @@ export default function PublicProfileScreen() {
                     const exList = routine.exercises || [];
 
                     return (
-                      <TouchableOpacity
+                      <View
                         key={String(routine.id)}
-                        activeOpacity={0.86}
-                        onPress={() => setSelectedRoutine(routine)}
                         style={[
-                          styles.routineCard,
+                          styles.routineCardWrap,
                           { backgroundColor: unselectedColors.backgroundColor, borderColor: colors.border },
                         ]}
                       >
-                        <View style={styles.routineTopRow}>
-                          {coverImage ? (
-                            <Image
-                              source={{ uri: coverImage }}
-                              contentFit="cover"
-                              cachePolicy="memory-disk"
-                              style={styles.routineThumb}
-                            />
-                          ) : coverPreset ? (
-                            <LinearGradient
-                              colors={coverPreset.colors as any}
-                              start={coverPreset.start}
-                              end={coverPreset.end}
-                              style={styles.routineThumb}
-                            >
-                              <Dumbbell size={18} color="#ffffff" />
-                            </LinearGradient>
-                          ) : (
-                            <View style={[styles.routineThumb, { backgroundColor: colors.tint + '22' }]}>
-                              <Dumbbell size={18} color={colors.tint} />
+                        <Pressable
+                          android_ripple={{
+                            color: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                          }}
+                          onPress={() => setSelectedRoutine(routine)}
+                          style={({ pressed }) => [
+                            styles.routineCard,
+                            pressed && { opacity: 0.88 },
+                          ]}
+                        >
+                          <View style={styles.routineTopRow}>
+                            {coverImage ? (
+                              <Image
+                                source={{ uri: coverImage }}
+                                contentFit="cover"
+                                cachePolicy="memory-disk"
+                                style={styles.routineThumb}
+                              />
+                            ) : coverPreset ? (
+                              <LinearGradient
+                                colors={coverPreset.colors as any}
+                                start={coverPreset.start}
+                                end={coverPreset.end}
+                                style={styles.routineThumb}
+                              >
+                                <Dumbbell size={19} color="#ffffff" />
+                              </LinearGradient>
+                            ) : (
+                              <View style={[styles.routineThumb, { backgroundColor: colors.tint + '22' }]}>
+                                <Dumbbell size={19} color={colors.tint} />
+                              </View>
+                            )}
+
+                            <View style={styles.routineHeaderInfo}>
+                              <Text style={[styles.routineName, { color: colors.text }]} numberOfLines={2}>
+                                {routine.name}
+                              </Text>
+
+                              <View style={styles.routineMetaRow}>
+                                {renderVisibilityBadge(routine.visibility)}
+                                <Text style={[styles.routineMetaText, { color: colors.textSecondary }]}>·</Text>
+                                <Text style={[styles.routineMetaText, { color: colors.textSecondary }]}>
+                                  {exList.length} {exList.length === 1 ? 'ejercicio' : 'ejercicios'}
+                                </Text>
+                                <Text style={[styles.routineMetaText, { color: colors.textSecondary }]}>·</Text>
+                                <Text style={[styles.routineMetaText, { color: colors.textSecondary }]}>
+                                  {Number(routine.downloads_count || 0)} descargas
+                                </Text>
+                                {!!routine.folder && (
+                                  <View style={styles.folderChip}>
+                                    <Folder size={10} color={colors.textSecondary} />
+                                    <Text style={[styles.routineMetaText, { color: colors.textSecondary }]} numberOfLines={1}>
+                                      {routine.folder}
+                                    </Text>
+                                  </View>
+                                )}
+                              </View>
+                            </View>
+                          </View>
+
+                          {!!routine.description && (
+                            <Text style={[styles.routineDesc, { color: colors.textSecondary }]} numberOfLines={2}>
+                              {routine.description}
+                            </Text>
+                          )}
+
+                          {exList.length > 0 && (
+                            <View style={styles.previewExercises}>
+                              {exList.slice(0, 3).map((ex, idx) => (
+                                <View
+                                  key={`${routine.id}-ex-${idx}`}
+                                  style={[styles.previewExChip, { borderColor: colors.border, backgroundColor: colors.card }]}
+                                >
+                                  <Text style={[styles.previewExText, { color: colors.text }]} numberOfLines={1}>
+                                    {ex.name}
+                                  </Text>
+                                </View>
+                              ))}
+                              {exList.length > 3 && (
+                                <Text style={[styles.moreExText, { color: colors.tint }]}>
+                                  +{exList.length - 3} más
+                                </Text>
+                              )}
                             </View>
                           )}
 
-                          <View style={{ flex: 1, gap: 4 }}>
-                            <View style={styles.routineTitleRow}>
-                              <Text style={[styles.routineName, { color: colors.text }]} numberOfLines={1}>
-                                {routine.name}
+                          {!profile.is_me && (
+                            <View style={[styles.routineFooterRow, { borderTopColor: colors.border }]}>
+                              <Text style={[styles.viewDetailHint, { color: colors.textSecondary }]}>
+                                Toca para ver ejercicios
                               </Text>
-                              {renderVisibilityBadge(routine.visibility)}
-                            </View>
-
-                            {!!routine.description && (
-                              <Text style={[styles.routineDesc, { color: colors.textSecondary }]} numberOfLines={2}>
-                                {routine.description}
-                              </Text>
-                            )}
-
-                            <View style={styles.routineMetaRow}>
-                              <Text style={[styles.routineMetaText, { color: colors.textSecondary }]}>
-                                {exList.length} {exList.length === 1 ? 'ejercicio' : 'ejercicios'}
-                              </Text>
-                              <Text style={[styles.routineMetaText, { color: colors.textSecondary }]}>·</Text>
-                              <Text style={[styles.routineMetaText, { color: colors.textSecondary }]}>
-                                {Number(routine.downloads_count || 0)} descargas
-                              </Text>
-                              {!!routine.folder && (
-                                <View style={styles.folderChip}>
-                                  <Folder size={10} color={colors.textSecondary} />
-                                  <Text style={[styles.routineMetaText, { color: colors.textSecondary }]} numberOfLines={1}>
-                                    {routine.folder}
-                                  </Text>
-                                </View>
-                              )}
-                            </View>
-                          </View>
-                        </View>
-
-                        {exList.length > 0 && (
-                          <View style={styles.previewExercises}>
-                            {exList.slice(0, 3).map((ex, idx) => (
-                              <View
-                                key={`${routine.id}-ex-${idx}`}
-                                style={[styles.previewExChip, { borderColor: colors.border, backgroundColor: colors.card }]}
-                              >
-                                <Text style={[styles.previewExText, { color: colors.text }]} numberOfLines={1}>
-                                  {ex.name}
-                                </Text>
+                              <View style={[styles.importChipWrap, { backgroundColor: colors.tint }]}>
+                                <Pressable
+                                  disabled={importingId != null}
+                                  android_ripple={{ color: 'rgba(255,255,255,0.22)' }}
+                                  onPress={(e) => {
+                                    e.stopPropagation();
+                                    void handleImportRoutine(routine);
+                                  }}
+                                  style={({ pressed }) => [
+                                    styles.importChipBtn,
+                                    pressed && { opacity: 0.85 },
+                                  ]}
+                                >
+                                  {String(importingId) === String(routine.id) ? (
+                                    <ActivityIndicator size="small" color={contrastText} />
+                                  ) : (
+                                    <>
+                                      <Download size={12} color={contrastText} />
+                                      <Text style={[styles.importChipText, { color: contrastText }]}>Importar</Text>
+                                    </>
+                                  )}
+                                </Pressable>
                               </View>
-                            ))}
-                            {exList.length > 3 && (
-                              <Text style={[styles.moreExText, { color: colors.tint }]}>
-                                +{exList.length - 3} más
-                              </Text>
-                            )}
-                          </View>
-                        )}
-
-                        {!profile.is_me && (
-                          <View style={styles.routineFooterRow}>
-                            <Text style={[styles.viewDetailHint, { color: colors.textSecondary }]}>
-                              Toca para ver detalles
-                            </Text>
-                            <TouchableOpacity
-                              disabled={importingId != null}
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                void handleImportRoutine(routine);
-                              }}
-                              style={[styles.importChipBtn, { backgroundColor: colors.tint }]}
-                            >
-                              {String(importingId) === String(routine.id) ? (
-                                <ActivityIndicator size="small" color={contrastText} />
-                              ) : (
-                                <>
-                                  <Download size={12} color={contrastText} />
-                                  <Text style={[styles.importChipText, { color: contrastText }]}>Importar</Text>
-                                </>
-                              )}
-                            </TouchableOpacity>
-                          </View>
-                        )}
-                      </TouchableOpacity>
+                            </View>
+                          )}
+                        </Pressable>
+                      </View>
                     );
                   })}
                 </View>
@@ -1032,23 +1046,29 @@ export default function PublicProfileScreen() {
 
             {!profile?.is_me && (
               <View style={[styles.sheetFooter, { borderTopColor: colors.border }]}>
-                <TouchableOpacity
-                  disabled={importingId != null}
-                  onPress={() => void handleImportRoutine(selectedRoutine)}
-                  activeOpacity={0.86}
-                  style={[styles.primaryBtn, { backgroundColor: colors.tint, width: '100%' }]}
-                >
-                  {String(importingId) === String(selectedRoutine.id) ? (
-                    <ActivityIndicator size="small" color={contrastText} />
-                  ) : (
-                    <>
-                      <Download size={16} color={contrastText} />
-                      <Text style={[styles.primaryBtnText, { color: contrastText }]}>
-                        Importar a mis rutinas
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                <View style={[styles.primaryBtnWrap, { backgroundColor: colors.tint, width: '100%' }]}>
+                  <Pressable
+                    disabled={importingId != null}
+                    android_ripple={{ color: 'rgba(255,255,255,0.22)' }}
+                    onPress={() => void handleImportRoutine(selectedRoutine)}
+                    style={({ pressed }) => [
+                      styles.primaryBtn,
+                      { width: '100%' },
+                      pressed && { opacity: 0.88 },
+                    ]}
+                  >
+                    {String(importingId) === String(selectedRoutine.id) ? (
+                      <ActivityIndicator size="small" color={contrastText} />
+                    ) : (
+                      <>
+                        <Download size={16} color={contrastText} />
+                        <Text style={[styles.primaryBtnText, { color: contrastText }]}>
+                          Importar a mis rutinas
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+                </View>
               </View>
             )}
           </View>
@@ -1123,14 +1143,21 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 4,
   },
+  primaryBtnWrap: {
+    borderRadius: 16,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
+  },
   primaryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     paddingHorizontal: 18,
-    paddingVertical: 11,
-    borderRadius: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
   },
   primaryBtnText: { fontSize: 14, fontWeight: '800' },
   secondaryBtn: {
@@ -1214,23 +1241,32 @@ const styles = StyleSheet.create({
   paginationRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 2 },
   pageBtn: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   pageLabel: { fontSize: 12, fontWeight: '700' },
-  routinesList: { gap: 10 },
-  routineCard: { borderRadius: 18, borderWidth: 1, padding: 13, gap: 10 },
+  routinesList: { gap: 12 },
+  routineCardWrap: {
+    borderRadius: 20,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  routineCard: { padding: 14, gap: 10 },
   routineTopRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  routineHeaderInfo: { flex: 1, minWidth: 0, gap: 6 },
   routineThumb: {
-    width: 52,
-    height: 52,
+    width: 56,
+    height: 56,
     borderRadius: 14,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    flexShrink: 0,
   },
   routineTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  routineName: { fontSize: 15, fontWeight: '800', flex: 1 },
-  routineDesc: { fontSize: 12, lineHeight: 16 },
+  routineName: { fontSize: 15.5, fontWeight: '800', lineHeight: 20 },
+  routineDesc: { fontSize: 12.5, lineHeight: 17 },
   routineMetaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
-  routineMetaText: { fontSize: 11, fontWeight: '600' },
-  folderChip: { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: 120 },
+  routineMetaText: { fontSize: 11.5, fontWeight: '600' },
+  folderChip: { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: 130 },
   visibilityPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1242,17 +1278,28 @@ const styles = StyleSheet.create({
   },
   visibilityText: { fontSize: 10, fontWeight: '700' },
   previewExercises: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
-  previewExChip: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, maxWidth: '48%' },
+  previewExChip: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10, borderCurve: 'continuous', borderWidth: 1, maxWidth: '100%' },
   previewExText: { fontSize: 11, fontWeight: '600' },
   moreExText: { fontSize: 11, fontWeight: '700' },
-  routineFooterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 },
-  viewDetailHint: { fontSize: 11, fontWeight: '600' },
+  routineFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 2,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  viewDetailHint: { fontSize: 11.5, fontWeight: '600' },
+  importChipWrap: {
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
   importChipBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: 11,
-    paddingVertical: 6,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
     borderRadius: 999,
   },
   importChipText: { fontSize: 12, fontWeight: '800' },

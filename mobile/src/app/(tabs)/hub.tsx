@@ -134,7 +134,7 @@ const HubButton = ({
               ) : null}
             </View>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8, flexShrink: 0 }}>
             {rightContent}
             <ChevronRight size={17} color={colors.textSecondary} style={{ opacity: 0.4 }} strokeWidth={2.2} />
           </View>
@@ -163,7 +163,8 @@ const HubButton = ({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
-        height: 78,
+        paddingVertical: 14,
+        minHeight: 74,
         borderRadius: 18,
         borderWidth: 1,
         borderColor: colors.border,
@@ -171,22 +172,23 @@ const HubButton = ({
         opacity: isComingSoon ? 0.6 : 1,
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, gap: 14 }}>
         <View
           style={{
-            width: 48,
-            height: 48,
-            borderRadius: 24,
+            width: 46,
+            height: 46,
+            borderRadius: 23,
             backgroundColor: colors.tint + '1A',
             alignItems: 'center',
             justifyContent: 'center',
+            flexShrink: 0,
           }}
         >
           <Icon size={22} color={colors.tint} />
         </View>
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={{ fontSize: 17, fontWeight: 'bold', color: colors.text }}>{title}</Text>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+            <Text numberOfLines={1} style={{ fontSize: 16.5, fontWeight: 'bold', color: colors.text, flexShrink: 1 }}>{title}</Text>
             {Boolean(isComingSoon) ? (
               <View style={{ backgroundColor: colors.tint + '20', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 }}>
                 <Text style={{ fontSize: 10, fontWeight: 'bold', color: colors.tint, textTransform: 'uppercase' }}>Pronto</Text>
@@ -197,11 +199,11 @@ const HubButton = ({
             ) : null}
           </View>
           {Boolean(description) ? (
-            <Text style={{ fontSize: 13, fontWeight: '500', color: colors.textSecondary, marginTop: 2 }}>{description}</Text>
+            <Text numberOfLines={2} style={{ fontSize: 13, fontWeight: '500', color: colors.textSecondary, marginTop: 2, lineHeight: 17 }}>{description}</Text>
           ) : null}
         </View>
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 10, flexShrink: 0 }}>
         {rightContent}
         <ChevronRight size={18} color={colors.textSecondary} style={{ opacity: 0.6 }} />
       </View>
@@ -450,25 +452,45 @@ export default function Hub() {
                 iosBadgeColor="#BF5AF2"
                 onPress={() => router.push('/appearance')}
                 rightContent={
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginRight: 2 }}>
-                    <Text
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6,
+                      paddingHorizontal: 10,
+                      paddingVertical: 5,
+                      borderRadius: 999,
+                      backgroundColor: isIOS
+                        ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)')
+                        : colors.tint + '16',
+                      borderWidth: isIOS ? 0 : 1,
+                      borderColor: colors.tint + '35',
+                      maxWidth: 118,
+                    }}
+                  >
+                    <View
                       style={{
-                        fontSize: isIOS ? 15 : 11,
-                        fontWeight: isIOS ? '400' : '700',
+                        width: 10,
+                        height: 10,
+                        borderRadius: 5,
+                        backgroundColor: colors.tint,
+                        borderWidth: 1.5,
+                        borderColor: 'rgba(255, 255, 255, 0.45)',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 12,
+                        fontWeight: '700',
                         color: isIOS ? colors.textSecondary : colors.tint,
                         letterSpacing: -0.2,
+                        flexShrink: 1,
                       }}
                     >
                       {getThemeLabel(themePreference || theme)}
                     </Text>
-                    <View style={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: 6,
-                      backgroundColor: colors.tint,
-                      borderWidth: 1.5,
-                      borderColor: 'rgba(255, 255, 255, 0.4)',
-                    }} />
                   </View>
                 }
               />

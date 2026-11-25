@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Circle, G } from 'react-native-svg';
 import { LayoutGrid, PieChart, Flame, Beef, Wheat, Salad, IceCream, AlertTriangle, CheckCircle2, Target } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
@@ -134,6 +135,23 @@ const NutritionStatCard: React.FC<NutritionStatCardProps> = ({
   return <View style={styles.statCardTouch}>{content}</View>;
 };
 
+const SUMMARY_VIEW_STORAGE_KEY = 'nutritionSummaryView';
+let cachedSummaryView: 'grid' | 'chart' | null = null;
+
+const readStoredSummaryView = (): 'grid' | 'chart' => {
+  if (cachedSummaryView) return cachedSummaryView;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem(SUMMARY_VIEW_STORAGE_KEY);
+      if (saved === 'chart' || saved === 'grid') {
+        cachedSummaryView = saved;
+        return saved;
+      }
+    }
+  } catch {}
+  return 'grid';
+};
+
 export const DailySummary: React.FC<DailySummaryProps> = ({
   totals,
   targets,
@@ -145,8 +163,25 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
-  const [summaryView, setSummaryView] = useState<'grid' | 'chart'>('grid');
+  const [summaryView, setSummaryView] = useState<'grid' | 'chart'>(readStoredSummaryView);
   const [selectedMacro, setSelectedMacro] = useState<'protein' | 'carbs' | 'fats' | 'sugar' | null>(null);
+  const userToggledRef = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    AsyncStorage.getItem(SUMMARY_VIEW_STORAGE_KEY)
+      .then((saved) => {
+        if (!active || userToggledRef.current) return;
+        if (saved === 'chart' || saved === 'grid') {
+          cachedSummaryView = saved;
+          setSummaryView(saved);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const isSugarHigh = totals.sugar >= targets.sugar;
 
@@ -183,8 +218,16 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
     try {
       Haptics.selectionAsync();
     } catch {}
+    userToggledRef.current = true;
+    cachedSummaryView = mode;
     setSummaryView(mode);
     setSelectedMacro(null);
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(SUMMARY_VIEW_STORAGE_KEY, mode);
+      }
+    } catch {}
+    void AsyncStorage.setItem(SUMMARY_VIEW_STORAGE_KEY, mode).catch(() => {});
   };
 
   const handleSelectMacro = (macro: 'protein' | 'carbs' | 'fats' | 'sugar') => {

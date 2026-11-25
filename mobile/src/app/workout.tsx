@@ -1,6 +1,7 @@
 /* mobile/src/app/workout.tsx */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
+  Animated,
   View,
   Text,
   TouchableOpacity,
@@ -10,6 +11,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   useWindowDimensions,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -128,6 +131,28 @@ export default function WorkoutScreen() {
   const [coachExercise, setCoachExercise] = useState<any>(null);
   const [selectedDetailExercise, setSelectedDetailExercise] = useState<any>(null);
   const [substituteIndex, setSubstituteIndex] = useState<number | null>();
+  const [showFloatingToolbar, setShowFloatingToolbar] = useState(false);
+  const showToolbarRef = useRef(false);
+  const floatingToolbarAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(floatingToolbarAnim, {
+      toValue: showFloatingToolbar ? 1 : 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
+  }, [showFloatingToolbar, floatingToolbarAnim]);
+
+  const handleWorkoutScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    if (!showToolbarRef.current && offsetY > 95) {
+      showToolbarRef.current = true;
+      setShowFloatingToolbar(true);
+    } else if (showToolbarRef.current && offsetY <= 60) {
+      showToolbarRef.current = false;
+      setShowFloatingToolbar(false);
+    }
+  }, []);
 
   const hasWorkoutStarted = workoutStartTime !== null;
 
@@ -349,6 +374,8 @@ export default function WorkoutScreen() {
           keyExtractor={({ group }, index) => group.map(exercise => exercise.id).filter(id => id != null).join(':') || String(index)}
           initialNumToRender={1}
           maxToRenderPerBatch={2}
+          onScroll={handleWorkoutScroll}
+          scrollEventThrottle={16}
           contentContainerStyle={[
             styles.scrollContent,
             {
@@ -645,58 +672,71 @@ export default function WorkoutScreen() {
         />
       )}
 
-      {/* Barra Flotante Expressive en Android durante el entrenamiento */}
-      <ExpressiveFloatingToolbar
+      {/* Barra Flotante Expressive en Android durante el entrenamiento (solo al bajar de la cabecera) */}
+      <Animated.View
+        pointerEvents={showFloatingToolbar ? 'box-none' : 'none'}
         style={{
           position: 'absolute',
           left: 16,
           right: 16,
           bottom: Math.max(insets.bottom, 12) + 8,
+          opacity: floatingToolbarAnim,
+          transform: [
+            {
+              translateY: floatingToolbarAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [28, 0],
+              }),
+            },
+          ],
         }}
-        actions={[
-          {
-            key: 'rest',
-            icon: <Timer size={20} color={colors.tint} />,
-            onPress: () => {
-              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
-              openRestModal(90);
+      >
+        <ExpressiveFloatingToolbar
+          actions={[
+            {
+              key: 'rest',
+              icon: <Timer size={20} color={colors.tint} />,
+              onPress: () => {
+                try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                openRestModal(90);
+              },
             },
-          },
-          {
-            key: 'calc',
-            icon: <Calculator size={20} color={colors.text} />,
-            onPress: () => {
-              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
-              setShowCalculator(true);
+            {
+              key: 'calc',
+              icon: <Calculator size={20} color={colors.text} />,
+              onPress: () => {
+                try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                setShowCalculator(true);
+              },
             },
-          },
-          {
-            key: 'heatmap',
-            icon: <Activity size={20} color={colors.text} />,
-            onPress: () => {
-              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
-              setShowHeatmap(true);
+            {
+              key: 'heatmap',
+              icon: <Activity size={20} color={colors.text} />,
+              onPress: () => {
+                try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                setShowHeatmap(true);
+              },
             },
-          },
-          {
-            key: 'finish',
-            icon: <CheckCheck size={20} color="#22c55e" />,
-            tintColor: '#22c55e',
-            onPress: handleFinishClick,
-          },
-        ]}
-        fab={{
-          icon: isTimerRunning ? (
-            <Pause size={21} color={getContrastTextColor(colors.tint)} fill={getContrastTextColor(colors.tint)} />
-          ) : (
-            <Play size={21} color={getContrastTextColor(colors.tint)} fill={getContrastTextColor(colors.tint)} />
-          ),
-          onPress: () => {
-            try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
-            togglePauseWorkout();
-          },
-        }}
-      />
+            {
+              key: 'finish',
+              icon: <CheckCheck size={20} color="#22c55e" />,
+              tintColor: '#22c55e',
+              onPress: handleFinishClick,
+            },
+          ]}
+          fab={{
+            icon: isTimerRunning ? (
+              <Pause size={21} color={getContrastTextColor(colors.tint)} fill={getContrastTextColor(colors.tint)} />
+            ) : (
+              <Play size={21} color={getContrastTextColor(colors.tint)} fill={getContrastTextColor(colors.tint)} />
+            ),
+            onPress: () => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
+              togglePauseWorkout();
+            },
+          }}
+        />
+      </Animated.View>
     </View>
   );
 }
