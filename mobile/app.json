@@ -21,7 +21,7 @@
       }
     },
     "android": {
-      "versionCode": 809,
+      "versionCode": 810,
       "package": "com.profitnessglass.app",
       "googleServicesFile": "./google-services.json",
       "blockedPermissions": [
