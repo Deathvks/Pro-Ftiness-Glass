@@ -55,8 +55,8 @@ export default function NewsIndex() {
 
   const open = (article: NewsArticle) => router.push({ pathname: '/noticias/[slug]', params: { slug: article.slug } });
   return (
-    <AnimatedScreen scrollRef={scroll} paddingBottom={48} keyboardShouldPersistTaps="handled"
-      header={<GlobalHeader title="Noticias y Artículos" showBackButton hideRightButtons onBackPress={() =>
+    <AnimatedScreen fixedHeader scrollRef={scroll} paddingBottom={48} keyboardShouldPersistTaps="handled"
+      header={<GlobalHeader title="Noticias y Artículos" showBackButton hideRightButtons showBackground={false} onBackPress={() =>
         router.canGoBack() ? router.back() : router.replace(signedIn ? '/(tabs)/hub' : '/login')} />}>
       <View style={styles.container}>
         <View style={styles.intro}>

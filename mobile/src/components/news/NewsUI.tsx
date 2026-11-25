@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ArrowRight, CalendarDays, Clock3, Eye, Newspaper, Sparkles } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -26,17 +26,24 @@ export function NewsSurface({ children }: { children: ReactNode }) {
 export function NewsCover({ article, featured = false, badges = true }: { article: NewsArticle; featured?: boolean; badges?: boolean }) {
   const colors = useAppColors();
   const uri = resolveNewsImage(article.image_url);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    setLoaded(false);
+  }, [uri]);
+
   return <View style={[styles.cover, { aspectRatio: featured ? 1.6 : 16 / 9, backgroundColor: colors.tabBar }]}>
-    <Newspaper size={34} color={colors.textMuted} strokeWidth={1.5} />
+    {!loaded && <Newspaper size={34} color={colors.textMuted} strokeWidth={1.5} />}
     {!!uri && (
       <Image
+        key={uri}
         source={{ uri }}
-        recyclingKey={uri}
         cachePolicy="memory-disk"
-        priority={featured ? 'high' : 'normal'}
+        priority="high"
         contentFit="cover"
-        transition={80}
-        style={StyleSheet.absoluteFill}
+        transition={0}
+        onLoad={() => setLoaded(true)}
+        style={styles.coverImage}
       />
     )}
     {featured && <LinearGradient colors={['#00000040', '#00000000', '#00000038']} style={StyleSheet.absoluteFill} pointerEvents="none" />}
@@ -55,7 +62,7 @@ export function NewsAuthor({ article, size = 36 }: { article: NewsArticle; size?
   const uri = resolveNewsImage(article.author_avatar);
   return <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', backgroundColor: colors.tint + '22' }}>
     <Image source={logo} contentFit="contain" style={StyleSheet.absoluteFill} />
-    {!!uri && <Image source={{ uri }} contentFit="cover" recyclingKey={uri} style={StyleSheet.absoluteFill} />}
+    {!!uri && <Image key={uri} source={{ uri }} cachePolicy="memory-disk" transition={0} contentFit="cover" style={StyleSheet.absoluteFill} />}
   </View>;
 }
 
@@ -111,6 +118,7 @@ export function NewsAction({ label, onPress, disabled = false, active = false }:
 const styles = StyleSheet.create({
   surface: { borderRadius: 24, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   cover: { width: '100%', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  coverImage: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
   coverTags: { position: 'absolute', left: 12, right: 12, top: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   categoryPill: { borderRadius: 20, backgroundColor: '#151515df', paddingHorizontal: 10, paddingVertical: 5 },
   featuredPill: { flexDirection: 'row', alignItems: 'center', gap: 4 },
