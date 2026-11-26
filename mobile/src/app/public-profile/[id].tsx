@@ -1034,7 +1034,8 @@ export default function PublicProfileScreen() {
                             forceImageMode
                             showImageCounter={false}
                             fitMode="contain"
-                            previewColors={{ background: baseBg, placeholder: colors.tabBar }}
+                            roundedRadius={14}
+                            previewColors={{ background: 'transparent', placeholder: colors.textSecondary }}
                           />
                         </View>
                       )}
@@ -1328,6 +1329,6 @@ const styles = StyleSheet.create({
   orderBadge: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   orderBadgeText: { fontSize: 12, fontWeight: '800' },
   sheetExerciseName: { fontSize: 14, fontWeight: '700', flex: 1 },
-  mediaBox: { width: '100%', height: 180, borderRadius: 12, overflow: 'hidden' },
+  mediaBox: { width: '100%', height: 180, borderRadius: 14, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   sheetFooter: { borderTopWidth: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 4 },
 });

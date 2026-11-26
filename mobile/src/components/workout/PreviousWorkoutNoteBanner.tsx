@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { StickyNote, X, Copy, Check } from 'lucide-react-native';
-import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -51,20 +50,15 @@ export const PreviousWorkoutNoteBanner: React.FC<PreviousWorkoutNoteBannerProps>
       style={[
         styles.banner,
         {
-          backgroundColor: isDark ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.08)',
-          borderColor: 'rgba(59, 130, 246, 0.35)',
+          backgroundColor: colors.tint + (isDark ? '1C' : '12'),
+          borderColor: colors.tint + (isDark ? '4D' : '38'),
         },
       ]}
     >
-      <ContentCardBackdrop
-        colorScheme={isDark ? 'dark' : 'light'}
-        style={StyleSheet.absoluteFill}
-      />
-
       <View style={styles.contentRow}>
         {/* Left StickyNote Badge */}
-        <View style={[styles.iconBadge, { backgroundColor: colors.tint + '25', borderColor: colors.tint + '45' }]}>
-          <StickyNote size={20} color={colors.tint} strokeWidth={2.5} />
+        <View style={[styles.iconBadge, { backgroundColor: colors.tint + '24', borderColor: colors.tint + '45' }]}>
+          <StickyNote size={19} color={colors.tint} strokeWidth={2.4} />
         </View>
 
         <View style={styles.bodyCol}>
@@ -89,14 +83,17 @@ export const PreviousWorkoutNoteBanner: React.FC<PreviousWorkoutNoteBannerProps>
                 onDismiss();
               }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={styles.closeBtn}
+              style={[
+                styles.closeBtn,
+                { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' },
+              ]}
             >
-              <X size={16} color={colors.textSecondary} />
+              <X size={15} color={colors.textSecondary} strokeWidth={2.4} />
             </TouchableOpacity>
           </View>
 
           {/* Quote Note */}
-          <View style={[styles.quoteBox, { borderLeftColor: colors.tint + '60' }]}>
+          <View style={[styles.quoteBox, { borderLeftColor: colors.tint + '70' }]}>
             <Text style={[styles.quoteText, { color: colors.text }]}>
               "{previousNote.note}"
             </Text>
@@ -121,8 +118,8 @@ export const PreviousWorkoutNoteBanner: React.FC<PreviousWorkoutNoteBannerProps>
               </>
             ) : (
               <>
-                <Copy size={13} color={colors.text} style={{ marginRight: 5 }} />
-                <Text style={[styles.copyPillText, { color: colors.text }]}>Copiar a notas de hoy</Text>
+                <Copy size={13} color={colors.tint} style={{ marginRight: 5 }} />
+                <Text style={[styles.copyPillText, { color: colors.text }]}>Copiar a mis notas de hoy</Text>
               </>
             )}
           </TouchableOpacity>
@@ -134,47 +131,43 @@ export const PreviousWorkoutNoteBanner: React.FC<PreviousWorkoutNoteBannerProps>
 
 const styles = StyleSheet.create({
   banner: {
-    borderRadius: 28,
+    borderRadius: 24,
     borderWidth: 1,
     padding: 16,
-    marginBottom: 20,
-    overflow: 'hidden',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 2,
+    marginBottom: 18,
   },
   contentRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    zIndex: 2,
+    gap: 12,
   },
   iconBadge: {
     width: 40,
     height: 40,
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
-    marginTop: 2,
+    flexShrink: 0,
   },
   bodyCol: {
     flex: 1,
+    minWidth: 0,
   },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    gap: 8,
   },
   tagWrap: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 6,
+    paddingTop: 2,
   },
   tagText: {
     fontSize: 11,
@@ -182,7 +175,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
   dateBadge: {
-    paddingHorizontal: 7,
+    paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 9999,
   },
@@ -191,16 +184,22 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   closeBtn: {
-    padding: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   quoteBox: {
     borderLeftWidth: 2.5,
-    paddingLeft: 8,
-    marginVertical: 8,
+    paddingLeft: 10,
+    marginTop: 10,
+    marginBottom: 12,
   },
   quoteText: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 13.5,
+    lineHeight: 20,
     fontStyle: 'italic',
     fontWeight: '500',
   },
@@ -209,13 +208,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: 9999,
     borderWidth: 1,
-    marginTop: 4,
   },
   copyPillText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '800',
   },
 });

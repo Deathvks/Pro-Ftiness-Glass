@@ -111,8 +111,15 @@ export default function WorkoutScreen() {
   }, []);
 
   // Estados locales para notas y modales
-  const [notes, setNotes] = useState('');
+  const notes = typeof activeWorkout?.notes === 'string' ? activeWorkout.notes : '';
+  const setNotes = useCallback((value: string | ((prev: string) => string)) => {
+    (useAppStore.getState() as any).setWorkoutNotes?.(value);
+  }, []);
   const [dismissedPreviousNote, setDismissedPreviousNote] = useState(false);
+
+  useEffect(() => {
+    setDismissedPreviousNote(false);
+  }, [activeWorkout?.startTime]);
 
   // Modales
   const [showCalorieModal, setShowCalorieModal] = useState(false);
@@ -166,7 +173,9 @@ export default function WorkoutScreen() {
     let latestTime = -Infinity;
 
     for (const log of workoutLog) {
-      const matchesId = routineId && (log.routine_id === routineId || log.routineId === routineId);
+      const matchesId =
+        routineId != null &&
+        (String(log.routine_id) === String(routineId) || String(log.routineId) === String(routineId));
       const matchesName = normalizedRoutineName && log.routine_name?.toLowerCase().trim() === normalizedRoutineName;
       if (!matchesId && !matchesName) continue;
       const note = log.notes?.split('GPS_DATA::')[0].trim();

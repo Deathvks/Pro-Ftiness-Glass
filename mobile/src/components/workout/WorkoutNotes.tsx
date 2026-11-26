@@ -2,9 +2,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { FileText } from 'lucide-react-native';
-import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle } from '@/constants/theme';
+import { getThemedModalCardColor } from '@/components/ui/ModalThemeBackground';
 import useAppStore from '@/store/useAppStore';
 
 interface WorkoutNotesProps {
@@ -36,23 +37,20 @@ export const WorkoutNotes: React.FC<WorkoutNotesProps> = ({
     <View
       style={[
         styles.card,
+        getAppleCardSurfaceStyle(theme, 28),
         {
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.85)',
+          backgroundColor: theme === 'light' ? '#FFFFFF' : getThemedModalCardColor(theme),
           borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+          borderWidth: 1,
         },
       ]}
     >
-      <ContentCardBackdrop
-        colorScheme={isDark ? 'dark' : 'light'}
-        style={StyleSheet.absoluteFill}
-      />
-
       <View style={styles.headerRow}>
         <View style={styles.titleWithIcon}>
           <View style={[styles.iconBadge, { backgroundColor: colors.tint + '18', borderColor: colors.tint + '35' }]}>
             <FileText size={20} color={colors.tint} strokeWidth={2.5} />
           </View>
-          <Text style={[styles.title, { color: colors.text }]}>Notas de la Sesión</Text>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>Notas de la Sesión</Text>
         </View>
 
         {previousNote?.note && hasWorkoutStarted ? (
@@ -93,18 +91,12 @@ export const WorkoutNotes: React.FC<WorkoutNotesProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 32,
+    borderRadius: 28,
     borderWidth: 1,
     padding: 20,
     marginTop: 10,
     marginBottom: 24,
     overflow: 'hidden',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 14,
-    elevation: 3,
   },
   headerRow: {
     flexDirection: 'row',
@@ -113,11 +105,12 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
     marginBottom: 16,
-    zIndex: 2,
   },
   titleWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 1,
+    minWidth: 0,
   },
   iconBadge: {
     width: 38,

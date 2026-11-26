@@ -273,6 +273,7 @@ export const createWorkoutSlice = (set, get) => ({
         image_url: routine.imageUrl || routine.image_url || null,
         imageUrl: routine.imageUrl || routine.image_url || null,
         exercises,
+        notes: '',
         startTime: new Date().toISOString(),
       },
       workoutStartTime: null,
@@ -333,7 +334,8 @@ export const createWorkoutSlice = (set, get) => ({
         image_url: null,
         imageUrl: null,
         exercises: [],
-        startTime: new Date().toISOString(), 
+        notes: '',
+        startTime: new Date().toISOString(),
       },
       workoutStartTime: null,
       isWorkoutPaused: true,
@@ -690,6 +692,18 @@ export const createWorkoutSlice = (set, get) => ({
 
     const newState = {
       activeWorkout: { ...session, exercises: newExercises },
+    };
+    set(newState);
+    setWorkoutInStorage({ ...get(), ...newState });
+  },
+
+  setWorkoutNotes: (notesValue) => {
+    const session = get().activeWorkout;
+    if (!session) return;
+    const prevNotes = typeof session.notes === 'string' ? session.notes : '';
+    const nextNotes = typeof notesValue === 'function' ? notesValue(prevNotes) : String(notesValue ?? '');
+    const newState = {
+      activeWorkout: { ...session, notes: nextNotes },
     };
     set(newState);
     setWorkoutInStorage({ ...get(), ...newState });

@@ -461,6 +461,8 @@ export default function SharedRoutinePreviewScreen() {
                               details={ex}
                               fitMode="contain"
                               staticOnly
+                              roundedRadius={14}
+                              previewColors={{ background: 'transparent', placeholder: colors.textSecondary }}
                             />
                             {isSuperset && (
                               <View style={styles.supersetBadge}>

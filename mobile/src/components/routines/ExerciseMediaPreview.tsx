@@ -26,6 +26,7 @@ interface ExerciseMediaPreviewProps {
   playYouTube?: boolean;
   forceImageMode?: boolean;
   showImageCounter?: boolean;
+  roundedRadius?: number;
   previewColors?: { background: string; placeholder: string };
   onPress?: () => void;
   onMediaAspectRatio?: (ratio: number, isPortrait: boolean) => void;
@@ -117,6 +118,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   playYouTube = false,
   forceImageMode = false,
   showImageCounter = true,
+  roundedRadius,
   previewColors,
   onPress,
   onMediaAspectRatio,
@@ -127,6 +129,8 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   const [failedUris, setFailedUris] = useState<Record<string, boolean>>({});
   const [webViewLoading, setWebViewLoading] = useState(true);
   const [containerSize, setContainerSize] = useState({ width: 320, height: 200 });
+  const [imageSlotSize, setImageSlotSize] = useState({ width: 0, height: 0 });
+  const [naturalRatio, setNaturalRatio] = useState<number | null>(null);
   const [playerError, setPlayerError] = useState<string | null>(null);
 
   const allExercises = useAppStore(state => state.allExercises) || [];
@@ -388,6 +392,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   useEffect(() => {
     setFailedUris({});
     setLoadedUris({});
+    setNaturalRatio(null);
     setCurrentIndex(0);
   }, [imagesKey]);
 
@@ -536,9 +541,45 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   // 6. Capas apiladas para evitar desmontaje/parpadeo negro entre fotogramas del GIF
   const safeIndex = displayImages.length > 0 ? currentIndex % displayImages.length : 0;
 
+  const fittedImageFrameStyle = useMemo(() => {
+    if (roundedRadius === undefined) return null;
+    if (naturalRatio && imageSlotSize.width > 0 && imageSlotSize.height > 0) {
+      const boxRatio = imageSlotSize.width / imageSlotSize.height;
+      const fittedWidth =
+        naturalRatio > boxRatio
+          ? imageSlotSize.width
+          : Math.round(imageSlotSize.height * naturalRatio);
+      const fittedHeight =
+        naturalRatio > boxRatio
+          ? Math.round(imageSlotSize.width / naturalRatio)
+          : imageSlotSize.height;
+      return {
+        width: fittedWidth,
+        height: fittedHeight,
+        borderRadius: roundedRadius,
+        borderCurve: 'continuous' as const,
+        overflow: 'hidden' as const,
+      };
+    }
+    return {
+      width: '100%' as const,
+      height: '100%' as const,
+      borderRadius: roundedRadius,
+      borderCurve: 'continuous' as const,
+      overflow: 'hidden' as const,
+    };
+  }, [roundedRadius, naturalRatio, imageSlotSize]);
+
   if (displayImages.length === 0) {
     return (
-      <View style={[styles.fullContainer, styles.placeholderContainer, previewColors && { backgroundColor: previewColors.background }]}>
+      <View
+        style={[
+          styles.fullContainer,
+          styles.placeholderContainer,
+          roundedRadius !== undefined && { borderRadius: roundedRadius, borderCurve: 'continuous' },
+          previewColors && { backgroundColor: previewColors.background },
+        ]}
+      >
         <Dumbbell size={36} color={previewColors?.placeholder ?? 'rgba(255,255,255,0.3)'} />
       </View>
     );
@@ -547,7 +588,21 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   return (
     <TouchableOpacity
       activeOpacity={onPress ? 0.8 : staticOnly ? 1 : 0.88}
-      style={[styles.fullContainer, previewColors && { backgroundColor: previewColors.background }]}
+      style={[
+        styles.fullContainer,
+        roundedRadius !== undefined && { backgroundColor: 'transparent', borderRadius: roundedRadius },
+        previewColors && { backgroundColor: previewColors.background },
+      ]}
+      onLayout={e => {
+        const { width, height } = e.nativeEvent.layout;
+        if (width > 0 && height > 0) {
+          const roundedW = Math.round(width);
+          const roundedH = Math.round(height);
+          setImageSlotSize(prev =>
+            prev.width === roundedW && prev.height === roundedH ? prev : { width: roundedW, height: roundedH }
+          );
+        }
+      }}
       onPress={() => {
         if (onPress) {
           try {
@@ -560,10 +615,11 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       }}
       disabled={!onPress && (staticOnly || !(rawVideo || yid))}
     >
-      <View style={styles.imageFill} pointerEvents="none">
+      <View style={[styles.imageFill, fittedImageFrameStyle]} pointerEvents="none">
         {displayImages.map((uri, idx) => {
           const isActive = idx === safeIndex;
           const isShowingYoutubeThumb = uri === youtubeThumbnail;
+          const useRoundedCover = Boolean(roundedRadius !== undefined && naturalRatio);
           return (
             <Image
               key={uri}
@@ -571,18 +627,22 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
               fadeDuration={0}
               style={[
                 styles.stackedImage,
+                roundedRadius !== undefined && { borderRadius: roundedRadius },
                 {
                   opacity: isActive ? 1 : 0,
                   zIndex: isActive ? 2 : 1,
                 },
               ]}
-              resizeMode={isShowingYoutubeThumb ? 'cover' : fitMode}
+              resizeMode={isShowingYoutubeThumb || useRoundedCover ? 'cover' : fitMode}
               onLoad={e => {
                 setLoadedUris(prev => (prev[uri] ? prev : { ...prev, [uri]: true }));
                 const src = e?.nativeEvent?.source;
-                if (src?.width && src?.height && onMediaAspectRatio) {
+                if (src?.width && src?.height) {
                   const ratio = src.width / src.height;
-                  onMediaAspectRatio(ratio, ratio < 1);
+                  setNaturalRatio(prev => prev ?? ratio);
+                  if (onMediaAspectRatio) {
+                    onMediaAspectRatio(ratio, ratio < 1);
+                  }
                 }
               }}
               onError={() => {

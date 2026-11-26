@@ -1,5 +1,5 @@
 /* mobile/src/components/workout/WorkoutExerciseCard.tsx */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -26,10 +26,10 @@ import {
   TrendingUp,
   Sparkles,
 } from 'lucide-react-native';
-import { GlassView } from 'expo-glass-effect';
-import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle } from '@/constants/theme';
+import { getThemedModalCardColor } from '@/components/ui/ModalThemeBackground';
 import useAppStore from '@/store/useAppStore';
 import { calculate1RM } from '@/utils/workoutHelpers';
 import {
@@ -158,6 +158,10 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [reminderInput, setReminderInput] = useState(exercise.reminder || '');
 
+  useEffect(() => {
+    setReminderInput(exercise.reminder || '');
+  }, [exercise.reminder, exercise.id]);
+
   // Helper para imágenes en ExerciseMediaPreview
   const getImageUrl = (it: any) => {
     const raw =
@@ -215,19 +219,16 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
     <View
       style={[
         styles.cardContainer,
+        getAppleCardSurfaceStyle(theme, 28),
         {
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.85)',
+          backgroundColor: theme === 'light' ? '#FFFFFF' : getThemedModalCardColor(theme),
           borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+          borderWidth: 1,
         },
       ]}
     >
-      <ContentCardBackdrop
-        colorScheme={isDark ? 'dark' : 'light'}
-        style={StyleSheet.absoluteFill}
-      />
-
       <View style={styles.cardInner}>
-        {/* 1. GIFs / imágenes limpias a ancho móvil (como en Frontend, sin textos encima) */}
+        {/* 1. GIFs / imágenes limpias sin fondos laterales ni bordes extra */}
         <View
           style={[
             styles.mediaHeroContainer,
@@ -235,8 +236,6 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
               width: '100%',
               aspectRatio: mediaAspectRatio,
               maxHeight: 260,
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
             },
           ]}
         >
@@ -249,12 +248,13 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
             fitMode="contain"
             forceImageMode={true}
             showImageCounter={false}
+            roundedRadius={22}
             previewColors={{
-              background: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
+              background: 'transparent',
               placeholder: colors.textSecondary,
             }}
             onMediaAspectRatio={ratio => {
-              const clamped = Math.max(1, Math.min(16 / 9, ratio));
+              const clamped = Math.max(0.65, Math.min(16 / 9, ratio));
               setMediaAspectRatio(clamped);
             }}
             onPress={() => {
@@ -806,28 +806,20 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
 
 const styles = StyleSheet.create({
   cardContainer: {
-    borderRadius: 32,
+    borderRadius: 28,
     borderWidth: 1,
     marginBottom: 20,
     overflow: 'hidden',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 14,
-    elevation: 3,
   },
   cardInner: {
     padding: 18,
-    zIndex: 2,
   },
   mediaHeroContainer: {
     width: '100%',
     minHeight: 190,
     maxHeight: 260,
     alignSelf: 'center',
-    borderRadius: 24,
-    borderWidth: 1,
+    borderRadius: 22,
     overflow: 'hidden',
     marginBottom: 16,
     justifyContent: 'center',

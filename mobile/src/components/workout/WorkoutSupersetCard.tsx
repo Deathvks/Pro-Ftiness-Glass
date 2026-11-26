@@ -18,9 +18,10 @@ import {
   AlertTriangle,
   CheckCircle2,
 } from 'lucide-react-native';
-import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle } from '@/constants/theme';
+import { getThemedModalCardColor } from '@/components/ui/ModalThemeBackground';
 import useAppStore from '@/store/useAppStore';
 import { normalizeDecimalInput, normalizeIntegerInput } from '@/utils/workoutHelpers';
 import { getExerciseHistorySessions, diagnoseExerciseTrend } from '@/utils/smartProgressionCoach';
@@ -81,17 +82,14 @@ export const WorkoutSupersetCard: React.FC<WorkoutSupersetCardProps> = ({
     <View
       style={[
         styles.supersetCard,
+        getAppleCardSurfaceStyle(theme, 28),
         {
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.85)',
+          backgroundColor: theme === 'light' ? '#FFFFFF' : getThemedModalCardColor(theme),
           borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+          borderWidth: 1,
         },
       ]}
     >
-      <ContentCardBackdrop
-        colorScheme={isDark ? 'dark' : 'light'}
-        style={StyleSheet.absoluteFill}
-      />
-
       {/* 1. Header con Badge de Superserie */}
       <View style={styles.headerRow}>
         <View style={[styles.badgePill, { backgroundColor: colors.tint }]}>
@@ -366,17 +364,11 @@ export const WorkoutSupersetCard: React.FC<WorkoutSupersetCardProps> = ({
 
 const styles = StyleSheet.create({
   supersetCard: {
-    borderRadius: 32,
+    borderRadius: 28,
     borderWidth: 1,
     padding: 16,
     marginBottom: 20,
     overflow: 'hidden',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 14,
-    elevation: 3,
   },
   headerRow: {
     marginBottom: 12,
