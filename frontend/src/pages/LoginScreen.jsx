@@ -589,6 +589,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             addToast(msg, 'error');
             setErrors({ api: msg, code: msg });
             setIsLoading(false);
+            setOtp(new Array(6).fill(""));
             setVerificationCode('');
         }
     };
@@ -605,6 +606,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
     const handleCancel2FA = () => {
         cancelTwoFactor();
+        setOtp(new Array(6).fill(""));
         setVerificationCode('');
         setErrors({});
         setIsLoading(false);
@@ -652,13 +654,15 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                                     ref={(el) => (inputRefs.current[index] = el)}
                                     type="text"
                                     inputMode="numeric"
+                                    autoComplete="one-time-code"
+                                    aria-label={`Dígito ${index + 1}`}
                                     maxLength={1}
                                     value={digit}
                                     onChange={(e) => handleOtpChange(e.target, index)}
                                     onKeyDown={(e) => handleOtpKeyDown(e, index)}
                                     onPaste={handlePaste}
                                     onFocus={(e) => e.target.select()}
-                                    className={`flex-1 min-w-0 max-w-[3.25rem] h-13 sm:h-16 rounded-[16px] border-2 text-xl sm:text-2xl font-bold text-center outline-none transition-all bg-black/5 dark:bg-white/5 text-text-primary caret-accent ${digit ? 'border-accent shadow-lg shadow-accent/20' : 'border-glass-border focus:border-accent focus:shadow-lg focus:shadow-accent/20'}`}
+                                    className={`flex-1 min-w-0 max-w-[3.25rem] h-14 sm:h-16 min-h-[3.5rem] sm:min-h-[4rem] p-0 leading-none rounded-[16px] border-2 text-xl sm:text-2xl font-bold text-center outline-none transition-all bg-black/5 dark:bg-white/5 text-text-primary caret-accent ${digit ? 'border-accent shadow-lg shadow-accent/20' : 'border-glass-border focus:border-accent focus:shadow-lg focus:shadow-accent/20'}`}
                                 />
                             ))}
                         </div>

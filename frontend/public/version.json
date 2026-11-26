@@ -1,21 +1,17 @@
 {
-  "version": "7.16.67",
-  "releaseNotes": "Actualización v7.16.67: barra inferior flotante en entrenamiento al hacer scroll (descanso, calculadora, mapa muscular, finalizar y play/pausa) en Web y Capacitor.",
+  "version": "7.16.68",
+  "releaseNotes": "Actualización v7.16.68: corregida la altura y proporción de las casillas de código 2FA y verificación en web y Capacitor.",
   "welcome": {
-    "title": "Controles Flotantes en Entrenamiento",
-    "subtitle": "Al deslizar hacia abajo durante tu sesión, los controles rápidos te acompañan en la parte inferior.",
+    "title": "Mejora visual en Verificación 2FA",
+    "subtitle": "Las casillas para introducir el código de 6 dígitos ahora mantienen su altura y proporción correcta en todos los tamaños de pantalla.",
     "features": [
       {
-        "title": "Barra Flotante Liquid Glass",
-        "description": "Accede al temporizador de descanso, calculadora de discos, mapa muscular y finalizar sin subir hasta la cabecera."
+        "title": "Casillas 2FA Proporcionadas",
+        "description": "Corregida la clase de altura en Tailwind v3 para que los 6 dígitos se muestren verticales y legibles en móvil y Capacitor."
       },
       {
-        "title": "Play y Pausa Siempre a Mano",
-        "description": "Botón principal destacado para pausar o reanudar el cronómetro en mitad de la rutina."
-      },
-      {
-        "title": "Paridad con Nativo en Web y Capacitor",
-        "description": "Diseñada para no solapar con la barra inferior de navegación y ocultarse automáticamente al volver arriba."
+        "title": "Consistencia en Setup y Email",
+        "description": "Unificada la proporción y limpieza automática tras error o cancelación en las pantallas de verificación."
       }
     ]
   }

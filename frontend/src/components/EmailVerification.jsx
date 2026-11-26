@@ -140,18 +140,20 @@ const EmailVerification = ({ email, onBack, onSuccess, backButtonText = 'Volver 
 
                         <div>
                             {/* CONTENEDOR DE LOS 6 CUADROS */}
-                            <div className="flex justify-between gap-2" onPaste={handlePaste}>
+                            <div className="flex justify-center gap-1.5 sm:gap-2" onPaste={handlePaste}>
                                 {code.map((digit, index) =>
                 <input
                   key={index}
                   ref={(el) => inputRefs.current[index] = el}
                   type="text"
                   inputMode="numeric"
+                  autoComplete="one-time-code"
+                  aria-label={`Dígito ${index + 1}`}
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handleChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="w-10 h-12 sm:w-12 sm:h-14 text-center text-2xl font-bold bg-bg-secondary border border-glass-border rounded-md text-text-primary focus:border-accent focus:ring-2 focus:ring-accent/50 outline-none transition-all"
+                  className="flex-1 min-w-0 max-w-[2.85rem] sm:max-w-[3rem] h-14 sm:h-16 min-h-[3.5rem] sm:min-h-[4rem] p-0 leading-none text-center text-2xl font-bold bg-bg-secondary border border-glass-border rounded-md text-text-primary focus:border-accent focus:ring-2 focus:ring-accent/50 outline-none transition-all"
                   required />
 
                 )}

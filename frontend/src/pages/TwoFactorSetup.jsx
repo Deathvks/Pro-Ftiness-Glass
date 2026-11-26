@@ -177,13 +177,15 @@ const TwoFactorSetup = ({ setView }) => {
 
   // --- Renderizado del Input de Código (Individuales) ---
   const renderCodeInput = () => (
-    <div className="flex justify-between gap-2 sm:gap-3 mb-8 w-full max-w-[340px] mx-auto">
+    <div className="flex justify-center gap-1.5 sm:gap-2.5 mb-8 w-full max-w-[340px] mx-auto">
       {otp.map((digit, index) => (
         <input
           key={index}
           ref={(el) => (inputRefs.current[index] = el)}
           type="text"
           inputMode="numeric"
+          autoComplete="one-time-code"
+          aria-label={`Dígito ${index + 1}`}
           maxLength={1}
           value={digit}
           onChange={(e) => handleOtpChange(e.target, index)}
@@ -191,7 +193,7 @@ const TwoFactorSetup = ({ setView }) => {
           onPaste={handlePaste}
           onFocus={(e) => e.target.select()}
           className={`
-            w-12 h-14 sm:w-14 sm:h-16 rounded-[16px] border-none 
+            flex-1 min-w-0 max-w-[3.25rem] sm:max-w-[3.5rem] h-14 sm:h-16 min-h-[3.5rem] sm:min-h-[4rem] p-0 leading-none rounded-[16px] border-none 
             text-2xl sm:text-3xl font-extrabold text-center 
             outline-none transition-all duration-300
             bg-black/5 dark:bg-white/5 text-text-primary caret-accent
