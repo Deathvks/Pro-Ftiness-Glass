@@ -39,6 +39,10 @@ export default function AppTabs() {
             right: 0,
             backgroundColor: 'transparent',
             elevation: 0,
+            shadowColor: 'transparent',
+            shadowOpacity: 0,
+            shadowRadius: 0,
+            shadowOffset: { width: 0, height: 0 },
             borderTopWidth: 0,
           },
         }}
@@ -76,7 +80,7 @@ function NativeAppTabs() {
       backgroundColor={colors.tabBar}
       blurEffect={blurEffect}
       disableTransparentOnScrollEdge={true}
-      shadowColor={isDark ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.08)'}
+      shadowColor="transparent"
       iconColor={{
         default: inactiveInk,
         selected: colors.tint,

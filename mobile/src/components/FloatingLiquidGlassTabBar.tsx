@@ -211,6 +211,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 10,
     elevation: 0,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
   },
   tabRow: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   drop: {
@@ -221,6 +225,11 @@ const styles = StyleSheet.create({
     height: DROP_HEIGHT,
     borderRadius: DROP_HEIGHT / 2,
     borderWidth: StyleSheet.hairlineWidth,
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
   },
   tabButton: { flex: 1, height: '100%', alignItems: 'center', justifyContent: 'center' },
 });
