@@ -118,7 +118,7 @@ export function FloatingLiquidGlassTabBar({ state, emitter, navigateToTab, inset
     if (!fromDrag && useAppStore.getState().hapticsEnabled !== false) {
       void Haptics.selectionAsync().catch(() => {});
     }
-    navigateToTab(route.key);
+    requestAnimationFrame(() => navigateToTab(route.key));
   }, [activeIndex, cell, emitter, moveDrop, navigateToTab, state.routes]);
 
   const updateHover = useCallback((index: number, feedback: boolean) => {
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     borderRadius: CAPSULE_HEIGHT / 2,
     borderWidth: 1,
     paddingHorizontal: 10,
-    elevation: 2,
+    elevation: 0,
   },
   tabRow: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   drop: {

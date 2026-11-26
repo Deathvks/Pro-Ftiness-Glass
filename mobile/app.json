@@ -82,6 +82,13 @@
       "expo-font",
       "expo-status-bar",
       [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false,
+          "style": "light"
+        }
+      ],
+      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Permite a ProFitnessGlass acceder a tu ubicación para encontrar los gimnasios más cercanos a ti."

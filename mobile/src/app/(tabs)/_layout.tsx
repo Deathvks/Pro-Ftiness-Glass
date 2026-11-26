@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform } from 'react-native';
+import { Easing, Platform } from 'react-native';
 import { NativeTabs } from 'expo-router/native-tabs';
 import { Tabs } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
@@ -15,11 +15,23 @@ export default function AppTabs() {
     return (
       <Tabs
         tabBar={renderFloatingTabBar}
+        detachInactiveScreens={false}
         screenOptions={{
           headerShown: false,
           tabBarShowLabel: false,
-          lazy: false,
-          animation: 'none',
+          lazy: true,
+          freezeOnBlur: true,
+          animation: 'shift',
+          transitionSpec: {
+            animation: 'timing',
+            config: {
+              duration: 210,
+              easing: Easing.out(Easing.cubic),
+            },
+          },
+          sceneStyle: {
+            backgroundColor: 'transparent',
+          },
           tabBarStyle: {
             position: 'absolute',
             bottom: 0,
