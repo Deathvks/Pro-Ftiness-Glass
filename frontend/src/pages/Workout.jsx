@@ -1,5 +1,5 @@
 /* frontend/src/pages/Workout.jsx */
-import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, useRef, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Activity, Maximize2, CloudOff, RefreshCw } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
@@ -25,6 +25,7 @@ import NoActiveWorkout from '../components/Workout/NoActiveWorkout';
 import WorkoutHeader from '../components/Workout/WorkoutHeader';
 import WorkoutExerciseList from '../components/Workout/WorkoutExerciseList';
 import WorkoutNotes from '../components/Workout/WorkoutNotes';
+import WorkoutFloatingToolbar from '../components/Workout/WorkoutFloatingToolbar';
 import PreviousWorkoutNoteBanner from '../components/Workout/PreviousWorkoutNoteBanner';
 import SmartExerciseCoachModal from '../components/Workout/SmartExerciseCoachModal';
 
@@ -92,6 +93,11 @@ const Workout = ({ timer, setView, navParams }) => {
     const [showHeatmapModal, setShowHeatmapModal] = useState(false);
     const [smartCoachExercise, setSmartCoachExercise] = useState(null);
     const [dismissedPreviousNote, setDismissedPreviousNote] = useState(false);
+    const [showFloatingToolbar, setShowFloatingToolbar] = useState(false);
+    const headerWrapRef = useRef(null);
+    const showFloatingToolbarRef = useRef(false);
+
+    const isResting = useAppStore((state) => Boolean(state.restTimerEndTime || state.isRestTimerPaused));
 
     const syncQueue = useAppStore((state) => state.syncQueue || []);
     const isSyncing = useAppStore((state) => state.isSyncing || false);
@@ -165,6 +171,58 @@ const Workout = ({ timer, setView, navParams }) => {
             mainEl.scrollTo(0, 0);
         }
     }, []);
+
+    useEffect(() => {
+        if (!activeWorkout) {
+            showFloatingToolbarRef.current = false;
+            setShowFloatingToolbar(false);
+            return;
+        }
+
+        const mainEl = document.querySelector('main.flex-1.overflow-y-auto');
+        let rafId = null;
+
+        const updateToolbarVisibility = () => {
+            rafId = null;
+            const headerEl = headerWrapRef.current;
+            if (!headerEl) return;
+
+            const mainTop = mainEl ? mainEl.getBoundingClientRect().top : 0;
+            const rect = headerEl.getBoundingClientRect();
+
+            if (!showFloatingToolbarRef.current && rect.bottom < mainTop + 64) {
+                showFloatingToolbarRef.current = true;
+                setShowFloatingToolbar(true);
+            } else if (showFloatingToolbarRef.current && rect.bottom > mainTop + 96) {
+                showFloatingToolbarRef.current = false;
+                setShowFloatingToolbar(false);
+            }
+        };
+
+        const handleScroll = () => {
+            if (rafId === null) {
+                rafId = requestAnimationFrame(updateToolbarVisibility);
+            }
+        };
+
+        updateToolbarVisibility();
+        const scrollTarget = mainEl || window;
+        scrollTarget.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('resize', handleScroll);
+
+        let ro = null;
+        if (headerWrapRef.current && typeof ResizeObserver !== 'undefined') {
+            ro = new ResizeObserver(handleScroll);
+            ro.observe(headerWrapRef.current);
+        }
+
+        return () => {
+            scrollTarget.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('resize', handleScroll);
+            if (ro) ro.disconnect();
+            if (rafId !== null) cancelAnimationFrame(rafId);
+        };
+    }, [activeWorkout]);
 
     useEffect(() => {
         const mountTime = Date.now();
@@ -408,8 +466,20 @@ const Workout = ({ timer, setView, navParams }) => {
         return <NoActiveWorkout setView={setView} onStartQuickCardio={() => setShowQuickCardio(true)} />;
     }
 
+    const isAnyModalOpen =
+        showCalorieModal ||
+        showReviewModal ||
+        showWorkoutSummaryModal ||
+        showCalculatorModal ||
+        showHeatmapModal ||
+        showCancelModal ||
+        Boolean(selectedExercise) ||
+        Boolean(historyExercise) ||
+        Boolean(smartCoachExercise) ||
+        exerciseToReplace !== null;
+
     return (
-        <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 pb-28 md:pb-10 animate-[fade-in_0.5s_ease-out]">
+        <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 pb-36 md:pb-24 animate-[fade-in_0.5s_ease-out]">
             {pendingWorkoutsCount > 0 && (
                 <div className="mb-5 p-3.5 sm:p-4 rounded-2xl glass border border-amber-500/30 bg-amber-500/10 flex items-center justify-between gap-3 text-xs animate-[fade-in_0.3s_ease-out]">
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -437,19 +507,21 @@ const Workout = ({ timer, setView, navParams }) => {
                 </div>
             )}
 
-            <WorkoutHeader
-                routineName={activeWorkout.routineName}
-                routineImage={activeWorkout.imageUrl || activeWorkout.image_url} 
-                timer={timer}
-                isWorkoutPaused={isWorkoutPaused}
-                hasWorkoutStarted={hasWorkoutStarted}
-                onBackClick={handleBackClick}
-                onTogglePause={togglePauseWorkout}
-                onFinishClick={handleFinishClick}
-                onShowCalculator={() => setShowCalculatorModal(true)}
-                onShowHeatmap={() => setShowHeatmapModal(true)}
-                onOpenSettings={() => setView('settings', { highlight: 'workout', returnView: 'workout' })}
-            />
+            <div ref={headerWrapRef}>
+                <WorkoutHeader
+                    routineName={activeWorkout.routineName}
+                    routineImage={activeWorkout.imageUrl || activeWorkout.image_url} 
+                    timer={timer}
+                    isWorkoutPaused={isWorkoutPaused}
+                    hasWorkoutStarted={hasWorkoutStarted}
+                    onBackClick={handleBackClick}
+                    onTogglePause={togglePauseWorkout}
+                    onFinishClick={handleFinishClick}
+                    onShowCalculator={() => setShowCalculatorModal(true)}
+                    onShowHeatmap={() => setShowHeatmapModal(true)}
+                    onOpenSettings={() => setView('settings', { highlight: 'workout', returnView: 'workout' })}
+                />
+            </div>
 
             {!isSimpleWorkout && Object.keys(workoutMuscleData).length > 0 && (
                 <section className="mb-7 overflow-hidden rounded-[28px] border border-accent/20 bg-gradient-to-br from-accent/10 via-bg-secondary to-bg-primary shadow-lg shadow-black/5">
@@ -688,6 +760,18 @@ const Workout = ({ timer, setView, navParams }) => {
                     }}
                 />
             )}
+
+            <WorkoutFloatingToolbar
+                visible={showFloatingToolbar && !isAnyModalOpen}
+                isWorkoutPaused={isWorkoutPaused}
+                hasWorkoutStarted={hasWorkoutStarted}
+                isResting={isResting}
+                onOpenRest={() => openRestModal(90)}
+                onShowCalculator={() => setShowCalculatorModal(true)}
+                onShowHeatmap={() => setShowHeatmapModal(true)}
+                onFinishClick={handleFinishClick}
+                onTogglePause={togglePauseWorkout}
+            />
         </div>
     );
 };

@@ -1,21 +1,21 @@
 {
-  "version": "7.16.66",
-  "releaseNotes": "Actualización v7.16.66: nuevas páginas individuales SEO indexables para cada ejercicio (/ejercicios/:slug) y cada rutina semanal (/rutinas y /rutinas/:slug) incluidas en sitemap.",
+  "version": "7.16.67",
+  "releaseNotes": "Actualización v7.16.67: barra inferior flotante en entrenamiento al hacer scroll (descanso, calculadora, mapa muscular, finalizar y play/pausa) en Web y Capacitor.",
   "welcome": {
-    "title": "Fichas Individuales de Ejercicios y Rutinas",
-    "subtitle": "Cada ejercicio técnico y cada división semanal dispone ahora de su propia URL optimizada y enlazada en el sitemap.",
+    "title": "Controles Flotantes en Entrenamiento",
+    "subtitle": "Al deslizar hacia abajo durante tu sesión, los controles rápidos te acompañan en la parte inferior.",
     "features": [
       {
-        "title": "13 Guías Individuales de Ejercicios",
-        "description": "Páginas dedicadas como /ejercicios/press-de-banca, /ejercicios/sentadilla-bulgara o /ejercicios/hip-thrust con esquema HowTo."
+        "title": "Barra Flotante Liquid Glass",
+        "description": "Accede al temporizador de descanso, calculadora de discos, mapa muscular y finalizar sin subir hasta la cabecera."
       },
       {
-        "title": "Rutinas Día a Día (/rutinas/:slug)",
-        "description": "Plantillas detalladas para Push Pull Legs, Torso-Pierna 4 días, Full Body y Arnold Split enlazadas a cada ejercicio."
+        "title": "Play y Pausa Siempre a Mano",
+        "description": "Botón principal destacado para pausar o reanudar el cronómetro en mitad de la rutina."
       },
       {
-        "title": "Indexación Completa en Sitemap y Robots",
-        "description": "Todas las fichas nuevas prerrenderizadas en HTML estático e incorporadas en /sitemap.xml."
+        "title": "Paridad con Nativo en Web y Capacitor",
+        "description": "Diseñada para no solapar con la barra inferior de navegación y ocultarse automáticamente al volver arriba."
       }
     ]
   }
