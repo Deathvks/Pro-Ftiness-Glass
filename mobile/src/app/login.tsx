@@ -27,7 +27,9 @@ import {
 } from 'lucide-react-native';
 import { FontAwesome5, FontAwesome6 } from '@expo/vector-icons';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastColor } from '@/utils/colorUtils';
+import ThemeBackground from '@/components/ThemeBackground';
+import { getAppleCardSurfaceStyle, getThemeBaseBackground } from '@/constants/theme';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import useAppStore from '@/store/useAppStore';
@@ -87,7 +89,10 @@ export default function Login() {
   const theme = colors;
   const currentStoreTheme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(currentStoreTheme);
-  const contrastColor = getContrastColor(theme.tint, currentStoreTheme);
+  const contrastColor = getContrastTextColor(theme.tint);
+  const baseBackground = getThemeBaseBackground(currentStoreTheme);
+  const cardSurfaceStyle = getAppleCardSurfaceStyle(currentStoreTheme, 28);
+  const isIOS = Platform.OS === 'ios';
   const colorScheme = useDeviceColorScheme();
   const insets = useSafeAreaInsets();
 
@@ -301,17 +306,34 @@ export default function Login() {
     }
   };
 
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={[styles.container, { backgroundColor: theme.background }]}
-    >
+  const renderAuthCard = (children: React.ReactNode) =>
+    isIOS ? (
       <GlassView
-        pointerEvents="none"
         glassEffectStyle="regular"
         colorScheme={isDark ? 'dark' : 'light'}
-        style={StyleSheet.absoluteFill}
-      />
+        style={[styles.glassCard, { borderColor: theme.border }]}
+      >
+        {children}
+      </GlassView>
+    ) : (
+      <View
+        style={[
+          styles.glassCard,
+          styles.androidCardNoElevation,
+          cardSurfaceStyle,
+          { backgroundColor: colors.card, borderColor: theme.border },
+        ]}
+      >
+        {children}
+      </View>
+    );
+
+  return (
+    <KeyboardAvoidingView
+      behavior={isIOS ? 'padding' : undefined}
+      style={[styles.container, { backgroundColor: baseBackground }]}
+    >
+      <ThemeBackground />
 
       <ScrollView
         style={{ flex: 1, width: '100%' }}
@@ -323,6 +345,8 @@ export default function Login() {
           },
         ]}
         showsVerticalScrollIndicator={false}
+        overScrollMode="never"
+        removeClippedSubviews={false}
         keyboardShouldPersistTaps="handled"
       >
         {/* PANTALLA 2FA */}
@@ -356,11 +380,7 @@ export default function Login() {
               </Text>
             </View>
 
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[styles.glassCard, { borderColor: theme.border }]}
-            >
+            {renderAuthCard(
               <View style={[styles.form, { paddingHorizontal: 8 }]}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, gap: 8 }}>
                   {otp2FA.map((digit, index) => (
@@ -396,6 +416,8 @@ export default function Login() {
                       keyboardType="number-pad"
                       maxLength={1}
                       selectionColor={theme.tint}
+                      underlineColorAndroid="transparent"
+                      disableFullscreenUI
                     />
                   ))}
                 </View>
@@ -416,11 +438,13 @@ export default function Login() {
                   disabled={isLoading || otp2FA.some(d => d === '')}
                   activeOpacity={0.85}
                 >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
-                  />
+                  {isIOS && (
+                    <GlassView
+                      glassEffectStyle="regular"
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                    />
+                  )}
                   <View
                     pointerEvents="none"
                     style={[
@@ -459,7 +483,7 @@ export default function Login() {
                   <Text style={{ color: theme.textSecondary, fontSize: 13, fontWeight: '600' }}>Volver al inicio de sesión</Text>
                 </TouchableOpacity>
               </View>
-            </GlassView>
+            )}
           </View>
         ) : needsVerification ? (
           /* PANTALLA DE CUENTA NO VERIFICADA */
@@ -484,11 +508,7 @@ export default function Login() {
               </Text>
             </View>
 
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[styles.glassCard, { borderColor: theme.border }]}
-            >
+            {renderAuthCard(
               <View style={[styles.form, { paddingHorizontal: 8 }]}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, gap: 8 }}>
                   {verificationCode.map((digit, index) => (
@@ -524,6 +544,8 @@ export default function Login() {
                       keyboardType="number-pad"
                       maxLength={1}
                       selectionColor={theme.tint}
+                      underlineColorAndroid="transparent"
+                      disableFullscreenUI
                     />
                   ))}
                 </View>
@@ -544,11 +566,13 @@ export default function Login() {
                   disabled={isLoading || verificationCode.some(d => d === '')}
                   activeOpacity={0.85}
                 >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
-                  />
+                  {isIOS && (
+                    <GlassView
+                      glassEffectStyle="regular"
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                    />
+                  )}
                   <View
                     pointerEvents="none"
                     style={[
@@ -584,7 +608,7 @@ export default function Login() {
                   <Text style={{ color: theme.textSecondary, fontSize: 13, fontWeight: '600' }}>Volver al login</Text>
                 </TouchableOpacity>
               </View>
-            </GlassView>
+            )}
           </View>
         ) : (
           /* PANTALLA PRINCIPAL DE LOGIN */
@@ -593,6 +617,7 @@ export default function Login() {
               source={require('../../assets/images/logo.webp')}
               style={{ width: 84, height: 84, alignSelf: 'center', marginBottom: 14 }}
               resizeMode="contain"
+              fadeDuration={0}
             />
 
             {/* BADGE "Gratis y Sin Anuncios" */}
@@ -601,18 +626,20 @@ export default function Login() {
                 style={[
                   styles.badge,
                   {
-                    backgroundColor: 'transparent',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.65)',
+                    backgroundColor: isIOS ? 'transparent' : colors.card,
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
                     borderWidth: 1,
                     overflow: 'hidden',
                   },
                 ]}
               >
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 9999 }]}
-                />
+                {isIOS && (
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 9999 }]}
+                  />
+                )}
                 <Sparkles color={theme.tint} size={15} style={{ marginRight: 6 }} />
                 <Text style={[styles.badgeText, { color: theme.text }]}>GRATIS Y SIN ANUNCIOS</Text>
               </View>
@@ -626,11 +653,7 @@ export default function Login() {
               </Text>
             </View>
 
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[styles.glassCard, { borderColor: theme.border }]}
-            >
+            {renderAuthCard(
               <View style={styles.form}>
                 {maintenanceMode && (
                   <View style={[styles.maintenanceBanner, { backgroundColor: 'rgba(234, 179, 8, 0.15)', borderColor: 'rgba(234, 179, 8, 0.35)' }]}>
@@ -680,6 +703,8 @@ export default function Login() {
                     onFocus={() => setFocusedInput('email')}
                     onBlur={() => setFocusedInput(null)}
                     autoCapitalize="none"
+                    underlineColorAndroid="transparent"
+                    disableFullscreenUI
                   />
                   {errors.email ? <Text style={styles.fieldErrorText}>{errors.email}</Text> : null}
                 </View>
@@ -714,6 +739,8 @@ export default function Login() {
                       onFocus={() => setFocusedInput('password')}
                       onBlur={() => setFocusedInput(null)}
                       secureTextEntry={!showPassword}
+                      underlineColorAndroid="transparent"
+                      disableFullscreenUI
                     />
                     <TouchableOpacity
                       onPress={() => setShowPassword(!showPassword)}
@@ -742,7 +769,7 @@ export default function Login() {
                         },
                       ]}
                     >
-                      {rememberMe && <Check size={12} color="#000" strokeWidth={3} />}
+                      {rememberMe && <Check size={12} color={contrastColor} strokeWidth={3} />}
                     </View>
                     <Text style={[styles.rememberText, { color: theme.textSecondary }]}>Recordar sesión</Text>
                   </TouchableOpacity>
@@ -772,11 +799,13 @@ export default function Login() {
                   disabled={isLoading}
                   activeOpacity={0.85}
                 >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
-                  />
+                  {isIOS && (
+                    <GlassView
+                      glassEffectStyle="regular"
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                    />
+                  )}
                   <View
                     pointerEvents="none"
                     style={[
@@ -902,7 +931,7 @@ export default function Login() {
                   </View>
                 </View>
               </View>
-            </GlassView>
+            )}
           </>
         )}
       </ScrollView>
@@ -984,6 +1013,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 24,
     elevation: 8,
+  },
+  androidCardNoElevation: {
+    elevation: 0,
+    shadowOpacity: 0,
   },
   form: {
     width: '100%',

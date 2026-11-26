@@ -16,6 +16,22 @@ const clearAuthStorage = () => {
     localStorage.removeItem('templateRoutinesShowFilters');
 };
 
+// Completa la sesión tras login/2FA/OAuth sin exponer un perfil parcial sin `goal`
+// antes de que fetchInitialData() cargue el perfil completo desde el backend.
+const completeAuthenticatedSession = (set, { token, user }) => {
+    localStorage.removeItem('fittrack_token');
+    localStorage.setItem('pro_fitness_token', token);
+    const hasFullProfile = Boolean(user && Object.prototype.hasOwnProperty.call(user, 'goal'));
+    set({
+        token,
+        isAuthenticated: true,
+        twoFactorPending: null,
+        userProfile: hasFullProfile ? user : null,
+        sessionExpired: false,
+        isLoading: !hasFullProfile,
+    });
+};
+
 // Definimos el "slice" o parte del store que gestiona la autenticación y el perfil.
 export const createAuthSlice = (set, get) => ({
     // --- ESTADO INICIAL ---
@@ -60,21 +76,7 @@ export const createAuthSlice = (set, get) => ({
         // --- FIN MODIFICACIÓN 2FA ---
 
         // Flujo normal si no hay 2FA o ya devolvió token
-        // MODIFICACIÓN: Extraemos 'user' además del token
-        const { token, user } = response;
-
-        localStorage.removeItem('fittrack_token');
-        localStorage.setItem('pro_fitness_token', token);
-
-        // Al establecer isAuthenticated: true, el componente MainAppLayout se montará.
-        // Guardamos userProfile inmediatamente para tener la foto y datos disponibles.
-        set({
-            token,
-            isAuthenticated: true,
-            twoFactorPending: null,
-            userProfile: user || null, // Guardamos el usuario si existe
-            sessionExpired: false // Reiniciamos por si acaso
-        });
+        completeAuthenticatedSession(set, response);
     },
 
     // Inicia sesión con Google
@@ -93,18 +95,7 @@ export const createAuthSlice = (set, get) => ({
             return;
         }
 
-        const { token, user } = response;
-
-        localStorage.removeItem('fittrack_token');
-        localStorage.setItem('pro_fitness_token', token);
-
-        set({
-            token,
-            isAuthenticated: true,
-            twoFactorPending: null,
-            userProfile: user || null,
-            sessionExpired: false
-        });
+        completeAuthenticatedSession(set, response);
     },
 
     // Inicia sesión con Discord
@@ -123,18 +114,7 @@ export const createAuthSlice = (set, get) => ({
             return;
         }
 
-        const { token, user } = response;
-
-        localStorage.removeItem('fittrack_token');
-        localStorage.setItem('pro_fitness_token', token);
-
-        set({
-            token,
-            isAuthenticated: true,
-            twoFactorPending: null,
-            userProfile: user || null,
-            sessionExpired: false
-        });
+        completeAuthenticatedSession(set, response);
     },
 
     // Inicia sesión con Facebook
@@ -153,18 +133,7 @@ export const createAuthSlice = (set, get) => ({
             return;
         }
 
-        const { token, user } = response;
-
-        localStorage.removeItem('fittrack_token');
-        localStorage.setItem('pro_fitness_token', token);
-
-        set({
-            token,
-            isAuthenticated: true,
-            twoFactorPending: null,
-            userProfile: user || null,
-            sessionExpired: false
-        });
+        completeAuthenticatedSession(set, response);
     },
 
     // Inicia sesión con X
@@ -182,18 +151,7 @@ export const createAuthSlice = (set, get) => ({
             return;
         }
 
-        const { token, user } = response;
-
-        localStorage.removeItem('fittrack_token');
-        localStorage.setItem('pro_fitness_token', token);
-
-        set({
-            token,
-            isAuthenticated: true,
-            twoFactorPending: null,
-            userProfile: user || null,
-            sessionExpired: false
-        });
+        completeAuthenticatedSession(set, response);
     },
 
     // Inicia sesión con GitHub
@@ -212,18 +170,7 @@ export const createAuthSlice = (set, get) => ({
             return;
         }
 
-        const { token, user } = response;
-
-        localStorage.removeItem('fittrack_token');
-        localStorage.setItem('pro_fitness_token', token);
-
-        set({
-            token,
-            isAuthenticated: true,
-            twoFactorPending: null,
-            userProfile: user || null,
-            sessionExpired: false
-        });
+        completeAuthenticatedSession(set, response);
     },
 
     // Inicia sesión con Spotify
@@ -241,38 +188,15 @@ export const createAuthSlice = (set, get) => ({
             return;
         }
 
-        const { token, user } = response;
-
-        localStorage.removeItem('fittrack_token');
-        localStorage.setItem('pro_fitness_token', token);
-
-        set({
-            token,
-            isAuthenticated: true,
-            twoFactorPending: null,
-            userProfile: user || null,
-            sessionExpired: false
-        });
+        completeAuthenticatedSession(set, response);
     },
 
     // --- INICIO MODIFICACIÓN 2FA ---
     // Nueva acción para completar el login con el código 2FA
     handleVerify2FA: async (verificationData) => {
         // verificationData trae { userId, token/code, method }
-        // MODIFICACIÓN: Extraemos 'user' además del token si el backend lo devuelve
-        const { token, user } = await authService.verify2FALogin(verificationData);
-
-        localStorage.removeItem('fittrack_token');
-        localStorage.setItem('pro_fitness_token', token);
-
-        // Limpiamos el estado pendiente y marcamos autenticado.
-        set({
-            token,
-            isAuthenticated: true,
-            twoFactorPending: null,
-            userProfile: user || null,
-            sessionExpired: false
-        });
+        const response = await authService.verify2FALogin(verificationData);
+        completeAuthenticatedSession(set, response);
     },
 
     // Acción para cancelar el proceso de 2FA y volver al login normal

@@ -42,12 +42,23 @@ import { MilestoneLevelUpModal } from '@/components/modals/MilestoneLevelUpModal
 
 SplashScreen.preventAutoHideAsync();
 
+// Solo exige onboarding si el perfil completo ya cargó (`goal` presente en la respuesta) y no tiene datos físicos básicos.
+const isProfileOnboardingIncomplete = (profile: any) =>
+  Boolean(
+    profile &&
+      Object.prototype.hasOwnProperty.call(profile, 'goal') &&
+      !profile.goal &&
+      profile.role !== 'trainee' &&
+      !(profile.age && profile.weight)
+  );
+
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
   const hasCheckedCardio = useRef(false);
   
   const isAuthenticated = useAppStore(state => state.isAuthenticated);
   const userProfile = useAppStore(state => state.userProfile);
+  const isStoreLoading = useAppStore(state => state.isLoading);
   const workoutLog = useAppStore(state => state.workoutLog);
   const gamificationLevel = useAppStore(state => state.gamification?.level || state.userProfile?.level || 1);
   const gamificationEvents = useAppStore(state => (state.gamification as any)?.gamificationEvents);
@@ -113,7 +124,9 @@ export default function RootLayout() {
       'mantenimiento',
     ].includes(segments[0]);
 
-    const needsOnboarding = isAuthenticated && userProfile && !userProfile.goal && userProfile.role !== 'trainee';
+    const needsOnboarding = Boolean(
+      isAuthenticated && !isStoreLoading && isProfileOnboardingIncomplete(userProfile)
+    );
 
     if (!isAuthenticated && !inLogin && !inRegister && !inForgot && !inResetPassword && !inNotFound && !inLegal && !inNews && !inShare && !inPublicUtility) {
       router.replace('/login');
@@ -133,12 +146,12 @@ export default function RootLayout() {
         }
       }
     }
-  }, [isAuthenticated, isReady, segments, userProfile]);
+  }, [isAuthenticated, isReady, isStoreLoading, segments, userProfile]);
 
   useEffect(() => {
     if (!isAuthenticated) hasCheckedCardio.current = false;
     if (!isReady || !isAuthenticated || userProfile?.id == null || hasCheckedCardio.current) return;
-    if (!userProfile.goal && userProfile.role !== 'trainee') return;
+    if (isProfileOnboardingIncomplete(userProfile)) return;
     if (segments[0] === 'login' || segments[0] === 'register' || segments[0] === 'forgot-password') return;
 
     hasCheckedCardio.current = true;
@@ -469,7 +482,7 @@ export default function RootLayout() {
     const uid = userProfile.id;
     const forceReset = Boolean((userProfile as any).force_password_reset);
     const needsVerify = userProfile.email_verified === false;
-    const needsOnboarding = !userProfile.goal && userProfile.role !== 'trainee';
+    const needsOnboarding = isProfileOnboardingIncomplete(userProfile);
     const createdRaw = (userProfile as any).created_at || (userProfile as any).createdAt;
     const createdMs = createdRaw ? new Date(createdRaw).getTime() : NaN;
     const isAccountMature = Number.isFinite(createdMs) && Date.now() - createdMs >= 24 * 60 * 60 * 1000;
@@ -522,7 +535,7 @@ export default function RootLayout() {
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
   const needsOnboarding = Boolean(
-    isAuthenticated && userProfile && !userProfile.goal && userProfile.role !== 'trainee'
+    isAuthenticated && !isStoreLoading && isProfileOnboardingIncomplete(userProfile)
   );
   const inAuthOrOnboarding =
     ['login', 'register', 'forgot-password', 'reset-password', 'onboarding'].includes(segments[0]) ||
