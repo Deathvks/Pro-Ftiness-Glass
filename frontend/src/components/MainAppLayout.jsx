@@ -1680,7 +1680,7 @@ export default function MainAppLayout({
           <AIInfoModal onClose={() => setShowAIModal(false)} />
         )}
 
-        {cookieConsent === null && (
+        {cookieConsent === null && view !== 'privacyPolicy' && (
           <CookieConsentBanner 
             onAccept={handleAcceptCookies} 
             onDecline={handleDeclineCookies} 

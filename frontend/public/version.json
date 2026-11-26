@@ -1,17 +1,17 @@
 {
-  "version": "7.16.68",
-  "releaseNotes": "Actualización v7.16.68: corregida la altura y proporción de las casillas de código 2FA y verificación en web y Capacitor.",
+  "version": "7.16.69",
+  "releaseNotes": "Actualización v7.16.69: el modal de cookies en Ajustes se abre en la vista principal (Rechazar todo, Configurar, Aceptar todo) y sale desde la parte inferior en móvil y Capacitor.",
   "welcome": {
-    "title": "Mejora visual en Verificación 2FA",
-    "subtitle": "Las casillas para introducir el código de 6 dígitos ahora mantienen su altura y proporción correcta en todos los tamaños de pantalla.",
+    "title": "Modal de Cookies Mejorado",
+    "subtitle": "El aviso de privacidad y cookies ahora aparece como hoja inferior nativa en móvil y muestra primero las tres acciones principales.",
     "features": [
       {
-        "title": "Casillas 2FA Proporcionadas",
-        "description": "Corregida la clase de altura en Tailwind v3 para que los 6 dígitos se muestren verticales y legibles en móvil y Capacitor."
+        "title": "Vista Principal al Abrir desde Ajustes",
+        "description": "Al pulsar Cookies en Ajustes se muestran directamente Rechazar todo, Configurar y Aceptar todo."
       },
       {
-        "title": "Consistencia en Setup y Email",
-        "description": "Unificada la proporción y limpieza automática tras error o cancelación en las pantallas de verificación."
+        "title": "Diseño Bottom-Sheet en Móvil y Capacitor",
+        "description": "Desliza desde abajo al ras de la pantalla con soporte para barra inferior segura."
       }
     ]
   }

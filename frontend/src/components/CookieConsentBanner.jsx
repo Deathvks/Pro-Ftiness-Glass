@@ -1,6 +1,8 @@
 /* frontend/src/components/CookieConsentBanner.jsx */
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, SlidersHorizontal, Lock, Mail, BellRing } from 'lucide-react';
+import ModalPortal from './ModalPortal';
+import useModalLock from '../hooks/useModalLock';
 import { getPushPreferences } from '../services/notificationService';
 import { PUSH_CONSENT_VERSION } from '../config/pushConsent';
 
@@ -90,13 +92,15 @@ const CookieConsentBanner = ({
   isAuthenticated = false,
   forceConfig = false,
 }) => {
+  useModalLock(true);
+
   const [showConfig, setShowConfig] = useState(Boolean(forceConfig));
   const [preferences, setPreferences] = useState(() =>
     buildInitialPreferences(userProfile, isAuthenticated)
   );
 
   useEffect(() => {
-    if (forceConfig) setShowConfig(true);
+    setShowConfig(Boolean(forceConfig));
   }, [forceConfig]);
 
   useEffect(() => {
@@ -121,9 +125,12 @@ const CookieConsentBanner = ({
   };
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-[100] p-3 sm:p-4 pb-24 md:pb-6 animate-[fade-in-up_0.5s_ease-out]">
-      <div className="max-w-4xl mx-auto max-h-[82vh] overflow-y-auto custom-scrollbar rounded-2xl shadow-lg border backdrop-blur-glass bg-[--glass-bg] border-[--glass-border] p-4 sm:p-5 md:p-6">
-        <div className="flex flex-col md:flex-row items-center gap-4 sm:gap-5 md:gap-8">
+    <ModalPortal>
+      <div className="fixed inset-0 z-[300] flex items-end justify-center p-0 sm:p-4 sm:pb-6 bg-black/55 sm:bg-black/35 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
+        <div className="relative w-full max-w-4xl mt-auto sm:mt-0 max-h-[88vh] overflow-y-auto no-scrollbar sm:custom-scrollbar rounded-t-[32px] rounded-b-none sm:rounded-[28px] shadow-2xl border-t sm:border bg-bg-primary/95 sm:bg-[--glass-bg] backdrop-blur-glass border-[--glass-border] p-5 sm:p-6 pb-[calc(1.25rem+var(--safe-bottom))] sm:pb-6 animate-[slide-up_0.3s_ease-out] sm:animate-[fade-in-up_0.35s_ease-out]">
+          {/* Drag handle visual para móvil / Capacitor */}
+          <div className="w-12 h-1.5 bg-black/15 dark:bg-white/25 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
+          <div className="flex flex-col md:flex-row items-center gap-4 sm:gap-5 md:gap-8">
 
           <div className="flex-shrink-0">
             <div className="p-3 bg-accent/10 rounded-full">
@@ -286,8 +293,9 @@ const CookieConsentBanner = ({
             </div>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 };
 
