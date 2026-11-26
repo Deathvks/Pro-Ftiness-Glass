@@ -20,6 +20,8 @@ const TAB_ITEMS = {
 };
 
 const CAPSULE_HEIGHT = 60;
+export const FLOATING_TAB_BAR_HEIGHT = CAPSULE_HEIGHT;
+export const getFloatingTabBarBottomOffset = (bottomInset = 0) => Math.max(bottomInset + 12, 20);
 const DROP_WIDTH = 48;
 const DROP_HEIGHT = 44;
 const SLIDE = { duration: 360, easing: Easing.bezier(0.22, 1, 0.36, 1) };
@@ -180,7 +182,7 @@ export function FloatingLiquidGlassTabBar({ state, emitter, navigateToTab, inset
   }));
 
   return (
-    <View style={[styles.wrapper, { bottom: Math.max(insets.bottom, 12) }]} pointerEvents="box-none">
+    <View style={[styles.wrapper, { bottom: getFloatingTabBarBottomOffset(insets.bottom) }]} pointerEvents="box-none">
       <GestureDetector gesture={pan}>
         <View style={[styles.capsule, { backgroundColor: capsuleBackground, borderColor: theme.border }]}>
           <View style={styles.tabRow} onLayout={event => setWidth(event.nativeEvent.layout.width)}>

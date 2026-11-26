@@ -18,6 +18,10 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getThemeBaseBackground, getThemeSurfaceMode } from '@/constants/theme';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import {
+  FLOATING_TAB_BAR_HEIGHT,
+  getFloatingTabBarBottomOffset,
+} from '@/components/FloatingLiquidGlassTabBar';
 
 const HIDDEN_PATH_PREFIXES = [
   '/workout',
@@ -119,7 +123,7 @@ export function FloatingActiveWorkoutBar() {
 
   const bottomOffset = isInTabs
     ? Platform.OS === 'android'
-      ? Math.max(insets.bottom, 12) + 60 + 10
+      ? getFloatingTabBarBottomOffset(insets.bottom) + FLOATING_TAB_BAR_HEIGHT + 10
       : insets.bottom + 62
     : Math.max(insets.bottom, 16) + 8;
 
