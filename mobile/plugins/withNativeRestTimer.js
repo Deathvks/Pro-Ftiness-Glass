@@ -42,15 +42,12 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import androidx.core.app.NotificationCompat;
@@ -62,9 +59,10 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import java.util.Locale;
 
 public class NativeTimerModule extends ReactContextBaseJavaModule {
-    public static final String CHANNEL_ID = "native_timer_channel_v17";
+    public static final String CHANNEL_ID = "native_timer_channel_v18";
     public static final String COMPLETE_CHANNEL_ID = "native_timer_complete_v2";
     public static final String ACTION_ADD_15 = "${pkg}.ACTION_ADD_15";
     public static final String ACTION_ADD_TIME = "${pkg}.ACTION_ADD_TIME";
@@ -77,8 +75,10 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
     private static final String EXTRA_SKIPPED_END_TIME = "skippedEndTimeMs";
     private static final long MAX_ALERT_DELAY_MS = 60_000;
 
-    private static final String DEFAULT_TITLE = "Descanso entre series";
+    private static final String DEFAULT_SUBTITLE = "Siguiente serie lista";
     private static final int DEFAULT_COLOR = Color.parseColor("#22C55E");
+    private static final Handler TICK_HANDLER = new Handler(Looper.getMainLooper());
+    private static Runnable activeTickRunnable;
     private static ReactApplicationContext activeReactContext;
 
     public NativeTimerModule(ReactApplicationContext reactContext) {
@@ -113,10 +113,24 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         }
 
         long endTimeMs = (long) options.getDouble("endTimeMs");
-        String title = options.hasKey("title") && !options.isNull("title")
-                ? options.getString("title")
-                : DEFAULT_TITLE;
-        if (title == null || title.trim().isEmpty()) title = DEFAULT_TITLE;
+        int totalSeconds = options.hasKey("totalSeconds") && !options.isNull("totalSeconds")
+                ? Math.max(1, options.getInt("totalSeconds"))
+                : Math.max(1, (int) Math.ceil(Math.max(1000L, endTimeMs - System.currentTimeMillis()) / 1000.0));
+
+        String subtitle = options.hasKey("subtitle") && !options.isNull("subtitle")
+                ? options.getString("subtitle")
+                : null;
+        if (subtitle == null || subtitle.trim().isEmpty()) {
+            subtitle = DEFAULT_SUBTITLE;
+        } else {
+            subtitle = subtitle.trim();
+        }
+
+        String detail = options.hasKey("detail") && !options.isNull("detail")
+                ? options.getString("detail")
+                : "";
+        if (detail == null) detail = "";
+        detail = detail.trim();
 
         String colorStr = options.hasKey("color") && !options.isNull("color")
                 ? options.getString("color")
@@ -131,7 +145,7 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         boolean sound = !options.hasKey("sound") || options.getBoolean("sound");
         boolean vibrate = !options.hasKey("vibrate") || options.getBoolean("vibrate");
 
-        startTimerInternal(getReactApplicationContext(), title, endTimeMs, accentColor, sound, vibrate);
+        startTimerInternal(getReactApplicationContext(), subtitle, detail, endTimeMs, totalSeconds, accentColor, sound, vibrate);
         promise.resolve(null);
     }
 
@@ -167,38 +181,67 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         } catch (Exception ignored) {}
     }
 
-    private static synchronized void startTimerInternal(Context context, String title, long endTimeMs, int accentColor,
-                                                        boolean sound, boolean vibrate) {
+    private static void stopTicking() {
+        if (activeTickRunnable != null) {
+            TICK_HANDLER.removeCallbacks(activeTickRunnable);
+            activeTickRunnable = null;
+        }
+    }
+
+    private static synchronized void startTimerInternal(Context context, String subtitle, String detail, long endTimeMs,
+                                                        int totalSeconds, int accentColor, boolean sound, boolean vibrate) {
         if (context == null) return;
-        timerState(context).edit()
+        Context appCtx = context.getApplicationContext();
+        if (appCtx == null) appCtx = context;
+        stopTicking();
+
+        int safeTotal = Math.max(1, totalSeconds);
+        String safeSubtitle = (subtitle != null && !subtitle.trim().isEmpty()) ? subtitle.trim() : DEFAULT_SUBTITLE;
+        String safeDetail = detail != null ? detail.trim() : "";
+
+        timerState(appCtx).edit()
                 .putLong(EXTRA_END_TIME, endTimeMs)
                 .remove(EXTRA_SKIPPED_END_TIME)
-                .putString("title", title)
+                .putString("subtitle", safeSubtitle)
+                .putString("detail", safeDetail)
+                .putInt("totalSeconds", safeTotal)
                 .putInt("color", accentColor)
                 .putBoolean("sound", sound)
                 .putBoolean("vibrate", vibrate)
                 .apply();
 
-        NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationManager manager = (NotificationManager) appCtx.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager == null) return;
 
-        createNotificationChannels(context, manager);
+        createNotificationChannels(appCtx, manager);
 
-        int appIconId = context.getApplicationInfo().icon;
-        int smallIconId = context.getResources().getIdentifier("ic_notification", "drawable", context.getPackageName());
-        if (smallIconId == 0) smallIconId = appIconId;
-
-        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+        Intent launchIntent = appCtx.getPackageManager().getLaunchIntentForPackage(appCtx.getPackageName());
         int pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) pendingFlags |= PendingIntent.FLAG_IMMUTABLE;
         PendingIntent contentPendingIntent = null;
         if (launchIntent != null) {
             launchIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            contentPendingIntent = PendingIntent.getActivity(context, 0, launchIntent, pendingFlags);
+            contentPendingIntent = PendingIntent.getActivity(appCtx, 0, launchIntent, pendingFlags);
         }
 
-        scheduleCompletionAlarm(context, endTimeMs, contentPendingIntent);
+        scheduleCompletionAlarm(appCtx, endTimeMs, contentPendingIntent);
         manager.cancel(COMPLETE_NOTIFICATION_ID);
+
+        postActiveNotification(appCtx, manager, safeSubtitle, safeDetail, endTimeMs, safeTotal, accentColor, contentPendingIntent);
+        scheduleNextTick(appCtx, endTimeMs);
+    }
+
+    private static void postActiveNotification(Context context, NotificationManager manager, String subtitle, String detail,
+                                               long endTimeMs, int totalSeconds, int accentColor, PendingIntent contentPendingIntent) {
+        long remainingMs = endTimeMs - System.currentTimeMillis();
+        if (remainingMs <= 0L) return;
+
+        int appIconId = context.getApplicationInfo().icon;
+        int smallIconId = context.getResources().getIdentifier("ic_notification", "drawable", context.getPackageName());
+        if (smallIconId == 0) smallIconId = appIconId;
+
+        int pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) pendingFlags |= PendingIntent.FLAG_IMMUTABLE;
 
         Intent add15Intent = new Intent(context, NativeTimerActionReceiver.class);
         add15Intent.setAction(ACTION_ADD_15);
@@ -212,35 +255,26 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         skipIntent.setAction(ACTION_SKIP);
         PendingIntent skipPendingIntent = PendingIntent.getBroadcast(context, 102, skipIntent, pendingFlags);
 
-        String safeTitle = title.length() > 36 ? title.substring(0, 35) + "…" : title;
-        long remainingMs = Math.max(0L, endTimeMs - System.currentTimeMillis());
-        long totalSeconds = Math.max(1L, (remainingMs + 999L) / 1000L);
-        long mins = totalSeconds / 60L;
-        long secs = totalSeconds % 60L;
-        String durationLabel = String.format(java.util.Locale.getDefault(), "%d:%02d", mins, secs);
-        String finishClock = android.text.format.DateFormat.getTimeFormat(context).format(new java.util.Date(endTimeMs));
-        String collapsedText = "Descanso " + durationLabel + " · Termina " + finishClock;
-        String expandedText = "Tiempo programado: " + durationLabel + " (hasta las " + finishClock + ").\\n"
-                + "Amplía el descanso con +15s / +30s o pulsa Saltar para seguir entrenando.";
+        long remainingSec = Math.max(1L, (remainingMs + 999L) / 1000L);
+        long mins = remainingSec / 60L;
+        long secs = remainingSec % 60L;
+        String countdownLabel = String.format(Locale.US, "%d:%02d", mins, secs);
+        int progressMax = Math.max(totalSeconds, (int) remainingSec);
+        int progressValue = (int) Math.min(progressMax, remainingSec);
 
-        NotificationCompat.BigTextStyle expandedStyle = new NotificationCompat.BigTextStyle()
-                .setBigContentTitle(safeTitle)
-                .bigText(expandedText)
-                .setSummaryText("Toca para volver");
-
-        // Cronómetro nativo sin subText ni largeIcon para evitar recortes horizontales y permitir expansión completa
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(smallIconId)
                 .setColor(accentColor)
-                .setContentTitle(safeTitle)
-                .setContentText(collapsedText)
-                .setStyle(expandedStyle)
+                .setContentTitle("Descanso · " + countdownLabel)
+                .setContentText(subtitle)
+                .setProgress(progressMax, progressValue, false)
                 .setWhen(endTimeMs)
                 .setShowWhen(true)
                 .setUsesChronometer(true)
                 .setChronometerCountDown(true)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
+                .setSilent(true)
                 .setLocalOnly(true)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
@@ -248,6 +282,10 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
                 .addAction(0, "+15s", add15PendingIntent)
                 .addAction(0, "+30s", addTimePendingIntent)
                 .addAction(0, "Saltar", skipPendingIntent);
+
+        if (detail != null && !detail.isEmpty()) {
+            builder.setSubText(detail);
+        }
 
         if (contentPendingIntent != null) {
             builder.setContentIntent(contentPendingIntent);
@@ -260,11 +298,64 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         }
     }
 
+    private static void scheduleNextTick(final Context appCtx, final long targetEndTimeMs) {
+        long now = System.currentTimeMillis();
+        long remainingMs = targetEndTimeMs - now;
+        if (remainingMs <= 0L) return;
+
+        long mod = remainingMs % 1000L;
+        long delayMs = Math.max(250L, (mod == 0L ? 1000L : mod) + 20L);
+
+        activeTickRunnable = new Runnable() {
+            @Override
+            public void run() {
+                SharedPreferences state = timerState(appCtx);
+                long currentEnd = state.getLong(EXTRA_END_TIME, 0L);
+                if (currentEnd == 0L || currentEnd != targetEndTimeMs) return;
+
+                long currentNow = System.currentTimeMillis();
+                if (currentNow >= currentEnd) {
+                    handleCompleteFromBroadcast(appCtx, currentEnd);
+                    return;
+                }
+
+                NotificationManager manager = (NotificationManager) appCtx.getSystemService(Context.NOTIFICATION_SERVICE);
+                if (manager != null) {
+                    Intent launchIntent = appCtx.getPackageManager().getLaunchIntentForPackage(appCtx.getPackageName());
+                    int pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) pendingFlags |= PendingIntent.FLAG_IMMUTABLE;
+                    PendingIntent contentPendingIntent = null;
+                    if (launchIntent != null) {
+                        launchIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        contentPendingIntent = PendingIntent.getActivity(appCtx, 0, launchIntent, pendingFlags);
+                    }
+
+                    postActiveNotification(
+                            appCtx,
+                            manager,
+                            state.getString("subtitle", DEFAULT_SUBTITLE),
+                            state.getString("detail", ""),
+                            currentEnd,
+                            Math.max(1, state.getInt("totalSeconds", 90)),
+                            state.getInt("color", DEFAULT_COLOR),
+                            contentPendingIntent
+                    );
+                }
+
+                scheduleNextTick(appCtx, targetEndTimeMs);
+            }
+        };
+        TICK_HANDLER.postDelayed(activeTickRunnable, delayMs);
+    }
+
     private static synchronized void stopTimerInternal(Context context, long skippedEndTimeMs) {
+        stopTicking();
         if (context == null) return;
         SharedPreferences.Editor editor = timerState(context).edit()
                 .remove(EXTRA_END_TIME)
-                .remove("title")
+                .remove("subtitle")
+                .remove("detail")
+                .remove("totalSeconds")
                 .remove("color")
                 .remove("sound")
                 .remove("vibrate");
@@ -292,12 +383,17 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         SharedPreferences state = timerState(context);
         long endTimeMs = state.getLong(EXTRA_END_TIME, 0L);
         if (endTimeMs == 0) return;
-        long newEndTimeMs = Math.max(endTimeMs, System.currentTimeMillis()) + seconds * 1000L;
+        long now = System.currentTimeMillis();
+        long newEndTimeMs = Math.max(endTimeMs, now) + seconds * 1000L;
+        int prevTotal = Math.max(1, state.getInt("totalSeconds", 90));
+        int newTotal = Math.max(prevTotal, (int) Math.ceil((newEndTimeMs - now) / 1000.0));
 
         startTimerInternal(
                 context,
-                state.getString("title", DEFAULT_TITLE),
+                state.getString("subtitle", DEFAULT_SUBTITLE),
+                state.getString("detail", ""),
                 newEndTimeMs,
+                newTotal,
                 state.getInt("color", DEFAULT_COLOR),
                 state.getBoolean("sound", true),
                 state.getBoolean("vibrate", true)
@@ -331,10 +427,11 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         boolean sound = state.getBoolean("sound", true);
         boolean vibrate = state.getBoolean("vibrate", true);
         int color = state.getInt("color", DEFAULT_COLOR);
+        String subtitle = state.getString("subtitle", "");
         stopTimerInternal(context, endTimeMs);
 
         if (now - endTimeMs <= MAX_ALERT_DELAY_MS) {
-            publishCompletion(context, manager, sound, vibrate, color);
+            publishCompletion(context, manager, sound, vibrate, color, subtitle);
         }
 
         WritableMap payload = Arguments.createMap();
@@ -343,7 +440,7 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
         emitTimerAction(payload);
     }
 
-    private static void publishCompletion(Context context, NotificationManager manager, boolean sound, boolean vibrate, int color) {
+    private static void publishCompletion(Context context, NotificationManager manager, boolean sound, boolean vibrate, int color, String subtitle) {
         boolean customFeedback = !sound || !vibrate || manager == null
                 || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && !manager.areNotificationsEnabled());
 
@@ -382,11 +479,15 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) pendingFlags |= PendingIntent.FLAG_IMMUTABLE;
             PendingIntent contentPendingIntent = PendingIntent.getActivity(context, 0, launchIntent, pendingFlags);
 
+            String completeBody = (subtitle != null && subtitle.startsWith("Siguiente: ") && subtitle.length() > 11)
+                    ? "Toca " + subtitle.substring(11) + ". ¡A por todas!"
+                    : "Es hora de tu siguiente serie. ¡A por todas!";
+
             NotificationCompat.Builder completeBuilder = new NotificationCompat.Builder(context, COMPLETE_CHANNEL_ID)
                     .setSmallIcon(smallIconId)
                     .setColor(color)
                     .setContentTitle("¡Descanso terminado! 💪")
-                    .setContentText("Es hora de tu siguiente serie. ¡A por todas!")
+                    .setContentText(completeBody)
                     .setPriority(NotificationCompat.PRIORITY_MAX)
                     .setCategory(NotificationCompat.CATEGORY_ALARM)
                     .setDefaults(NotificationCompat.DEFAULT_SOUND)
@@ -453,7 +554,7 @@ public class NativeTimerModule extends ReactContextBaseJavaModule {
             activeChannel.setDescription("Cuenta atrás del descanso entre series con botones rápidos");
             activeChannel.enableVibration(false);
             activeChannel.setSound(null, null);
-            activeChannel.setShowBadge(true);
+            activeChannel.setShowBadge(false);
             activeChannel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
             manager.createNotificationChannel(activeChannel);
 

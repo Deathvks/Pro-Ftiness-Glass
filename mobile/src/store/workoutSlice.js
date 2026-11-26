@@ -6,6 +6,7 @@ import {
   presentInstantNotification,
 } from '../services/nativeNotifications';
 import {
+  buildNativeRestTimerOptions,
   startNativeRestTimer,
   stopNativeRestTimer,
 } from '../services/nativeRestTimer';
@@ -20,30 +21,7 @@ const stopNativeTimer = () => {
 const launchNativeTimer = (endTimeMs, get) => {
   if (AppState?.currentState === 'active') return;
   const state = get();
-  const routineName = state.activeWorkout?.routineName;
-  void startNativeRestTimer(endTimeMs, {
-    title: routineName ? `Descanso · ${routineName}` : 'Descanso entre series',
-    color: getAccentColor(),
-    sound: state.restSoundEnabled ?? true,
-    vibrate: state.hapticsEnabled ?? true,
-    userId: state.userProfile?.id,
-  });
-};
-
-const getAccentColor = () => {
-  try {
-    const accent = (typeof localStorage !== 'undefined' ? localStorage.getItem('accent') : null) || 'green';
-    const colors = {
-      green: '#22c55e', blue: '#3b82f6', violet: '#8b5cf6', amber: '#f59e0b',
-      rose: '#f43f5e', teal: '#14b8a6', cyan: '#06b6d4', orange: '#f97316',
-      lime: '#84cc16', fuchsia: '#d946ef', emerald: '#10b981', indigo: '#6366f1',
-      purple: '#a855f7', pink: '#ec4899', red: '#ef4444', yellow: '#eab308',
-      sky: '#0ea5e9', slate: '#64748b', zinc: '#71717a', stone: '#78716c', neutral: '#737373'
-    };
-    return colors[accent] || '#22c55e';
-  } catch (e) {
-    return '#22c55e';
-  }
+  void startNativeRestTimer(endTimeMs, buildNativeRestTimerOptions(state, endTimeMs));
 };
 
 // stopNativeTimer original eliminado
