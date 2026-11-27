@@ -203,7 +203,7 @@ export default function RewardsModal({ isOpen, onClose }) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary leading-tight">Recompensas</h2>
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-accent/15 text-accent text-[10px] font-black uppercase tracking-wider">
-                    <FaBolt size={10} /> +1.000 XP / amigo
+                    <FaBolt size={10} /> +1.000 XP para ambos
                   </span>
                 </div>
               </div>
@@ -220,7 +220,7 @@ export default function RewardsModal({ isOpen, onClose }) {
 
           <div className="overflow-y-auto hide-scrollbar space-y-4 pr-0.5 flex-1 relative z-10">
             <p className="text-text-secondary text-xs sm:text-sm leading-relaxed">
-              Cada amigo que se registre con tu enlace te suma <strong className="text-text-primary">+1.000 XP</strong> al instante y desbloquea estos temas inmersivos Liquid Glass.
+              Cada amigo que se registre con tu enlace os suma <strong className="text-text-primary">+1.000 XP a los dos</strong> al instante y desbloquea estos temas inmersivos Liquid Glass.
             </p>
 
             {/* Contador de Invitados */}

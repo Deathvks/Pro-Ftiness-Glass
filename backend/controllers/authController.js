@@ -35,6 +35,23 @@ const resolveReferral = async (code) => {
   }
 };
 
+const linkReferrerIfEligible = (user, referrerId) => {
+  if (!user || user.referred_by || !referrerId) return false;
+  if (Number(referrerId) === Number(user.id)) return false;
+  user.referred_by = referrerId;
+  return true;
+};
+
+const awardMutualReferralBonus = async (user) => {
+  if (!user?.referred_by || !user?.id) return;
+  try {
+    const { grantMutualReferralBonus } = await import('../services/challengeService.js');
+    await grantMutualReferralBonus(user.referred_by, user);
+  } catch (err) {
+    console.error("Error otorgando bono mutuo por referido:", err);
+  }
+};
+
 // --- HELPER PARA CREAR O ACTUALIZAR SESIÓN ---
 const createUserSession = async (userId, token, req) => {
   try {
@@ -297,6 +314,7 @@ export const googleLogin = async (req, res, next) => {
     
     // Resolvemos el referido independientemente de si el usuario ya existía o no
     const referred_by = await resolveReferral(referralCode);
+    let shouldGrantReferralBonus = false;
 
     if (user) {
       if (!user.google_id) {
@@ -319,14 +337,15 @@ export const googleLogin = async (req, res, next) => {
       }
       
       // Si el usuario existía pero NO tenía referidor asignado, se lo asignamos ahora
-      if (!user.referred_by && referred_by) {
-        user.referred_by = referred_by;
+      if (linkReferrerIfEligible(user, referred_by)) {
         updated = true;
+        shouldGrantReferralBonus = true;
       }
 
       if (updated) await user.save();
 
       if (user.two_factor_enabled) {
+        if (shouldGrantReferralBonus) await awardMutualReferralBonus(user);
         if (user.two_factor_method === 'email') {
           const code = generateVerificationCode();
           try {
@@ -362,6 +381,7 @@ export const googleLogin = async (req, res, next) => {
         role: 'user',
         referred_by
       });
+      if (user.referred_by) shouldGrantReferralBonus = true;
 
       createNotification(user.id, {
         type: 'success',
@@ -394,6 +414,7 @@ export const googleLogin = async (req, res, next) => {
 
     await createUserSession(user.id, appToken, req);
     await handleDailyLoginGamification(user);
+    if (shouldGrantReferralBonus) await awardMutualReferralBonus(user);
 
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
     if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
@@ -461,6 +482,7 @@ export const discordLogin = async (req, res, next) => {
     
     // Resolvemos el referido independientemente
     const referred_by = await resolveReferral(referralCode);
+    let shouldGrantReferralBonus = false;
 
     if (user) {
       if (!user.discord_id) return res.status(409).json({ error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.' });
@@ -481,14 +503,15 @@ export const discordLogin = async (req, res, next) => {
       }
       
       // Inyección de referido si aplica
-      if (!user.referred_by && referred_by) {
-        user.referred_by = referred_by;
+      if (linkReferrerIfEligible(user, referred_by)) {
         updated = true;
+        shouldGrantReferralBonus = true;
       }
 
       if (updated) await user.save();
 
       if (user.two_factor_enabled) {
+        if (shouldGrantReferralBonus) await awardMutualReferralBonus(user);
         if (user.two_factor_method === 'email') {
           const code = generateVerificationCode();
           try { await sendVerificationEmail(user.email, code); } catch (e) {}
@@ -523,6 +546,7 @@ export const discordLogin = async (req, res, next) => {
         role: 'user',
         referred_by
       });
+      if (user.referred_by) shouldGrantReferralBonus = true;
 
       createNotification(user.id, {
         type: 'success',
@@ -555,6 +579,7 @@ export const discordLogin = async (req, res, next) => {
 
     await createUserSession(user.id, appToken, req);
     await handleDailyLoginGamification(user);
+    if (shouldGrantReferralBonus) await awardMutualReferralBonus(user);
 
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
     if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
@@ -618,6 +643,7 @@ export const facebookLogin = async (req, res, next) => {
 
     let user = await User.findOne({ where: { email } });
     const referred_by = await resolveReferral(referralCode);
+    let shouldGrantReferralBonus = false;
 
     if (user) {
       if (!user.facebook_id) return res.status(409).json({ error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.' });
@@ -637,14 +663,15 @@ export const facebookLogin = async (req, res, next) => {
         }
       }
       
-      if (!user.referred_by && referred_by) {
-        user.referred_by = referred_by;
+      if (linkReferrerIfEligible(user, referred_by)) {
         updated = true;
+        shouldGrantReferralBonus = true;
       }
 
       if (updated) await user.save();
 
       if (user.two_factor_enabled) {
+        if (shouldGrantReferralBonus) await awardMutualReferralBonus(user);
         if (user.two_factor_method === 'email') {
           const code = generateVerificationCode();
           try { await sendVerificationEmail(user.email, code); } catch (e) {}
@@ -679,6 +706,7 @@ export const facebookLogin = async (req, res, next) => {
         role: 'user',
         referred_by
       });
+      if (user.referred_by) shouldGrantReferralBonus = true;
 
       createNotification(user.id, {
         type: 'success',
@@ -711,6 +739,7 @@ export const facebookLogin = async (req, res, next) => {
 
     await createUserSession(user.id, appToken, req);
     await handleDailyLoginGamification(user);
+    if (shouldGrantReferralBonus) await awardMutualReferralBonus(user);
 
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
     if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
@@ -797,6 +826,7 @@ export const xLogin = async (req, res, next) => {
     if (!user) user = await User.findOne({ where: { email } });
     
     const referred_by = await resolveReferral(referralCode);
+    let shouldGrantReferralBonus = false;
 
     if (user) {
       if (!user.x_id) {
@@ -818,15 +848,16 @@ export const xLogin = async (req, res, next) => {
         }
       }
       
-      if (!user.referred_by && referred_by) {
-        user.referred_by = referred_by;
+      if (linkReferrerIfEligible(user, referred_by)) {
         updated = true;
+        shouldGrantReferralBonus = true;
       }
 
       // IMPORTANTE: Para guardar x_id o referidos u otras cosas.
       await user.save();
 
       if (user.two_factor_enabled) {
+        if (shouldGrantReferralBonus) await awardMutualReferralBonus(user);
         if (user.two_factor_method === 'email') {
           const codeStr = generateVerificationCode();
           try { await sendVerificationEmail(user.email, codeStr); } catch (e) {}
@@ -860,6 +891,7 @@ export const xLogin = async (req, res, next) => {
         role: 'user',
         referred_by
       });
+      if (user.referred_by) shouldGrantReferralBonus = true;
 
       createNotification(user.id, {
         type: 'success',
@@ -892,6 +924,7 @@ export const xLogin = async (req, res, next) => {
 
     await createUserSession(user.id, appToken, req);
     await handleDailyLoginGamification(user);
+    if (shouldGrantReferralBonus) await awardMutualReferralBonus(user);
 
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
     if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
@@ -1000,6 +1033,7 @@ export const githubLogin = async (req, res, next) => {
 
     let user = await User.findOne({ where: { email } });
     const referred_by = await resolveReferral(referralCode);
+    let shouldGrantReferralBonus = false;
 
     if (user) {
       if (!user.github_id) return res.status(409).json({ error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.' });
@@ -1019,14 +1053,15 @@ export const githubLogin = async (req, res, next) => {
         }
       }
       
-      if (!user.referred_by && referred_by) {
-        user.referred_by = referred_by;
+      if (linkReferrerIfEligible(user, referred_by)) {
         updated = true;
+        shouldGrantReferralBonus = true;
       }
 
       if (updated) await user.save();
 
       if (user.two_factor_enabled) {
+        if (shouldGrantReferralBonus) await awardMutualReferralBonus(user);
         if (user.two_factor_method === 'email') {
           const codeStr = generateVerificationCode();
           try { await sendVerificationEmail(user.email, codeStr); } catch (e) {}
@@ -1060,6 +1095,7 @@ export const githubLogin = async (req, res, next) => {
         role: 'user',
         referred_by
       });
+      if (user.referred_by) shouldGrantReferralBonus = true;
 
       createNotification(user.id, {
         type: 'success',
@@ -1092,6 +1128,7 @@ export const githubLogin = async (req, res, next) => {
 
     await createUserSession(user.id, appToken, req);
     await handleDailyLoginGamification(user);
+    if (shouldGrantReferralBonus) await awardMutualReferralBonus(user);
 
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
     if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
@@ -1180,6 +1217,7 @@ export const spotifyLogin = async (req, res, next) => {
 
     let user = await User.findOne({ where: { email } });
     const referred_by = await resolveReferral(referralCode);
+    let shouldGrantReferralBonus = false;
 
     if (user) {
       if (!user.spotify_id) return res.status(409).json({ error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.' });
@@ -1199,14 +1237,15 @@ export const spotifyLogin = async (req, res, next) => {
         }
       }
       
-      if (!user.referred_by && referred_by) {
-        user.referred_by = referred_by;
+      if (linkReferrerIfEligible(user, referred_by)) {
         updated = true;
+        shouldGrantReferralBonus = true;
       }
 
       if (updated) await user.save();
 
       if (user.two_factor_enabled) {
+        if (shouldGrantReferralBonus) await awardMutualReferralBonus(user);
         if (user.two_factor_method === 'email') {
           const codeStr = generateVerificationCode();
           try { await sendVerificationEmail(user.email, codeStr); } catch (e) {}
@@ -1240,6 +1279,7 @@ export const spotifyLogin = async (req, res, next) => {
         role: 'user',
         referred_by
       });
+      if (user.referred_by) shouldGrantReferralBonus = true;
 
       createNotification(user.id, {
         type: 'success',
@@ -1272,6 +1312,7 @@ export const spotifyLogin = async (req, res, next) => {
 
     await createUserSession(user.id, appToken, req);
     await handleDailyLoginGamification(user);
+    if (shouldGrantReferralBonus) await awardMutualReferralBonus(user);
 
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
     if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
@@ -1374,7 +1415,10 @@ export const register = async (req, res, next) => {
             email_coaching_consent: false
           }, 'registration', transaction);
         }
-        await user.update({ ...account, referred_by: user.referred_by || referred_by }, { transaction });
+        await user.update({
+          ...account,
+          referred_by: user.referred_by || (referred_by && Number(referred_by) !== Number(user.id) ? referred_by : null)
+        }, { transaction });
       } else {
         user = await User.create({ ...account, referred_by }, { transaction });
       }
@@ -1467,17 +1511,9 @@ export const verifyEmail = async (req, res, next) => {
     await createUserSession(user.id, token, req);
     await handleDailyLoginGamification(user);
 
-    // Otorgar XP al referidor si existe
-    if (user.referred_by) {
-      try {
-        const { grantInfiniteChallengeXp } = await import('../services/challengeService.js');
-        await grantInfiniteChallengeXp(user.referred_by, 'Invitar a un amigo', 1000, {
-          notificationType: 'referral_success',
-          friendName: user.name || user.email.split('@')[0]
-        });
-      } catch (err) {
-        console.error("Error otorgando XP por referido:", err);
-      }
+    // Otorgar XP mutuo (+1.000 XP para referidor e invitado) si existe referido y es verificación inicial
+    if (user.referred_by && !isPendingUpdate) {
+      await awardMutualReferralBonus(user);
     }
 
     createNotification(user.id, {

@@ -711,10 +711,15 @@ export default function MainAppLayout({
 
   useEffect(() => {
     if (notifications.length > 0) {
-      const unreadReferrals = notifications.filter(n => !n.is_read && n.type === 'referral_success');
+      const unreadReferrals = notifications.filter(
+        n => !n.is_read && (n.type === 'referral_success' || n.type === 'referral_welcome')
+      );
       if (unreadReferrals.length > 0) {
         unreadReferrals.forEach(n => {
-          useAppStore.getState().addReferralAnimation({ friendName: n.data?.friendName || 'Tu amigo' });
+          useAppStore.getState().addReferralAnimation({
+            friendName: n.data?.friendName || n.data?.inviterName || 'Tu amigo',
+            isWelcome: n.type === 'referral_welcome',
+          });
           useAppStore.getState().markNotificationAsRead(n.id);
         });
       }
@@ -1257,8 +1262,11 @@ export default function MainAppLayout({
     
     let activeSocket = null;
     const handleGamificationEvent = async (data) => {
-      if (data.type === 'referral_success') {
-        useAppStore.getState().addReferralAnimation(data);
+      if (data.type === 'referral_success' || data.type === 'referral_welcome') {
+        useAppStore.getState().addReferralAnimation({
+          ...data,
+          isWelcome: data.type === 'referral_welcome',
+        });
       } else if (data.type === 'level_up') {
           let extraStr = '';
           if (data.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
@@ -1273,7 +1281,7 @@ export default function MainAppLayout({
         }
       }
       
-      if (data.type === 'challenge_completed' || data.type === 'referral_success') {
+      if (data.type === 'challenge_completed' || data.type === 'referral_success' || data.type === 'referral_welcome') {
         try {
           const profileData = await userService.getMyProfile();
           if (profileData && setGamificationData) {

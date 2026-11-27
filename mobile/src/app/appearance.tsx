@@ -548,7 +548,7 @@ export default function AppearanceScreen() {
                   )}
                 </View>
                 <Text style={[styles.myThemesSubtitle, { color: colors.textSecondary }]}>
-                  {isMyThemesOpen ? 'Toca para solapar' : '3 temas exclusivos · +1.000 XP por amigo'}
+                  {isMyThemesOpen ? 'Toca para solapar' : '3 temas exclusivos · +1.000 XP c/u'}
                 </Text>
               </View>
             </View>
@@ -585,11 +585,11 @@ export default function AppearanceScreen() {
                       </Text>
                       <View style={[styles.referralXpPill, { backgroundColor: colors.tint + '24' }]}>
                         <FontAwesome5 name="bolt" size={9} color={colors.tint} />
-                        <Text style={[styles.referralXpPillText, { color: colors.tint }]}>+1.000 XP / amigo</Text>
+                        <Text style={[styles.referralXpPillText, { color: colors.tint }]}>+1.000 XP para ambos</Text>
                       </View>
                     </View>
                     <Text style={[styles.referralShowcaseDesc, { color: colors.textSecondary }]}>
-                      Invita a amigos con tu enlace: ganas 1.000 XP al instante por cada registro y desbloqueas estos temas Liquid Glass ({referralCount} {referralCount === 1 ? 'amigo' : 'amigos'}).
+                      Invita a amigos con tu enlace: ganáis 1.000 XP cada uno al instante y desbloqueas estos temas Liquid Glass ({referralCount} {referralCount === 1 ? 'amigo' : 'amigos'}).
                     </Text>
                   </View>
                 </View>

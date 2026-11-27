@@ -932,7 +932,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false, showRe
                         ¿Invitas a alguien a entrenar contigo?
                       </p>
                       <p className="text-[11px] text-text-secondary leading-snug mt-0.5">
-                        Gana <strong>+1.000 XP</strong> y desbloquea los temas Galaxia, Desierto y Océano.
+                        Ganad <strong>+1.000 XP cada uno</strong> y desbloquea los temas Galaxia, Desierto y Océano.
                       </p>
                     </div>
                   </div>

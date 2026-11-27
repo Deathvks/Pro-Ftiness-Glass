@@ -1,7 +1,11 @@
 import models from '../models/index.js';
 import { addXp } from './gamificationService.js';
 
-const { User, UserChallenge, sequelize } = models;
+const { User, UserChallenge, XpLog, sequelize } = models;
+
+const REFERRAL_INVITER_XP = 1000;
+const REFERRAL_INVITED_XP = 1000;
+const REFERRAL_WELCOME_REASON = 'Bono de bienvenida por invitación';
 
 // Definición de retos
 export const CHALLENGES = {
@@ -230,6 +234,90 @@ export const grantInfiniteChallengeXp = async (userId, title, xp, opts = {}) => 
     }
 
     return xpResult;
+};
+
+/**
+ * Otorga +1.000 XP tanto al usuario que invita como al nuevo invitado de forma idempotente.
+ */
+export const grantMutualReferralBonus = async (referrerId, invitedUser) => {
+    if (!referrerId || !invitedUser?.id) return null;
+    if (Number(referrerId) === Number(invitedUser.id)) return null;
+
+    try {
+        const alreadyRewarded = await XpLog.findOne({
+            where: { user_id: invitedUser.id, reason: REFERRAL_WELCOME_REASON },
+            attributes: ['id']
+        });
+        if (alreadyRewarded) return { alreadyRewarded: true };
+
+        const referrer = await User.findByPk(referrerId, {
+            attributes: ['id', 'username', 'name']
+        });
+        if (!referrer) return null;
+
+        const friendName =
+            invitedUser.name ||
+            invitedUser.username ||
+            invitedUser.email?.split('@')[0] ||
+            'Tu amigo';
+
+        const inviterXpResult = await grantInfiniteChallengeXp(
+            referrer.id,
+            'Invitar a un amigo',
+            REFERRAL_INVITER_XP,
+            {
+                notificationType: 'referral_success',
+                friendName
+            }
+        );
+
+        const inviterName = referrer.username || referrer.name || 'tu amigo';
+        const invitedXpResult = await addXp(
+            invitedUser.id,
+            REFERRAL_INVITED_XP,
+            REFERRAL_WELCOME_REASON
+        );
+
+        try {
+            const { createNotification } = await import('./notificationService.js');
+            await createNotification(invitedUser.id, {
+                type: 'referral_welcome',
+                title: '¡Bono de Bienvenida!',
+                message: `Te has unido con la invitación de ${inviterName} y ambos ganáis +${REFERRAL_INVITED_XP} XP.`,
+                data: {
+                    type: 'referral_welcome',
+                    inviterName,
+                    friendName: inviterName,
+                    xp: REFERRAL_INVITED_XP
+                }
+            });
+        } catch (notifErr) {
+            console.error('Error enviando notificación de bienvenida por referido:', notifErr);
+        }
+
+        try {
+            const { io } = await import('../server.js');
+            if (io) {
+                io.to(invitedUser.id.toString()).emit('GAMIFICATION_EVENT', {
+                    type: 'referral_welcome',
+                    title: '¡Bono de Bienvenida!',
+                    message: `Invitación de ${inviterName}`,
+                    xpAdded: REFERRAL_INVITED_XP,
+                    leveledUp: invitedXpResult?.leveledUp,
+                    newLevel: invitedXpResult?.level,
+                    inviterName,
+                    friendName: inviterName
+                });
+            }
+        } catch (socketErr) {
+            console.error('Error emitiendo evento referral_welcome:', socketErr);
+        }
+
+        return { inviterXpResult, invitedXpResult };
+    } catch (err) {
+        console.error('Error otorgando bono mutuo de referido:', err);
+        return null;
+    }
 };
 
 export const getChallengesForUser = async (userId) => {

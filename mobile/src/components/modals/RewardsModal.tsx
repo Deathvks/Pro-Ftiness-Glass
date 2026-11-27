@@ -177,7 +177,7 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
               <Text style={[styles.title, { color: colors.text }]}>Recompensas</Text>
               <View style={[styles.xpPill, { backgroundColor: colors.tint + '22' }]}>
                 <FontAwesome5 name="bolt" size={9} color={colors.tint} />
-                <Text style={[styles.xpPillText, { color: colors.tint }]}>+1.000 XP / amigo</Text>
+                <Text style={[styles.xpPillText, { color: colors.tint }]}>+1.000 XP para ambos</Text>
               </View>
             </View>
           </View>
@@ -196,7 +196,7 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.description, { color: colors.textSecondary }]}>
-          Cada amigo que se registre con tu enlace te suma 1.000 XP al instante y desbloquea estos temas inmersivos Liquid Glass.
+          Cada amigo que se registre con tu enlace os suma 1.000 XP a los dos al instante y desbloquea estos temas inmersivos Liquid Glass.
         </Text>
 
         {/* Contador de Amigos Invitados */}

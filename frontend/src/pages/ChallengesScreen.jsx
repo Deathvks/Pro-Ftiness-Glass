@@ -140,7 +140,7 @@ const ChallengesScreen = ({ setView }) => {
                                 </div>
                                 <div className="flex-1 text-center md:text-left">
                                     <h3 className="text-xl font-bold text-white tracking-tight mb-1">Invitar a un amigo</h3>
-                                    <p className="text-white/80 text-sm mb-3">Infinito • Pide a un amigo que se registre con tu enlace y obtén 1.000 XP cada vez que alguien nuevo lo haga.</p>
+                                    <p className="text-white/80 text-sm mb-3">Infinito • Invita a un amigo con tu enlace y ambos ganaréis 1.000 XP cuando se registre.</p>
                                     <div className="inline-flex items-center gap-2 bg-black/30 px-4 py-2 rounded-full border border-white/20 text-white font-mono text-sm shadow-inner group-hover:bg-black/40 transition-colors">
                                         <span>{userProfile?.referral_code || 'Cargando...'}</span>
                                         <span className="text-white/60 text-xs uppercase font-bold ml-2">Click para copiar</span>

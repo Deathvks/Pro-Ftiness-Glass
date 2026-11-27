@@ -60,6 +60,7 @@ export default function RootLayout() {
   const userProfile = useAppStore(state => state.userProfile);
   const isStoreLoading = useAppStore(state => state.isLoading);
   const workoutLog = useAppStore(state => state.workoutLog);
+  const notifications = useAppStore(state => state.notifications);
   const gamificationLevel = useAppStore(state => state.gamification?.level || state.userProfile?.level || 1);
   const gamificationEvents = useAppStore(state => (state.gamification as any)?.gamificationEvents);
   const clearGamificationEvents = useAppStore(state => (state as any).clearGamificationEvents);
@@ -198,6 +199,27 @@ export default function RootLayout() {
     }
   }, [isReady, isAuthenticated, userProfile?.id]);
 
+  // Mostrar toast y marcar como leídos avisos pendientes de referido/bienvenida al iniciar sesión
+  useEffect(() => {
+    if (!isReady || !isAuthenticated || !Array.isArray(notifications) || notifications.length === 0) return;
+    const unreadReferrals = notifications.filter(
+      (n: any) => !n.is_read && (n.type === 'referral_success' || n.type === 'referral_welcome')
+    );
+    if (unreadReferrals.length === 0) return;
+
+    const showToast = useToastStore.getState().showToast;
+    const markNotificationAsRead = (useAppStore.getState() as any).markNotificationAsRead;
+    unreadReferrals.forEach((n: any) => {
+      if (n.type === 'referral_welcome') {
+        showToast('¡Bono de bienvenida! Te has unido con invitación (+1.000 XP)', 'success', 5500);
+      } else {
+        const friend = n.data?.friendName || 'Tu amigo';
+        showToast(`¡Reto completado! ${friend} se unió con tu enlace (+1.000 XP)`, 'success', 5000);
+      }
+      void markNotificationAsRead?.(n.id);
+    });
+  }, [isReady, isAuthenticated, notifications]);
+
   // Consumir gamificationEvents en cola y mostrar toasts de XP / Retos / Insignias / Subida de Nivel
   useEffect(() => {
     if (!gamificationEvents || gamificationEvents.length === 0) return;
@@ -302,6 +324,12 @@ export default function RootLayout() {
           'success',
           5000
         );
+      } else if (data.type === 'referral_welcome') {
+        showToast(
+          `¡Bono de bienvenida! Te has unido con invitación (+${data.xpAdded || 1000} XP)`,
+          'success',
+          5500
+        );
       } else if (data.type === 'level_up') {
         let extraStr = '';
         if (data.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
@@ -316,7 +344,12 @@ export default function RootLayout() {
         }
       }
 
-      if (data.type === 'challenge_completed' || data.type === 'referral_success' || data.type === 'level_up') {
+      if (
+        data.type === 'challenge_completed' ||
+        data.type === 'referral_success' ||
+        data.type === 'referral_welcome' ||
+        data.type === 'level_up'
+      ) {
         try {
           const profileData = await userService.getMyProfile();
           if (profileData && state.setGamificationData) {

@@ -532,7 +532,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
                     ¿Invitas a alguien a entrenar contigo?
                   </Text>
                   <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16 }}>
-                    Gana +1.000 XP y desbloquea los temas Galaxia, Desierto y Océano.
+                    Ganad +1.000 XP cada uno y desbloquea los temas Galaxia, Desierto y Océano.
                   </Text>
                 </View>
               </View>

@@ -207,7 +207,7 @@ export default function Hub({ setView }) {
             onPreload={() => preloadViewChunk('challenges')}
             icon={FaTrophy}
             title="Retos y Misiones"
-            description="Gana +1.000 XP/amigo y recompensas"
+            description="Gana +1.000 XP para ambos y recompensas"
             onClick={() => {
               if (userProfile?.id) {
                 localStorage.setItem(`visited_challenges_v2_${userProfile.id}`, 'true');

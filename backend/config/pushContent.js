@@ -27,6 +27,7 @@ export function formatXpReason(reason) {
   const trimmed = reason.trim();
 
   if (/^login\s*diario$/i.test(trimmed)) return 'iniciar sesión hoy';
+  if (/^bono de bienvenida por invitaci[oó]n$/i.test(trimmed)) return 'unirte con una invitación de amigo';
   if (/^peso\s*registrado(\s*\(perfil\))?$/i.test(trimmed)) return 'registrar tu peso corporal';
   if (/^medida\s*registrada:\s*(.+)$/i.test(trimmed)) {
     const m = trimmed.match(/^medida\s*registrada:\s*(.+)$/i);
@@ -85,7 +86,8 @@ const byEvent = new Map([
   ['chat_closed', ['Asesoría cerrada por inactividad', 'Puedes solicitar asesoría de nuevo cuando quieras.', '/asesoria']],
   ['security', ['Bloqueo de seguridad', 'El sistema bloqueó un acceso. Revisa el incidente en Ciberseguridad.', '/adminPanel?section=security']],
   ['friend_request', ['Solicitud de amistad', 'Un atleta te ha enviado una solicitud.']],
-  ['friend_request_accepted', ['Solicitud aceptada', 'Un atleta ha aceptado tu solicitud de amistad.']]
+  ['friend_request_accepted', ['Solicitud aceptada', 'Un atleta ha aceptado tu solicitud de amistad.']],
+  ['referral_welcome', ['¡Bono de Bienvenida! (+1.000 XP)', 'Te has unido con una invitación y ambos habéis ganado +1.000 XP.', '/challenges']]
 ]);
 
 const reminderContent = {

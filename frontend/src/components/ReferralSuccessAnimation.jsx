@@ -61,11 +61,19 @@ const ReferralSuccessAnimation = () => {
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent via-purple-500 to-accent" />
                     
                     <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70 mb-2">
-                        ¡Misión Cumplida!
+                        {currentData.isWelcome ? '¡Bono de Bienvenida!' : '¡Misión Cumplida!'}
                     </h2>
                     
                     <p className="text-lg text-text-secondary mb-6">
-                        <span className="font-bold text-white">{currentData.friendName || 'Tu amigo'}</span> se ha unido a Pro Fitness usando tu enlace.
+                        {currentData.isWelcome ? (
+                          <>
+                            Te has unido con la invitación de <span className="font-bold text-white">{currentData.inviterName || currentData.friendName || 'tu amigo'}</span>. ¡Ambos ganáis XP!
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-bold text-white">{currentData.friendName || 'Tu amigo'}</span> se ha unido a Pro Fitness usando tu enlace. ¡Ambos ganáis XP!
+                          </>
+                        )}
                     </p>
 
                     <div className="bg-gradient-to-br from-black/40 to-black/20 p-4 rounded-2xl border border-white/10 mb-6 flex flex-col items-center justify-center gap-2 transform transition-transform hover:scale-105">

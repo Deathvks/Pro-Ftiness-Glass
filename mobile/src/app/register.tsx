@@ -14,7 +14,7 @@ import {
   Pressable,
   useColorScheme as useDeviceColorScheme,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
 import { Sparkles, UserPlus, ArrowRight, CheckCircle2, Eye, EyeOff, Mail, Check, Info } from 'lucide-react-native';
 import { FontAwesome5, FontAwesome6 } from '@expo/vector-icons';
@@ -79,6 +79,27 @@ export default function Register() {
   const inputRefs = React.useRef<Array<any>>([]);
 
   const router = useRouter();
+  const { ref: routeRef } = useLocalSearchParams<{ ref?: string }>();
+  const [referralCode, setReferralCode] = useState<string>(() => {
+    try {
+      return (typeof localStorage !== 'undefined' ? localStorage.getItem('pending_ref') : null) || '';
+    } catch {
+      return '';
+    }
+  });
+
+  React.useEffect(() => {
+    const incoming = Array.isArray(routeRef) ? routeRef[0] : routeRef;
+    if (incoming && typeof incoming === 'string') {
+      const cleaned = incoming.trim();
+      if (cleaned) {
+        setReferralCode(cleaned);
+        try {
+          if (typeof localStorage !== 'undefined') localStorage.setItem('pending_ref', cleaned);
+        } catch {}
+      }
+    }
+  }, [routeRef]);
   const colors = useAppColors();
   const theme = colors;
   const currentStoreTheme = useAppStore(state => state.theme);
@@ -182,7 +203,8 @@ export default function Register() {
     try {
       setIsLoading(true);
       persistQuizTemp(quizData);
-      await runOAuthFlow(provider);
+      const currentRef = (referralCode || (typeof localStorage !== 'undefined' ? localStorage.getItem('pending_ref') : null) || '').trim() || undefined;
+      await runOAuthFlow(provider, currentRef);
     } catch (e: any) {
       alert(`Error conectando con ${label}: ` + (e.message || e));
     } finally {
@@ -245,6 +267,7 @@ export default function Register() {
 
     try {
       persistQuizTemp(quizData);
+      const currentRef = (referralCode || (typeof localStorage !== 'undefined' ? localStorage.getItem('pending_ref') : null) || '').trim() || undefined;
       await registerUser({
         username: username.trim(),
         email: email.trim().toLowerCase(),
@@ -255,7 +278,11 @@ export default function Register() {
         marketingEmailConsent,
         coachingEmailConsent,
         emailConsentVersion: EMAIL_CONSENT_VERSION,
+        ...(currentRef ? { referralCode: currentRef } : {}),
       });
+      try {
+        if (typeof localStorage !== 'undefined') localStorage.removeItem('pending_ref');
+      } catch {}
 
       startVerification(email.trim().toLowerCase());
     } catch (error: any) {

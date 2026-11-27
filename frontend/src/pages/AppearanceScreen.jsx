@@ -520,7 +520,7 @@ export default function AppearanceScreen({ setView }) {
                   Invita amigos para ganar +1.000 XP cada uno y desbloquear estos 3 temas con vistas previas reales.
                 </p>
                 <p className="text-[11px] text-text-muted mt-0.5 lg:hidden block truncate">
-                  {isMyThemesOpenMobile ? 'Toca para solapar' : '3 temas exclusivos · +1.000 XP/amigo'}
+                  {isMyThemesOpenMobile ? 'Toca para solapar' : '3 temas exclusivos · +1.000 XP c/u'}
                 </p>
               </div>
             </div>
@@ -571,11 +571,11 @@ export default function AppearanceScreen({ setView }) {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-black text-text-primary">Consigue temas y +1.000 XP</span>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent text-[10px] font-black uppercase tracking-wider">
-                      <FaBolt size={10} /> +1.000 XP / amigo
+                      <FaBolt size={10} /> +1.000 XP para ambos
                     </span>
                   </div>
                   <p className="text-[11px] sm:text-xs text-text-secondary mt-1 leading-relaxed">
-                    Comparte tu enlace: cada amigo nuevo te suma <strong>1.000 XP</strong> y desbloquea los temas atmosféricos Liquid Glass.
+                    Comparte tu enlace: tú y cada amigo nuevo ganáis <strong>1.000 XP</strong> al instante y desbloqueas los temas atmosféricos Liquid Glass.
                   </p>
                 </div>
               </div>

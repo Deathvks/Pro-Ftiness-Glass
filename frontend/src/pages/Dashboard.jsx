@@ -1193,7 +1193,7 @@ const Dashboard = ({ setView }) => {
             {/* Fila superior dedicada para la insignia XP y el botón X arriba del resto */}
             <div className="flex items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-accent/15 text-accent text-[10px] font-black uppercase tracking-wider">
-                <FaBolt size={9} /> +1.000 XP / amigo
+                <FaBolt size={9} /> +1.000 XP para ambos
               </span>
               <button
                 type="button"

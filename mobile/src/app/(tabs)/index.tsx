@@ -1197,7 +1197,7 @@ export default function Dashboard() {
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: isDark ? 'rgba(139, 92, 246, 0.22)' : 'rgba(124, 58, 237, 0.12)' }}>
                 <FontAwesome5 name="bolt" size={9} color={isDark ? '#c4b5fd' : '#6d28d9'} />
-                <Text style={{ fontSize: 10, fontWeight: '800', color: isDark ? '#e9d5ff' : '#6d28d9' }}>+1.000 XP / amigo</Text>
+                <Text style={{ fontSize: 10, fontWeight: '800', color: isDark ? '#e9d5ff' : '#6d28d9' }}>+1.000 XP para ambos</Text>
               </View>
             </View>
             <TouchableOpacity
@@ -1225,8 +1225,8 @@ export default function Dashboard() {
             </View>
             <Text style={{ fontSize: 11.5, color: colors.textMuted, marginTop: 3 }}>
               {nextThemeTarget
-                ? `Te ${nextThemeTarget.remaining === 1 ? 'falta 1 amigo' : `faltan ${nextThemeTarget.remaining} amigos`} para ${nextThemeTarget.name} y +1.000 XP`
-                : 'Invita amigos y consigue +1.000 XP y temas exclusivos'}
+                ? `Te ${nextThemeTarget.remaining === 1 ? 'falta 1 amigo' : `faltan ${nextThemeTarget.remaining} amigos`} para ${nextThemeTarget.name} y +1.000 XP c/u`
+                : 'Invita amigos y conseguid +1.000 XP cada uno y temas exclusivos'}
             </Text>
           </View>
 

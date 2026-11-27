@@ -394,8 +394,7 @@ export default function ChallengesScreen() {
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={[styles.referralTitle, { color: tabContrastTextColor }]}>Invitar a un amigo</Text>
               <Text style={[styles.referralDesc, { color: referralSubtleInk }]}>
-                Infinito • Pide a un amigo que se registre con tu enlace y obtén 1.000 XP cada vez
-                que alguien nuevo lo haga.
+                Infinito • Invita a un amigo con tu enlace y ambos ganaréis 1.000 XP cuando se registre.
               </Text>
             </View>
 
