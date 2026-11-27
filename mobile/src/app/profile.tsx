@@ -775,7 +775,6 @@ function ChangePasswordModal({ visible, onClose, hasPassword }: ChangePasswordMo
       onClose={onClose}
       backdropColor="rgba(0, 0, 0, 0.65)"
       avoidKeyboard
-      dragAreaHeight={156}
       sheetStyle={[
         styles.modalCard,
         {

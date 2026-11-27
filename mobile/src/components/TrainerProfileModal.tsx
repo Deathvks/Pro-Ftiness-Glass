@@ -86,7 +86,7 @@ export default function TrainerProfileModal({
       visible={visible}
       onClose={handleClose}
       backdropColor={isDark ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.6)'}
-      dragAreaHeight={HEADER_HEIGHT}
+      dragAreaHeight={160}
       sheetStyle={[
         styles.modalContainer,
         {

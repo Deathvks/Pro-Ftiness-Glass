@@ -41,10 +41,10 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
 
     const baseOpacity = nativeGlassAvailable
         ? (color ? (colorHasAlpha ? 1 : 0.26) : 0)
-        : (colorHasAlpha ? 1 : (isLight ? 0.5 : 0.15));
+        : (colorHasAlpha ? 1 : (color ? 0.24 : (isLight ? 0.78 : 0.12)));
     const pressedOpacity = nativeGlassAvailable
         ? (color ? (colorHasAlpha ? 0.85 : 0.36) : 0.18)
-        : (colorHasAlpha ? 0.85 : (isLight ? 0.7 : 0.3));
+        : (colorHasAlpha ? 0.85 : (color ? 0.36 : (isLight ? 0.92 : 0.22)));
     
     const bgOpacityAnim = useRef(new Animated.Value(baseOpacity)).current;
 
@@ -118,7 +118,7 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
     };
     const finalBorderRadius = (finalStyle.borderRadius as number) ?? 18;
 
-    const defaultBorderWidth = nativeGlassAvailable ? 0 : StyleSheet.hairlineWidth;
+    const defaultBorderWidth = nativeGlassAvailable ? 0 : 1;
 
     return (
         <Pressable 
@@ -172,7 +172,7 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
                 borderCurve: 'continuous',
                 transform: [{ scale: scaleAnim }],
                 borderWidth: finalStyle.borderWidth !== undefined ? finalStyle.borderWidth : defaultBorderWidth,
-                borderColor: finalStyle.borderColor !== undefined ? finalStyle.borderColor : (isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.14)'),
+                borderColor: finalStyle.borderColor !== undefined ? finalStyle.borderColor : (isLight ? 'rgba(15,23,42,0.10)' : 'rgba(255,255,255,0.20)'),
             }]}>
                 {Platform.OS === 'ios' ? (
                     <GlassView 
@@ -197,7 +197,7 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
                         { 
                             borderRadius: finalBorderRadius,
                             borderCurve: 'continuous',
-                            backgroundColor: color || (isLight ? '#ffffff' : '#000000'),
+                            backgroundColor: color || (nativeGlassAvailable ? (isLight ? '#ffffff' : '#000000') : '#ffffff'),
                             opacity: bgOpacityAnim
                         }
                     ]} 

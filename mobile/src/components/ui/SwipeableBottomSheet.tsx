@@ -31,7 +31,7 @@ import {
   getThemedModalSurfaceColor,
 } from '@/components/ui/ModalThemeBackground';
 
-const HEADER_DRAG_HEIGHT = 120;
+const HEADER_DRAG_HEIGHT = 180;
 
 interface SwipeableSheetModalProps {
   visible: boolean;
@@ -203,7 +203,7 @@ export function SwipeableSheetModal({
     draggingRef.current = false;
     if (closingRef.current || !visibleRef.current) return;
     const distance = absoluteY - touchStartY.current;
-    if (success && (distance > 48 || (distance > 16 && velocityY > 300))) {
+    if (success && (distance > 38 || (distance > 12 && velocityY > 240))) {
       dismissAnimated();
       return;
     }
@@ -222,9 +222,9 @@ export function SwipeableSheetModal({
       .enabled(dismissible && visible)
       .runOnJS(true)
       .maxPointers(1)
-      .activeOffsetY(7)
-      .failOffsetY(-7)
-      .failOffsetX([-10, 10])
+      .activeOffsetY(8)
+      .failOffsetY(-18)
+      .failOffsetX([-24, 24])
       .shouldCancelWhenOutside(false);
 
     // eslint-disable-next-line react-hooks/refs -- Gesture Handler invokes these callbacks after touch events.

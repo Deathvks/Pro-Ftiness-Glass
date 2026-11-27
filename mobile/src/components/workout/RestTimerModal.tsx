@@ -206,7 +206,6 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
       visible={isVisible}
       onClose={handleClose}
       backdropColor={isDark ? 'rgba(0, 0, 0, 0.65)' : 'rgba(0, 0, 0, 0.4)'}
-      dragAreaHeight={120}
       sheetStyle={[
         styles.modalContent,
         {

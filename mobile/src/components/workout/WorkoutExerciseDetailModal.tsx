@@ -360,7 +360,7 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
       visible={Boolean(exercise)}
       onClose={onClose}
       backdropColor={isDark ? 'rgba(0, 0, 0, 0.55)' : 'rgba(0, 0, 0, 0.28)'}
-      dragAreaHeight={84}
+      dragAreaHeight={160}
       sheetStyle={[
         styles.modalSheet,
         {

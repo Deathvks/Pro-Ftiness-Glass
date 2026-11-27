@@ -555,7 +555,7 @@ export default function Onboarding() {
             <GlassButton
               theme={colorScheme}
               onPress={handleBack}
-              style={[styles.footerBtnBack, { backgroundColor: 'transparent' }]}
+              style={styles.footerBtnBack}
             >
               <ChevronLeft size={28} color={colors.text} />
             </GlassButton>
@@ -605,6 +605,6 @@ const styles = StyleSheet.create({
   summaryLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 2, marginBottom: 4 },
   summaryVal: { fontSize: 20, fontWeight: 'bold' },
   footer: { flexDirection: 'row', padding: 24, position: 'absolute', bottom: 0, width: '100%', gap: 16, backgroundColor: 'transparent', alignItems: 'center' },
-  footerBtnBack: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)' },
+  footerBtnBack: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   footerBtnNext: { height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' }
 });

@@ -88,7 +88,7 @@ export const ExerciseHistoryModal: React.FC<ExerciseHistoryModalProps> = ({
       onClose={onClose}
       backdropColor={isDark ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.4)'}
       dismissOnBackdrop={false}
-      dragAreaHeight={84}
+      dragAreaHeight={160}
       sheetStyle={[
         styles.sheet,
         {
