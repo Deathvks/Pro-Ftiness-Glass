@@ -23,12 +23,15 @@ const getUserBadgesList = (userProfile: any, unlockedBadges: any[] = []): string
   return [...new Set([...profileBadges, ...extraBadges].map(String))];
 };
 
+export const hasChristmasThemeBadge = (userProfile: any, unlockedBadges: any[] = []): boolean =>
+  getUserBadgesList(userProfile, unlockedBadges).includes(CHRISTMAS_THEME_BADGE_ID);
+
 export const hasChristmasThemeUnlocked = (userProfile: any, unlockedBadges: any[] = []): boolean => {
   if (!userProfile && !Array.isArray(unlockedBadges)) return false;
   if (userProfile?.role === 'admin') return true;
   if ((userProfile?.referralCount || 0) >= 1) return true;
 
-  return getUserBadgesList(userProfile, unlockedBadges).includes(CHRISTMAS_THEME_BADGE_ID);
+  return hasChristmasThemeBadge(userProfile, unlockedBadges);
 };
 
 export const hasChristmasMissionCompleted = (userProfile: any, unlockedBadges: any[] = []): boolean =>

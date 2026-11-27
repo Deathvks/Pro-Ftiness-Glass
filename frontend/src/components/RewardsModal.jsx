@@ -22,7 +22,7 @@ import { useAppTheme } from '../hooks/useAppTheme';
 import useModalLock from '../hooks/useModalLock';
 import { useToast } from '../hooks/useToast';
 import { claimChristmasTheme } from '../services/userService';
-import { hasChristmasThemeUnlocked, isChristmasPromoActive } from '../utils/christmasTheme';
+import { hasChristmasThemeBadge, hasChristmasThemeUnlocked, isChristmasPromoActive } from '../utils/christmasTheme';
 
 const REWARDS = [
   {
@@ -139,6 +139,14 @@ export default function RewardsModal({ isOpen, onClose }) {
   };
 
   const handleApplyTheme = (themeId) => {
+    if (
+      themeId === 'christmas' &&
+      (!hasChristmasThemeBadge(userProfile, unlockedBadges) ||
+        userProfile?.christmasXpBonusClaimed === false)
+    ) {
+      void handleClaimChristmas();
+      return;
+    }
     setTheme(themeId, false);
     onClose();
   };

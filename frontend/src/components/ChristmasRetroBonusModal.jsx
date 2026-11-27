@@ -5,6 +5,7 @@ import useModalLock from '../hooks/useModalLock';
 import useAppStore from '../store/useAppStore';
 import { claimChristmasXpBonus } from '../services/userService';
 import { useToast } from '../hooks/useToast';
+import { useAppTheme } from '../hooks/useAppTheme';
 
 const BONUS_FLAKES = Array.from({ length: 12 }).map((_, i) => ({
   id: `bonus-flake-${i}`,
@@ -21,10 +22,17 @@ export default function ChristmasRetroBonusModal() {
   const showChristmasUnlockModal = useAppStore((state) => Boolean(state.showChristmasUnlockModal));
   const applyChristmasRewardResult = useAppStore((state) => state.applyChristmasRewardResult);
   const { addToast } = useToast();
+  const { theme, activeTheme } = useAppTheme();
 
   const [claiming, setClaiming] = useState(false);
 
-  const isOpen = Boolean(userProfile?.christmasXpBonusPending && !showChristmasUnlockModal);
+  const hasLocalChristmasActive = theme === 'christmas' || activeTheme === 'christmas';
+  const isOpen = Boolean(
+    !showChristmasUnlockModal &&
+      userProfile?.id &&
+      (userProfile.christmasXpBonusPending ||
+        (hasLocalChristmasActive && userProfile.christmasXpBonusClaimed === false))
+  );
   const bonusAmount = Number(userProfile?.christmasXpBonusAmount || 250);
 
   useModalLock(isOpen);

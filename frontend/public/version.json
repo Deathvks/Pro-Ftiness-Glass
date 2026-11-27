@@ -1,8 +1,8 @@
 {
-  "version": "7.17.6",
-  "releaseNotes": "Actualización v7.17.6: mejoras visuales en pestañas de Retos y Misiones e indicadores de misión de temporada en Menú, Retos y Generales.",
+  "version": "7.17.7",
+  "releaseNotes": "Actualización v7.17.7: corrección del abono retroactivo de +250 XP e insignia Edición Navidad 2026 también para administradores y cuentas con acceso previo.",
   "welcome": {
-    "title": "Regalo Navidad 2026 (v7.17.6)",
+    "title": "Regalo Navidad 2026 (v7.17.7)",
     "subtitle": "Ahora el tema Edición Navidad 2026 suma +250 XP directos en tu cuenta y recompensa retroactiva si ya lo tenías.",
     "features": [
       {

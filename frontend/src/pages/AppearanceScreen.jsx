@@ -20,7 +20,7 @@ import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { claimChristmasTheme } from '../services/userService';
-import { hasChristmasThemeUnlocked, isChristmasPromoActive } from '../utils/christmasTheme';
+import { hasChristmasThemeBadge, hasChristmasThemeUnlocked, isChristmasPromoActive } from '../utils/christmasTheme';
 import GlassCard from '../components/GlassCard';
 import { useToast } from '../hooks/useToast';
 import LevelBadge from '../components/LevelBadge';
@@ -328,6 +328,14 @@ export default function AppearanceScreen({ setView }) {
   
 
   const handleThemeClick = (mode) => {
+    if (
+      mode === 'christmas' &&
+      (!hasChristmasThemeBadge(userProfile, unlockedBadges) ||
+        userProfile?.christmasXpBonusClaimed === false)
+    ) {
+      void handleClaimChristmas();
+      return;
+    }
     setTheme(mode);
   };
 

@@ -25,6 +25,7 @@ export function ChristmasRetroBonusModal({ visible: externalVisible }: Christmas
   const showChristmasUnlockModal = useAppStore((s: any) => Boolean(s.showChristmasUnlockModal));
   const applyChristmasRewardResult = useAppStore((s: any) => s.applyChristmasRewardResult);
   const theme = useAppStore((s: any) => s.theme) || 'oled';
+  const themePreference = useAppStore((s: any) => s.themePreference);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
   const [claiming, setClaiming] = useState(false);
@@ -32,8 +33,21 @@ export function ChristmasRetroBonusModal({ visible: externalVisible }: Christmas
 
   const isVisible = useMemo(() => {
     if (externalVisible === false) return false;
-    return Boolean(userProfile?.christmasXpBonusPending && !showChristmasUnlockModal);
-  }, [externalVisible, userProfile?.christmasXpBonusPending, showChristmasUnlockModal]);
+    if (showChristmasUnlockModal || !userProfile?.id) return false;
+    const hasLocalChristmasActive = theme === 'christmas' || themePreference === 'christmas';
+    return Boolean(
+      userProfile.christmasXpBonusPending ||
+        (hasLocalChristmasActive && userProfile.christmasXpBonusClaimed === false)
+    );
+  }, [
+    externalVisible,
+    showChristmasUnlockModal,
+    theme,
+    themePreference,
+    userProfile?.id,
+    userProfile?.christmasXpBonusPending,
+    userProfile?.christmasXpBonusClaimed,
+  ]);
 
   const bonusAmount = Number(userProfile?.christmasXpBonusAmount || 250);
 

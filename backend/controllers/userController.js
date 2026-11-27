@@ -117,15 +117,14 @@ export const getMyProfile = async (req, res, next) => {
     const hasChristmasBadge =
       Array.isArray(userData.unlocked_badges) &&
       userData.unlocked_badges.includes(CHRISTMAS_THEME_BADGE_ID);
-    if (hasChristmasBadge && XpLog) {
-      const existingBonus = await XpLog.findOne({
-        where: { user_id: req.user.userId, reason: CHRISTMAS_CLAIM_XP_REASON },
-        attributes: ['id'],
-      });
-      userData.christmasXpBonusPending = !existingBonus;
-    } else {
-      userData.christmasXpBonusPending = false;
-    }
+    const existingBonus = XpLog
+      ? await XpLog.findOne({
+          where: { user_id: req.user.userId, reason: CHRISTMAS_CLAIM_XP_REASON },
+          attributes: ['id'],
+        })
+      : null;
+    userData.christmasXpBonusClaimed = Boolean(existingBonus);
+    userData.christmasXpBonusPending = Boolean(hasChristmasBadge && !existingBonus);
     userData.christmasXpBonusAmount = CHRISTMAS_CLAIM_XP;
 
     res.json(userData);
@@ -740,11 +739,24 @@ export const claimChristmasXpBonus = async (req, res, next) => {
     }
 
     const currentBadges = parseUserBadges(user.unlocked_badges);
+    const referralCount = await User.count({ where: { referred_by: userId } });
+    const isWithinPromoWindow = Date.now() <= CHRISTMAS_PROMO_DEADLINE.getTime();
+    const isEligible =
+      currentBadges.includes(CHRISTMAS_THEME_BADGE_ID) ||
+      user.role === 'admin' ||
+      referralCount >= 1 ||
+      isWithinPromoWindow;
 
-    if (!currentBadges.includes(CHRISTMAS_THEME_BADGE_ID)) {
+    if (!isEligible) {
       return res.status(403).json({
         error: 'Debes tener desbloqueada la Edición Navidad 2026 para reclamar este regalo de XP.',
       });
+    }
+
+    let updatedBadges = currentBadges;
+    if (!updatedBadges.includes(CHRISTMAS_THEME_BADGE_ID)) {
+      updatedBadges = [...updatedBadges, CHRISTMAS_THEME_BADGE_ID];
+      await user.update({ unlocked_badges: JSON.stringify(updatedBadges) });
     }
 
     const xpInfo = await grantChristmasXpBonusIfEligible(user);
@@ -752,7 +764,7 @@ export const claimChristmasXpBonus = async (req, res, next) => {
     return res.json({
       claimed: true,
       alreadyClaimed: xpInfo.xpAdded === 0,
-      unlocked_badges: currentBadges,
+      unlocked_badges: updatedBadges,
       xpAdded: xpInfo.xpAdded,
       xp: xpInfo.xp,
       level: xpInfo.level,

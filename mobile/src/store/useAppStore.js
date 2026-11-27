@@ -236,6 +236,7 @@ const useAppStore = create((set, get) => ({
                         ...(nextXp !== undefined ? { xp: nextXp } : {}),
                         ...(nextLevel !== undefined ? { level: nextLevel } : {}),
                         christmasXpBonusPending: false,
+                        christmasXpBonusClaimed: true,
                     }
                     : state.userProfile,
                 gamification: {

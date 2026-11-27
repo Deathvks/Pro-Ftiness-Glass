@@ -19,7 +19,7 @@ import { useToastStore } from '@/store/toastStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { claimChristmasTheme } from '@/services/userService';
-import { hasChristmasThemeUnlocked, isChristmasPromoActive } from '@/utils/christmasTheme';
+import { hasChristmasThemeBadge, hasChristmasThemeUnlocked, isChristmasPromoActive } from '@/utils/christmasTheme';
 import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
 
@@ -167,6 +167,14 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
   };
 
   const handleApplyTheme = (themeId: string) => {
+    if (
+      themeId === 'christmas' &&
+      (!hasChristmasThemeBadge(userProfile, unlockedBadges) ||
+        userProfile?.christmasXpBonusClaimed === false)
+    ) {
+      void handleClaimChristmas();
+      return;
+    }
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     } catch {}

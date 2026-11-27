@@ -45,7 +45,7 @@ import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import useAppStore from '@/store/useAppStore';
 import { useToastStore } from '@/store/toastStore';
 import { claimChristmasTheme } from '@/services/userService';
-import { hasChristmasThemeUnlocked, isChristmasPromoActive } from '@/utils/christmasTheme';
+import { hasChristmasThemeBadge, hasChristmasThemeUnlocked, isChristmasPromoActive } from '@/utils/christmasTheme';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
 import { getContrastTextColor } from '@/utils/routineHelpers';
@@ -430,6 +430,14 @@ export default function AppearanceScreen() {
   };
 
   const handleThemeClick = (mode: string) => {
+    if (
+      mode === 'christmas' &&
+      (!hasChristmasThemeBadge(userProfile, unlockedBadges) ||
+        userProfile?.christmasXpBonusClaimed === false)
+    ) {
+      void handleClaimChristmas();
+      return;
+    }
     tap();
     setTheme(mode);
   };
