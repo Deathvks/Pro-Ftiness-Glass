@@ -447,7 +447,7 @@ export default function Hub() {
               <HubButton
                 icon={Paintbrush}
                 title="Apariencia"
-                description="3 temas exclusivos, acentos y colores"
+                description="4 temas exclusivos, acentos y colores"
                 colors={colors}
                 iosBadgeColor="#BF5AF2"
                 onPress={() => router.push('/appearance')}

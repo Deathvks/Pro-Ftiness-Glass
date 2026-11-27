@@ -224,7 +224,7 @@ export default function Hub({ setView }) {
             onPreload={() => preloadViewChunk('appearance')}
             icon={FaPalette}
             title="Apariencia"
-            description="3 temas exclusivos, acentos y colores"
+            description="4 temas exclusivos, acentos y colores"
             onClick={() => setView('appearance')}
           />
 
