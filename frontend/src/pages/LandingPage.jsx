@@ -6,7 +6,7 @@ import {
     Instagram, Youtube, Github, Globe, Download, Sparkles, Bot, Apple, Check, ShieldCheck, Newspaper, Calculator, HelpCircle
 } from 'lucide-react';
 import { FaGooglePlay } from 'react-icons/fa';
-import { FaCalculator, FaDumbbell, FaUtensils, FaNewspaper, FaCircleQuestion, FaTrophy, FaHeartPulse } from 'react-icons/fa6';
+import { FaCalculator, FaDumbbell, FaListCheck, FaUtensils, FaNewspaper, FaCircleQuestion, FaTrophy, FaHeartPulse } from 'react-icons/fa6';
 import { Helmet } from 'react-helmet-async';
 
 import packageJson from '../../package.json';
@@ -526,10 +526,28 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                 </span>
                             </div>
 
-                            <div className="flex items-center gap-1.5 sm:gap-3 flex-nowrap shrink-0">
+                            <div className="flex items-center gap-1.5 sm:gap-2.5 flex-nowrap shrink-0">
+                                <a
+                                    href="/rutinas"
+                                    className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
+                                    title="Rutinas de Gimnasio Gratis"
+                                >
+                                    <FaListCheck className="text-amber-400 shrink-0 text-sm" />
+                                    <span className="uppercase tracking-wider text-xs">Rutinas</span>
+                                </a>
+
+                                <a
+                                    href="/ejercicios"
+                                    className="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
+                                    title="Guía y Enciclopedia de Ejercicios"
+                                >
+                                    <FaDumbbell className="text-sky-400 shrink-0 text-sm" />
+                                    <span className="uppercase tracking-wider text-xs">Ejercicios</span>
+                                </a>
+
                                 <a
                                     href="/calculadora-1rm"
-                                    className="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
+                                    className="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
                                     title="Calculadora de 1RM y Fuerza"
                                 >
                                     <FaCalculator className="text-accent shrink-0 text-sm" />
@@ -538,11 +556,11 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                                 <a
                                     href="/calculadora-calorias-macros"
-                                    className="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
+                                    className="hidden 2xl:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
                                     title="Calculadora de Calorías y Macros"
                                 >
                                     <FaUtensils className="text-emerald-400 shrink-0 text-sm" />
-                                    <span className="uppercase tracking-wider text-xs">Calculadora Macros</span>
+                                    <span className="uppercase tracking-wider text-xs">Macros</span>
                                 </a>
 
                                 <a
@@ -555,29 +573,30 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                 </a>
 
                                 <a
-                                    href="/privacy"
-                                    className="hidden md:flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-text-secondary hover:text-accent transition-colors shrink-0"
-                                    title="Política de Privacidad"
-                                >
-                                    <Shield size={15} />
-                                    <span className="uppercase tracking-wider text-xs">Privacidad</span>
-                                </a>
-
-                                <button
-                                    onClick={onLogin}
+                                    href="/login"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        onLogin?.();
+                                    }}
                                     className="text-xs sm:text-sm font-bold text-text-primary hover:text-accent transition-colors px-3 sm:px-4 py-1.5 sm:py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-xl sm:rounded-2xl active:scale-95 shrink-0 whitespace-nowrap"
+                                    title="Iniciar Sesión en Pro Fitness Glass"
                                 >
                                     <span className="inline sm:hidden">Entrar</span>
                                     <span className="hidden sm:inline">Iniciar Sesión</span>
-                                </button>
+                                </a>
 
-                                <button
-                                    onClick={onRegister}
+                                <a
+                                    href="/register"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        onRegister?.();
+                                    }}
                                     className="text-xs sm:text-sm font-bold bg-accent hover:bg-accent/90 text-accent-contrast px-3.5 sm:px-6 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl transition-all shadow-md sm:shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-1 sm:gap-2 shrink-0 whitespace-nowrap"
+                                    title="Crear Cuenta Gratis en Pro Fitness Glass"
                                 >
                                     <span>Empezar</span>
                                     <ChevronRight size={15} strokeWidth={3} className="shrink-0" />
-                                </button>
+                                </a>
                             </div>
                         </div>
                         <MaintenanceNoticeBanner />
@@ -947,8 +966,54 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                 </div>
                             </ScrollRevealCard>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <ScrollRevealCard delay={50} className="h-full">
+                                    <a
+                                        href="/rutinas"
+                                        className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-amber-500/60 backdrop-blur-xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-amber-500/15 group relative overflow-hidden"
+                                    >
+                                        <div>
+                                            <div className="w-14 h-14 rounded-[20px] bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-slate-950 transition-all duration-300">
+                                                <FaListCheck className="text-2xl" />
+                                            </div>
+                                            <span className="inline-block text-[11px] font-black uppercase tracking-widest text-amber-400 mb-2">Programación de Gimnasio</span>
+                                            <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-amber-400 transition-colors">
+                                                Rutinas de Gimnasio Gratis
+                                            </h3>
+                                            <p className="text-sm font-medium text-text-secondary leading-relaxed mb-6">
+                                                Plantillas semanales estructuradas de Push Pull Legs, Torso Pierna, Full Body y Arnold Split por nivel, días de entrenamiento y objetivo.
+                                            </p>
+                                        </div>
+                                        <span className="inline-flex items-center gap-2 text-sm font-black text-amber-400 group-hover:translate-x-1 transition-transform">
+                                            Explorar Rutinas de Gimnasio <ArrowRight size={16} />
+                                        </span>
+                                    </a>
+                                </ScrollRevealCard>
+
                                 <ScrollRevealCard delay={100} className="h-full">
+                                    <a
+                                        href="/ejercicios"
+                                        className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-blue-500/60 backdrop-blur-xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/15 group relative overflow-hidden"
+                                    >
+                                        <div>
+                                            <div className="w-14 h-14 rounded-[20px] bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
+                                                <FaHeartPulse className="text-2xl" />
+                                            </div>
+                                            <span className="inline-block text-[11px] font-black uppercase tracking-widest text-blue-400 mb-2">Técnica y Biomecánica</span>
+                                            <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-blue-400 transition-colors">
+                                                Guía y Enciclopedia de Ejercicios
+                                            </h3>
+                                            <p className="text-sm font-medium text-text-secondary leading-relaxed mb-6">
+                                                Técnica paso a paso de Press de Banca, Sentadilla Búlgara, Peso Muerto Rumano, Dominadas, músculos implicados y errores frecuentes.
+                                            </p>
+                                        </div>
+                                        <span className="inline-flex items-center gap-2 text-sm font-black text-blue-400 group-hover:translate-x-1 transition-transform">
+                                            Ver Guía de Ejercicios <ArrowRight size={16} />
+                                        </span>
+                                    </a>
+                                </ScrollRevealCard>
+
+                                <ScrollRevealCard delay={150} className="h-full">
                                     <a
                                         href="/calculadora-1rm"
                                         className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/60 backdrop-blur-xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-accent/15 group relative overflow-hidden"
@@ -994,7 +1059,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                     </a>
                                 </ScrollRevealCard>
 
-                                <ScrollRevealCard delay={300} className="h-full">
+                                <ScrollRevealCard delay={250} className="h-full">
                                     <a
                                         href="/noticias"
                                         className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-purple-500/60 backdrop-blur-xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/15 group relative overflow-hidden"
@@ -1017,25 +1082,25 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                     </a>
                                 </ScrollRevealCard>
 
-                                <ScrollRevealCard delay={400} className="h-full">
+                                <ScrollRevealCard delay={300} className="h-full">
                                     <a
-                                        href="/ejercicios"
-                                        className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-blue-500/60 backdrop-blur-xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/15 group relative overflow-hidden"
+                                        href="/faq"
+                                        className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-cyan-500/60 backdrop-blur-xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/15 group relative overflow-hidden"
                                     >
                                         <div>
-                                            <div className="w-14 h-14 rounded-[20px] bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
-                                                <FaHeartPulse className="text-2xl" />
+                                            <div className="w-14 h-14 rounded-[20px] bg-cyan-500/15 text-cyan-400 ring-1 ring-cyan-500/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all duration-300">
+                                                <FaCircleQuestion className="text-2xl" />
                                             </div>
-                                            <span className="inline-block text-[11px] font-black uppercase tracking-widest text-blue-400 mb-2">Técnica y Rutinas</span>
-                                            <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-blue-400 transition-colors">
-                                                Enciclopedia de Ejercicios y Splits
+                                            <span className="inline-block text-[11px] font-black uppercase tracking-widest text-cyan-400 mb-2">Dudas y Plataforma</span>
+                                            <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-cyan-400 transition-colors">
+                                                Preguntas Frecuentes (FAQ)
                                             </h3>
                                             <p className="text-sm font-medium text-text-secondary leading-relaxed mb-6">
-                                                Técnica paso a paso de Press de Banca, Sentadilla Búlgara, Peso Muerto Rumano, Dominadas y plantillas semanales Push Pull Legs y Torso Pierna.
+                                                Resuelve todas tus dudas sobre cómo funciona el diario sin internet, la exportación CSV/JSON, la app Android y las herramientas gratuitas.
                                             </p>
                                         </div>
-                                        <span className="inline-flex items-center gap-2 text-sm font-black text-blue-400 group-hover:translate-x-1 transition-transform">
-                                            Ver Guía de Ejercicios <ArrowRight size={16} />
+                                        <span className="inline-flex items-center gap-2 text-sm font-black text-cyan-400 group-hover:translate-x-1 transition-transform">
+                                            Ver Preguntas Frecuentes <ArrowRight size={16} />
                                         </span>
                                     </a>
                                 </ScrollRevealCard>

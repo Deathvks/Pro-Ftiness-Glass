@@ -12,11 +12,14 @@ import {
   FaCalculator,
   FaFire,
   FaDumbbell,
+  FaListCheck,
   FaNewspaper,
   FaCircleQuestion,
   FaUsers,
   FaShieldHalved,
-  FaScaleBalanced
+  FaScaleBalanced,
+  FaRightToBracket,
+  FaUserPlus
 } from 'react-icons/fa6';
 
 export default function PublicPageFooter({ className = '' }) {
@@ -134,6 +137,15 @@ export default function PublicPageFooter({ className = '' }) {
               </li>
               <li>
                 <Link 
+                  to="/rutinas" 
+                  className="flex items-center gap-2 py-2 px-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 hover:text-accent transition-colors"
+                >
+                  <FaListCheck size={13} className="text-amber-400 shrink-0" />
+                  <span className="font-semibold">Rutinas de Gimnasio (PPL, Torso Pierna)</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
                   to="/ejercicios" 
                   className="flex items-center gap-2 py-2 px-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 hover:text-accent transition-colors"
                 >
@@ -176,6 +188,24 @@ export default function PublicPageFooter({ className = '' }) {
                 >
                   <FaNewspaper size={13} className="text-purple-400 shrink-0" />
                   <span className="font-semibold">Portal de Artículos y Noticias</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/login" 
+                  className="flex items-center gap-2 py-2 px-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 hover:text-accent transition-colors"
+                >
+                  <FaRightToBracket size={13} className="text-accent shrink-0" />
+                  <span className="font-semibold">Iniciar Sesión</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/register" 
+                  className="flex items-center gap-2 py-2 px-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 hover:text-accent transition-colors"
+                >
+                  <FaUserPlus size={13} className="text-emerald-400 shrink-0" />
+                  <span className="font-semibold">Crear Cuenta Gratis</span>
                 </Link>
               </li>
             </ul>

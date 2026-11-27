@@ -1,17 +1,17 @@
 {
-  "version": "7.18.0",
-  "releaseNotes": "Actualización v7.18.0: nuevo diseño del Sistema XP con multiplicadores semanales (x1,5 en niveles acabados en 5 y x2 en niveles acabados en 0) y reloj de cuenta atrás en vivo.",
+  "version": "7.18.1",
+  "releaseNotes": "Actualización v7.18.1: optimización SEO de enlaces principales (Rutinas, Ejercicios, Calculadoras, Noticias y Acceso) y sitemap dinámico para Google Sitelinks.",
   "welcome": {
-    "title": "Novedades Sistema XP (v7.18.0)",
-    "subtitle": "Sube de nivel y activa multiplicadores semanales de experiencia con contador en directo.",
+    "title": "Novedades Pro Fitness Glass (v7.18.1)",
+    "subtitle": "Navegación mejorada hacia rutinas de gimnasio, guía de ejercicios, calculadoras e inicio de sesión.",
     "features": [
       {
-        "title": "Boost XP x1,5 y x2 durante 1 semana",
-        "description": "Al alcanzar niveles en ...5 (5, 15, 25...) ganas XP x1,5 y en niveles en ...0 (10, 20, 30...) ganas XP x2 durante 7 días."
+        "title": "Acceso directo a Rutinas y Ejercicios",
+        "description": "Encuentra al instante plantillas Push Pull Legs, Torso Pierna, guías técnicas y calculadoras desde la página principal."
       },
       {
-        "title": "Sistema XP Renovado + Reloj en Vivo",
-        "description": "Consulta la cuenta atrás semanal directamente desde tu tarjeta de nivel en el inicio y dentro del nuevo modal de Sistema XP."
+        "title": "SEO y Sitelinks optimizados",
+        "description": "Estructura de navegación, datos estructurados y sitemap XML completo para descubrir todas las secciones públicas en Google."
       }
     ]
   }

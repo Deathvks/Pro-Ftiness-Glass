@@ -688,7 +688,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
     return (
         <>
-            <SEOHead title="Iniciar Sesión - Pro Fitness Glass" description="Accede a tu cuenta de Pro Fitness Glass." route="login" noIndex={true} />
+            <SEOHead title="Iniciar Sesión | Pro Fitness Glass" description="Inicia sesión en Pro Fitness Glass para acceder a tus rutinas de gimnasio, diario de entrenamiento, seguimiento de macros y récords personales." route="login" />
             <SplitLayout onShowPolicy={() => setShowPolicy(true)}>
 
                 <img src="/logo.webp" alt="Pro Fitness Glass Logo" className="w-20 h-20 mx-auto mb-3 object-contain drop-shadow-md transition-transform duration-500 hover:scale-105" />

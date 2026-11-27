@@ -610,7 +610,7 @@ export async function prerenderNewsArtifacts({ articles, distOnly = isDistOnly()
   }
 
   const removed = validSlugs.size > 0 ? pruneStaleNewsDirs(validSlugs) : 0;
-  return { skipped: false, count, removed, baseHtml };
+  return { skipped: false, count, removed, baseHtml, articles: resolvedArticles };
 }
 
 async function main() {
@@ -619,7 +619,7 @@ async function main() {
     console.error('[Prerender] Error: dist/index.html no existe. Ejecuta primero vite build.');
     return;
   }
-  const { baseHtml, count, removed } = result;
+  const { baseHtml, count, removed, articles: allArticles } = result;
   console.log(`[Prerender] ¡Listo! ${count} artículos prerenderizados en dist/noticias/:slug/index.html${removed ? ` (${removed} obsoletos eliminados)` : ''}.`);
 
   // 4. Prerender de las Calculadoras Públicas de Gimnasio (/calculadora-1rm y /calculadora-calorias-macros)
@@ -1437,6 +1437,139 @@ async function main() {
     );
   }
   console.log('[Prerender] Generadas páginas legales (/privacy, /terms, /aviso-legal).');
+
+  // 10. Prerender de páginas de acceso prioritario (/login y /register) para Sitelinks y crawlers
+  const authPages = [
+    {
+      slug: 'login',
+      chunk: 'LoginScreen',
+      title: 'Iniciar Sesión | Pro Fitness Glass',
+      description: 'Inicia sesión en Pro Fitness Glass para acceder a tus rutinas de gimnasio, diario de entrenamiento, seguimiento de macros y récords personales.',
+      h1: 'Iniciar Sesión en Pro Fitness Glass',
+      summary: 'Accede a tu diario de entrenamiento, rutinas personalizadas, calculadora 1RM, control nutricional y seguimiento de récords personales sin publicidad.',
+      altHref: '/register',
+      altLabel: '¿No tienes cuenta? Regístrate gratis',
+    },
+    {
+      slug: 'register',
+      chunk: 'RegisterScreen',
+      title: 'Crear Cuenta Gratis | Pro Fitness Glass',
+      description: 'Regístrate gratis en Pro Fitness Glass y empieza a crear rutinas de entrenamiento, registrar series, calcular tu 1RM y controlar tus calorías y macros.',
+      h1: 'Crear Cuenta Gratis en Pro Fitness Glass',
+      summary: 'Empieza hoy gratis en web y Android: planifica tus rutinas Push Pull Legs o Torso Pierna, registra tus cargas con 100% privacidad y sigue tus macros diarios.',
+      altHref: '/login',
+      altLabel: '¿Ya tienes cuenta? Iniciar Sesión',
+    },
+  ];
+
+  for (const page of authPages) {
+    const pageDir = path.join(distDir, page.slug);
+    if (!fs.existsSync(pageDir)) fs.mkdirSync(pageDir, { recursive: true });
+    const pageUrl = `${BASE_URL}/${page.slug}`;
+    const pageBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 860px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav aria-label="Navegación principal" style="margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 1rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Pro Fitness Glass</a>
+      <a href="/rutinas" style="color: #fbbf24; text-decoration: none; font-weight: 700;">Rutinas de Gimnasio</a>
+      <a href="/ejercicios" style="color: #34d399; text-decoration: none; font-weight: 700;">Guía de Ejercicios</a>
+      <a href="/calculadora-1rm" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Calculadora 1RM</a>
+      <a href="/calculadora-calorias-macros" style="color: #34d399; text-decoration: none; font-weight: 700;">Calculadora Macros</a>
+      <a href="/noticias" style="color: #c084fc; text-decoration: none; font-weight: 700;">Noticias</a>
+    </nav>
+    <header style="margin-bottom: 2rem;">
+      <h1 style="font-size: 2.25rem; font-weight: 900; margin: 0 0 1rem; letter-spacing: -0.02em;">${escapeHtml(page.h1)}</h1>
+      <p style="font-size: 1.05rem; color: #94a3b8; margin: 0 0 1.25rem;">${escapeHtml(page.summary)}</p>
+      <a href="${page.altHref}" style="color: #38bdf8; font-weight: 700; text-decoration: underline;">${escapeHtml(page.altLabel)}</a>
+    </header>
+  </main>`;
+    const pageHtml = injectMeta(baseHtml, {
+      title: page.title,
+      description: page.description,
+      image: `${BASE_URL}/og-preview.jpg`,
+      url: pageUrl,
+      type: 'website',
+      jsonLdScripts: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          name: page.h1,
+          description: page.description,
+          url: pageUrl,
+          inLanguage: 'es-ES',
+        },
+      ],
+    });
+    fs.writeFileSync(
+      path.join(pageDir, 'index.html'),
+      injectPrerenderBody(pageHtml, pageBody, page.chunk),
+      'utf8'
+    );
+  }
+  console.log('[Prerender] Generadas páginas de acceso (/login, /register).');
+
+  // 11. Generación dinámica de sitemap.xml válido y completo para Google Search Console
+  const todayIso = new Date().toISOString().split('T')[0];
+  const staticSitemapEntries = [
+    { loc: `${BASE_URL}/`, lastmod: todayIso, changefreq: 'daily', priority: '1.0' },
+    { loc: `${BASE_URL}/rutinas`, lastmod: todayIso, changefreq: 'weekly', priority: '0.95' },
+    { loc: `${BASE_URL}/ejercicios`, lastmod: todayIso, changefreq: 'weekly', priority: '0.95' },
+    { loc: `${BASE_URL}/calculadora-1rm`, lastmod: todayIso, changefreq: 'monthly', priority: '0.95' },
+    { loc: `${BASE_URL}/calculadora-calorias-macros`, lastmod: todayIso, changefreq: 'monthly', priority: '0.95' },
+    { loc: `${BASE_URL}/noticias`, lastmod: todayIso, changefreq: 'daily', priority: '0.9' },
+    { loc: `${BASE_URL}/sobre-nosotros`, lastmod: todayIso, changefreq: 'monthly', priority: '0.8' },
+    { loc: `${BASE_URL}/faq`, lastmod: todayIso, changefreq: 'monthly', priority: '0.8' },
+    { loc: `${BASE_URL}/login`, lastmod: todayIso, changefreq: 'monthly', priority: '0.75' },
+    { loc: `${BASE_URL}/register`, lastmod: todayIso, changefreq: 'monthly', priority: '0.75' },
+    { loc: `${BASE_URL}/mantenimiento`, lastmod: todayIso, changefreq: 'monthly', priority: '0.4' },
+    { loc: `${BASE_URL}/privacy`, lastmod: todayIso, changefreq: 'yearly', priority: '0.3' },
+    { loc: `${BASE_URL}/terms`, lastmod: todayIso, changefreq: 'yearly', priority: '0.3' },
+    { loc: `${BASE_URL}/aviso-legal`, lastmod: todayIso, changefreq: 'yearly', priority: '0.3' },
+  ];
+
+  const seenLocs = new Set(staticSitemapEntries.map((e) => e.loc));
+  const sitemapEntries = [...staticSitemapEntries];
+
+  for (const routine of PUBLIC_ROUTINES) {
+    const loc = `${BASE_URL}/rutinas/${routine.slug}`;
+    if (!seenLocs.has(loc)) {
+      seenLocs.add(loc);
+      sitemapEntries.push({ loc, lastmod: todayIso, changefreq: 'monthly', priority: '0.85' });
+    }
+  }
+
+  for (const exercise of PUBLIC_EXERCISES) {
+    const loc = `${BASE_URL}/ejercicios/${exercise.slug}`;
+    if (!seenLocs.has(loc)) {
+      seenLocs.add(loc);
+      sitemapEntries.push({ loc, lastmod: todayIso, changefreq: 'monthly', priority: '0.8' });
+    }
+  }
+
+  for (const article of allArticles || []) {
+    if (!article || !article.slug) continue;
+    const loc = `${BASE_URL}/noticias/${article.slug}`;
+    if (seenLocs.has(loc)) continue;
+    seenLocs.add(loc);
+    const rawDate = article.updatedAt || article.publishedAt || article.createdAt;
+    const parsedDate = rawDate ? new Date(rawDate) : null;
+    const lastmod = parsedDate && !Number.isNaN(parsedDate.getTime())
+      ? parsedDate.toISOString().split('T')[0]
+      : todayIso;
+    sitemapEntries.push({ loc, lastmod, changefreq: 'weekly', priority: '0.85' });
+  }
+
+  const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapEntries
+    .map(
+      (entry) =>
+        `  <url>\n    <loc>${escapeHtml(entry.loc)}</loc>\n    <lastmod>${entry.lastmod}</lastmod>\n    <changefreq>${entry.changefreq}</changefreq>\n    <priority>${entry.priority}</priority>\n  </url>`
+    )
+    .join('\n')}\n</urlset>\n`;
+
+  fs.writeFileSync(path.join(distDir, 'sitemap.xml'), sitemapXml, 'utf8');
+  if (!isDistOnly() && fs.existsSync(publicDir)) {
+    fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), sitemapXml, 'utf8');
+  }
+  console.log(`[Prerender] Generado sitemap.xml con ${sitemapEntries.length} URLs válidas.`);
 
 }
 

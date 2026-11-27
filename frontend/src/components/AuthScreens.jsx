@@ -68,9 +68,11 @@ const AuthScreens = ({ authView, setAuthView }) => {
   return (
     <div className="fixed inset-0 flex flex-col w-full h-full bg-bg-primary overflow-hidden animate-fade-in">
       <MaintenanceNoticeBanner withSafeArea />
-      <Helmet>
-        <meta name="robots" content="noindex, nofollow" />
-      </Helmet>
+      {!['login', 'register'].includes(authView) && (
+        <Helmet>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+      )}
       <div className={`flex-1 min-h-0 flex flex-col ${isFullLayoutView ? 'overflow-hidden' : 'overflow-y-auto overscroll-y-contain custom-scrollbar'}`} style={!isFullLayoutView ? { WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' } : undefined}>
         <Suspense
           fallback={

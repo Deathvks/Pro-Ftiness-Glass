@@ -12,6 +12,9 @@ Allow: /ejercicios
 Allow: /ejercicios/
 Allow: /rutinas
 Allow: /rutinas/
+Allow: /aviso-legal
+Allow: /login
+Allow: /register
 Disallow: /api/
 Disallow: /dashboard
 Disallow: /workout
@@ -22,8 +25,6 @@ Disallow: /social
 Disallow: /settings
 Disallow: /profile
 Disallow: /admin
-Disallow: /login
-Disallow: /register
 Disallow: /forgotPassword
 Disallow: /forgot-password
 Disallow: /reset-password
