@@ -46,6 +46,7 @@ export const createGamificationSlice = (set, get) => ({
         workoutsCount: 0,
         lastActivityDate: null,
         unlockedBadges: [],
+        xpBoost: null,
         gamificationEvents: [],
         isCheckingStreak: false,
     },
@@ -245,6 +246,10 @@ export const createGamificationSlice = (set, get) => ({
                         });
                     }
 
+                    const nextXpBoost = serverData.xpBoost !== undefined
+                        ? serverData.xpBoost
+                        : (response.xpBoost !== undefined ? response.xpBoost : state.gamification.xpBoost);
+
                     return {
                         gamification: {
                             ...state.gamification,
@@ -254,6 +259,7 @@ export const createGamificationSlice = (set, get) => ({
                             workoutsCount: serverData.workouts_count ?? state.gamification.workoutsCount,
                             lastActivityDate: normalizeDate(serverData.last_activity_date),
                             unlockedBadges: serverData.unlocked_badges || [],
+                            xpBoost: nextXpBoost,
                             gamificationEvents: newEvents,
                             isCheckingStreak: false
                         }
@@ -279,6 +285,10 @@ export const createGamificationSlice = (set, get) => ({
         const unlockedBadges = data.unlocked_badges || data.unlockedBadges || state.gamification.unlockedBadges || [];
         const newLevel = data.level !== undefined ? data.level : state.gamification.level;
 
+        const nextXpBoost = data.xpBoost !== undefined
+            ? data.xpBoost
+            : (data.xp_boost !== undefined ? data.xp_boost : state.gamification.xpBoost);
+
         return {
             gamification: {
                 ...state.gamification,
@@ -288,6 +298,7 @@ export const createGamificationSlice = (set, get) => ({
                 workoutsCount: data.workouts_count !== undefined ? data.workouts_count : (data.workoutsCount !== undefined ? data.workoutsCount : state.gamification.workoutsCount),
                 lastActivityDate: data.last_activity_date || data.lastActivityDate ? normalizeDate(data.last_activity_date || data.lastActivityDate) : state.gamification.lastActivityDate,
                 unlockedBadges: unlockedBadges,
+                xpBoost: nextXpBoost,
                 gamificationEvents: state.gamification.gamificationEvents || []
             }
         };

@@ -7,6 +7,7 @@ import { createNotification } from '../services/notificationService.js';
 import { processUploadedFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/imageService.js';
 import { addXp, syncUserStreak, WEIGHT_UPDATE_XP } from '../services/gamificationService.js';
+import { getActiveXpBoostFromUser } from '../utils/xpBoost.js';
 import { sanitizePlainText } from '../utils/sanitizer.js';
 import { EMAIL_CONSENT_VERSION, updateEmailConsents } from '../services/emailConsentService.js';
 import { getWeeklyTrainingTarget } from '../utils/weeklyTraining.js';
@@ -126,6 +127,7 @@ export const getMyProfile = async (req, res, next) => {
     userData.christmasXpBonusClaimed = Boolean(existingBonus);
     userData.christmasXpBonusPending = Boolean(hasChristmasBadge && !existingBonus);
     userData.christmasXpBonusAmount = CHRISTMAS_CLAIM_XP;
+    userData.xpBoost = getActiveXpBoostFromUser(user);
 
     res.json(userData);
   } catch (error) {
@@ -236,17 +238,21 @@ export const updateGamificationStats = async (req, res, next) => {
       let returnDate = user.last_activity_date;
       if (returnDate) returnDate = new Date(returnDate).toISOString().split('T')[0];
 
+      const activeXpBoost = getActiveXpBoostFromUser(user);
+
       return res.json({
         message: xpResult.xpAdded > 0 ? 'Login diario procesado (+XP)' : 'Login diario ya registrado hoy',
         success: true,
         xpAdded: xpResult.xpAdded || 0,
+        xpBoost: activeXpBoost,
         data: {
           xp: user.xp,
           level: user.level,
           streak: user.streak,
           last_activity_date: returnDate,
           unlocked_badges: currentBadges,
-          xpAdded: xpResult.xpAdded || 0
+          xpAdded: xpResult.xpAdded || 0,
+          xpBoost: activeXpBoost
         },
         ignored: xpResult.xpAdded === 0
       });
@@ -580,7 +586,7 @@ export const clearMyData = async (req, res, next) => {
       {
         profile_image_url: null,
         gender: null, age: null, height: null, activity_level: null,
-        goal: null, xp: 0, level: 1, streak: 0, unlocked_badges: '[]'
+        goal: null, xp: 0, level: 1, streak: 0, unlocked_badges: '[]', daily_gamification_state: {}
       },
       { transaction: t }
     );
@@ -664,13 +670,14 @@ const grantChristmasXpBonusIfEligible = async (user) => {
     userInstance: user,
   });
   if (!xpResult?.success) {
-    return { xpAdded: 0, xp: user.xp, level: user.level, leveledUp: false };
+    return { xpAdded: 0, xp: user.xp, level: user.level, leveledUp: false, xpBoost: getActiveXpBoostFromUser(user) };
   }
   return {
     xpAdded: xpResult.xpAdded || CHRISTMAS_CLAIM_XP,
     xp: xpResult.xp ?? user.xp,
     level: xpResult.level ?? user.level,
     leveledUp: Boolean(xpResult.leveledUp),
+    xpBoost: xpResult.xpBoost ?? getActiveXpBoostFromUser(user),
   };
 };
 
@@ -723,6 +730,7 @@ export const claimChristmasTheme = async (req, res, next) => {
       xp: xpInfo.xp,
       level: xpInfo.level,
       leveledUp: xpInfo.leveledUp,
+      xpBoost: xpInfo.xpBoost ?? null,
       message: '¡Tema Navidad 2026 y +250 XP desbloqueados para siempre!',
     });
   } catch (error) {
@@ -769,6 +777,7 @@ export const claimChristmasXpBonus = async (req, res, next) => {
       xp: xpInfo.xp,
       level: xpInfo.level,
       leveledUp: xpInfo.leveledUp,
+      xpBoost: xpInfo.xpBoost ?? null,
       message: xpInfo.xpAdded > 0
         ? `¡Has recibido +${xpInfo.xpAdded} XP por tu Edición Navidad 2026!`
         : 'Tu regalo de XP de Navidad 2026 ya estaba acreditado en tu cuenta.',

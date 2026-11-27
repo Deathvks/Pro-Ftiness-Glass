@@ -1275,7 +1275,14 @@ export default function MainAppLayout({
           if (data.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
           if (data.newLevel === 15) extraStr = ' (¡Nuevos degradados desbloqueados!)';
           if (data.newLevel === 20) extraStr = ' (¡Nuevos acentos animados desbloqueados!)';
+          if (data.boostActivated?.multiplier > 1) {
+            const multStr = data.boostActivated.multiplier === 2 ? 'x2' : 'x1,5';
+            extraStr += ` · ¡Boost XP ${multStr} durante 1 semana!`;
+          }
           addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel}!${extraStr}`, 'success', 6000);
+          if (data.xpBoost !== undefined && setGamificationData) {
+            setGamificationData({ xpBoost: data.xpBoost });
+          }
         } else if (data.type === 'challenge_completed') {
         addToast(`¡Reto completado! ${data.message} (+${data.xpAdded} XP)`, 'success');
         if (data.leveledUp) {
@@ -1292,7 +1299,8 @@ export default function MainAppLayout({
               level: profileData.level,
               streak: profileData.streak,
               last_activity_date: profileData.last_activity_date,
-              unlocked_badges: profileData.unlocked_badges
+              unlocked_badges: profileData.unlocked_badges,
+              xpBoost: profileData.xpBoost ?? null,
             });
           }
         } catch (error) {

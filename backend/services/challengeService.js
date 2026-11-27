@@ -200,8 +200,9 @@ export const trackChallenge = async (userId, challengeKey, increment = 1, opts =
                 }
             }
 
-            // Otorgar XP
+            // Otorgar XP (con multiplicador semanal si aplica)
             xpResult = await addXp(userId, challengeDef.xp, `Reto: ${challengeDef.title}`, { transaction: t });
+            const awardedXp = xpResult?.xpAdded ?? challengeDef.xp;
 
             // Emitir evento por WebSocket si está disponible
             try {
@@ -211,9 +212,10 @@ export const trackChallenge = async (userId, challengeKey, increment = 1, opts =
                         type: 'challenge_completed',
                         title: '¡Reto Completado!',
                         message: challengeDef.title,
-                        xpAdded: challengeDef.xp,
+                        xpAdded: awardedXp,
                         leveledUp: xpResult?.leveledUp,
                         newLevel: xpResult?.level,
+                        xpBoost: xpResult?.xpBoost ?? null,
                         badgeUnlocked: unlockedBadge || undefined,
                     });
                 }
@@ -245,19 +247,20 @@ export const trackChallenge = async (userId, challengeKey, increment = 1, opts =
  * Otorgar XP directo infinito sin barra de progreso (por ejemplo, referidos).
  */
 export const grantInfiniteChallengeXp = async (userId, title, xp, opts = {}) => {
+    const xpResult = await addXp(userId, xp, `Reto Infinito: ${title}`, opts);
+    const awardedXp = xpResult?.xpAdded ?? xp;
+
     try {
         const { createNotification } = await import('./notificationService.js');
         await createNotification(userId, {
             type: opts.notificationType || 'success',
             title: '¡Reto Completado!',
-            message: `Has completado el reto: ${title} (+${xp} XP)`,
-            data: { type: 'challenge', friendName: opts.friendName, xp }
+            message: `Has completado el reto: ${title} (+${awardedXp} XP)`,
+            data: { type: 'challenge', friendName: opts.friendName, xp: awardedXp }
         });
     } catch (err) {
         console.error("Error enviando push de reto infinito:", err);
     }
-
-    const xpResult = await addXp(userId, xp, `Reto Infinito: ${title}`, opts);
 
     try {
         const { io } = await import('../server.js');
@@ -266,9 +269,10 @@ export const grantInfiniteChallengeXp = async (userId, title, xp, opts = {}) => 
                 type: opts.notificationType === 'referral_success' ? 'referral_success' : 'challenge_completed',
                 title: '¡Reto Completado!',
                 message: title,
-                xpAdded: xp,
+                xpAdded: awardedXp,
                 leveledUp: xpResult?.leveledUp,
                 newLevel: xpResult?.level,
+                xpBoost: xpResult?.xpBoost ?? null,
                 friendName: opts.friendName
             });
         }

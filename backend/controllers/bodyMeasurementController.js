@@ -84,8 +84,8 @@ export const logMeasurement = async (req, res, next) => {
 
         if (previousLogsOfMuscleToday === 0) {
             try {
-                await addXp(userId, 5, `Medida registrada: ${measure_type}`);
-                xpAdded = 5;
+                const xpResult = await addXp(userId, 5, `Medida registrada: ${measure_type}`);
+                xpAdded = xpResult?.xpAdded ?? 5;
             } catch (gError) {
                 console.error('Error gamificación measurement:', gError);
             }

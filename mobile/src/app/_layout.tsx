@@ -303,6 +303,7 @@ export default function RootLayout() {
               workouts_count: profileData.workouts_count,
               last_activity_date: profileData.last_activity_date,
               unlocked_badges: profileData.unlocked_badges,
+              xpBoost: profileData.xpBoost ?? null,
             });
           }
         })
@@ -338,7 +339,14 @@ export default function RootLayout() {
         if (data.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
         if (data.newLevel === 15) extraStr = ' (¡Nuevos degradados desbloqueados!)';
         if (data.newLevel === 20) extraStr = ' (¡Nuevos acentos animados desbloqueados!)';
+        if (data.boostActivated?.multiplier > 1) {
+          const multStr = data.boostActivated.multiplier === 2 ? 'x2' : 'x1,5';
+          extraStr += ` · ¡Boost XP ${multStr} durante 1 semana!`;
+        }
         showToast(`¡Felicidades! Has subido al Nivel ${data.newLevel}!${extraStr}`, 'success', 5500);
+        if (data.xpBoost !== undefined && state.setGamificationData) {
+          state.setGamificationData({ xpBoost: data.xpBoost });
+        }
       } else if (data.type === 'challenge_completed') {
         showToast(`¡Reto completado! ${data.message} (+${data.xpAdded} XP)`, 'success');
         if (data.leveledUp && data.newLevel) {
@@ -361,6 +369,7 @@ export default function RootLayout() {
               streak: profileData.streak,
               last_activity_date: profileData.last_activity_date,
               unlocked_badges: profileData.unlocked_badges,
+              xpBoost: profileData.xpBoost ?? null,
             });
           }
         } catch {}

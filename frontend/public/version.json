@@ -1,17 +1,17 @@
 {
-  "version": "7.17.7",
-  "releaseNotes": "Actualización v7.17.7: corrección del abono retroactivo de +250 XP e insignia Edición Navidad 2026 también para administradores y cuentas con acceso previo.",
+  "version": "7.18.0",
+  "releaseNotes": "Actualización v7.18.0: nuevo diseño del Sistema XP con multiplicadores semanales (x1,5 en niveles acabados en 5 y x2 en niveles acabados en 0) y reloj de cuenta atrás en vivo.",
   "welcome": {
-    "title": "Regalo Navidad 2026 (v7.17.7)",
-    "subtitle": "Ahora el tema Edición Navidad 2026 suma +250 XP directos en tu cuenta y recompensa retroactiva si ya lo tenías.",
+    "title": "Novedades Sistema XP (v7.18.0)",
+    "subtitle": "Sube de nivel y activa multiplicadores semanales de experiencia con contador en directo.",
     "features": [
       {
-        "title": "+250 XP con Invierno Glass",
-        "description": "Al reclamar el tema gratuito de Navidad antes del 6 de enero, recibes el tema permanente, la insignia Navidad 2026 y +250 XP."
+        "title": "Boost XP x1,5 y x2 durante 1 semana",
+        "description": "Al alcanzar niveles en ...5 (5, 15, 25...) ganas XP x1,5 y en niveles en ...0 (10, 20, 30...) ganas XP x2 durante 7 días."
       },
       {
-        "title": "Reto Racha de Invierno ❄️",
-        "description": "Completa 5 entrenamientos antes del 6 de enero en Retos y Misiones → Generales para sumar +400 XP e insignia exclusiva."
+        "title": "Sistema XP Renovado + Reloj en Vivo",
+        "description": "Consulta la cuenta atrás semanal directamente desde tu tarjeta de nivel en el inicio y dentro del nuevo modal de Sistema XP."
       }
     ]
   }

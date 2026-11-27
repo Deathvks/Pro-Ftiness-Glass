@@ -3,6 +3,14 @@ import models from '../models/index.js';
 import { createNotification } from './notificationService.js';
 import { formatXpReason } from '../config/pushContent.js';
 import { getWeeklyTrainingTarget, trainingDateFormatter, trainingDateKey } from '../utils/weeklyTraining.js';
+import {
+    createXpBoostPayload,
+    formatXpMultiplierLabel,
+    getActiveXpBoostFromState,
+    getActiveXpBoostFromUser,
+    getBestMilestoneBoostCrossed,
+    parseDailyGamificationState,
+} from '../utils/xpBoost.js';
 
 const { User, NutritionLog, XpLog, WorkoutLog, Sequelize, sequelize } = models;
 
@@ -52,13 +60,11 @@ const normalizeDate = (inputDate) => {
 // --- HELPER PRIVADO: GESTIÓN DE ESTADO ---
 const getDailyState = (user, rawDate) => {
     const dateKey = trainingDateKey(rawDate ?? new Date(), trainingDateFormatter(user?.timezone)) || normalizeDate(rawDate);
-    // Aseguramos que daily_gamification_state sea un objeto
-    let state = user.daily_gamification_state || {};
-    if (typeof state === 'string') {
-        try { state = JSON.parse(state); } catch (e) { state = {}; }
-    }
+    // Aseguramos que daily_gamification_state sea un objeto y preservamos xp_boost semanal
+    let state = parseDailyGamificationState(user.daily_gamification_state);
+    const preservedBoost = state.xp_boost && typeof state.xp_boost === 'object' ? state.xp_boost : null;
 
-    // Si cambia el día, reseteamos contadores
+    // Si cambia el día, reseteamos contadores diarios manteniendo el boost activo semanal
     if (state.date !== dateKey) {
         state = {
             date: dateKey,
@@ -67,7 +73,8 @@ const getDailyState = (user, rawDate) => {
             creatina: 0,
             water_xp: 0,
             progressive_overload: 0,
-            daily_login: false
+            daily_login: false,
+            ...(preservedBoost ? { xp_boost: preservedBoost } : {}),
         };
     } else {
         // Asegurar que existan las propiedades si el día es el mismo pero la estructura cambió
@@ -77,6 +84,7 @@ const getDailyState = (user, rawDate) => {
         if (state.food_logs === undefined) state.food_logs = 0;
         if (state.progressive_overload === undefined) state.progressive_overload = 0;
         if (state.daily_login === undefined) state.daily_login = false;
+        if (preservedBoost) state.xp_boost = preservedBoost;
     }
     return state;
 };
@@ -85,7 +93,7 @@ const getDailyState = (user, rawDate) => {
 
 export const addXp = async (userId, amount, reason = 'Actividad completada', opts = {}) => {
     try {
-        const { transaction, userInstance } = opts;
+        const { transaction, userInstance, nowMs = Date.now() } = opts;
 
         let user = userInstance;
         if (!user) {
@@ -95,80 +103,141 @@ export const addXp = async (userId, amount, reason = 'Actividad completada', opt
         if (!user) throw new Error('Usuario no encontrado');
 
         if (reason === 'Login Diario' || reason === 'Login diario') {
-            const state = getDailyState(user);
+            const state = getDailyState(user, new Date(nowMs));
             if (state.daily_login) {
-                return { success: true, xp: user.xp, xpAdded: 0 };
+                return {
+                    success: true,
+                    xp: user.xp,
+                    level: user.level,
+                    xpAdded: 0,
+                    baseXp: 0,
+                    xpMultiplier: 1,
+                    xpBoost: getActiveXpBoostFromUser(user, nowMs),
+                };
             }
             state.daily_login = true;
             user.daily_gamification_state = state;
             user.changed('daily_gamification_state', true);
         }
 
+        const activeBoost = amount > 0 ? getActiveXpBoostFromUser(user, nowMs) : null;
+        const appliedMultiplier = activeBoost?.multiplier > 1 ? activeBoost.multiplier : 1;
+        const effectiveAmount = amount > 0 ? Math.round(amount * appliedMultiplier) : amount;
+
         const oldLevel = user.level;
         const oldXp = user.xp;
-        user.xp += amount;
+        user.xp += effectiveAmount;
 
         // --- CORRECCIÓN CRÍTICA ---
         // Calculamos y asignamos el nivel ANTES de guardar en la DB.
         const newLevel = calculateLevel(user.xp);
         let leveledUp = false;
+        let boostActivated = null;
+        let crossedBoost = null;
 
-        // Auto-reparación: Si el nivel calculado es diferente al almacenado, lo actualizamos.
-        // Esto arreglará tu cuenta la próxima vez que ganes cualquier cantidad de XP.
         if (newLevel !== oldLevel) {
             user.level = newLevel;
             if (newLevel > oldLevel) {
                 leveledUp = true;
-                let extraMsg = '';
-                if (newLevel === 5) extraMsg = '\n¡Desbloqueas 5 nuevos colores pastel para la app!';
-                if (newLevel === 10) extraMsg = '\n¡Desbloqueas 5 nuevos pasteles vibrantes para la app!';
-                createNotification(userId, {
-                    type: 'success',
-                    title: '¡Subida de Nivel!',
-                    message: `¡Felicidades! Has alcanzado el Nivel ${newLevel}.${extraMsg}`,
-                    data: { type: 'level_up', newLevel }
-                });
-                
-                // Emitir evento socket para el Toast global en tiempo real
-                try {
-                    import('../server.js').then(({ io }) => {
-                        if (io) {
-                            io.to(userId.toString()).emit('GAMIFICATION_EVENT', {
-                                type: 'level_up',
-                                newLevel: newLevel,
-                                leveledUp: true
-                            });
-                        }
-                    });
-                } catch (err) {
-                    console.error("Error emitiendo level_up socket:", err);
+                crossedBoost = getBestMilestoneBoostCrossed(oldLevel, newLevel);
+                if (crossedBoost) {
+                    const currentState = parseDailyGamificationState(user.daily_gamification_state);
+                    const shouldActivateBoost =
+                        !activeBoost || crossedBoost.multiplier >= activeBoost.multiplier;
+                    if (shouldActivateBoost) {
+                        boostActivated = createXpBoostPayload(crossedBoost.level, crossedBoost.multiplier, nowMs);
+                        currentState.xp_boost = boostActivated;
+                        user.daily_gamification_state = currentState;
+                        user.changed('daily_gamification_state', true);
+                    }
                 }
             }
         }
 
-        // Ahora sí guardamos, con XP y Level actualizados simultáneamente
+        // Limpiar un boost caducado si no se ha activado uno nuevo en este turno
+        if (!boostActivated) {
+            const currentState = parseDailyGamificationState(user.daily_gamification_state);
+            if (currentState.xp_boost && !getActiveXpBoostFromState(currentState, nowMs)) {
+                delete currentState.xp_boost;
+                user.daily_gamification_state = currentState;
+                user.changed('daily_gamification_state', true);
+            }
+        }
+
+        const currentBoostAfter = getActiveXpBoostFromUser(user, nowMs);
+
+        // Ahora sí guardamos, con XP, Level y Boost actualizados simultáneamente
         await user.save({ transaction });
 
-        if (amount !== 0) {
+        if (leveledUp) {
+            let extraMsg = '';
+            if (newLevel === 5) extraMsg += '\n¡Desbloqueas 5 nuevos colores pastel para la app!';
+            if (newLevel === 10) extraMsg += '\n¡Desbloqueas 5 nuevos pasteles vibrantes para la app!';
+            if (boostActivated) {
+                extraMsg += `\n¡Boost semanal ${formatXpMultiplierLabel(boostActivated.multiplier)} activo durante 7 días!`;
+            }
+            createNotification(userId, {
+                type: 'success',
+                title: '¡Subida de Nivel!',
+                message: `¡Felicidades! Has alcanzado el Nivel ${newLevel}.${extraMsg}`,
+                data: { type: 'level_up', newLevel, xpBoost: currentBoostAfter }
+            });
+
+            // Emitir evento socket para el Toast global en tiempo real
+            try {
+                import('../server.js').then(({ io }) => {
+                    if (io) {
+                        io.to(userId.toString()).emit('GAMIFICATION_EVENT', {
+                            type: 'level_up',
+                            newLevel: newLevel,
+                            leveledUp: true,
+                            xpBoost: currentBoostAfter,
+                            boostActivated,
+                        });
+                    }
+                });
+            } catch (err) {
+                console.error("Error emitiendo level_up socket:", err);
+            }
+        }
+
+        if (effectiveAmount !== 0) {
             await XpLog.create({
                 user_id: user.id,
-                amount: amount,
+                amount: effectiveAmount,
                 reason: reason,
                 previous_xp: oldXp,
                 new_xp: user.xp
             }, { transaction });
         }
 
-        if (amount > 0) {
+        if (effectiveAmount > 0) {
+            const boostLabel = appliedMultiplier > 1 ? ` (${formatXpMultiplierLabel(appliedMultiplier)})` : '';
             createNotification(userId, {
                 type: 'success',
-                title: `+${amount} XP`,
-                message: `Has ganado ${amount} XP por ${formatXpReason(reason)}.`,
-                data: { type: 'xp', amount, reason }
+                title: `+${effectiveAmount} XP${appliedMultiplier > 1 ? ` · ${formatXpMultiplierLabel(appliedMultiplier)}` : ''}`,
+                message: `Has ganado ${effectiveAmount} XP por ${formatXpReason(reason)}${boostLabel}.`,
+                data: {
+                    type: 'xp',
+                    amount: effectiveAmount,
+                    baseAmount: amount,
+                    multiplier: appliedMultiplier,
+                    reason,
+                }
             });
         }
 
-        return { success: true, xp: user.xp, level: user.level, leveledUp, xpAdded: amount };
+        return {
+            success: true,
+            xp: user.xp,
+            level: user.level,
+            leveledUp,
+            xpAdded: effectiveAmount,
+            baseXp: amount,
+            xpMultiplier: appliedMultiplier,
+            xpBoost: currentBoostAfter,
+            boostActivated,
+        };
     } catch (error) {
         console.error('Error en addXp:', error);
         return { success: false, error: error.message, xpAdded: 0 };
@@ -542,6 +611,7 @@ export default {
     processCreatinaGamification,
     getWaterXpToday,
     addWaterXpToday,
+    getActiveXpBoostFromUser,
     DAILY_LOGIN_XP,
     WEIGHT_UPDATE_XP,
     WORKOUT_COMPLETION_XP,
@@ -565,6 +635,7 @@ export const processProgressiveOverload = async (userId, exerciseName, rawDate, 
         
         state.progressive_overload += 1;
         user.daily_gamification_state = state;
+        user.changed('daily_gamification_state', true);
         await user.save({ transaction: t });
 
         return { ...xpResult, limitReached: false };

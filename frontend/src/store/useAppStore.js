@@ -145,6 +145,7 @@ const useAppStore = create((set, get) => ({
                     unlockedBadges: nextBadges,
                     ...(nextXp !== undefined ? { xp: nextXp } : {}),
                     ...(nextLevel !== undefined ? { level: nextLevel } : {}),
+                    ...(res.xpBoost !== undefined ? { xpBoost: res.xpBoost } : {}),
                 },
             };
         });

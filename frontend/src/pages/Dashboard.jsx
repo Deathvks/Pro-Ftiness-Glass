@@ -46,6 +46,7 @@ import CircularProgress from '../components/CircularProgress';
 import CreatinaTracker from '../components/CreatinaTracker';
 import WaterLogModal from '../components/WaterLogModal';
 import XPGuideModal from '../components/XPGuideModal';
+import XpBoostClockPill from '../components/XpBoostClockPill';
 import TourGuide from '../components/TourGuide';
 import ExerciseSearch from '../components/RoutineEditor/ExerciseSearch';
 import LevelBadge from '../components/LevelBadge';
@@ -883,6 +884,7 @@ const Dashboard = ({ setView }) => {
               <span className="text-[10px] font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full whitespace-nowrap">
                 {levelData.progress} / {levelData.needed} XP
               </span>
+              <XpBoostClockPill xpBoost={gamification?.xpBoost} />
             </div>
 
             <div className="h-2.5 w-full sm:w-48 bg-black/10 dark:bg-white/5 rounded-full overflow-hidden">

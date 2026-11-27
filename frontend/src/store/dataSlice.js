@@ -220,7 +220,8 @@ export const createDataSlice = (set, get) => ({
             level: profileData.level,
             streak: profileData.streak,
             last_activity_date: profileData.last_activity_date,
-            unlocked_badges: profileData.unlocked_badges
+            unlocked_badges: profileData.unlocked_badges,
+            xpBoost: profileData.xpBoost ?? null,
           });
 
           const today = getTodayDateString();

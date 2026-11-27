@@ -86,6 +86,7 @@ import { WeeklyRecapModal } from '@/components/modals/WeeklyRecapModal';
 import { ExerciseSearchModal } from '@/components/modals/ExerciseSearchModal';
 import { BodyWeightModal } from '@/components/modals/BodyWeightModal';
 import { XPGuideModal } from '@/components/modals/XPGuideModal';
+import { XpBoostClockPill } from '@/components/XpBoostClockPill';
 import { GymLocationModal } from '@/components/modals/GymLocationModal';
 import { WaterLogModal } from '@/components/nutrition/WaterLogModal';
 import { CreatineTrackerModal } from '@/components/nutrition/CreatineTrackerModal';
@@ -752,6 +753,11 @@ export default function Dashboard() {
             <View style={[styles.progressTrack, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' }]}>
               <View style={[styles.progressFill, { backgroundColor: colors.tint, width: `${levelData.progressPercent}%` }]} />
             </View>
+            {(gamification as any)?.xpBoost ? (
+              <View style={{ marginTop: 6, flexDirection: 'row', alignItems: 'center' }}>
+                <XpBoostClockPill xpBoost={(gamification as any)?.xpBoost} accentColor={colors.tint} />
+              </View>
+            ) : null}
           </View>
 
           {/* Racha / Escudo */}
