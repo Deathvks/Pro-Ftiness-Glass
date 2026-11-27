@@ -16,6 +16,61 @@ const __dirname = path.dirname(__filename);
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
 const UPLOADS_DIR = path.join(PUBLIC_DIR, 'images');
 
+const BLOCKED_EXTENSIONS = new Set([
+  '.html', '.htm', '.svg', '.svgz', '.xml', '.xhtml',
+  '.js', '.mjs', '.cjs', '.jsx', '.ts', '.tsx',
+  '.php', '.phtml', '.asp', '.aspx', '.jsp', '.cgi', '.pl', '.py', '.sh', '.bash',
+  '.exe', '.bat', '.cmd', '.vbs', '.msi', '.dll', '.ps1'
+]);
+
+const ALLOWED_IMAGE_MIMES = new Set([
+  'image/jpeg', 'image/jpg', 'image/pjpeg', 'image/png',
+  'image/webp', 'image/gif', 'image/heic', 'image/heif', 'image/avif'
+]);
+
+const ALLOWED_IMAGE_EXTS = new Set([
+  '.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif', '.avif'
+]);
+
+const ALLOWED_VIDEO_MIMES = new Set([
+  'video/mp4', 'video/quicktime', 'video/webm', 'video/x-m4v', 'video/3gpp'
+]);
+
+const ALLOWED_VIDEO_EXTS = new Set(['.mp4', '.mov', '.webm', '.m4v', '.3gp']);
+
+const VIDEO_MIME_TO_EXT = {
+  'video/mp4': '.mp4',
+  'video/quicktime': '.mov',
+  'video/webm': '.webm',
+  'video/x-m4v': '.m4v',
+  'video/3gpp': '.3gp',
+};
+
+const hasValidVideoSignature = (filePath) => {
+  let fd;
+  try {
+    const header = Buffer.alloc(16);
+    fd = fs.openSync(filePath, 'r');
+    const bytesRead = fs.readSync(fd, header, 0, 16, 0);
+    if (bytesRead < 8) return false;
+
+    // WebM / Matroska EBML header: 1A 45 DF A3
+    if (header[0] === 0x1a && header[1] === 0x45 && header[2] === 0xdf && header[3] === 0xa3) {
+      return true;
+    }
+
+    // MP4 / MOV / M4V / 3GP ISO Base Media File Format boxes at offset 4..8
+    const boxType = header.subarray(4, 8).toString('ascii');
+    return ['ftyp', 'moov', 'mdat', 'wide', 'free', 'skip'].includes(boxType);
+  } catch {
+    return false;
+  } finally {
+    if (fd !== undefined) {
+      try { fs.closeSync(fd); } catch {}
+    }
+  }
+};
+
 const ensureDir = (dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -35,17 +90,44 @@ const storage = multer.diskStorage({
     cb(null, finalPath);
   },
   filename: (req, file, cb) => {
+    const mime = (file.mimetype || '').toLowerCase();
+    const rawExt = path.extname(file.originalname || '').toLowerCase();
+    let safeExt = '.bin';
+
+    if (ALLOWED_VIDEO_MIMES.has(mime)) {
+      safeExt = ALLOWED_VIDEO_EXTS.has(rawExt) ? rawExt : (VIDEO_MIME_TO_EXT[mime] || '.mp4');
+    } else if (ALLOWED_IMAGE_MIMES.has(mime)) {
+      safeExt = ALLOWED_IMAGE_EXTS.has(rawExt) ? rawExt : '.img';
+    }
+
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    cb(null, file.fieldname + '-' + uniqueSuffix + safeExt);
   }
 });
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Formato de archivo no soportado'), false);
+  const mime = (file.mimetype || '').toLowerCase();
+  const rawExt = path.extname(file.originalname || '').toLowerCase();
+
+  if (rawExt && BLOCKED_EXTENSIONS.has(rawExt)) {
+    return cb(new Error('Extensión de archivo bloqueada por seguridad.'), false);
   }
+
+  if (ALLOWED_IMAGE_MIMES.has(mime)) {
+    if (rawExt && !ALLOWED_IMAGE_EXTS.has(rawExt)) {
+      return cb(new Error('Extensión de imagen no permitida.'), false);
+    }
+    return cb(null, true);
+  }
+
+  if (ALLOWED_VIDEO_MIMES.has(mime)) {
+    if (rawExt && !ALLOWED_VIDEO_EXTS.has(rawExt)) {
+      return cb(new Error('Extensión de vídeo no permitida (usa .mp4, .mov o .webm).'), false);
+    }
+    return cb(null, true);
+  }
+
+  return cb(new Error('Formato de archivo no soportado'), false);
 };
 
 export const upload = multer({
@@ -108,7 +190,13 @@ const releaseModelSafely = () => {
 export const processUploadedFile = async (file, isHDRRequested = false) => {
   if (!file) throw new Error("No file provided");
 
-  if (file.mimetype.startsWith('video/')) {
+  if ((file.mimetype || '').toLowerCase().startsWith('video/')) {
+    if (!hasValidVideoSignature(file.path)) {
+      if (fs.existsSync(file.path)) {
+        try { fs.unlinkSync(file.path); } catch {}
+      }
+      throw new Error('El archivo de vídeo no tiene una cabecera multimedia válida.');
+    }
     const relativePath = path.relative(PUBLIC_DIR, file.path);
     return {
       url: '/' + relativePath.split(path.sep).join('/'),

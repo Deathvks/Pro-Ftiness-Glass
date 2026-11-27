@@ -175,6 +175,13 @@ app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 // --- ARCHIVOS ESTÁTICOS (con caché para ahorrar tráfico) ---
+// Las capturas de reportes de bugs nunca deben servirse sin autenticación de administrador
+app.use('/uploads/reports', (req, res) => {
+  return res.status(403).json({
+    error: 'Acceso denegado. Las capturas de reportes requieren sesión de administrador.'
+  });
+});
+
 const staticPath = path.join(__dirname, 'public');
 app.use(express.static(staticPath, {
   maxAge: '7d',        // El navegador/app guarda los archivos 7 días sin volver a pedirlos

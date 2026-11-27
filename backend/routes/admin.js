@@ -48,6 +48,7 @@ router.delete('/users/:userId/profile-image', adminController.updateTrainerProfi
 
 // Rutas de gestión de reportes de bugs
 router.get('/reports', reportController.getReports);
+router.get('/reports/image/:filename', reportController.serveReportImage);
 router.delete('/reports/:id', reportController.deleteReport);
 
   // Rutas de valoraciones

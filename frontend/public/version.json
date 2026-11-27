@@ -1,17 +1,17 @@
 {
-  "version": "7.18.2",
-  "releaseNotes": "Actualización v7.18.2: corrección de lectura en el apartado Versión de App (Soporte) en web móvil y Capacitor Android.",
+  "version": "7.18.3",
+  "releaseNotes": "Actualización v7.18.3: endurecimiento de seguridad en subidas de archivos multimedia y protección privada para capturas de reportes.",
   "welcome": {
-    "title": "Novedades Pro Fitness Glass (v7.18.2)",
-    "subtitle": "Mejoras visuales en la pantalla de Soporte y optimización de enlaces principales.",
+    "title": "Novedades Pro Fitness Glass (v7.18.3)",
+    "subtitle": "Refuerzo de seguridad en servidor, Web, PWA, Capacitor y App Nativa.",
     "features": [
       {
-        "title": "Versión de App legible en móvil",
-        "description": "Corregido el recorte con puntos suspensivos en Versión de App y añadida detección de plataforma en Android Capacitor y Web."
+        "title": "Validación estricta de subidas multimedia",
+        "description": "Verificación de extensiones permitidas y cabeceras binarias reales en vídeos e imágenes para bloquear archivos maliciosos."
       },
       {
-        "title": "Acceso directo y Sitelinks SEO",
-        "description": "Navegación mejorada hacia rutinas de gimnasio, guía de ejercicios, calculadoras e inicio de sesión."
+        "title": "Capturas de reportes 100% privadas",
+        "description": "Las imágenes de reportes se guardan fuera de la carpeta pública y solo son accesibles mediante sesión verificada de administrador."
       }
     ]
   }

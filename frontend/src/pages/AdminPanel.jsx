@@ -22,7 +22,7 @@ import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getS
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
 import useAppStore from '../store/useAppStore';
-import apiClient from '../services/apiClient';
+import apiClient, { API_BASE_URL } from '../services/apiClient';
 import { useShallow } from 'zustand/react/shallow';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -41,6 +41,76 @@ const SecurityDashboard = lazyWithRetry(() => import('./SecurityDashboard'), 'ad
 const AdminNewsManager = lazyWithRetry(() => import('../components/Admin/AdminNewsManager'), 'adminNews');
 const AdminRetentionRescue = lazyWithRetry(() => import('../components/Admin/AdminRetentionRescue'), 'adminRetention');
 const AdminServerResources = lazyWithRetry(() => import('./AdminServerResources'), 'adminServerResources');
+
+const getProtectedReportImageUrl = (rawPath) => {
+  const filename = String(rawPath || '').split('/').pop().split('?')[0];
+  if (!filename) return '';
+  const base = (API_BASE_URL || '/api').replace(/\/+$/, '');
+  return `${base}/admin/reports/image/${encodeURIComponent(filename)}`;
+};
+
+const ProtectedReportThumbnail = ({ imagePath, token, onOpen }) => {
+  const [blobUrl, setBlobUrl] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    let objectUrl = null;
+    const url = getProtectedReportImageUrl(imagePath);
+    if (!url) {
+      setFailed(true);
+      return undefined;
+    }
+
+    const loadImage = async () => {
+      setFailed(false);
+      try {
+        const res = await fetch(url, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          credentials: 'include',
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        objectUrl = URL.createObjectURL(blob);
+        if (active) setBlobUrl(objectUrl);
+      } catch {
+        if (active) setFailed(true);
+      }
+    };
+
+    loadImage();
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [imagePath, token]);
+
+  return (
+    <div
+      className={`relative group w-20 h-20 rounded-[16px] overflow-hidden ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary shadow-sm flex items-center justify-center ${blobUrl ? 'cursor-zoom-in' : 'cursor-default'}`}
+      onClick={() => {
+        if (blobUrl) onOpen(blobUrl);
+      }}
+    >
+      {blobUrl ? (
+        <>
+          <img
+            src={blobUrl}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+            alt="bug-snap"
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+            <ZoomIn size={20} className="text-white" strokeWidth={2.5} />
+          </div>
+        </>
+      ) : failed ? (
+        <span className="text-[10px] font-bold text-text-muted text-center px-1">No disponible</span>
+      ) : (
+        <Spinner size={18} />
+      )}
+    </div>
+  );
+};
 
 const REPORT_CATEGORY_LABELS = {
   bug: 'Bug',
@@ -277,8 +347,9 @@ const StatusIndicator = ({ lastSeen }) => {
 
 const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
   const { showToast: addToast } = useToast();
-  const { userProfile, setUserProfile, setGamificationData } = useAppStore(useShallow(state => ({
+  const { userProfile, token, setUserProfile, setGamificationData } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
+    token: state.token,
     setUserProfile: state.setUserProfile,
     setGamificationData: state.setGamificationData
   })));
@@ -417,9 +488,6 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
       addToast(err.message || 'Error al eliminar la foto', 'error');
     }
   };
-
-  const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
-  const SERVER_URL = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : API_URL.replace('/api', '');
 
   useEffect(() => {
     localStorage.setItem('admin_users_sort', sortBy);
@@ -1922,16 +1990,12 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                               </div>
                               <div className="flex flex-wrap gap-3">
                                 {report.images.map((img, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="relative group w-20 h-20 rounded-[16px] overflow-hidden ring-1 ring-black/5 dark:ring-white/10 cursor-zoom-in bg-bg-primary shadow-sm"
-                                    onClick={() => setSelectedImageForLightbox(`${API_URL}${img}`)}
-                                  >
-                                    <img src={`${API_URL}${img}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" alt="bug-snap" />
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <ZoomIn size={20} className="text-white" strokeWidth={2.5} />
-                                    </div>
-                                  </div>
+                                  <ProtectedReportThumbnail
+                                    key={`${report.id}-${idx}-${img}`}
+                                    imagePath={img}
+                                    token={token}
+                                    onOpen={(blobUrl) => setSelectedImageForLightbox(blobUrl)}
+                                  />
                                 ))}
                               </div>
                             </>

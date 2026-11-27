@@ -6,12 +6,19 @@ import authenticateToken from '../middleware/authenticateToken.js';
 
 const router = express.Router();
 
+const ALLOWED_REPORT_IMAGE_MIMES = new Set([
+    'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif', 'image/avif'
+]);
+
 // Usamos memoryStorage para procesar las imágenes con sharp en el controlador sin generar archivos temporales
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
     fileFilter: (req, file, cb) => {
-        file.mimetype.startsWith('image/') ? cb(null, true) : cb(new Error('Solo imágenes'), false);
+        const mime = (file.mimetype || '').toLowerCase();
+        ALLOWED_REPORT_IMAGE_MIMES.has(mime)
+            ? cb(null, true)
+            : cb(new Error('Solo se permiten imágenes JPG, PNG, WebP, GIF o HEIC'), false);
     }
 });
 

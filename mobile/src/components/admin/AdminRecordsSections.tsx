@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Image, Linking, View } from 'react-native';
-import { Activity, Clock, Cpu, Database, FileCheck, FileWarning, HardDrive, Layers, Radio, RefreshCw, Send, Star, UserCheck, Users, Zap } from 'lucide-react-native';
+import { Image, Linking, Modal, Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Activity, Clock, Cpu, Database, FileCheck, FileWarning, HardDrive, Layers, Radio, RefreshCw, Send, Star, UserCheck, Users, X, Zap } from 'lucide-react-native';
 import apiClient, { BACKEND_BASE_URL } from '@/services/apiClient';
 import { adminWrite } from '@/services/adminService';
+import useAppStore from '@/store/useAppStore';
 import { AdminButton, AdminCard, AdminInput, AdminLoad, AdminMetrics, AdminRecords, AdminText, adminDate, adminSearch, confirmAdmin, styles, useAdminAction } from './AdminUI';
 import { AdminBadge, AdminIconButton, AdminMeter, AdminSegments, AdminSelect, AdminTiles } from './AdminControls';
 
@@ -18,9 +20,20 @@ type Upload = { id: number; file_name: string; file_type?: string; status: strin
 
 const reportCategories: Record<string, string> = { bug: 'Error', suggestion: 'Sugerencia', performance: 'Rendimiento', ui: 'Interfaz', other: 'Otro' };
 const mediaUri = (path: string) => /^https?:\/\//i.test(path) ? path : BACKEND_BASE_URL + (path.startsWith('/') ? path : '/' + path);
+const protectedReportSource = (rawPath: string, token?: string | null) => {
+  const filename = String(rawPath || '').split('/').pop()?.split('?')[0] || '';
+  return {
+    uri: `${BACKEND_BASE_URL}/api/admin/reports/image/${encodeURIComponent(filename)}`,
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  };
+};
 
 export function AdminReports() {
   const { busy, run } = useAdminAction();
+  const insets = useSafeAreaInsets();
+  const token = useAppStore((state: { token?: string | null }) => state.token);
+  const [previewSource, setPreviewSource] = useState<{ uri: string; headers?: Record<string, string> } | null>(null);
+
   return <AdminLoad<Report[]> load={loadReports}>{(reports, reload) => <>
     <AdminCard><View style={styles.toggle}>
       <AdminBadge tone="danger" style={{ alignSelf: 'center' }}>{reports.length} reportes pendientes</AdminBadge>
@@ -36,15 +49,40 @@ export function AdminReports() {
         {!!report.email && <AdminText secondary>{report.email}</AdminText>}
         <AdminText>{report.description}</AdminText>
         {!!report.deviceInfo && <AdminText secondary>{typeof report.deviceInfo === 'string' ? report.deviceInfo : Object.values(report.deviceInfo).filter(value => typeof value === 'string').join(' · ')}</AdminText>}
-        {!!report.images?.length && <View style={styles.actions}>{report.images.map((path, index) => (
-          <View key={index} style={{ gap: 6 }}>
-            <Image source={{ uri: mediaUri(path) }} accessibilityLabel={`Captura ${index + 1}`} style={{ width: 100, height: 100, borderRadius: 12 }} resizeMode="cover" />
-            <AdminButton label="Abrir captura" onPress={() => void run(() => Linking.openURL(mediaUri(path)))} />
-          </View>
-        ))}</View>}
+        {!!report.images?.length && <View style={styles.actions}>{report.images.map((path, index) => {
+          const source = protectedReportSource(path, token);
+          return (
+            <View key={index} style={{ gap: 6 }}>
+              <Pressable onPress={() => setPreviewSource(source)}>
+                <Image source={source} accessibilityLabel={`Captura ${index + 1}`} style={{ width: 100, height: 100, borderRadius: 12 }} resizeMode="cover" />
+              </Pressable>
+              <AdminButton label="Ver captura" onPress={() => setPreviewSource(source)} />
+            </View>
+          );
+        })}</View>}
         <AdminButton label="Resolver" variant="primary" disabled={busy} onPress={() => confirmAdmin('Resolver reporte', 'El reporte se retirará de la lista de pendientes.', () => void run(() => adminWrite(`/admin/reports/${report.id}`, 'DELETE'), 'Reporte resuelto.', reload), 'Resolver')} />
       </AdminCard>
     )} />
+    <Modal visible={!!previewSource} transparent animationType="fade" onRequestClose={() => setPreviewSource(null)}>
+      <Pressable
+        onPress={() => setPreviewSource(null)}
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center', padding: 16, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }}
+      >
+        <Pressable
+          onPress={() => setPreviewSource(null)}
+          style={{ position: 'absolute', top: insets.top + 14, right: 16, width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}
+        >
+          <X color="#fff" size={22} />
+        </Pressable>
+        {!!previewSource && (
+          <Image
+            source={previewSource}
+            style={{ width: '100%', height: '82%' }}
+            resizeMode="contain"
+          />
+        )}
+      </Pressable>
+    </Modal>
   </>}</AdminLoad>;
 }
 

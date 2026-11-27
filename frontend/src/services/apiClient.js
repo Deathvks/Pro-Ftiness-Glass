@@ -211,4 +211,5 @@ const apiClient = async (endpoint, options = {}) => {
     }
 };
 
+export { API_BASE_URL };
 export default apiClient;

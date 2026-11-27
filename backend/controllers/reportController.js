@@ -11,6 +11,23 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
+const PRIVATE_REPORTS_DIR = path.resolve(__dirname, '../storage/reports');
+const LEGACY_PUBLIC_REPORTS_DIR = path.join(PUBLIC_DIR, 'uploads', 'reports');
+const SAFE_REPORT_FILENAME = /^[a-zA-Z0-9_-]+\.(webp|png|jpe?g)$/i;
+
+const resolveReportImageFile = (rawFileName) => {
+    const cleanName = path.basename(String(rawFileName || ''));
+    if (!SAFE_REPORT_FILENAME.test(cleanName)) return null;
+
+    const candidates = [PRIVATE_REPORTS_DIR, LEGACY_PUBLIC_REPORTS_DIR];
+    for (const dir of candidates) {
+        const candidate = path.resolve(dir, cleanName);
+        if (candidate.startsWith(dir + path.sep) && fs.existsSync(candidate)) {
+            return candidate;
+        }
+    }
+    return null;
+};
 
 const { BugReport, User } = db;
 
@@ -29,15 +46,15 @@ export const createReport = async (req, res) => {
 
         const images = [];
         if (req.files && req.files.length > 0) {
-            const reportUploadsDir = path.join(PUBLIC_DIR, 'uploads', 'reports');
-            if (!fs.existsSync(reportUploadsDir)) fs.mkdirSync(reportUploadsDir, { recursive: true });
+            if (!fs.existsSync(PRIVATE_REPORTS_DIR)) fs.mkdirSync(PRIVATE_REPORTS_DIR, { recursive: true });
 
             for (const file of req.files) {
                 const newFileName = `bug-${Date.now()}-${Math.round(Math.random() * 1E9)}.webp`;
-                const newPath = path.join(reportUploadsDir, newFileName);
+                const newPath = path.join(PRIVATE_REPORTS_DIR, newFileName);
 
                 // Procesamos el buffer directamente desde memoria a WebP
                 await sharp(file.buffer)
+                    .rotate()
                     .webp({ quality: 80 })
                     .toFile(newPath);
 
@@ -92,6 +109,22 @@ export const getReports = async (req, res) => {
     }
 };
 
+export const serveReportImage = async (req, res) => {
+    try {
+        const filePath = resolveReportImageFile(req.params.filename);
+        if (!filePath) {
+            return res.status(404).json({ error: 'Captura de reporte no encontrada.' });
+        }
+
+        res.setHeader('Cache-Control', 'private, max-age=3600');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        return res.sendFile(filePath);
+    } catch (error) {
+        console.error('Error sirviendo imagen de reporte:', error);
+        return res.status(500).json({ error: 'Error al obtener la captura del reporte.' });
+    }
+};
+
 export const deleteReport = async (req, res) => {
     try {
         const { id } = req.params;
@@ -99,10 +132,16 @@ export const deleteReport = async (req, res) => {
 
         if (!report) return res.status(404).json({ error: 'No encontrado' });
 
-        if (report.images) {
+        if (Array.isArray(report.images)) {
             report.images.forEach(imgUrl => {
-                const fullPath = path.join(PUBLIC_DIR, imgUrl);
-                if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+                const cleanName = path.basename(String(imgUrl || ''));
+                if (!SAFE_REPORT_FILENAME.test(cleanName)) return;
+                [PRIVATE_REPORTS_DIR, LEGACY_PUBLIC_REPORTS_DIR].forEach((dir) => {
+                    const fullPath = path.resolve(dir, cleanName);
+                    if (fullPath.startsWith(dir + path.sep) && fs.existsSync(fullPath)) {
+                        fs.unlinkSync(fullPath);
+                    }
+                });
             });
         }
 
