@@ -116,6 +116,13 @@ const BADGE_DETAILS = {
     color: 'text-sky-400',
     bg: 'bg-sky-500/15'
   },
+  event_christmas_2026: {
+    name: 'Invierno Activo',
+    desc: 'Completa 5 entrenamientos en Navidad',
+    icon: Snowflake,
+    color: 'text-[#fb7185]',
+    bg: 'bg-[#e11d48]/15'
+  },
   default: {
     name: 'Insignia',
     desc: 'Logro desbloqueado',
@@ -126,12 +133,13 @@ const BADGE_DETAILS = {
 };
 
 const Profile = ({ onCancel, setView, navigate }) => {
-  const { userProfile, fetchInitialData, handleLogout, gamification } = useAppStore(
+  const { userProfile, fetchInitialData, handleLogout, gamification, theme: activeTheme } = useAppStore(
     (state) => ({
       userProfile: state.userProfile,
       fetchInitialData: state.fetchInitialData,
       handleLogout: state.handleLogout,
       gamification: state.gamification,
+      theme: state.theme,
     }),
   );
   const { addToast } = useToast();
@@ -441,7 +449,11 @@ const Profile = ({ onCancel, setView, navigate }) => {
               className="hidden"
             />
             {(() => {
-              const roleConfig = getUserRoleRingConfig(userProfile, userProfile);
+              const roleConfig = getUserRoleRingConfig(
+                { ...userProfile, unlocked_badges: gamification?.unlockedBadges || userProfile?.unlocked_badges },
+                userProfile,
+                activeTheme
+              );
               return (
                 <>
                   <div

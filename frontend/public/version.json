@@ -1,17 +1,17 @@
 {
-  "version": "7.17.3",
-  "releaseNotes": "Actualización v7.17.3: nueva insignia exclusiva visible Navidad 2026 en tu perfil y perfil público tras reclamar Invierno Glass.",
+  "version": "7.17.4",
+  "releaseNotes": "Actualización v7.17.4: marco navideño en avatares y nuevo reto de temporada Racha de Invierno con +400 XP e insignia Invierno Activo hasta el 6 de enero.",
   "welcome": {
-    "title": "Novedades en Pro Fitness Glass (v7.17.3)",
-    "subtitle": "Reclamar Invierno Glass ahora muestra la insignia especial Navidad 2026 en tu perfil.",
+    "title": "Evento de Navidad 2026 (v7.17.4)",
+    "subtitle": "Luce el aro festivo en tu avatar y completa el nuevo reto navideño antes del 6 de enero.",
     "features": [
       {
-        "title": "Insignia Exclusiva Navidad 2026",
-        "description": "Disponible al instante en «Mis Insignias» y en tu perfil público si ya reclamaste el tema Edición Navidad 2026."
+        "title": "Marco Navideño en tu Avatar",
+        "description": "Al usar Invierno Glass (o tras desbloquearlo en campaña), tu avatar luce un degradado cristalino azul hielo y rojo navidad."
       },
       {
-        "title": "Invierno Glass hasta el 6 de enero",
-        "description": "Recuerda desbloquear el tema en Apariencia o Recompensas antes del 6 de enero para conservarlo para siempre."
+        "title": "Reto Racha de Invierno ❄️",
+        "description": "Completa 5 entrenamientos antes del 6 de enero en Retos → Generales para sumar +400 XP y la insignia «Invierno Activo»."
       }
     ]
   }

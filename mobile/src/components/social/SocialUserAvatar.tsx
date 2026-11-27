@@ -31,7 +31,9 @@ const START = { x: 0, y: 1 };
 const END = { x: 1, y: 0 };
 
 export function UserRoleAvatarRing({ user, size = 44, gapColor, style, children, showStoryIndicator = true }: AvatarRingProps & { children: React.ReactNode }) {
-  const role = useAppStore(state => getUserRoleRingConfig(user, state.userProfile));
+  const activeTheme = useAppStore(state => state.theme);
+  const viewerProfile = useAppStore(state => state.userProfile);
+  const role = getUserRoleRingConfig(user, viewerProfile, activeTheme);
   const themeBackground = useAppStore(state => getThemeBaseBackground(state.theme));
   const unseen = useAppStore(state => showStoryIndicator && selectHasUnseenStory(state, user?.id));
   const { tint } = useAppColors();

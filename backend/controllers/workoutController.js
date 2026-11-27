@@ -392,6 +392,19 @@ export const logWorkoutSession = async (req, res, next) => {
         });
       }
 
+      const christmasChallengeRes = await trackChallenge(userId, 'event_christmas_winter_streak', 1);
+      if (christmasChallengeRes.completedNow && christmasChallengeRes.xpResult) {
+        xpAdded += christmasChallengeRes.xpResult.xpAdded;
+        gamificationEvents.push({
+          type: 'challenge_completed',
+          message: 'Racha de Invierno ❄️',
+          xpAdded: christmasChallengeRes.xpResult.xpAdded,
+          leveledUp: christmasChallengeRes.xpResult.leveledUp,
+          newLevel: christmasChallengeRes.xpResult.level,
+          badgeUnlocked: christmasChallengeRes.unlockedBadge || 'event_christmas_2026',
+        });
+      }
+
       if (newWorkoutLog.visibility !== 'private') {
         const shareRes = await trackChallenge(userId, 'social_share_workout', 1);
         if (shareRes.completedNow && shareRes.xpResult) {

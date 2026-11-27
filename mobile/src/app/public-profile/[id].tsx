@@ -97,6 +97,7 @@ const BADGE_DETAILS: Record<string, BadgeConfig> = {
   milestone_70: { name: 'Épico (Lvl 70)', desc: 'Alcanza el nivel 70', icon: Crown, color: '#FF4500', bg: 'rgba(255, 69, 0, 0.15)' },
   milestone_80: { name: 'Leyenda (Lvl 80)', desc: 'Alcanza el nivel 80', icon: Sparkles, color: '#FFD700', bg: 'rgba(255, 215, 0, 0.15)' },
   theme_christmas_2026: { name: 'Navidad 2026', desc: 'Edición Invierno Glass', icon: Snowflake, color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.16)' },
+  event_christmas_2026: { name: 'Invierno Activo', desc: 'Completa 5 entrenos en Navidad', icon: Snowflake, color: '#fb7185', bg: 'rgba(225, 29, 72, 0.16)' },
   default: { name: 'Insignia', desc: 'Logro desbloqueado', icon: Trophy, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
 };
 

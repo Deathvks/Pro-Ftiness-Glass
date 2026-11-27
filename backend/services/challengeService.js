@@ -6,9 +6,22 @@ const { User, UserChallenge, XpLog, sequelize } = models;
 const REFERRAL_INVITER_XP = 1000;
 const REFERRAL_INVITED_XP = 1000;
 const REFERRAL_WELCOME_REASON = 'Bono de bienvenida por invitación';
+const CHRISTMAS_CHALLENGE_DEADLINE = new Date('2027-01-07T04:59:59.999Z');
 
 // Definición de retos
 export const CHALLENGES = {
+    // Evento temporal de Navidad (hasta fin del 6 de enero)
+    event_christmas_winter_streak: {
+        type: 'general',
+        seasonal: 'christmas',
+        expiresAt: '2027-01-06',
+        target: 5,
+        xp: 400,
+        badgeId: 'event_christmas_2026',
+        title: 'Racha de Invierno ❄️',
+        desc: 'Completa 5 entrenamientos antes del 6 de enero • +400 XP e insignia exclusiva',
+    },
+
     // Diarios
     daily_progressive_overload: { type: 'daily', target: 4, xp: 0, title: 'Sobrecarga Progresiva', desc: 'Mantén el peso y haz más repeticiones (Otorga 25 XP al instante)' },
     daily_5_meals: { type: 'daily', target: 5, xp: 50, title: 'Registra 5 comidas', desc: 'Registra al menos 5 alimentos hoy' },
@@ -90,6 +103,11 @@ export const trackChallenge = async (userId, challengeKey, increment = 1, opts =
             return { error: 'Reto desconocido' };
         }
 
+        if (challengeDef.seasonal === 'christmas' && Date.now() > CHRISTMAS_CHALLENGE_DEADLINE.getTime()) {
+            if (!opts.transaction) await t.rollback();
+            return { success: true, completedNow: false, expired: true };
+        }
+
         const todaySpain = getSpainDate();
 
         // 1. Obtener o crear el UserChallenge (bloqueo para concurrencia)
@@ -141,6 +159,7 @@ export const trackChallenge = async (userId, challengeKey, increment = 1, opts =
 
         let completedNow = false;
         let xpResult = null;
+        let unlockedBadge = null;
 
         if (userChallenge.progress >= challengeDef.target) {
             userChallenge.completed = true;
@@ -159,6 +178,28 @@ export const trackChallenge = async (userId, challengeKey, increment = 1, opts =
                 console.error("Error enviando push de reto:", err);
             }
 
+            // Otorgar insignia exclusiva de evento si corresponde
+            if (challengeDef.badgeId) {
+                try {
+                    const user = await User.findByPk(userId, { attributes: ['id', 'unlocked_badges'], transaction: t });
+                    if (user) {
+                        let currentBadges = [];
+                        if (typeof user.unlocked_badges === 'string') {
+                            try { currentBadges = JSON.parse(user.unlocked_badges) || []; } catch { currentBadges = []; }
+                        } else if (Array.isArray(user.unlocked_badges)) {
+                            currentBadges = [...user.unlocked_badges];
+                        }
+                        if (!currentBadges.includes(challengeDef.badgeId)) {
+                            currentBadges.push(challengeDef.badgeId);
+                            await user.update({ unlocked_badges: JSON.stringify(currentBadges) }, { transaction: t });
+                            unlockedBadge = challengeDef.badgeId;
+                        }
+                    }
+                } catch (badgeErr) {
+                    console.error('Error otorgando insignia de reto:', badgeErr);
+                }
+            }
+
             // Otorgar XP
             xpResult = await addXp(userId, challengeDef.xp, `Reto: ${challengeDef.title}`, { transaction: t });
 
@@ -172,7 +213,8 @@ export const trackChallenge = async (userId, challengeKey, increment = 1, opts =
                         message: challengeDef.title,
                         xpAdded: challengeDef.xp,
                         leveledUp: xpResult?.leveledUp,
-                        newLevel: xpResult?.level
+                        newLevel: xpResult?.level,
+                        badgeUnlocked: unlockedBadge || undefined,
                     });
                 }
             } catch (err) {
@@ -189,7 +231,8 @@ export const trackChallenge = async (userId, challengeKey, increment = 1, opts =
             completedNow, 
             progress: userChallenge.progress, 
             target: challengeDef.target,
-            xpResult 
+            xpResult,
+            unlockedBadge
         };
     } catch (error) {
         if (!opts.transaction) await t.rollback();
@@ -351,17 +394,26 @@ export const getChallengesForUser = async (userId) => {
         };
     }
 
-    // Unir la lista estática con el estado del usuario
-    const result = Object.keys(CHALLENGES).map(key => {
-        const def = CHALLENGES[key];
-        const state = stateMap[key] || { progress: 0, completed: false };
-        return {
-            id: key,
-            ...def,
-            progress: state.progress,
-            completed: state.completed
-        };
-    });
+    // Unir la lista estática con el estado del usuario (ocultando retos de temporada expirados si no se completaron)
+    const isChristmasActive = Date.now() <= CHRISTMAS_CHALLENGE_DEADLINE.getTime();
+    const result = Object.keys(CHALLENGES)
+        .filter(key => {
+            const def = CHALLENGES[key];
+            if (def.seasonal === 'christmas' && !isChristmasActive) {
+                return Boolean(stateMap[key]?.completed);
+            }
+            return true;
+        })
+        .map(key => {
+            const def = CHALLENGES[key];
+            const state = stateMap[key] || { progress: 0, completed: false };
+            return {
+                id: key,
+                ...def,
+                progress: state.progress,
+                completed: state.completed
+            };
+        });
 
     return result;
 };

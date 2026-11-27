@@ -10,9 +10,22 @@ const {
     WorkoutLike, WorkoutComment, WorkoutLogDetail, WorkoutLogSet 
 } = models;
 
+const hasChristmasBadge = (rawBadges) => {
+    try {
+        const list = typeof rawBadges === 'string' ? JSON.parse(rawBadges) : rawBadges;
+        return Array.isArray(list) && list.includes('theme_christmas_2026');
+    } catch {
+        return false;
+    }
+};
+
 const publicUserData = (user) => {
     if (!user) return user;
     const data = typeof user.toJSON === 'function' ? user.toJSON() : { ...user };
+    if (data.unlocked_badges !== undefined) {
+        data.christmas_unlocked = hasChristmasBadge(data.unlocked_badges);
+        delete data.unlocked_badges;
+    }
     if (data.role === 'admin') {
         data.role = 'user';
         data.trainer_id = null;
@@ -399,6 +412,7 @@ export const getPublicProfile = async (req, res) => {
             streak: null,
             workoutsCount: 0,
             unlocked_badges: [],
+            christmas_unlocked: hasChristmasBadge(user.unlocked_badges),
             routines: visibleRoutines
         };
 
@@ -796,7 +810,8 @@ export const getFeed = async (req, res) => {
                             'trainer_id',
                             'gym_data',
                             'show_gym',
-                            'is_public_profile'
+                            'is_public_profile',
+                            'unlocked_badges'
                         ]
                     },
                     {
@@ -841,7 +856,7 @@ export const getFeed = async (req, res) => {
                             {
                                 model: User,
                                 as: 'user',
-                                attributes: ['id', 'username', 'profile_image_url', 'role', 'trainer_id']
+                                attributes: ['id', 'username', 'profile_image_url', 'role', 'trainer_id', 'unlocked_badges']
                             }
                         ]
                     }

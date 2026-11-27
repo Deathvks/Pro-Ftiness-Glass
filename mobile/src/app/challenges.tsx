@@ -28,6 +28,7 @@ import {
   CheckCircle2,
   ExternalLink,
   Info,
+  Snowflake,
 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -49,6 +50,7 @@ import { useRegisterTourScroll } from '@/components/tutorials/tourRegistry';
 export interface Challenge {
   id: string;
   type: 'daily' | 'weekly' | 'general';
+  seasonal?: string;
   target: number;
   xp: number;
   title: string;
@@ -155,6 +157,22 @@ function ChallengeCard({ challenge, isDark, colors }: ChallengeCardProps) {
               <Text style={[styles.cardTitle, { color: colors.text, flexShrink: 1 }]} numberOfLines={1}>
                 {challenge.title}
               </Text>
+              {challenge.seasonal === 'christmas' && (
+                <View
+                  style={{
+                    paddingHorizontal: 7,
+                    paddingVertical: 2,
+                    borderRadius: 8,
+                    backgroundColor: 'rgba(225, 29, 72, 0.18)',
+                    borderWidth: 1,
+                    borderColor: 'rgba(251, 113, 133, 0.35)',
+                  }}
+                >
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#fda4af' }}>
+                    HASTA 6 ENE
+                  </Text>
+                </View>
+              )}
               {challenge.type === 'weekly' && (
                 <View
                   style={{
@@ -673,6 +691,30 @@ export default function ChallengesScreen() {
           </View>
         ) : activeTab === 'general' ? (
           <View style={styles.tabContent}>
+            {/* Evento de Navidad */}
+            {generalChallenges.some(c => c.id.startsWith('event_')) && (
+              <View style={styles.sectionGroup}>
+                <View style={styles.sectionTitleRow}>
+                  <Snowflake size={20} color="#38bdf8" strokeWidth={2.4} />
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                    Evento de Navidad 2026
+                  </Text>
+                </View>
+                <View style={styles.challengesList}>
+                  {generalChallenges
+                    .filter(c => c.id.startsWith('event_'))
+                    .map(c => (
+                      <ChallengeCard
+                        key={c.id}
+                        challenge={c}
+                        isDark={isDark}
+                        colors={colors}
+                      />
+                    ))}
+                </View>
+              </View>
+            )}
+
             {/* Social General */}
             <View style={styles.sectionGroup}>
               <View style={styles.sectionTitleRow}>

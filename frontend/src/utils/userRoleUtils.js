@@ -1,4 +1,5 @@
 /* frontend/src/utils/userRoleUtils.js */
+import { hasChristmasThemeUnlocked, isChristmasPromoActive } from './christmasTheme';
 
 /**
  * Determina la apariencia pública del rol/membresía de un usuario.
@@ -48,12 +49,22 @@ export const getUserRoleType = (user, viewer = null) => {
  * Devuelve la configuración visual estilo historias de Instagram para el avatar según su rol:
  * Borde con degradado de colores específicos + glow + textos
  */
-export const getUserRoleRingConfig = (user, viewer = null) => {
+export const getUserRoleRingConfig = (user, viewer = null, activeTheme = null) => {
   const roleType = getUserRoleType(user, viewer);
 
+  const isViewerSelf = Boolean(
+    user && viewer && user.id != null && viewer.id != null && String(user.id) === String(viewer.id)
+  );
+  const hasChristmasActive = isViewerSelf && activeTheme === 'christmas';
+  const hasChristmasEventFrame =
+    isChristmasPromoActive() &&
+    (user?.christmas_unlocked === true || hasChristmasThemeUnlocked(user));
+  const useChristmasFrame = hasChristmasActive || hasChristmasEventFrame;
+
+  let config;
   switch (roleType) {
     case 'admin':
-      return {
+      config = {
         type: 'admin',
         label: 'Admin',
         title: 'Administrador',
@@ -63,9 +74,10 @@ export const getUserRoleRingConfig = (user, viewer = null) => {
         badgeBg: 'bg-red-500/10 text-red-500 border-red-500/30',
         dotColor: 'bg-red-500'
       };
+      break;
 
     case 'trainer':
-      return {
+      config = {
         type: 'trainer',
         label: 'Entrenador',
         title: 'Entrenador Oficial',
@@ -75,9 +87,10 @@ export const getUserRoleRingConfig = (user, viewer = null) => {
         badgeBg: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
         dotColor: 'bg-blue-500'
       };
+      break;
 
     case 'asesoria':
-      return {
+      config = {
         type: 'asesoria',
         label: 'Asesoría',
         title: 'Miembro de la Asesoría',
@@ -87,10 +100,11 @@ export const getUserRoleRingConfig = (user, viewer = null) => {
         badgeBg: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
         dotColor: 'bg-amber-400'
       };
+      break;
 
     case 'user':
     default:
-      return {
+      config = {
         type: 'user',
         label: 'Usuario',
         title: 'Usuario',
@@ -100,5 +114,19 @@ export const getUserRoleRingConfig = (user, viewer = null) => {
         badgeBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
         dotColor: 'bg-emerald-500'
       };
+      break;
   }
+
+  if (useChristmasFrame) {
+    return {
+      ...config,
+      isChristmasFrame: true,
+      title: `${config.title} • Edición Navidad`,
+      gradientClass: 'bg-gradient-to-tr from-[#38bdf8] via-[#e0f2fe] to-[#e11d48]',
+      borderClass: 'bg-gradient-to-tr from-[#38bdf8] via-[#e0f2fe] to-[#e11d48]',
+      glowClass: 'shadow-md shadow-[#38bdf8]/35',
+    };
+  }
+
+  return config;
 };

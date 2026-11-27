@@ -33,6 +33,7 @@ const UserAvatar = ({
 }) => {
     const [error, setError] = useState(false);
     const viewerProfile = useAppStore(state => state.userProfile);
+    const activeTheme = useAppStore(state => state.theme);
     const isOnline = useAppStore(state => state.isOnline ?? true);
     const syncQueue = useAppStore(state => state.syncQueue || []);
 
@@ -49,7 +50,7 @@ const UserAvatar = ({
     const showUnstableNetworkBadge = showNetworkStatus && isCurrentUser && (!isOnline || syncQueue.length > 0);
 
     const sizeClass = SIZE_MAP[size] || (typeof size === 'number' ? `w-${size} h-${size}` : 'w-10 h-10');
-    const roleConfig = getUserRoleRingConfig(user, viewerProfile);
+    const roleConfig = getUserRoleRingConfig(user, viewerProfile, activeTheme);
 
     const getSecureImageUrl = () => {
         const rawUrl = user?.profile_image_url || user?.avatar || user?.profile_image || user?.avatar_url;

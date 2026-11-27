@@ -1,4 +1,5 @@
 /* mobile/src/utils/userRoleUtils.ts */
+import { hasChristmasThemeUnlocked, isChristmasPromoActive } from '@/utils/christmasTheme';
 
 export type UserRoleType = 'admin' | 'trainer' | 'asesoria' | 'user';
 
@@ -10,6 +11,7 @@ export interface UserRoleRingConfig {
   badgeBg: string;
   badgeText: string;
   badgeBorder: string;
+  isChristmasFrame?: boolean;
 }
 
 export interface RoleUser {
@@ -21,6 +23,8 @@ export interface RoleUser {
   isTrainer?: boolean;
   is_in_asesoria?: boolean;
   trainer?: unknown;
+  unlocked_badges?: unknown;
+  christmas_unlocked?: boolean;
 }
 
 export const getUserRoleType = (user?: RoleUser | null, viewer: RoleUser | null = null): UserRoleType => {
@@ -89,5 +93,27 @@ const ROLE_RINGS: Record<UserRoleType, UserRoleRingConfig> = {
   },
 };
 
-export const getUserRoleRingConfig = (user?: RoleUser | null, viewer: RoleUser | null = null): UserRoleRingConfig =>
-  ROLE_RINGS[getUserRoleType(user, viewer)];
+export const getUserRoleRingConfig = (
+  user?: RoleUser | null,
+  viewer: RoleUser | null = null,
+  activeTheme?: string | null
+): UserRoleRingConfig => {
+  const base = ROLE_RINGS[getUserRoleType(user, viewer)];
+  const isViewerSelf = Boolean(
+    user && viewer && user.id != null && viewer.id != null && String(user.id) === String(viewer.id)
+  );
+  const hasChristmasActive = isViewerSelf && activeTheme === 'christmas';
+  const hasChristmasEventFrame =
+    isChristmasPromoActive() &&
+    (user?.christmas_unlocked === true || hasChristmasThemeUnlocked(user));
+
+  if (hasChristmasActive || hasChristmasEventFrame) {
+    return {
+      ...base,
+      isChristmasFrame: true,
+      title: `${base.title} • Edición Navidad`,
+      colors: ['#38bdf8', '#e0f2fe', '#e11d48'],
+    };
+  }
+  return base;
+};

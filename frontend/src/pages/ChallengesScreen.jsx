@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserGroupIcon, FireIcon, BoltIcon, SparklesIcon } from '@heroicons/react/24/outline';
-import { Share2, Copy, CheckCircle, ChevronLeft } from 'lucide-react';
+import { Share2, Copy, CheckCircle, ChevronLeft, Snowflake } from 'lucide-react';
 import { FaMeteor, FaGift, FaSun, FaUmbrellaBeach } from 'react-icons/fa6';
 import apiClient from '../services/apiClient';
 import useAppStore from '../store/useAppStore';
@@ -64,6 +64,11 @@ const ChallengesScreen = ({ setView }) => {
                                 {challenge.title}
                                 {isCompleted && <span className="ml-2 text-accent text-sm">✓</span>}
                             </h3>
+                            {challenge.seasonal === 'christmas' && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-[#e11d48]/20 text-[#fda4af] border border-[#fb7185]/35">
+                                    Hasta el 6 ene
+                                </span>
+                            )}
                             {challenge.type === 'weekly' && (
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/25">
                                     Semanal
@@ -242,7 +247,23 @@ const ChallengesScreen = ({ setView }) => {
                             </div>
                         </div>
                     ) : activeTab === 'general' ? (
-                        <div className="flex flex-col md:flex-row gap-8 items-start">
+                        <div className="space-y-8">
+                            {generalChallenges.some(c => c.id.startsWith('event_')) && (
+                                <div className="rounded-3xl p-5 sm:p-6 bg-gradient-to-br from-[#0c1e35]/90 via-[#0f294a]/80 to-[#241328]/80 border border-sky-300/25 shadow-xl shadow-sky-950/30">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                                        <h2 className="text-xl font-black text-white flex items-center gap-2.5">
+                                            <Snowflake className="w-6 h-6 text-sky-300" /> Evento de Navidad 2026
+                                        </h2>
+                                        <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#e11d48]/25 text-[#ffe4e6] border border-[#fda4af]/35">
+                                            Insignia + XP
+                                        </span>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {generalChallenges.filter(c => c.id.startsWith('event_')).map(renderChallengeCard)}
+                                    </div>
+                                </div>
+                            )}
+                            <div className="flex flex-col md:flex-row gap-8 items-start">
                             {/* Left Column */}
                             <div className="flex-1 w-full flex flex-col gap-8">
                                 <div>
@@ -281,6 +302,7 @@ const ChallengesScreen = ({ setView }) => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

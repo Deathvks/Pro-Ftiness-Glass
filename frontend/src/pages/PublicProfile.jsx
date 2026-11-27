@@ -102,6 +102,7 @@ const BADGES_MAP = {
     'milestone_90': { name: 'Mítico (Lvl 90)', icon: '🔱' },
     'milestone_100': { name: 'Inmortal (Lvl 100)', icon: '♾️' },
     'theme_christmas_2026': { name: 'Navidad 2026', icon: '❄️' },
+    'event_christmas_2026': { name: 'Invierno Activo', icon: '🎄' },
     'default': { name: 'Logro', icon: '🏅' }
 };
 
