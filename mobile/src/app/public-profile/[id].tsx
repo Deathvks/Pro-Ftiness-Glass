@@ -280,7 +280,9 @@ export default function PublicProfileScreen() {
 
   const badges = useMemo(() => {
     const raw = Array.isArray(profile?.unlocked_badges) ? profile.unlocked_badges : [];
-    return raw.map(resolveBadge);
+    return raw
+      .filter((b: any) => !String(typeof b === 'string' ? b : (b?.id || b?.badge_id || '')).startsWith('theme_'))
+      .map(resolveBadge);
   }, [profile]);
 
   const badgeTotalPages = Math.max(1, Math.ceil(badges.length / BADGES_PER_PAGE));

@@ -8,6 +8,7 @@ import useAppStore from '../store/useAppStore';
 // Paletas sincronizadas milimétricamente con index.html para evitar el parpadeo en el arranque
 const THEME_COLORS = {
   galaxy: '#080814',
+  christmas: '#07131e',
   oled: '#000000',
   dark: '#0f172a',
   light: '#f8fafc',
@@ -19,6 +20,7 @@ const THEME_COLORS = {
 
 const HEADER_COLORS = {
   galaxy: '#080814',
+  christmas: '#07131e',
   oled: '#000000',
   dark: '#0f172a',
   light: '#f8fafc',
@@ -54,12 +56,12 @@ const syncThemeDocumentClass = (themeName) => {
     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     : themeName;
 
-  root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme', 'desert-theme', 'ocean-theme', 'dark');
+  root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme', 'christmas-theme', 'desert-theme', 'ocean-theme', 'dark');
   const classTheme = ['desert', 'desert-dark'].includes(effectiveTheme)
     ? 'desert'
     : ['ocean', 'ocean-dark'].includes(effectiveTheme)
       ? 'ocean'
-      : ['light', 'oled', 'galaxy'].includes(effectiveTheme)
+      : ['light', 'oled', 'galaxy', 'christmas'].includes(effectiveTheme)
         ? effectiveTheme
         : 'dark';
   root.classList.add(`${classTheme}-theme`);
@@ -75,7 +77,7 @@ const syncThemeDocumentClass = (themeName) => {
 
   const appRoot = document.getElementById('root');
   if (appRoot) {
-    if (['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(effectiveTheme)) {
+    if (['galaxy', 'christmas', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(effectiveTheme)) {
       appRoot.style.setProperty('background-color', 'transparent', 'important');
     } else {
       appRoot.style.setProperty('background-color', 'var(--bg-primary)', 'important');
@@ -270,6 +272,9 @@ export const useAppTheme = () => {
       if (effectiveTheme === 'galaxy') {
         color = THEME_COLORS.galaxy;
         headerColorStr = HEADER_COLORS.galaxy;
+      } else if (effectiveTheme === 'christmas') {
+        color = THEME_COLORS.christmas;
+        headerColorStr = HEADER_COLORS.christmas;
       } else if (effectiveTheme === 'desert' || effectiveTheme === 'desert-dark') {
         color = isDesertDark ? '#362423' : THEME_COLORS.desert;
         headerColorStr = isDesertDark ? '#362423' : HEADER_COLORS.desert;
@@ -284,10 +289,11 @@ export const useAppTheme = () => {
         headerColorStr = HEADER_COLORS.light;
       }
 
-      root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme', 'desert-theme', 'ocean-theme', 'dark');
+      root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme', 'christmas-theme', 'desert-theme', 'ocean-theme', 'dark');
       
       let classTheme = 'dark';
       if (effectiveTheme === 'galaxy') classTheme = 'galaxy';
+      else if (effectiveTheme === 'christmas') classTheme = 'christmas';
       else if (effectiveTheme === 'desert' || effectiveTheme === 'desert-dark') classTheme = 'desert';
       else if (effectiveTheme === 'ocean' || effectiveTheme === 'ocean-dark') classTheme = 'ocean';
       else if (effectiveTheme === 'oled') classTheme = 'oled';
@@ -295,6 +301,7 @@ export const useAppTheme = () => {
 
       root.classList.add(`${classTheme}-theme`);
       root.classList.toggle('galaxy-effects-enabled', useAppStore.getState().galaxyEffectsEnabled);
+      root.classList.toggle('christmas-effects-enabled', useAppStore.getState().christmasEffectsEnabled);
 
       if (effectiveTheme !== 'light' && (effectiveTheme !== 'desert' || isDesertDark) && effectiveTheme !== 'ocean') {
         root.classList.add('dark');
@@ -306,7 +313,7 @@ export const useAppTheme = () => {
       root.style.removeProperty('background-color');
       body.style.setProperty('background-color', 'var(--bg-primary)', 'important');
       if (appRootDiv) {
-        if (['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(effectiveTheme)) {
+        if (['galaxy', 'christmas', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(effectiveTheme)) {
           appRootDiv.style.setProperty('background-color', 'transparent', 'important');
         } else {
           appRootDiv.style.setProperty('background-color', 'var(--bg-primary)', 'important');
@@ -354,7 +361,7 @@ export const useAppTheme = () => {
     let classes = root.className.split(' ').filter(c => !c.startsWith('accent-'));
     
     // Si el tema es estructural y tiene su propio acento, no aplicamos el acento personalizado
-    const isSpecialTheme = ['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(resolvedTheme);
+    const isSpecialTheme = ['galaxy', 'christmas', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(resolvedTheme);
     
     if (isSpecialTheme) {
       root.className = classes.join(' ').trim();
@@ -370,6 +377,7 @@ export const useAppTheme = () => {
 
   const themeColor = useMemo(() => {
     if (resolvedTheme === 'galaxy') return THEME_COLORS.galaxy;
+    if (resolvedTheme === 'christmas') return THEME_COLORS.christmas;
     if (resolvedTheme === 'desert' || resolvedTheme === 'desert-dark') return resolvedTheme === 'desert-dark' ? '#362423' : THEME_COLORS.desert;
     if (resolvedTheme === 'ocean' || resolvedTheme === 'ocean-dark') return THEME_COLORS[resolvedTheme];
     if (resolvedTheme === 'oled') return THEME_COLORS.oled;
@@ -379,6 +387,7 @@ export const useAppTheme = () => {
 
   const headerColor = useMemo(() => {
     if (resolvedTheme === 'galaxy') return HEADER_COLORS.galaxy;
+    if (resolvedTheme === 'christmas') return HEADER_COLORS.christmas;
     if (resolvedTheme === 'desert' || resolvedTheme === 'desert-dark') return resolvedTheme === 'desert-dark' ? '#362423' : HEADER_COLORS.desert;
     if (resolvedTheme === 'ocean' || resolvedTheme === 'ocean-dark') return HEADER_COLORS[resolvedTheme];
     if (resolvedTheme === 'oled') return HEADER_COLORS.oled;

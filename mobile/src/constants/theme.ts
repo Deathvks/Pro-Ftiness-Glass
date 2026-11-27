@@ -61,6 +61,19 @@ export const Colors = {
     success: '#10B981',
     warning: '#fbbf24',
   },
+  christmas: {
+    background: 'transparent',
+    card: '#0b1c2a',
+    text: '#f8fafc',
+    textSecondary: '#cbd5e1',
+    textMuted: '#94a3b8',
+    border: '#e0f2fe24',
+    tint: '#e11d48',
+    tabBar: '#07131e',
+    tabBarInactive: '#bae6fd',
+    success: '#10B981',
+    warning: '#fbbf24',
+  },
   ocean: {
     background: 'transparent',
     card: '#e0f2fe',
@@ -119,6 +132,7 @@ type SurfaceMode = 'oled' | 'light' | 'dark';
 
 const atmosphericSurfaceModes = new Map<string, SurfaceMode>([
   ['galaxy', 'oled'],
+  ['christmas', 'oled'],
   ['ocean', 'light'],
   ['ocean-dark', 'dark'],
   ['desert', 'light'],
@@ -137,12 +151,13 @@ const themedUnselectedControls = {
   ocean: { backgroundColor: '#0c4a6e0a', borderColor: '#0c4a6e12' },
   'ocean-dark': { backgroundColor: '#bae6fd0a', borderColor: '#bae6fd14' },
   galaxy: { backgroundColor: '#a855f70d', borderColor: '#a855f71a' },
+  christmas: { backgroundColor: '#e11d4812', borderColor: '#e0f2fe20' },
   desert: { backgroundColor: '#5c40330d', borderColor: '#5c403314' },
   'desert-dark': { backgroundColor: '#f5deb30d', borderColor: '#f5deb314' },
 };
 
-export function usesFrontendCardSurface(theme?: string): theme is 'ocean' | 'ocean-dark' | 'galaxy' {
-  return theme === 'ocean' || theme === 'ocean-dark' || theme === 'galaxy';
+export function usesFrontendCardSurface(theme?: string): theme is 'ocean' | 'ocean-dark' | 'galaxy' | 'christmas' {
+  return theme === 'ocean' || theme === 'ocean-dark' || theme === 'galaxy' || theme === 'christmas';
 }
 
 export function getUnselectedControlColors(theme?: string) {
@@ -159,6 +174,7 @@ export const shouldUseContentGlass = (theme?: string): boolean =>
 
 const atmosphericGlassSurfaces: Record<string, { backgroundColor: string; borderColor: string }> = {
   galaxy: { backgroundColor: 'rgba(13, 13, 31, 0.56)', borderColor: 'rgba(255, 255, 255, 0.14)' },
+  christmas: { backgroundColor: 'rgba(10, 26, 38, 0.58)', borderColor: 'rgba(224, 242, 254, 0.16)' },
   ocean: { backgroundColor: 'rgba(240, 249, 255, 0.62)', borderColor: 'rgba(8, 47, 73, 0.10)' },
   'ocean-dark': { backgroundColor: 'rgba(8, 47, 73, 0.54)', borderColor: 'rgba(186, 230, 253, 0.18)' },
   desert: { backgroundColor: 'rgba(253, 248, 245, 0.64)', borderColor: 'rgba(92, 64, 51, 0.10)' },
@@ -233,6 +249,8 @@ export const getThemeBaseBackground = (theme: string): string => {
       return '#082f49';
     case 'galaxy':
       return '#080814';
+    case 'christmas':
+      return '#07131e';
     case 'light':
       return Platform.OS === 'ios' ? '#F2F2F7' : '#F3F4F6';
     case 'oled':

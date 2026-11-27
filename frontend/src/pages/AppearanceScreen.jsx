@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { 
-  Palette, Sun, Moon, MonitorCog, Smartphone, Check, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Info, Sparkles, Battery, Gauge, X
+  Palette, Sun, Moon, MonitorCog, Smartphone, Check, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Info, Sparkles, Battery, Gauge, X, Snowflake
 } from 'lucide-react';
 import {
   FaMeteor,
@@ -19,6 +19,8 @@ import {
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppTheme } from '../hooks/useAppTheme';
+import { claimChristmasTheme } from '../services/userService';
+import { hasChristmasThemeUnlocked, isChristmasPromoActive } from '../utils/christmasTheme';
 import GlassCard from '../components/GlassCard';
 import { useToast } from '../hooks/useToast';
 import LevelBadge from '../components/LevelBadge';
@@ -26,7 +28,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import ModalPortal from '../components/ModalPortal';
 import useModalLock from '../hooks/useModalLock';
 
-const GalaxyEffectsWarningModal = ({ onConfirm, onCancel }) => {
+const GalaxyEffectsWarningModal = ({ title = 'Efectos animados de Galaxia', message = 'Las estrellas en movimiento y los meteoros pueden exigir más al dispositivo, aumentar el consumo de batería y reducir la fluidez en algunos móviles. Puedes desactivarlos cuando quieras desde Personalización.', accentClass = 'text-accent', bgClass = 'bg-accent', iconBgClass = 'bg-accent/10 text-accent ring-accent/20', onConfirm, onCancel }) => {
   useModalLock();
 
   return (
@@ -49,21 +51,21 @@ const GalaxyEffectsWarningModal = ({ onConfirm, onCancel }) => {
             <X size={20} />
           </button>
           <div className="mb-5 flex justify-center">
-            <div className="rounded-[20px] bg-accent/10 p-4 text-accent ring-1 ring-accent/20">
+            <div className={`rounded-[20px] p-4 ring-1 ${iconBgClass}`}>
               <Sparkles size={30} strokeWidth={1.8} />
             </div>
           </div>
-          <h2 id="galaxy-effects-title" className="mb-3 text-xl font-extrabold tracking-tight text-text-primary">Efectos animados de Galaxia</h2>
+          <h2 id="galaxy-effects-title" className="mb-3 text-xl font-extrabold tracking-tight text-text-primary">{title}</h2>
           <p className="mb-5 text-sm leading-relaxed text-text-secondary">
-            Las estrellas en movimiento y los meteoros pueden exigir más al dispositivo, aumentar el consumo de batería y reducir la fluidez en algunos móviles. Puedes desactivarlos cuando quieras desde Personalización.
+            {message}
           </p>
           <div className="mb-6 flex items-center justify-center gap-5 text-[11px] font-semibold text-text-muted">
-            <span className="inline-flex items-center gap-1.5"><Gauge size={15} className="text-accent" /> Más carga gráfica</span>
-            <span className="inline-flex items-center gap-1.5"><Battery size={15} className="text-accent" /> Consumo de batería</span>
+            <span className="inline-flex items-center gap-1.5"><Gauge size={15} className={accentClass} /> Más carga gráfica</span>
+            <span className="inline-flex items-center gap-1.5"><Battery size={15} className={accentClass} /> Consumo de batería</span>
           </div>
           <div className="flex flex-col-reverse gap-3 sm:flex-row">
             <button type="button" onClick={onCancel} className="w-full rounded-xl bg-black/5 px-5 py-3 text-sm font-bold text-text-secondary transition hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10">Ahora no</button>
-            <button type="button" onClick={onConfirm} className="w-full rounded-xl bg-accent px-5 py-3 text-sm font-bold text-accent-contrast shadow-lg shadow-accent/20 transition hover:brightness-110">Activar efectos</button>
+            <button type="button" onClick={onConfirm} className={`w-full rounded-xl px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:brightness-110 ${bgClass}`}>Activar efectos</button>
           </div>
         </section>
       </div>
@@ -203,7 +205,23 @@ const AccentButton = ({ opt, isLocked, isSelected, onClick }) => (
 );
 
 export default function AppearanceScreen({ setView }) {
-  const { userProfile, galaxyEffectsEnabled, setGalaxyEffectsEnabled } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, galaxyEffectsEnabled: state.galaxyEffectsEnabled, setGalaxyEffectsEnabled: state.setGalaxyEffectsEnabled })));
+  const {
+    userProfile,
+    unlockedBadges,
+    galaxyEffectsEnabled,
+    setGalaxyEffectsEnabled,
+    christmasEffectsEnabled,
+    setChristmasEffectsEnabled,
+    applyUnlockedBadges,
+  } = useAppStore(useShallow(state => ({
+    userProfile: state.userProfile,
+    unlockedBadges: state.gamification?.unlockedBadges || [],
+    galaxyEffectsEnabled: state.galaxyEffectsEnabled,
+    setGalaxyEffectsEnabled: state.setGalaxyEffectsEnabled,
+    christmasEffectsEnabled: state.christmasEffectsEnabled,
+    setChristmasEffectsEnabled: state.setChristmasEffectsEnabled,
+    applyUnlockedBadges: state.applyUnlockedBadges,
+  })));
   const { addToast } = useToast();
   const { 
     theme, activeTheme, setTheme, accent, setAccent, 
@@ -214,6 +232,8 @@ export default function AppearanceScreen({ setView }) {
   const [showThemeReloadModal, setShowThemeReloadModal] = useState(false);
   const [pendingThemeAction, setPendingThemeAction] = useState(null);
   const [showGalaxyEffectsWarning, setShowGalaxyEffectsWarning] = useState(false);
+  const [showChristmasEffectsWarning, setShowChristmasEffectsWarning] = useState(false);
+  const [claimingChristmas, setClaimingChristmas] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(() => typeof window !== 'undefined' && window.matchMedia('(hover: none), (pointer: coarse)').matches);
 
   useEffect(() => {
@@ -262,6 +282,10 @@ export default function AppearanceScreen({ setView }) {
     handleCopyReferral();
   };
 
+  const isChristmasUnlocked = hasChristmasThemeUnlocked(userProfile, unlockedBadges);
+  const isChristmasPromoOpen = isChristmasPromoActive();
+  const isChristmasActive = activeTheme === 'christmas';
+
   const isGalaxyUnlocked = referralCount >= 3 || isAdmin;
   const isGalaxyActive = activeTheme === 'galaxy';
 
@@ -270,6 +294,24 @@ export default function AppearanceScreen({ setView }) {
 
   const isOceanUnlocked = referralCount >= 7 || isAdmin;
   const isOceanActive = activeTheme === 'ocean' || activeTheme === 'ocean-dark';
+  const isSpecialActive = isChristmasActive || isGalaxyActive || isDesertActive || isOceanActive;
+
+  const handleClaimChristmas = async () => {
+    if (claimingChristmas) return;
+    setClaimingChristmas(true);
+    try {
+      const res = await claimChristmasTheme();
+      if (Array.isArray(res?.unlocked_badges)) {
+        applyUnlockedBadges?.(res.unlocked_badges);
+      }
+      setTheme('christmas');
+      addToast(res?.message || '¡Tema Navidad 2026 desbloqueado para siempre!', 'success');
+    } catch (err) {
+      addToast(err?.message || 'No se pudo reclamar el tema.', 'error');
+    } finally {
+      setClaimingChristmas(false);
+    }
+  };
 
   
 
@@ -348,7 +390,7 @@ export default function AppearanceScreen({ setView }) {
 
                     {/* Acentos */}
           <div id="tutorial-appearance-accents" className="mb-8">
-            <div className={`transition-all duration-300 ${isGalaxyActive || isDesertActive || isOceanActive ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
+            <div className={`transition-all duration-300 ${isSpecialActive ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
               
               {/* Por defecto */}
               <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 ml-1">Acento de Color</h3>
@@ -358,7 +400,7 @@ export default function AppearanceScreen({ setView }) {
                     key={opt.id}
                     opt={opt}
                     isLocked={false}
-                    isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive}
+                    isSelected={accent === opt.id && !isSpecialActive}
                     onClick={() => setAccent(opt.id)}
                   />
                 ))}
@@ -382,7 +424,7 @@ export default function AppearanceScreen({ setView }) {
                       key={opt.id}
                       opt={opt}
                       isLocked={isLocked}
-                      isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked}
+                      isSelected={accent === opt.id && !isSpecialActive && !isLocked}
                       onClick={() => {
                         if (isLocked) {
                           addToast(`Requiere nivel 5 para aplicarlo`, 'info', 'lock');
@@ -410,7 +452,7 @@ export default function AppearanceScreen({ setView }) {
                       key={opt.id}
                       opt={opt}
                       isLocked={isLocked}
-                      isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked}
+                      isSelected={accent === opt.id && !isSpecialActive && !isLocked}
                       onClick={() => {
                         if (isLocked) {
                           addToast(`Requiere nivel 10 para aplicarlo`, 'info', 'lock');
@@ -443,7 +485,7 @@ export default function AppearanceScreen({ setView }) {
                       key={opt.id}
                       opt={opt}
                       isLocked={isLocked}
-                      isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked}
+                      isSelected={accent === opt.id && !isSpecialActive && !isLocked}
                       onClick={() => {
                         if (isLocked) {
                           addToast(`Requiere nivel 15 para aplicarlo`, 'info', 'lock');
@@ -476,7 +518,7 @@ export default function AppearanceScreen({ setView }) {
                       key={opt.id}
                       opt={opt}
                       isLocked={isLocked}
-                      isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked}
+                      isSelected={accent === opt.id && !isSpecialActive && !isLocked}
                       onClick={() => {
                         if (isLocked) {
                           addToast(`Requiere nivel 20 para aplicarlo`, 'info', 'lock');
@@ -510,25 +552,28 @@ export default function AppearanceScreen({ setView }) {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-nowrap min-w-0">
                   <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight whitespace-nowrap">Mis Temas</h2>
-                  {(isGalaxyActive || isDesertActive || isOceanActive) && (
+                  {isSpecialActive && (
                     <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 text-accent tracking-wider whitespace-nowrap shrink-0">
-                      {isGalaxyActive ? 'Galaxia' : isDesertActive ? 'Desierto' : 'Océano'}
+                      {isChristmasActive ? 'Navidad 2026' : isGalaxyActive ? 'Galaxia' : isDesertActive ? 'Desierto' : 'Océano'}
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-text-secondary mt-0.5 hidden lg:block">
-                  Invita amigos para ganar +1.000 XP cada uno y desbloquear estos 3 temas con vistas previas reales.
+                  Reclama la Edición Navidad 2026 hasta el 6 de enero o invita amigos (+1.000 XP c/u) para desbloquear temas Liquid Glass.
                 </p>
                 <p className="text-[11px] text-text-muted mt-0.5 lg:hidden block truncate">
-                  {isMyThemesOpenMobile ? 'Toca para solapar' : '3 temas exclusivos · +1.000 XP c/u'}
+                  {isMyThemesOpenMobile ? 'Toca para solapar' : 'Edición Navidad 2026 + temas exclusivos'}
                 </p>
               </div>
             </div>
 
             {/* Controles móviles para desplegar/solapar */}
             <div className="flex items-center gap-2 lg:hidden shrink-0">
-              {!isMyThemesOpenMobile && !(isGalaxyActive || isDesertActive || isOceanActive) && (
+              {!isMyThemesOpenMobile && !isSpecialActive && (
                 <div className="hidden xs:flex sm:flex -space-x-1 items-center mr-1 opacity-90">
+                  <span className="w-6 h-6 rounded-full bg-[#e11d48]/20 text-[#fb7185] flex items-center justify-center ring-1 ring-[#e11d48]/35" title="Navidad 2026">
+                    <Snowflake size={11} />
+                  </span>
                   <span className="w-6 h-6 rounded-full bg-[#a855f7]/20 text-[#a855f7] flex items-center justify-center ring-1 ring-[#a855f7]/30" title="Galaxia">
                     <FaMeteor size={11} />
                   </span>
@@ -604,6 +649,127 @@ export default function AppearanceScreen({ setView }) {
                 <span>Copiar enlace</span>
               </button>
             </div>
+          </div>
+
+          {/* Tema Estacional: Navidad / Invierno Glass 2026 */}
+          <div className={`mb-4 p-4 rounded-[22px] transition-all duration-500 border ${isChristmasActive ? 'bg-[#e11d48]/10 border-[#e11d48]/35 shadow-lg shadow-[#e11d48]/20' : 'bg-black/5 dark:bg-white/5 border-[#e11d48]/20'}`}>
+            {/* Vista previa real Navidad / Invierno Glass */}
+            <div
+              className="relative h-28 sm:h-32 rounded-2xl overflow-hidden mb-3.5 ring-1 ring-white/15"
+              style={{
+                background: 'radial-gradient(circle at 20% 25%, rgba(16, 185, 129, 0.35), transparent 55%), radial-gradient(circle at 82% 28%, rgba(225, 29, 72, 0.42), transparent 55%), radial-gradient(circle at 55% 85%, rgba(56, 189, 248, 0.25), transparent 55%), linear-gradient(135deg, #06101a 0%, #0b2434 52%, #190d1a 100%)'
+              }}
+            >
+              <Snowflake size={14} className="absolute top-3 left-7 text-white/75" />
+              <Snowflake size={11} className="absolute top-8 left-1/3 text-sky-200/80" />
+              <Snowflake size={15} className="absolute top-5 right-24 text-white/70" />
+              <Snowflake size={12} className="absolute bottom-6 left-16 text-amber-100/75" />
+              <Snowflake size={16} className="absolute bottom-4 right-12 text-white/80" />
+
+              <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#e11d48]/90 backdrop-blur-md text-[10px] font-black text-white border border-white/25 shadow-sm">
+                <Sparkles size={9} /> Edición Navidad 2026
+              </span>
+
+              <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
+                {isChristmasUnlocked ? <FaLockOpen size={9} className="text-emerald-400" /> : <FaLock size={9} className="text-amber-300" />}
+                {isChristmasUnlocked ? 'Desbloqueado' : isChristmasPromoOpen ? 'Hasta el 6 ene' : `${Math.min(referralCount, 1)}/1`}
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`p-2.5 rounded-[14px] shrink-0 ${isChristmasUnlocked ? 'bg-[#e11d48]/20 text-[#fb7185]' : 'bg-[#e11d48]/15 text-[#fb7185]'}`}>
+                  <Snowflake size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-extrabold text-text-primary antialiased">
+                      Tema Navidad 2026
+                    </span>
+                    <span className="text-[11px] font-bold text-[#e11d48] dark:text-[#fda4af] antialiased">Invierno Glass · Nieve</span>
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1.5 mt-0.5">
+                    {isChristmasUnlocked ? (
+                      <><FaLockOpen size={11} className="text-green-500" /> Tuyo para siempre</>
+                    ) : isChristmasPromoOpen ? (
+                      <><FaGift size={11} className="text-[#fbbf24]" /> Reclámalo antes del 6 de enero para conservarlo siempre (después, 1 amigo)</>
+                    ) : (
+                      <><FaLock size={11} className="text-text-muted" /> Invita a 1 amigo para desbloquearlo al instante</>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {isChristmasUnlocked ? (
+                  <button
+                    type="button"
+                    onClick={() => handleThemeClick('christmas')}
+                    className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${theme === 'christmas' ? 'bg-[#e11d48] text-white shadow-lg shadow-[#e11d48]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#e11d48]/20 text-[#e11d48] dark:text-[#fda4af]'}`}
+                  >
+                    {theme === 'christmas' ? 'Activo' : 'Aplicar'}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isIOS()) {
+                          setPendingThemeAction({ type: 'test', payload: { theme: 'christmas', duration: 10 } });
+                          setShowThemeReloadModal(true);
+                        } else {
+                          startThemeTest('christmas', 10);
+                        }
+                      }}
+                      disabled={isTestingTheme}
+                      className="px-3.5 py-2 rounded-full text-xs font-bold bg-[#e11d48]/15 text-[#e11d48] dark:text-[#fda4af] hover:bg-[#e11d48]/25 transition-all flex items-center justify-center gap-1.5 disabled:opacity-80 whitespace-nowrap cursor-pointer"
+                    >
+                      {isTestingTheme ? `Probando ${testTimeLeft}s` : 'Probar 10s'}
+                    </button>
+                    {isChristmasPromoOpen ? (
+                      <button
+                        type="button"
+                        onClick={handleClaimChristmas}
+                        disabled={claimingChristmas}
+                        className="px-3.5 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-[#e11d48] to-[#f59e0b] text-white shadow-md shadow-[#e11d48]/25 hover:brightness-110 transition-all inline-flex items-center gap-1.5 whitespace-nowrap cursor-pointer disabled:opacity-70"
+                      >
+                        <FaGift size={11} />
+                        <span>{claimingChristmas ? 'Reclamando...' : 'Reclamar tema'}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleShareReferral}
+                        className="px-3.5 py-2 rounded-full text-xs font-bold bg-accent text-accent-contrast hover:brightness-110 transition-all inline-flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+                      >
+                        <FaShareNodes size={11} />
+                        <span>Invitar (1 amigo)</span>
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {isChristmasActive && (
+              <p className="text-[10px] sm:text-xs text-[#e11d48] dark:text-[#fda4af] font-bold mt-4 ml-1 flex items-center gap-1.5">
+                <Info size={14} /> El Tema Navidad usa su propio acento rojo invernal (desactiva el acento manual).
+              </p>
+            )}
+            {isTouchDevice && isChristmasActive && (
+              <div className="mt-4 border-t border-[#e11d48]/15 pt-4">
+                <SwitchItem
+                  icon={Snowflake}
+                  title="Copos de nieve animados"
+                  subtitle="Añade caída sutil de nieve al fondo invernal"
+                  checked={christmasEffectsEnabled}
+                  onChange={() => {
+                    if (christmasEffectsEnabled) setChristmasEffectsEnabled(false);
+                    else setShowChristmasEffectsWarning(true);
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <div className={`p-4 rounded-[22px] transition-all duration-500 border ${theme === 'galaxy' || isTestingTheme ? 'bg-[#a855f7]/10 border-[#a855f7]/30 shadow-lg shadow-[#a855f7]/20' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
@@ -955,6 +1121,20 @@ export default function AppearanceScreen({ setView }) {
               setShowGalaxyEffectsWarning(false);
             }}
             onCancel={() => setShowGalaxyEffectsWarning(false)}
+          />
+        )}
+        {showChristmasEffectsWarning && (
+          <GalaxyEffectsWarningModal
+            title="Copos de nieve animados"
+            message="La caída continua de copos de nieve puede exigir más recursos gráficos al móvil y aumentar ligeramente el consumo de batería. Puedes desactivarla cuando quieras desde Apariencia."
+            accentClass="text-[#e11d48]"
+            bgClass="bg-[#e11d48]"
+            iconBgClass="bg-[#e11d48]/10 text-[#e11d48] ring-[#e11d48]/25"
+            onConfirm={() => {
+              setChristmasEffectsEnabled(true);
+              setShowChristmasEffectsWarning(false);
+            }}
+            onCancel={() => setShowChristmasEffectsWarning(false)}
           />
         )}
       </div>

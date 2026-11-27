@@ -9,7 +9,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 interface GlassButtonProps {
     onPress: () => void;
     children: React.ReactNode;
-    theme: 'light' | 'dark' | 'oled' | 'galaxy' | 'ocean' | 'desert' | string;
+    theme: 'light' | 'dark' | 'oled' | 'galaxy' | 'christmas' | 'ocean' | 'desert' | string;
     style?: StyleProp<ViewStyle>;
     color?: string;
     colors?: any;

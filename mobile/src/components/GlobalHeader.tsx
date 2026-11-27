@@ -25,6 +25,8 @@ const getHeaderThemeBg = (theme: string) => {
             return 'rgba(15, 23, 42, 0.88)';
         case 'galaxy':
             return 'rgba(10, 10, 26, 0.88)';
+        case 'christmas':
+            return 'rgba(7, 19, 30, 0.88)';
         case 'ocean-dark':
             return 'rgba(8, 47, 73, 0.88)';
         case 'desert-dark':

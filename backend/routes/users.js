@@ -104,6 +104,9 @@ router.put(
     userController.updateMyAccount
 );
 
+// POST /api/users/claim-christmas-theme (Reclamar Edición Navidad 2026)
+router.post('/claim-christmas-theme', userController.claimChristmasTheme);
+
 // DELETE /api/users/me/data (Limpiar datos del usuario)
 router.delete(
     '/me/data',

@@ -1179,9 +1179,17 @@ export default function Dashboard() {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <LinearGradient
+                  colors={['#07131e', '#e11d48']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: isDark ? '#18181b' : '#ffffff', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <FontAwesome5 name="snowflake" size={11} color="#ffffff" />
+                </LinearGradient>
                 <ExpoImage
                   source={require('../../../assets/images/galaxy.jpg')}
-                  style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: isDark ? '#18181b' : '#ffffff' }}
+                  style={{ width: 28, height: 28, borderRadius: 14, marginLeft: -8, borderWidth: 2, borderColor: isDark ? '#18181b' : '#ffffff' }}
                   contentFit="cover"
                 />
                 <ExpoImage
@@ -1195,9 +1203,9 @@ export default function Dashboard() {
                   contentFit="cover"
                 />
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: isDark ? 'rgba(139, 92, 246, 0.22)' : 'rgba(124, 58, 237, 0.12)' }}>
-                <FontAwesome5 name="bolt" size={9} color={isDark ? '#c4b5fd' : '#6d28d9'} />
-                <Text style={{ fontSize: 10, fontWeight: '800', color: isDark ? '#e9d5ff' : '#6d28d9' }}>+1.000 XP para ambos</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: isDark ? 'rgba(225, 29, 72, 0.22)' : 'rgba(225, 29, 72, 0.12)' }}>
+                <FontAwesome5 name="snowflake" size={9} color={isDark ? '#fda4af' : '#be123c'} />
+                <Text style={{ fontSize: 10, fontWeight: '800', color: isDark ? '#ffe4e6' : '#be123c' }}>Navidad 2026 · 6 ene</Text>
               </View>
             </View>
             <TouchableOpacity
@@ -1220,7 +1228,7 @@ export default function Dashboard() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <FontAwesome5 name="palette" size={12} color="#a78bfa" />
               <Text style={{ fontSize: 13.5, fontWeight: '800', color: colors.text, flex: 1 }} numberOfLines={1}>
-                Desbloquea Galaxia, Desierto y Océano
+                Edición Navidad 2026 + Galaxia, Desierto y Océano
               </Text>
             </View>
             <Text style={{ fontSize: 11.5, color: colors.textMuted, marginTop: 3 }}>

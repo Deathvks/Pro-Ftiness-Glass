@@ -19,6 +19,17 @@ export const getToastThemePalette = (resolvedTheme) => {
         shadow: 'none',
         accentBar: 'linear-gradient(180deg, #c084fc 0%, #60a5fa 100%)',
       };
+    case 'christmas':
+      return {
+        isDark: true,
+        bgBase: 'rgba(7, 19, 30, 0.95)',
+        bgGradient: 'linear-gradient(135deg, rgba(16, 46, 54, 0.97) 0%, rgba(7, 19, 30, 0.95) 60%, rgba(69, 14, 30, 0.92) 100%)',
+        textColor: '#f8fafc',
+        subtextColor: '#e0f2fe',
+        borderColor: 'rgba(225, 29, 72, 0.45)',
+        shadow: 'none',
+        accentBar: 'linear-gradient(180deg, #e11d48 0%, #fbbf24 100%)',
+      };
     case 'desert':
       return {
         isDark: false,

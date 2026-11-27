@@ -552,9 +552,13 @@ const Profile = ({ onCancel, setView, navigate }) => {
         {/* Group 4: Badges */}
         <div className="mb-8">
             <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 px-4">Mis Insignias</h2>
-            {gamification?.unlockedBadges?.length > 0 ? (
+            {(() => {
+                const visibleUnlockedBadges = (gamification?.unlockedBadges || []).filter(
+                    (id) => !String(id).startsWith('theme_')
+                );
+                return visibleUnlockedBadges.length > 0 ? (
                 <div className="grid grid-cols-3 gap-3">
-                    {gamification.unlockedBadges.slice(0, 6).map((badgeId) => {
+                    {visibleUnlockedBadges.slice(0, 6).map((badgeId) => {
                         const badge = BADGE_DETAILS[badgeId] || BADGE_DETAILS.default;
                         return (
                             <div key={badgeId} className="flex flex-col items-center p-3 rounded-[20px] bg-bg-secondary ring-1 ring-glass-border shadow-sm text-center">
@@ -571,7 +575,8 @@ const Profile = ({ onCancel, setView, navigate }) => {
                     <Trophy size={24} className="text-text-muted mx-auto mb-2" />
                     <p className="text-sm text-text-secondary">Aún no tienes insignias.</p>
                 </div>
-            )}
+            );
+            })()}
         </div>
 
         {/* Group 5: Danger Zone */}

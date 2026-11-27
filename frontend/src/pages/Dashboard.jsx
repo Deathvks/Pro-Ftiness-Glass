@@ -754,6 +754,13 @@ const Dashboard = ({ setView }) => {
     : referralCount < 7
     ? { label: 'Océano', req: 7, accent: '#0ea5e9' }
     : null;
+  const christmasUnlockedDashboard = (() => {
+    if (isAdmin || referralCount >= 1) return true;
+    const raw = userProfile?.unlocked_badges;
+    const arr = Array.isArray(raw) ? raw : [];
+    const gamArr = gamification?.unlockedBadges || [];
+    return arr.includes('theme_christmas_2026') || gamArr.includes('theme_christmas_2026');
+  })();
   const isCapacitor = !!window.Capacitor?.isNativePlatform?.() || window.location.origin.includes('localhost') && !window.location.port;
   const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://profitnessglass.es') : window.location.origin;
   const referralLink = `${baseUrl}/register?ref=${userProfile?.referral_code || ''}`;
@@ -1187,14 +1194,21 @@ const Dashboard = ({ setView }) => {
         </GlassCard>
       )}
 
-      {nextThemeTarget && !hideThemeDiscovery && (
+      {(nextThemeTarget || !christmasUnlockedDashboard) && !hideThemeDiscovery && (
         <GlassCard className="glass px-4 pt-3 pb-4 sm:px-5 sm:pt-3.5 sm:pb-5 rounded-[26px] mb-6 border-none ring-1 ring-black/10 dark:ring-white/15">
           <div className="flex flex-col gap-3">
             {/* Fila superior dedicada para la insignia XP y el botón X arriba del resto */}
             <div className="flex items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-accent/15 text-accent text-[10px] font-black uppercase tracking-wider">
-                <FaBolt size={9} /> +1.000 XP para ambos
-              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {!christmasUnlockedDashboard && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#e11d48]/15 text-[#e11d48] dark:text-[#fda4af] text-[10px] font-black uppercase tracking-wider">
+                    Edición Navidad 2026
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-accent/15 text-accent text-[10px] font-black uppercase tracking-wider">
+                  <FaBolt size={9} /> +1.000 XP para ambos
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => {
@@ -1214,16 +1228,30 @@ const Dashboard = ({ setView }) => {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm sm:text-base font-extrabold text-text-primary leading-snug">
-                  Desbloquea temas compartiendo la app
+                  {!christmasUnlockedDashboard ? 'Reclama el tema Navidad 2026 antes del 6 de enero' : 'Desbloquea temas compartiendo la app'}
                 </p>
                 <p className="text-xs text-text-secondary leading-relaxed mt-0.5">
-                  Llevas <strong>{referralCount}</strong> {referralCount === 1 ? 'amigo' : 'amigos'} · Te faltan <strong>{nextThemeTarget.req - referralCount}</strong> para <strong>{nextThemeTarget.label}</strong>.
+                  {!christmasUnlockedDashboard
+                    ? 'Desbloquéalo directamente antes del 6 de enero y quédatelo para siempre (después, invitando a 1 amigo).'
+                    : nextThemeTarget
+                      ? <>Llevas <strong>{referralCount}</strong> {referralCount === 1 ? 'amigo' : 'amigos'} · Te faltan <strong>{nextThemeTarget.req - referralCount}</strong> para <strong>{nextThemeTarget.label}</strong>.</>
+                      : 'Todos los temas desbloqueados.'}
                 </p>
               </div>
             </div>
 
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-              <div className="grid grid-cols-3 gap-2 w-full lg:max-w-md">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full lg:max-w-xl">
+                <button
+                  type="button"
+                  onClick={() => setShowRewardsModal(true)}
+                  className="relative h-14 sm:h-16 rounded-xl overflow-hidden ring-1 ring-[#e11d48]/40 text-left p-1.5 sm:p-2 flex items-end cursor-pointer"
+                  style={{ background: 'radial-gradient(circle at 20% 25%, rgba(16,185,129,0.38), transparent 58%), radial-gradient(circle at 82% 30%, rgba(225,29,72,0.45), transparent 58%), linear-gradient(135deg, #06101a, #0b2434)' }}
+                >
+                  <span className="text-[10px] font-extrabold text-white flex items-center gap-1 truncate">
+                    ❄ Navidad 2026
+                  </span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setShowRewardsModal(true)}

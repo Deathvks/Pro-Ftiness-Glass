@@ -495,9 +495,12 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
     let badges = [];
     try {
-        badges = (typeof profile.unlocked_badges === 'string'
+        const rawBadges = (typeof profile.unlocked_badges === 'string'
             ? JSON.parse(profile.unlocked_badges)
             : (profile.unlocked_badges || []));
+        badges = Array.isArray(rawBadges)
+            ? rawBadges.filter((b) => !String(typeof b === 'string' ? b : (b?.id || b?.badge_id || '')).startsWith('theme_'))
+            : [];
     } catch (e) {
         badges = [];
     }

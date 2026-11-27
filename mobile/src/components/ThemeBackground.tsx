@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused } from 'expo-router';
 import useAppStore from '@/store/useAppStore';
 import GalaxyStarBackground from '@/components/ui/GalaxyStarBackground';
+import { ChristmasSnowBackground } from '@/components/ui/ChristmasSnowBackground';
 import { getThemeBaseBackground } from '@/constants/theme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('screen');
@@ -35,8 +36,45 @@ function FocusedGalaxyStars() {
   return useIsFocused() ? <GalaxyStarBackground /> : null;
 }
 
+function FocusedChristmasSnow() {
+  return useIsFocused() ? <ChristmasSnowBackground /> : null;
+}
+
 export default function ThemeBackground({ root = false }: { root?: boolean }) {
   const theme = useAppStore(state => state.theme);
+
+  if (theme === 'christmas') {
+    return (
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: '#07131e',
+            width: '100%',
+            height: '100%',
+            minHeight: SCREEN_HEIGHT,
+          },
+        ]}
+        pointerEvents="none"
+      >
+        {/* Bruma verde pino invernal superior-izquierda */}
+        <LinearGradient
+          colors={['rgba(16, 185, 129, 0.16)', 'rgba(16, 185, 129, 0.04)', 'transparent']}
+          start={{ x: 0.1, y: 0.15 }}
+          end={{ x: 0.85, y: 0.75 }}
+          style={StyleSheet.absoluteFill}
+        />
+        {/* Resplandor rojo navideño y escarcha azulada */}
+        <LinearGradient
+          colors={['transparent', 'rgba(56, 189, 248, 0.08)', 'rgba(225, 29, 72, 0.16)']}
+          start={{ x: 0.2, y: 0.2 }}
+          end={{ x: 0.9, y: 0.85 }}
+          style={StyleSheet.absoluteFill}
+        />
+        {root ? <ChristmasSnowBackground /> : <FocusedChristmasSnow />}
+      </View>
+    );
+  }
 
   if (theme === 'galaxy') {
     return (

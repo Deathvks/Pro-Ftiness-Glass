@@ -694,13 +694,13 @@
           root.style.setProperty('--text-accent', luminance < 0.3 ? '#FFFFFF' : hexColor);
         }
 
-        var bgColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814', desert: '#f0dec5', 'desert-dark': '#2c1e16', ocean: '#e0f2fe', 'ocean-dark': '#0f172a' };
-        var headerColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814', desert: '#f0dec5', 'desert-dark': '#2c1e16', ocean: '#e0f2fe', 'ocean-dark': '#0f172a' };
+        var bgColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814', christmas: '#07131e', desert: '#f0dec5', 'desert-dark': '#2c1e16', ocean: '#e0f2fe', 'ocean-dark': '#0f172a' };
+        var headerColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814', christmas: '#07131e', desert: '#f0dec5', 'desert-dark': '#2c1e16', ocean: '#e0f2fe', 'ocean-dark': '#0f172a' };
 
         var selectedBgColor = bgColors[effectiveTheme] || bgColors.dark;
         var selectedHeaderColor = headerColors[effectiveTheme] || headerColors.dark;
 
-        root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme', 'desert-theme', 'dark');
+        root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme', 'christmas-theme', 'desert-theme', 'ocean-theme', 'dark');
         if (savedTheme === 'system') {
           root.classList.add(isDark ? 'dark-theme' : 'light-theme');
         } else {

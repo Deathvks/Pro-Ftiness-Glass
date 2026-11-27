@@ -18,6 +18,8 @@ import useAppStore from '@/store/useAppStore';
 import { useToastStore } from '@/store/toastStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import { claimChristmasTheme } from '@/services/userService';
+import { hasChristmasThemeUnlocked, isChristmasPromoActive } from '@/utils/christmasTheme';
 import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
 
@@ -35,6 +37,7 @@ interface RewardVariant {
 interface RewardItem {
   id: string;
   name: string;
+  seasonalBadge?: string;
   previewCaption: string;
   description: string;
   requiredReferrals: number;
@@ -42,11 +45,24 @@ interface RewardItem {
   textLight: string;
   textDark: string;
   iconName: string;
-  previewImage: number;
+  previewImage?: number;
   variants: RewardVariant[];
 }
 
 const REWARDS: RewardItem[] = [
+  {
+    id: 'christmas',
+    name: 'Tema Navidad 2026',
+    seasonalBadge: 'Edición Navidad 2026',
+    previewCaption: 'Invierno Glass · Nieve',
+    description: 'Azul noche invernal y cristal helado con nieve sutil y acento rojo navideño. Desbloquéalo directamente antes del 6 de enero y quédatelo para siempre (después, invitando a 1 amigo).',
+    requiredReferrals: 1,
+    color: '#e11d48',
+    textLight: '#be123c',
+    textDark: '#fda4af',
+    iconName: 'snowflake',
+    variants: [{ id: 'christmas', label: 'Usar tema', testLabel: 'Probar 10s' }],
+  },
   {
     id: 'galaxy',
     name: 'Tema Galaxia',
@@ -100,7 +116,10 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
   const startThemeTest = useAppStore(state => (state as any).startThemeTest);
   const themeTest = useAppStore(state => state.themeTest);
   const userProfile = useAppStore(state => state.userProfile);
+  const unlockedBadges = useAppStore(state => state.gamification?.unlockedBadges || []);
+  const applyUnlockedBadges = useAppStore(state => (state as any).applyUnlockedBadges);
   const colors = useAppColors();
+  const [claimingChristmas, setClaimingChristmas] = React.useState(false);
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const isIOS = Platform.OS === 'ios';
@@ -109,9 +128,29 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
 
   const referralCount = userProfile?.referralCount || 0;
   const isAdmin = userProfile?.role === 'admin';
+  const isChristmasPromoOpen = isChristmasPromoActive();
   const referralCode = userProfile?.referral_code || '';
   const referralLink = `https://profitnessglass.es/register?ref=${referralCode}`;
-  const nextReward = REWARDS.find(r => referralCount < r.requiredReferrals);
+  const nextReward = REWARDS.find(r => r.id !== 'christmas' && referralCount < r.requiredReferrals);
+
+  const handleClaimChristmas = async () => {
+    if (claimingChristmas) return;
+    setClaimingChristmas(true);
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      const res = await claimChristmasTheme();
+      if (Array.isArray(res?.unlocked_badges)) {
+        applyUnlockedBadges?.(res.unlocked_badges);
+      }
+      setTheme('christmas');
+      useToastStore.getState().showToast(res?.message || '¡Tema Navidad 2026 desbloqueado para siempre!', 'success');
+      onClose();
+    } catch (err: any) {
+      useToastStore.getState().showToast(err?.message || 'No se pudo reclamar el tema.', 'error');
+    } finally {
+      setClaimingChristmas(false);
+    }
+  };
 
   const handleApplyTheme = (themeId: string) => {
     try {
@@ -244,7 +283,10 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
         {/* Lista de Recompensas con vistas previas reales */}
         <View style={styles.rewardsList}>
           {REWARDS.map(reward => {
-            const isUnlocked = isAdmin || referralCount >= reward.requiredReferrals;
+            const isChristmas = reward.id === 'christmas';
+            const isUnlocked = isChristmas
+              ? hasChristmasThemeUnlocked(userProfile, unlockedBadges)
+              : isAdmin || referralCount >= reward.requiredReferrals;
             const isGroupActive = reward.variants.some(v => v.id === theme);
             const remaining = Math.max(0, reward.requiredReferrals - referralCount);
             const progressPct = Math.min(100, Math.round((referralCount / reward.requiredReferrals) * 100));
@@ -271,25 +313,73 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
                 ]}
               >
                 {/* Preview real despejado */}
-                <View style={styles.previewBanner}>
-                  <ExpoImage
-                    source={reward.previewImage}
-                    style={StyleSheet.absoluteFill}
-                    contentFit="cover"
-                    transition={200}
-                  />
+                <View style={[styles.previewBanner, isChristmas && { backgroundColor: '#07131e' }]}>
+                  {reward.previewImage ? (
+                    <ExpoImage
+                      source={reward.previewImage}
+                      style={StyleSheet.absoluteFill}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                  ) : (
+                    <>
+                      <LinearGradient
+                        colors={['#06101a', '#0b2434', '#190d1a']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      <LinearGradient
+                        colors={['rgba(16,185,129,0.28)', 'transparent', 'rgba(225,29,72,0.34)']}
+                        start={{ x: 0.1, y: 0.1 }}
+                        end={{ x: 0.9, y: 0.9 }}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      <FontAwesome5 name="snowflake" size={13} color="rgba(255,255,255,0.75)" style={{ position: 'absolute', top: 14, left: 26 }} />
+                      <FontAwesome5 name="snowflake" size={10} color="rgba(186,230,253,0.8)" style={{ position: 'absolute', top: 34, left: '42%' }} />
+                      <FontAwesome5 name="snowflake" size={11} color="rgba(254,243,199,0.75)" style={{ position: 'absolute', bottom: 18, left: 56 }} />
+                      <FontAwesome5 name="snowflake" size={14} color="rgba(255,255,255,0.8)" style={{ position: 'absolute', bottom: 14, right: 44 }} />
+                    </>
+                  )}
                   <LinearGradient
                     colors={['rgba(0,0,0,0.04)', 'rgba(0,0,0,0.3)']}
                     style={StyleSheet.absoluteFill}
                   />
+                  {reward.seasonalBadge && (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        paddingHorizontal: 9,
+                        paddingVertical: 4,
+                        borderRadius: 999,
+                        backgroundColor: 'rgba(225, 29, 72, 0.92)',
+                        borderWidth: 1,
+                        borderColor: 'rgba(255,255,255,0.28)',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                    >
+                      <FontAwesome5 name="snowflake" size={9} color="#ffffff" />
+                      <Text style={{ fontSize: 10, fontWeight: '800', color: '#ffffff' }}>
+                        {reward.seasonalBadge}
+                      </Text>
+                    </View>
+                  )}
                   <View style={styles.previewLockPill}>
                     <FontAwesome5
                       name={isUnlocked ? 'lock-open' : 'lock'}
                       size={9}
-                      color={isUnlocked ? '#34d399' : '#e2e8f0'}
+                      color={isUnlocked ? '#34d399' : isChristmas && isChristmasPromoOpen ? '#fcd34d' : '#e2e8f0'}
                     />
                     <Text style={styles.previewLockText}>
-                      {isUnlocked ? 'Desbloqueado' : `${referralCount}/${reward.requiredReferrals}`}
+                      {isUnlocked
+                        ? 'Desbloqueado'
+                        : isChristmas && isChristmasPromoOpen
+                        ? 'Hasta el 6 ene'
+                        : `${referralCount}/${reward.requiredReferrals}`}
                     </Text>
                   </View>
                 </View>
@@ -304,7 +394,7 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
                       </Text>
                     </View>
                   </View>
-                  {!isUnlocked && (
+                  {!isUnlocked && !(isChristmas && isChristmasPromoOpen) && (
                     <Text style={[styles.remainingText, { color: colors.textSecondary }]}>
                       Faltan {remaining}
                     </Text>
@@ -315,7 +405,7 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
                   {reward.description}
                 </Text>
 
-                {!isUnlocked && (
+                {!isUnlocked && !(isChristmas && isChristmasPromoOpen) && (
                   <View
                     style={[
                       styles.progressTrack,
@@ -366,25 +456,48 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
                           </TouchableOpacity>
                         );
                       })
-                    : reward.variants.map(v => (
-                        <TouchableOpacity
-                          key={v.id}
-                          onPress={() => handleTestTheme(v.id)}
-                          disabled={isTestingTheme}
-                          activeOpacity={0.75}
-                          style={[
-                            styles.variantBtn,
-                            {
-                              backgroundColor: reward.color + '24',
-                              opacity: isTestingTheme ? 0.8 : 1,
-                            },
-                          ]}
-                        >
-                          <Text style={[styles.variantBtnText, { color: reward.color }]}>
-                            {isTestingTheme ? `Probando ${themeTest?.timeLeft ?? 10}s` : v.testLabel}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
+                    : (
+                      <>
+                        {reward.variants.map(v => (
+                          <TouchableOpacity
+                            key={v.id}
+                            onPress={() => handleTestTheme(v.id)}
+                            disabled={isTestingTheme}
+                            activeOpacity={0.75}
+                            style={[
+                              styles.variantBtn,
+                              {
+                                backgroundColor: reward.color + '24',
+                                opacity: isTestingTheme ? 0.8 : 1,
+                              },
+                            ]}
+                          >
+                            <Text style={[styles.variantBtnText, { color: reward.color }]}>
+                              {isTestingTheme ? `Probando ${themeTest?.timeLeft ?? 10}s` : v.testLabel}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                        {isChristmas && isChristmasPromoOpen && (
+                          <TouchableOpacity
+                            onPress={() => void handleClaimChristmas()}
+                            disabled={claimingChristmas}
+                            activeOpacity={0.8}
+                            style={[
+                              styles.variantBtn,
+                              {
+                                backgroundColor: '#e11d48',
+                                opacity: claimingChristmas ? 0.7 : 1,
+                              },
+                            ]}
+                          >
+                            <FontAwesome5 name="gift" size={10} color="#ffffff" />
+                            <Text style={[styles.variantBtnText, { color: '#ffffff' }]}>
+                              {claimingChristmas ? 'Reclamando...' : 'Reclamar tema'}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </>
+                    )}
                 </View>
               </View>
             );

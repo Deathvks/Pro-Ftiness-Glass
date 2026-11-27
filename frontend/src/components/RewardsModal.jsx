@@ -2,6 +2,7 @@ import ModalPortal from './ModalPortal';
 import React, { useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
+import { Snowflake, Sparkles } from 'lucide-react';
 import {
   FaGift,
   FaTrophy,
@@ -20,8 +21,22 @@ import useAppStore from '../store/useAppStore';
 import { useAppTheme } from '../hooks/useAppTheme';
 import useModalLock from '../hooks/useModalLock';
 import { useToast } from '../hooks/useToast';
+import { claimChristmasTheme } from '../services/userService';
+import { hasChristmasThemeUnlocked, isChristmasPromoActive } from '../utils/christmasTheme';
 
 const REWARDS = [
+  {
+    id: 'christmas',
+    name: 'Tema Navidad 2026',
+    seasonalBadge: 'Edición Navidad 2026',
+    previewCaption: 'Invierno Glass · Nieve',
+    description: 'Azul noche invernal y cristal helado con nieve sutil y acento rojo navideño. Desbloquéalo directamente antes del 6 de enero y quédatelo para siempre (después, invitando a 1 amigo).',
+    requiredReferrals: 1,
+    icon: Snowflake,
+    accentHex: '#e11d48',
+    captionColorClass: 'text-[#e11d48] dark:text-[#fda4af]',
+    variants: [{ id: 'christmas', label: 'Usar tema', testLabel: 'Probar 10s' }],
+  },
   {
     id: 'galaxy',
     name: 'Tema Galaxia',
@@ -74,9 +89,12 @@ export default function RewardsModal({ isOpen, onClose }) {
   useModalLock(isOpen);
 
   const userProfile = useAppStore((state) => state.userProfile);
+  const unlockedBadges = useAppStore((state) => state.gamification?.unlockedBadges || []);
+  const applyUnlockedBadges = useAppStore((state) => state.applyUnlockedBadges);
   const { addToast } = useToast();
   const { theme, activeTheme, setTheme, startThemeTest, isTestingTheme, testTimeLeft } = useAppTheme();
   const [dragOffsetY, setDragOffsetY] = useState(0);
+  const [claimingChristmas, setClaimingChristmas] = useState(false);
   const dragStartYRef = useRef(null);
   const didDragRef = useRef(false);
 
@@ -84,12 +102,31 @@ export default function RewardsModal({ isOpen, onClose }) {
 
   const referralCount = userProfile?.referralCount || 0;
   const isAdmin = userProfile?.role === 'admin';
+  const isChristmasPromoOpen = isChristmasPromoActive();
   const baseShareUrl = Capacitor.isNativePlatform()
     ? (import.meta.env.VITE_WEB_URL || 'https://profitnessglass.es')
     : (typeof window !== 'undefined' ? window.location.origin : 'https://profitnessglass.es');
   const referralLink = `${baseShareUrl}/register?ref=${userProfile?.referral_code || ''}`;
 
-  const nextReward = REWARDS.find((r) => referralCount < r.requiredReferrals);
+  const nextReward = REWARDS.find((r) => r.id !== 'christmas' && referralCount < r.requiredReferrals);
+
+  const handleClaimChristmas = async () => {
+    if (claimingChristmas) return;
+    setClaimingChristmas(true);
+    try {
+      const res = await claimChristmasTheme();
+      if (Array.isArray(res?.unlocked_badges)) {
+        applyUnlockedBadges?.(res.unlocked_badges);
+      }
+      setTheme('christmas', false);
+      addToast(res?.message || '¡Tema Navidad 2026 desbloqueado para siempre!', 'success');
+      onClose();
+    } catch (err) {
+      addToast(err?.message || 'No se pudo reclamar el tema.', 'error');
+    } finally {
+      setClaimingChristmas(false);
+    }
+  };
 
   const handleApplyTheme = (themeId) => {
     setTheme(themeId, false);
@@ -248,7 +285,10 @@ export default function RewardsModal({ isOpen, onClose }) {
             {/* Tarjetas de temas con vistas previas reales */}
             <div className="space-y-3.5 pb-1">
               {REWARDS.map((reward) => {
-                const isUnlocked = isAdmin || referralCount >= reward.requiredReferrals;
+                const isChristmas = reward.id === 'christmas';
+                const isUnlocked = isChristmas
+                  ? hasChristmasThemeUnlocked(userProfile, unlockedBadges)
+                  : isAdmin || referralCount >= reward.requiredReferrals;
                 const isGroupActive = reward.variants.some((v) => v.id === activeTheme);
                 const RewardIcon = reward.icon;
                 const remaining = Math.max(0, reward.requiredReferrals - referralCount);
@@ -269,10 +309,15 @@ export default function RewardsModal({ isOpen, onClose }) {
                       style={
                         reward.imageUrl
                           ? undefined
-                          : {
-                              background:
-                                'radial-gradient(circle at 20% 25%, rgba(168,85,247,0.45), transparent 55%), radial-gradient(circle at 80% 75%, rgba(59,130,246,0.35), transparent 55%), linear-gradient(135deg, #070314 0%, #1d0b3b 50%, #090d26 100%)',
-                            }
+                          : isChristmas
+                            ? {
+                                background:
+                                  'radial-gradient(circle at 20% 25%, rgba(16, 185, 129, 0.35), transparent 55%), radial-gradient(circle at 82% 28%, rgba(225, 29, 72, 0.42), transparent 55%), radial-gradient(circle at 55% 85%, rgba(56, 189, 248, 0.25), transparent 55%), linear-gradient(135deg, #06101a 0%, #0b2434 52%, #190d1a 100%)',
+                              }
+                            : {
+                                background:
+                                  'radial-gradient(circle at 20% 25%, rgba(168,85,247,0.45), transparent 55%), radial-gradient(circle at 80% 75%, rgba(59,130,246,0.35), transparent 55%), linear-gradient(135deg, #070314 0%, #1d0b3b 50%, #090d26 100%)',
+                              }
                       }
                     >
                       {reward.imageUrl ? (
@@ -284,6 +329,13 @@ export default function RewardsModal({ isOpen, onClose }) {
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/15" />
                         </>
+                      ) : isChristmas ? (
+                        <>
+                          <Snowflake size={14} className="absolute top-3 left-7 text-white/75" />
+                          <Snowflake size={11} className="absolute top-8 left-1/3 text-sky-200/80" />
+                          <Snowflake size={13} className="absolute bottom-6 left-16 text-amber-100/75" />
+                          <Snowflake size={15} className="absolute bottom-4 right-12 text-white/80" />
+                        </>
                       ) : (
                         <>
                           <div className="absolute top-3 left-6 w-1.5 h-1.5 rounded-full bg-white/90 shadow-[0_0_8px_#fff]" />
@@ -292,13 +344,19 @@ export default function RewardsModal({ isOpen, onClose }) {
                         </>
                       )}
 
+                      {reward.seasonalBadge && (
+                        <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#e11d48]/90 backdrop-blur-md text-[10px] font-black text-white border border-white/25">
+                          <Sparkles size={9} /> {reward.seasonalBadge}
+                        </span>
+                      )}
+
                       <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md text-[10px] font-extrabold text-white border border-white/15">
                         {isUnlocked ? (
                           <FaLockOpen size={9} className="text-emerald-400" />
                         ) : (
-                          <FaLock size={9} className="text-white/80" />
+                          <FaLock size={9} className={isChristmas && isChristmasPromoOpen ? 'text-amber-300' : 'text-white/80'} />
                         )}
-                        {isUnlocked ? 'Desbloqueado' : `${referralCount}/${reward.requiredReferrals}`}
+                        {isUnlocked ? 'Desbloqueado' : isChristmas && isChristmasPromoOpen ? 'Hasta el 6 ene' : `${referralCount}/${reward.requiredReferrals}`}
                       </span>
                     </div>
 
@@ -310,7 +368,7 @@ export default function RewardsModal({ isOpen, onClose }) {
                           <span>{reward.previewCaption}</span>
                         </p>
                       </div>
-                      {!isUnlocked && (
+                      {!isUnlocked && !(isChristmas && isChristmasPromoOpen) && (
                         <span className="text-[11px] font-bold text-text-muted shrink-0">
                           Faltan {remaining}
                         </span>
@@ -321,7 +379,7 @@ export default function RewardsModal({ isOpen, onClose }) {
                       {reward.description}
                     </p>
 
-                    {!isUnlocked && (
+                    {!isUnlocked && !(isChristmas && isChristmasPromoOpen) && (
                       <div className="mb-3 w-full h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-500"
@@ -351,21 +409,36 @@ export default function RewardsModal({ isOpen, onClose }) {
                               </button>
                             );
                           })
-                        : reward.variants.map((v) => (
-                            <button
-                              key={v.id}
-                              type="button"
-                              onClick={() => handleTestTheme(v.id)}
-                              disabled={isTestingTheme}
-                              className="flex-1 min-w-[110px] py-2 px-3 rounded-xl font-bold text-xs transition-all cursor-pointer disabled:opacity-75"
-                              style={{
-                                backgroundColor: `${reward.accentHex}24`,
-                                color: reward.accentHex,
-                              }}
-                            >
-                              {isTestingTheme ? `Probando ${testTimeLeft}s` : v.testLabel}
-                            </button>
-                          ))}
+                        : (
+                          <>
+                            {reward.variants.map((v) => (
+                              <button
+                                key={v.id}
+                                type="button"
+                                onClick={() => handleTestTheme(v.id)}
+                                disabled={isTestingTheme}
+                                className="flex-1 min-w-[110px] py-2 px-3 rounded-xl font-bold text-xs transition-all cursor-pointer disabled:opacity-75"
+                                style={{
+                                  backgroundColor: `${reward.accentHex}24`,
+                                  color: reward.accentHex,
+                                }}
+                              >
+                                {isTestingTheme ? `Probando ${testTimeLeft}s` : v.testLabel}
+                              </button>
+                            ))}
+                            {isChristmas && isChristmasPromoOpen && (
+                              <button
+                                type="button"
+                                onClick={handleClaimChristmas}
+                                disabled={claimingChristmas}
+                                className="flex-1 min-w-[140px] py-2 px-3 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-[#e11d48] to-[#f59e0b] hover:brightness-110 transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-70"
+                              >
+                                <FaGift size={11} />
+                                <span>{claimingChristmas ? 'Reclamando...' : 'Reclamar tema'}</span>
+                              </button>
+                            )}
+                          </>
+                        )}
                     </div>
                   </div>
                 );

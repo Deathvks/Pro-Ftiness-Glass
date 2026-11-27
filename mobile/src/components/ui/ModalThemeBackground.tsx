@@ -71,6 +71,25 @@ export function ModalThemeBackground({ theme: explicitTheme }: { theme?: string 
     );
   }
 
+  if (theme === 'christmas') {
+    return (
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: baseBg }]}>
+        <LinearGradient
+          colors={['rgba(16, 185, 129, 0.20)', 'rgba(16, 185, 129, 0.03)', 'transparent']}
+          start={{ x: 0.05, y: 0.05 }}
+          end={{ x: 0.85, y: 0.85 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <LinearGradient
+          colors={['transparent', 'rgba(225, 29, 72, 0.06)', 'rgba(225, 29, 72, 0.20)']}
+          start={{ x: 0.2, y: 0.2 }}
+          end={{ x: 0.95, y: 0.9 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </View>
+    );
+  }
+
   if (theme.startsWith('ocean') || theme.startsWith('desert')) {
     const source = theme.startsWith('ocean') ? OCEAN_BG : DESERT_BG;
     const overlay = MODAL_PHOTO_OVERLAYS[theme] || 'rgba(0, 0, 0, 0.65)';

@@ -5,6 +5,10 @@ export const getMyProfile = () => {
   return apiClient('/users/me');
 };
 
+export const claimChristmasTheme = () => {
+  return apiClient('/users/claim-christmas-theme', { method: 'POST' });
+};
+
 export const updateUserProfile = (profileData) => {
   return apiClient('/users/me', { body: profileData, method: 'PUT' });
 };

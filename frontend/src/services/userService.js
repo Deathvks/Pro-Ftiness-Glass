@@ -6,6 +6,10 @@ export const getMyProfile = (options = {}) => {
   return apiClient('/users/me', options);
 };
 
+export const claimChristmasTheme = () => {
+  return apiClient('/users/claim-christmas-theme', { method: 'POST' });
+};
+
 export const updateUserProfile = (profileData, options = {}) => {
   return apiClient('/users/me', { ...options, body: profileData, method: 'PUT' });
 };

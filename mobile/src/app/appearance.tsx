@@ -37,11 +37,14 @@ import {
   Sparkles,
   Gauge,
   Battery,
+  Snowflake,
 } from 'lucide-react-native';
 
 import { LiquidCloseButton } from '@/components/ui/GlassButton';
 
 import useAppStore from '@/store/useAppStore';
+import { claimChristmasTheme } from '@/services/userService';
+import { hasChristmasThemeUnlocked, isChristmasPromoActive } from '@/utils/christmasTheme';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
 import { getContrastTextColor } from '@/utils/routineHelpers';
@@ -124,6 +127,9 @@ const BASE_THEMES = [
 const MeteorIcon = ({ size, color }: { size: number; color: string }) => (
   <FontAwesome5 name="meteor" size={size} color={color} />
 );
+const ChristmasIcon = ({ size, color }: { size: number; color: string }) => (
+  <Snowflake size={size} color={color} />
+);
 const DesertIcon = ({ size, color }: { size: number; color: string }) => (
   <FontAwesome5 name="sun" size={size} color={color} solid />
 );
@@ -134,8 +140,9 @@ const OceanIcon = ({ size, color }: { size: number; color: string }) => (
 type SpecialTheme = {
   key: string;
   label: string;
+  seasonalBadge?: string;
   previewCaption: string;
-  previewImage: number;
+  previewImage?: number;
   tint: string;
   requiredReferrals: number;
   icon: React.ComponentType<{ size: number; color: string }>;
@@ -146,6 +153,19 @@ type SpecialTheme = {
 };
 
 const SPECIAL_THEMES: SpecialTheme[] = [
+  {
+    key: 'christmas',
+    label: 'Tema Navidad 2026',
+    seasonalBadge: 'Edición Navidad 2026',
+    previewCaption: 'Invierno Glass · Nieve',
+    tint: '#e11d48',
+    requiredReferrals: 1,
+    icon: ChristmasIcon,
+    variants: [{ id: 'christmas', label: 'Aplicar', testLabel: 'Probar 10s' }],
+    textLight: '#be123c',
+    textDark: '#fda4af',
+    info: 'El Tema Navidad usa su propio acento rojo invernal (desactiva el acento manual).',
+  },
   {
     key: 'galaxy',
     label: 'Tema Galaxia',
@@ -193,7 +213,7 @@ const SPECIAL_THEMES: SpecialTheme[] = [
   },
 ];
 
-const SPECIAL_THEME_IDS = ['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'];
+const SPECIAL_THEME_IDS = ['christmas', 'galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'];
 const APPEARANCE_SECTIONS = ['themes', 'base', 0, 5, 10, 15, 20, 'experience'] as const;
 type AppearanceSection = (typeof APPEARANCE_SECTIONS)[number];
 const ACCENTS_BY_LEVEL = {
@@ -311,12 +331,17 @@ export default function AppearanceScreen() {
   const setHapticsEnabled = useAppStore(state => (state as any).setHapticsEnabled);
   const galaxyEffectsEnabled = useAppStore(state => (state as any).galaxyEffectsEnabled !== false);
   const setGalaxyEffectsEnabled = useAppStore(state => (state as any).setGalaxyEffectsEnabled);
+  const christmasEffectsEnabled = useAppStore(state => (state as any).christmasEffectsEnabled !== false);
+  const setChristmasEffectsEnabled = useAppStore(state => (state as any).setChristmasEffectsEnabled);
+  const applyUnlockedBadges = useAppStore(state => (state as any).applyUnlockedBadges);
 
   const testedTheme = useAppStore(state => state.themeTest?.name);
   const startThemeTest = useAppStore(state => (state as any).startThemeTest);
-  const isAdmin = useAppStore(state => state.userProfile?.role === 'admin');
-  const referralCount = useAppStore(state => state.userProfile?.referralCount || 0);
-  const referralCode = useAppStore(state => state.userProfile?.referral_code || '');
+  const userProfile = useAppStore(state => state.userProfile);
+  const unlockedBadges = useAppStore(state => state.gamification?.unlockedBadges || []);
+  const isAdmin = userProfile?.role === 'admin';
+  const referralCount = userProfile?.referralCount || 0;
+  const referralCode = userProfile?.referral_code || '';
   const userLevel = useAppStore(state => state.gamification?.level || state.userProfile?.level || 1);
 
   const colors = useAppColors();
@@ -330,6 +355,8 @@ export default function AppearanceScreen() {
   const activeTheme = theme;
   const isSpecialActive = SPECIAL_THEME_IDS.includes(activeTheme);
   const isGalaxyActive = activeTheme === 'galaxy';
+  const isChristmasActive = activeTheme === 'christmas';
+  const isChristmasPromoOpen = isChristmasPromoActive();
 
   const accentText = getContrastColor(colors.tint, theme);
   const subtleBg = usesFrontendCardSurface(activeTheme)
@@ -339,6 +366,8 @@ export default function AppearanceScreen() {
 
   const [isMyThemesOpen, setIsMyThemesOpen] = useState(true);
   const [showGalaxyWarning, setShowGalaxyWarning] = useState(false);
+  const [showChristmasWarning, setShowChristmasWarning] = useState(false);
+  const [claimingChristmas, setClaimingChristmas] = useState(false);
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
@@ -436,6 +465,40 @@ export default function AppearanceScreen() {
     setGalaxyEffectsEnabled?.(true);
     setShowGalaxyWarning(false);
     showToast('Efectos de Galaxia activados');
+  };
+
+  const handleToggleChristmasEffects = () => {
+    tap();
+    if (christmasEffectsEnabled) {
+      setChristmasEffectsEnabled?.(false);
+      showToast('Copos de nieve desactivados');
+    } else {
+      setShowChristmasWarning(true);
+    }
+  };
+
+  const handleConfirmChristmasEffects = () => {
+    setChristmasEffectsEnabled?.(true);
+    setShowChristmasWarning(false);
+    showToast('Copos de nieve activados');
+  };
+
+  const handleClaimChristmas = async () => {
+    if (claimingChristmas) return;
+    tap();
+    setClaimingChristmas(true);
+    try {
+      const res = await claimChristmasTheme();
+      if (Array.isArray(res?.unlocked_badges)) {
+        applyUnlockedBadges?.(res.unlocked_badges);
+      }
+      setTheme('christmas');
+      showToast(res?.message || '¡Tema Navidad 2026 desbloqueado para siempre!');
+    } catch (err: any) {
+      showToast(err?.message || 'No se pudo reclamar el tema.', true);
+    } finally {
+      setClaimingChristmas(false);
+    }
   };
 
   const handleTest = (themeId: string) => {
@@ -538,7 +601,9 @@ export default function AppearanceScreen() {
                   {isSpecialActive && (
                     <View style={[styles.activeThemePill, { backgroundColor: colors.tint + '20', flexShrink: 0 }]}>
                       <Text style={[styles.activeThemePillText, { color: colors.tint }]} numberOfLines={1}>
-                        {activeTheme.startsWith('galaxy')
+                        {activeTheme === 'christmas'
+                          ? 'Navidad 2026'
+                          : activeTheme.startsWith('galaxy')
                           ? 'Galaxia'
                           : activeTheme.startsWith('desert')
                           ? 'Desierto'
@@ -548,7 +613,7 @@ export default function AppearanceScreen() {
                   )}
                 </View>
                 <Text style={[styles.myThemesSubtitle, { color: colors.textSecondary }]}>
-                  {isMyThemesOpen ? 'Toca para solapar' : '3 temas exclusivos · +1.000 XP c/u'}
+                  {isMyThemesOpen ? 'Toca para solapar' : 'Edición Navidad 2026 + temas exclusivos'}
                 </Text>
               </View>
             </View>
@@ -628,7 +693,10 @@ export default function AppearanceScreen() {
               </View>
 
               {SPECIAL_THEMES.map((st, index) => {
-                const isUnlocked = referralCount >= st.requiredReferrals || isAdmin;
+                const isChristmas = st.key === 'christmas';
+                const isUnlocked = isChristmas
+                  ? hasChristmasThemeUnlocked(userProfile, unlockedBadges)
+                  : referralCount >= st.requiredReferrals || isAdmin;
                 const isGroupActive = st.variants.some(v => v.id === activeTheme);
                 const STIcon = st.icon;
                 const pillText = isDark ? st.textDark : st.textLight;
@@ -726,21 +794,67 @@ export default function AppearanceScreen() {
                     ]}
                   >
                     {/* Vista previa visual real del tema */}
-                    <View style={styles.themePreviewBox}>
-                      <ExpoImage
-                        source={st.previewImage}
-                        style={StyleSheet.absoluteFill}
-                        contentFit="cover"
-                        transition={200}
-                      />
+                    <View style={[styles.themePreviewBox, isChristmas && { backgroundColor: '#07131e' }]}>
+                      {st.previewImage ? (
+                        <ExpoImage
+                          source={st.previewImage}
+                          style={StyleSheet.absoluteFill}
+                          contentFit="cover"
+                          transition={200}
+                        />
+                      ) : (
+                        <>
+                          <LinearGradient
+                            colors={['#06101a', '#0b2434', '#190d1a']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={StyleSheet.absoluteFill}
+                          />
+                          <LinearGradient
+                            colors={['rgba(16,185,129,0.28)', 'transparent', 'rgba(225,29,72,0.34)']}
+                            start={{ x: 0.1, y: 0.1 }}
+                            end={{ x: 0.9, y: 0.9 }}
+                            style={StyleSheet.absoluteFill}
+                          />
+                          <Snowflake size={14} color="rgba(255,255,255,0.75)" style={{ position: 'absolute', top: 14, left: 26 }} />
+                          <Snowflake size={11} color="rgba(186,230,253,0.8)" style={{ position: 'absolute', top: 34, left: '42%' }} />
+                          <Snowflake size={12} color="rgba(254,243,199,0.75)" style={{ position: 'absolute', bottom: 18, left: 56 }} />
+                          <Snowflake size={15} color="rgba(255,255,255,0.8)" style={{ position: 'absolute', bottom: 14, right: 44 }} />
+                        </>
+                      )}
                       <LinearGradient
                         colors={['rgba(0,0,0,0.04)', 'rgba(0,0,0,0.3)']}
                         style={StyleSheet.absoluteFill}
                       />
+                      {st.seasonalBadge && (
+                        <View
+                          style={{
+                            position: 'absolute',
+                            top: 8,
+                            left: 8,
+                            paddingHorizontal: 9,
+                            paddingVertical: 4,
+                            borderRadius: 999,
+                            backgroundColor: 'rgba(225, 29, 72, 0.92)',
+                            borderWidth: 1,
+                            borderColor: 'rgba(255,255,255,0.28)',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                        >
+                          <Sparkles size={10} color="#ffffff" />
+                          <Text style={{ fontSize: 10, fontWeight: '800', color: '#ffffff' }}>
+                            {st.seasonalBadge}
+                          </Text>
+                        </View>
+                      )}
                       <View style={styles.themePreviewCountPill}>
                         <Text style={styles.themePreviewCountText}>
                           {isUnlocked
                             ? 'Desbloqueado'
+                            : isChristmas && isChristmasPromoOpen
+                            ? 'Hasta el 6 ene'
                             : `${Math.min(referralCount, st.requiredReferrals)}/${st.requiredReferrals}`}
                         </Text>
                       </View>
@@ -754,13 +868,15 @@ export default function AppearanceScreen() {
                             {
                               backgroundColor: isUnlocked
                                 ? st.tint + '33'
+                                : isChristmas && isChristmasPromoOpen
+                                ? st.tint + '22'
                                 : isDark
                                 ? 'rgba(255, 255, 255, 0.1)'
                                 : 'rgba(0, 0, 0, 0.1)',
                             },
                           ]}
                         >
-                          <STIcon size={18} color={isUnlocked ? st.tint : colors.textSecondary} />
+                          <STIcon size={18} color={isUnlocked || (isChristmas && isChristmasPromoOpen) ? st.tint : colors.textSecondary} />
                         </View>
                         <View style={{ flex: 1, minWidth: 0 }}>
                           <Text
@@ -777,7 +893,14 @@ export default function AppearanceScreen() {
                               <>
                                 <FontAwesome5 name="lock-open" size={10} color="#22c55e" />
                                 <Text style={[styles.themeRowStatusText, { color: colors.textSecondary }]}>
-                                  Desbloqueado
+                                  {isChristmas ? 'Tuyo para siempre' : 'Desbloqueado'}
+                                </Text>
+                              </>
+                            ) : isChristmas && isChristmasPromoOpen ? (
+                              <>
+                                <FontAwesome5 name="gift" size={10} color="#fbbf24" />
+                                <Text style={[styles.themeRowStatusText, { color: colors.textSecondary }]} numberOfLines={2}>
+                                  Reclámalo antes del 6 de enero para conservarlo siempre (después, 1 amigo)
                                 </Text>
                               </>
                             ) : (
@@ -799,7 +922,7 @@ export default function AppearanceScreen() {
                       )}
                     </View>
 
-                    {!isUnlocked && (
+                    {!isUnlocked && !(isChristmas && isChristmasPromoOpen) && (
                       <View
                         style={[
                           styles.themeProgressTrack,
@@ -819,21 +942,40 @@ export default function AppearanceScreen() {
                       <View style={styles.variantButtonsRowMobile}>
                         {st.variants.map(v => renderVariantButton(v, true))}
                         {!isUnlocked && (
-                          <Pressable
-                            onPress={() => void handleShareReferral()}
-                            style={({ pressed }) => [
-                              styles.themeInviteInlineBtn,
-                              {
-                                backgroundColor: colors.tint,
-                                opacity: pressed ? 0.85 : 1,
-                              },
-                            ]}
-                          >
-                            <FontAwesome5 name="share-alt" size={11} color={getContrastTextColor(colors.tint)} />
-                            <Text style={[styles.themeInviteInlineBtnText, { color: getContrastTextColor(colors.tint) }]} numberOfLines={1}>
-                              Invitar
-                            </Text>
-                          </Pressable>
+                          isChristmas && isChristmasPromoOpen ? (
+                            <Pressable
+                              onPress={() => void handleClaimChristmas()}
+                              disabled={claimingChristmas}
+                              style={({ pressed }) => [
+                                styles.themeInviteInlineBtn,
+                                {
+                                  backgroundColor: '#e11d48',
+                                  opacity: claimingChristmas ? 0.7 : pressed ? 0.85 : 1,
+                                },
+                              ]}
+                            >
+                              <FontAwesome5 name="gift" size={11} color="#ffffff" />
+                              <Text style={[styles.themeInviteInlineBtnText, { color: '#ffffff' }]} numberOfLines={1}>
+                                {claimingChristmas ? 'Reclamando...' : 'Reclamar tema'}
+                              </Text>
+                            </Pressable>
+                          ) : (
+                            <Pressable
+                              onPress={() => void handleShareReferral()}
+                              style={({ pressed }) => [
+                                styles.themeInviteInlineBtn,
+                                {
+                                  backgroundColor: colors.tint,
+                                  opacity: pressed ? 0.85 : 1,
+                                },
+                              ]}
+                            >
+                              <FontAwesome5 name="share-alt" size={11} color={getContrastTextColor(colors.tint)} />
+                              <Text style={[styles.themeInviteInlineBtnText, { color: getContrastTextColor(colors.tint) }]} numberOfLines={1}>
+                                Invitar
+                              </Text>
+                            </Pressable>
+                          )
                         )}
                       </View>
                     )}
@@ -875,6 +1017,41 @@ export default function AppearanceScreen() {
                             tintColor={st.tint}
                             isDark={isDark}
                             accessibilityLabel="Estrellas animadas y meteoros"
+                          />
+                        </Pressable>
+                      </View>
+                    )}
+
+                    {/* Switch para Copos de nieve animados (solo si Navidad está activo) */}
+                    {st.key === 'christmas' && isChristmasActive && (
+                      <View style={[styles.galaxySwitchContainer, { borderTopColor: st.tint + '26' }]}>
+                        <Pressable
+                          onPress={handleToggleChristmasEffects}
+                          style={({ pressed }) => [
+                            styles.galaxySwitchRow,
+                            { transform: [{ scale: pressed ? 0.98 : 1 }] },
+                          ]}
+                        >
+                          <View style={styles.galaxySwitchInfo}>
+                            <View style={[styles.switchIconBox, { backgroundColor: st.tint + '20' }]}>
+                              <Snowflake size={16} color={st.tint} />
+                            </View>
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <Text style={[styles.switchTitle, { color: colors.text }]}>
+                                Copos de nieve animados
+                              </Text>
+                              <Text style={[styles.switchSubtitle, { color: colors.textSecondary }]}>
+                                Añade caída sutil de nieve al fondo invernal
+                              </Text>
+                            </View>
+                          </View>
+
+                          <LiquidGlassSwitch
+                            value={christmasEffectsEnabled}
+                            onValueChange={handleToggleChristmasEffects}
+                            tintColor={st.tint}
+                            isDark={isDark}
+                            accessibilityLabel="Copos de nieve animados"
                           />
                         </Pressable>
                       </View>
@@ -1089,6 +1266,80 @@ export default function AppearanceScreen() {
                 <Pressable
                   onPress={handleConfirmGalaxyEffects}
                   style={[styles.modalBtnPrimary, { backgroundColor: '#a855f7' }]}
+                >
+                  <Text style={styles.modalBtnPrimaryText}>Activar efectos</Text>
+                </Pressable>
+              </View>
+            </GlassSurface>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Advertencia para Copos de Nieve */}
+      <Modal
+        visible={showChristmasWarning}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowChristmasWarning(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContainer}>
+            <GlassSurface
+              radius={26}
+              theme={theme} isDark={isDark}
+              borderColor={glassBorder}
+              tintColor={isDark ? '#07131e' : '#ffffff'}
+              tintOpacity={0.94}
+              style={styles.modalCard}
+            >
+              <LiquidCloseButton
+                onPress={() => setShowChristmasWarning(false)}
+                iconSize={20}
+                iconColor={colors.textSecondary}
+                hitSlop={12}
+                style={styles.modalCloseBtn}
+              />
+
+              <View style={[styles.modalIconWrap, { backgroundColor: '#e11d4820' }]}>
+                <Snowflake size={30} color="#e11d48" />
+              </View>
+
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                Copos de nieve animados
+              </Text>
+
+              <Text style={[styles.modalMessage, { color: colors.textSecondary }]}>
+                La caída continua de nieve puede exigir más carga gráfica al dispositivo y aumentar el consumo de batería. Puedes desactivarla cuando quieras desde Apariencia.
+              </Text>
+
+              <View style={styles.modalBadgesRow}>
+                <View style={styles.modalBadge}>
+                  <Gauge size={14} color="#e11d48" />
+                  <Text style={[styles.modalBadgeText, { color: colors.textSecondary }]}>
+                    Más carga gráfica
+                  </Text>
+                </View>
+                <View style={styles.modalBadge}>
+                  <Battery size={14} color="#e11d48" />
+                  <Text style={[styles.modalBadgeText, { color: colors.textSecondary }]}>
+                    Consumo de batería
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.modalActionsRow}>
+                <Pressable
+                  onPress={() => setShowChristmasWarning(false)}
+                  style={[styles.modalBtnSecondary, { backgroundColor: subtleBg }]}
+                >
+                  <Text style={[styles.modalBtnSecondaryText, { color: colors.textSecondary }]}>
+                    Ahora no
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={handleConfirmChristmasEffects}
+                  style={[styles.modalBtnPrimary, { backgroundColor: '#e11d48' }]}
                 >
                   <Text style={styles.modalBtnPrimaryText}>Activar efectos</Text>
                 </Pressable>

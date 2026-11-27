@@ -618,6 +618,64 @@ export const deleteMyAccount = async (req, res, next) => {
   }
 };
 
+const CHRISTMAS_THEME_BADGE_ID = 'theme_christmas_2026';
+// Ventana promocional gratuita hasta fin del 6 de enero de 2027 (hora peninsular/UTC)
+const CHRISTMAS_PROMO_DEADLINE = new Date('2027-01-07T04:59:59.999Z');
+
+export const claimChristmasTheme = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    let currentBadges = [];
+    if (typeof user.unlocked_badges === 'string') {
+      try {
+        currentBadges = JSON.parse(user.unlocked_badges) || [];
+      } catch {
+        currentBadges = [];
+      }
+    } else if (Array.isArray(user.unlocked_badges)) {
+      currentBadges = [...user.unlocked_badges];
+    }
+
+    if (currentBadges.includes(CHRISTMAS_THEME_BADGE_ID)) {
+      return res.json({
+        claimed: true,
+        alreadyClaimed: true,
+        unlocked_badges: currentBadges,
+        message: 'El Tema Navidad 2026 ya está desbloqueado en tu cuenta.',
+      });
+    }
+
+    const referralCount = await User.count({ where: { referred_by: userId } });
+    const now = new Date();
+    const isWithinPromoWindow = now.getTime() <= CHRISTMAS_PROMO_DEADLINE.getTime();
+    const hasReferralUnlock = referralCount >= 1;
+    const isAdmin = user.role === 'admin';
+
+    if (!isWithinPromoWindow && !hasReferralUnlock && !isAdmin) {
+      return res.status(403).json({
+        error: 'El plazo gratuito de Navidad 2026 finalizó. Invita a 1 amigo para desbloquearlo al instante.',
+      });
+    }
+
+    const updatedBadges = [...currentBadges, CHRISTMAS_THEME_BADGE_ID];
+    await user.update({ unlocked_badges: JSON.stringify(updatedBadges) });
+
+    return res.json({
+      claimed: true,
+      alreadyClaimed: false,
+      unlocked_badges: updatedBadges,
+      message: '¡Tema Navidad 2026 desbloqueado para siempre!',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const userController = {
   getMyProfile,
   updateMyProfile,
@@ -625,6 +683,7 @@ const userController = {
   clearMyData,
   deleteMyAccount,
   updateGamificationStats,
+  claimChristmasTheme,
   exportMyData
 };
 

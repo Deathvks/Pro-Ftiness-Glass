@@ -389,7 +389,9 @@ export default function ProfileScreen() {
   };
 
   const btnTextColor = getContrastTextColor(colors.tint);
-  const unlockedBadges = gamification?.unlockedBadges || [];
+  const unlockedBadges = (gamification?.unlockedBadges || []).filter(
+    (id: string) => !String(id).startsWith('theme_')
+  );
 
   const cardBorderColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
   const cardBgColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)';

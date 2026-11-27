@@ -87,6 +87,40 @@ const useAppStore = create((set, get) => ({
         set({ galaxyEffectsEnabled: enabled });
     },
 
+    // --- Efectos de nieve de Navidad en dispositivos táctiles ---
+    christmasEffectsEnabled: (() => {
+        try {
+            return localStorage.getItem('christmasEffectsEnabled') === 'true';
+        } catch (e) {
+            return false;
+        }
+    })(),
+
+    setChristmasEffectsEnabled: (enabled) => {
+        try {
+            localStorage.setItem('christmasEffectsEnabled', JSON.stringify(enabled));
+        } catch (e) {
+            console.warn('Error saving Christmas effects preference', e);
+        }
+        if (typeof document !== 'undefined') {
+            document.documentElement.classList.toggle('christmas-effects-enabled', enabled);
+        }
+        set({ christmasEffectsEnabled: enabled });
+    },
+
+    applyUnlockedBadges: (badges) => {
+        if (!Array.isArray(badges)) return;
+        set((state) => ({
+            userProfile: state.userProfile
+                ? { ...state.userProfile, unlocked_badges: badges }
+                : state.userProfile,
+            gamification: {
+                ...state.gamification,
+                unlockedBadges: badges,
+            },
+        }));
+    },
+
     // --- Configuración Global: Tour Guiado General con persistencia robusta por usuario ---
     tourCompleted: (() => {
         try {

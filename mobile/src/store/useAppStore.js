@@ -91,6 +91,11 @@ const useAppStore = create((set, get) => ({
         if (galaxyEffects !== null) {
             try { set({ galaxyEffectsEnabled: JSON.parse(galaxyEffects) }); } catch(e){}
         }
+
+        const christmasEffects = localStorage.getItem('christmasEffectsEnabled');
+        if (christmasEffects !== null) {
+            try { set({ christmasEffectsEnabled: JSON.parse(christmasEffects) }); } catch(e){}
+        }
         
         const tours = ['tourCompleted', 'nutritionTourCompleted', 'routineTourCompleted', 'socialTourCompleted', 'hubTourCompleted'];
         const uid = get().userProfile?.id;
@@ -193,6 +198,25 @@ const useAppStore = create((set, get) => ({
     setGalaxyEffectsEnabled: (enabled) => {
         set({ galaxyEffectsEnabled: enabled });
         if (typeof localStorage !== 'undefined') localStorage.setItem('galaxyEffectsEnabled', JSON.stringify(enabled));
+    },
+    christmasEffectsEnabled: (typeof localStorage !== 'undefined' && localStorage.getItem('christmasEffectsEnabled') !== null)
+        ? localStorage.getItem('christmasEffectsEnabled') === 'true'
+        : true,
+    setChristmasEffectsEnabled: (enabled) => {
+        set({ christmasEffectsEnabled: enabled });
+        if (typeof localStorage !== 'undefined') localStorage.setItem('christmasEffectsEnabled', JSON.stringify(enabled));
+    },
+    applyUnlockedBadges: (badges) => {
+        if (!Array.isArray(badges)) return;
+        set((state) => ({
+            userProfile: state.userProfile
+                ? { ...state.userProfile, unlocked_badges: badges }
+                : state.userProfile,
+            gamification: {
+                ...state.gamification,
+                unlockedBadges: badges,
+            },
+        }));
     },
     ...createAuthSlice(set, get),
     ...createDataSlice(set, get),
