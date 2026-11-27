@@ -380,7 +380,7 @@ export default function AppearanceScreen() {
     tap();
     try {
       await Clipboard.setStringAsync(referralLink);
-      showToast('Enlace copiado (+1.000 XP por amigo)');
+      showToast('Enlace copiado (+1.000 XP para ambos)');
     } catch {}
   };
 

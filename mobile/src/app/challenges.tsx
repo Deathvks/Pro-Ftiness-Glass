@@ -36,6 +36,7 @@ import * as Haptics from 'expo-haptics';
 
 import apiClient from '@/services/apiClient';
 import useAppStore from '@/store/useAppStore';
+import { useToastStore } from '@/store/toastStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { getThemeBaseBackground } from '@/constants/theme';
@@ -264,6 +265,7 @@ export default function ChallengesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('daily');
   const [showRewardsModal, setShowRewardsModal] = useState(false);
+  const [copiedReferral, setCopiedReferral] = useState(false);
 
   // Cargar retos desde el backend
   const fetchChallenges = useCallback(async (isRefresh = false) => {
@@ -305,25 +307,44 @@ export default function ChallengesScreen() {
   const completedChallenges = safeChallenges.filter(c => c && c.completed);
 
   const handleCopyReferral = async () => {
+    const showToast = useToastStore.getState().showToast;
+    const code = userProfile?.referral_code;
+    if (!code) {
+      showToast('Tu código aún se está cargando. Inténtalo de nuevo.', 'info');
+      return;
+    }
     try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      const referralLink = `https://profitnessglass.es/register?ref=${userProfile?.referral_code || ''}`;
-      await Clipboard.setStringAsync(referralLink);
-      useAppStore.getState().showToast?.('¡Enlace de referido copiado!');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch {}
+    try {
+      const referralLink = `https://profitnessglass.es/register?ref=${code}`;
+      await Clipboard.setStringAsync(referralLink);
+      setCopiedReferral(true);
+      setTimeout(() => setCopiedReferral(false), 2500);
+      showToast('¡Enlace copiado! (+1.000 XP para ambos)', 'success');
+    } catch {
+      showToast('No se pudo copiar el enlace al portapapeles.', 'error');
+    }
   };
 
   const handleShareReferral = async () => {
+    const code = userProfile?.referral_code;
+    if (!code) {
+      await handleCopyReferral();
+      return;
+    }
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const referralLink = `https://profitnessglass.es/register?ref=${userProfile?.referral_code || ''}`;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    } catch {}
+    try {
+      const referralLink = `https://profitnessglass.es/register?ref=${code}`;
       await Share.share({
         title: 'Únete a Pro Fitness Glass',
-        message: `¡Únete a Pro Fitness Glass y sube de nivel conmigo! Regístrate gratis aquí: ${referralLink}`,
+        message: `¡Únete a Pro Fitness Glass y gana +1.000 XP conmigo! Regístrate gratis aquí: ${referralLink}`,
         url: referralLink,
       });
-    } catch (err) {
-      console.warn('Error compartiendo código de referido:', err);
+    } catch {
+      await handleCopyReferral();
     }
   };
 
@@ -410,8 +431,14 @@ export default function ChallengesScreen() {
               <Text style={[styles.codePillText, { color: tabContrastTextColor }]}>
                 {userProfile?.referral_code || 'Cargando...'}
               </Text>
-              <Copy size={13} color={referralSubtleInk} style={{ marginLeft: 4 }} />
-              <Text style={[styles.codePillHint, { color: referralSubtleInk }]}>Toca para copiar</Text>
+              {copiedReferral ? (
+                <CheckCircle2 size={13} color={tabContrastTextColor} style={{ marginLeft: 4 }} />
+              ) : (
+                <Copy size={13} color={referralSubtleInk} style={{ marginLeft: 4 }} />
+              )}
+              <Text style={[styles.codePillHint, { color: copiedReferral ? tabContrastTextColor : referralSubtleInk }]}>
+                {copiedReferral ? '¡Enlace copiado!' : 'Toca para copiar'}
+              </Text>
             </View>
 
             <TouchableOpacity

@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
+import { useToastStore } from '@/store/toastStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { LiquidCloseButton } from '@/components/ui/GlassButton';
@@ -114,28 +115,37 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
 
   const handleApplyTheme = (themeId: string) => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     } catch {}
     setTheme(themeId);
-    useAppStore.getState().showToast?.(`¡Tema ${themeId} aplicado!`);
+    useToastStore.getState().showToast(`¡Tema ${themeId} aplicado!`, 'success');
     onClose();
   };
 
   const handleTestTheme = (themeId: string) => {
     if (isTestingTheme) return;
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     } catch {}
     startThemeTest?.(themeId, 10);
-    useAppStore.getState().showToast?.('Probando tema en vivo durante 10s');
+    useToastStore.getState().showToast('Probando tema en vivo durante 10s', 'info');
   };
 
   const handleCopyReferral = async () => {
+    const showToast = useToastStore.getState().showToast;
+    if (!referralCode) {
+      showToast('Tu código aún se está cargando. Inténtalo de nuevo.', 'info');
+      return;
+    }
     try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await Clipboard.setStringAsync(referralLink);
-      useAppStore.getState().showToast?.('Enlace copiado (+1.000 XP por amigo)');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch {}
+    try {
+      await Clipboard.setStringAsync(referralLink);
+      showToast('¡Enlace copiado! (+1.000 XP para ambos)', 'success');
+    } catch {
+      showToast('No se pudo copiar el enlace al portapapeles.', 'error');
+    }
   };
 
   const handleShareReferral = async () => {
