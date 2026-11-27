@@ -218,9 +218,37 @@ const useAppStore = create((set, get) => ({
             },
         }));
     },
+    applyChristmasRewardResult: (res) => {
+        if (!res || typeof res !== 'object') return;
+        set((state) => {
+            const nextBadges = Array.isArray(res.unlocked_badges)
+                ? res.unlocked_badges
+                : (state.gamification?.unlockedBadges || []);
+            const nextXp = res.xp !== undefined ? Number(res.xp) : (state.gamification?.xp ?? state.userProfile?.xp);
+            const nextLevel = res.level !== undefined ? Number(res.level) : (state.gamification?.level ?? state.userProfile?.level);
+            return {
+                userProfile: state.userProfile
+                    ? {
+                        ...state.userProfile,
+                        unlocked_badges: nextBadges,
+                        ...(nextXp !== undefined ? { xp: nextXp } : {}),
+                        ...(nextLevel !== undefined ? { level: nextLevel } : {}),
+                        christmasXpBonusPending: false,
+                    }
+                    : state.userProfile,
+                gamification: {
+                    ...state.gamification,
+                    unlockedBadges: nextBadges,
+                    ...(nextXp !== undefined ? { xp: nextXp } : {}),
+                    ...(nextLevel !== undefined ? { level: nextLevel } : {}),
+                },
+            };
+        });
+    },
     showChristmasUnlockModal: false,
-    openChristmasUnlockModal: () => set({ showChristmasUnlockModal: true }),
-    closeChristmasUnlockModal: () => set({ showChristmasUnlockModal: false }),
+    christmasUnlockMeta: null,
+    openChristmasUnlockModal: (meta = null) => set({ showChristmasUnlockModal: true, christmasUnlockMeta: meta }),
+    closeChristmasUnlockModal: () => set({ showChristmasUnlockModal: false, christmasUnlockMeta: null }),
     ...createAuthSlice(set, get),
     ...createDataSlice(set, get),
     ...createWorkoutSlice(set, get),

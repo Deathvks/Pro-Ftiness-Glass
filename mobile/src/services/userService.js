@@ -9,6 +9,10 @@ export const claimChristmasTheme = () => {
   return apiClient('/users/claim-christmas-theme', { method: 'POST' });
 };
 
+export const claimChristmasXpBonus = () => {
+  return apiClient('/users/claim-christmas-xp-bonus', { method: 'POST' });
+};
+
 export const updateUserProfile = (profileData) => {
   return apiClient('/users/me', { body: profileData, method: 'PUT' });
 };

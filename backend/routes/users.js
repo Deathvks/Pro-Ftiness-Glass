@@ -107,6 +107,9 @@ router.put(
 // POST /api/users/claim-christmas-theme (Reclamar Edición Navidad 2026)
 router.post('/claim-christmas-theme', userController.claimChristmasTheme);
 
+// POST /api/users/claim-christmas-xp-bonus (Bono retroactivo de XP para quienes ya tenían el tema)
+router.post('/claim-christmas-xp-bonus', userController.claimChristmasXpBonus);
+
 // DELETE /api/users/me/data (Limpiar datos del usuario)
 router.delete(
     '/me/data',

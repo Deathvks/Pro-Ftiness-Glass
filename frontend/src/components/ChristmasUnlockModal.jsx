@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gift, LockOpen, Palette, Snowflake, Sparkles, X } from 'lucide-react';
+import { Award, Gift, Snowflake, Sparkles, X, Zap } from 'lucide-react';
 import ModalPortal from './ModalPortal';
 import useModalLock from '../hooks/useModalLock';
 import useAppStore from '../store/useAppStore';
@@ -26,7 +26,9 @@ const CARD_FLAKES = Array.from({ length: 14 }).map((_, i) => ({
 
 export default function ChristmasUnlockModal() {
   const isOpen = useAppStore((state) => Boolean(state.showChristmasUnlockModal));
+  const meta = useAppStore((state) => state.christmasUnlockMeta);
   const onClose = useAppStore((state) => state.closeChristmasUnlockModal);
+  const xpAdded = Number(meta?.xpAdded ?? 250);
 
   useModalLock(isOpen);
 
@@ -167,21 +169,32 @@ export default function ChristmasUnlockModal() {
           </h2>
 
           <p className="relative z-10 text-sm text-slate-200/90 leading-relaxed mb-5">
-            Has reclamado <strong className="text-white">Invierno Glass</strong> y desbloqueado la insignia <strong className="text-sky-200">Navidad 2026</strong> antes del 6 de enero. Queda guardado en tu cuenta <strong className="text-[#fda4af]">para siempre</strong>.
+            Has reclamado <strong className="text-white">Invierno Glass</strong> antes del 6 de enero y ya hemos sumado{' '}
+            {xpAdded > 0 ? (
+              <>
+                <strong className="text-amber-300">+{xpAdded} XP</strong> y la insignia{' '}
+              </>
+            ) : (
+              'la insignia '
+            )}
+            <strong className="text-sky-200">Navidad 2026</strong> a tu cuenta{' '}
+            <strong className="text-[#fda4af]">para siempre</strong>.
           </p>
 
           <div className="relative z-10 grid grid-cols-3 gap-2 mb-6">
             <div className="p-2.5 rounded-2xl bg-white/[0.07] border border-white/15 flex flex-col items-center gap-1.5">
               <Snowflake size={16} className="text-sky-200" />
-              <span className="text-[11px] font-bold text-slate-100 leading-tight">Nieve cristalina</span>
+              <span className="text-[11px] font-bold text-slate-100 leading-tight">Tema Navidad</span>
             </div>
             <div className="p-2.5 rounded-2xl bg-white/[0.07] border border-white/15 flex flex-col items-center gap-1.5">
-              <Palette size={16} className="text-[#fb7185]" />
-              <span className="text-[11px] font-bold text-slate-100 leading-tight">Rojo Navidad</span>
+              <Award size={16} className="text-[#fb7185]" />
+              <span className="text-[11px] font-bold text-slate-100 leading-tight">Insignia perfil</span>
             </div>
             <div className="p-2.5 rounded-2xl bg-white/[0.07] border border-white/15 flex flex-col items-center gap-1.5">
-              <LockOpen size={16} className="text-emerald-300" />
-              <span className="text-[11px] font-bold text-slate-100 leading-tight">Para siempre</span>
+              <Zap size={16} className="text-amber-300" />
+              <span className="text-[11px] font-bold text-amber-200 leading-tight">
+                {xpAdded > 0 ? `+${xpAdded} XP en cuenta` : 'XP acreditada'}
+              </span>
             </div>
           </div>
 

@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Gift, LockOpen, Palette, Snowflake, Sparkles, X } from 'lucide-react-native';
+import { Gift, LockOpen, Palette, Snowflake, Sparkles, X, Zap } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 
@@ -104,9 +104,11 @@ function ModalSnowFlake({
 
 export function ChristmasUnlockModal() {
   const visible = useAppStore((state) => Boolean((state as any).showChristmasUnlockModal));
+  const christmasUnlockMeta = useAppStore((state) => (state as any).christmasUnlockMeta);
   const closeChristmasUnlockModal = useAppStore(
     (state) => (state as any).closeChristmasUnlockModal
   );
+  const xpAdded = Number(christmasUnlockMeta?.xpAdded ?? 250);
 
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -261,9 +263,14 @@ export function ChristmasUnlockModal() {
 
           <Text style={styles.subtitle}>
             Has reclamado <Text style={{ fontWeight: '800', color: '#ffffff' }}>Invierno Glass</Text>{' '}
-            y desbloqueado la insignia <Text style={{ fontWeight: '800', color: '#bae6fd' }}>Navidad 2026</Text>{' '}
-            antes del 6 de enero. Queda guardado en tu cuenta{' '}
-            <Text style={{ fontWeight: '800', color: '#fda4af' }}>para siempre</Text>.
+            y desbloqueado la insignia <Text style={{ fontWeight: '800', color: '#bae6fd' }}>Navidad 2026</Text>
+            {xpAdded > 0 ? (
+              <>
+                {' '}junto con{' '}
+                <Text style={{ fontWeight: '800', color: '#fde68a' }}>+{xpAdded} XP añadidos a tu cuenta</Text>
+              </>
+            ) : null}
+            . Queda guardado <Text style={{ fontWeight: '800', color: '#fda4af' }}>para siempre</Text>.
           </Text>
 
           <View style={styles.featuresRow}>
@@ -276,8 +283,17 @@ export function ChristmasUnlockModal() {
               <Text style={styles.featureLabel}>Rojo Navidad</Text>
             </View>
             <View style={styles.featureTile}>
-              <LockOpen size={16} color="#6ee7b7" />
-              <Text style={styles.featureLabel}>Para siempre</Text>
+              {xpAdded > 0 ? (
+                <>
+                  <Zap size={16} color="#fde68a" />
+                  <Text style={styles.featureLabel}>+{xpAdded} XP en cuenta</Text>
+                </>
+              ) : (
+                <>
+                  <LockOpen size={16} color="#6ee7b7" />
+                  <Text style={styles.featureLabel}>Para siempre</Text>
+                </>
+              )}
             </View>
           </View>
 

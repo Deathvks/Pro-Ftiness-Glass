@@ -43,6 +43,7 @@ import {
 import { LiquidCloseButton } from '@/components/ui/GlassButton';
 
 import useAppStore from '@/store/useAppStore';
+import { useToastStore } from '@/store/toastStore';
 import { claimChristmasTheme } from '@/services/userService';
 import { hasChristmasThemeUnlocked, isChristmasPromoActive } from '@/utils/christmasTheme';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -334,6 +335,7 @@ export default function AppearanceScreen() {
   const christmasEffectsEnabled = useAppStore(state => (state as any).christmasEffectsEnabled !== false);
   const setChristmasEffectsEnabled = useAppStore(state => (state as any).setChristmasEffectsEnabled);
   const applyUnlockedBadges = useAppStore(state => (state as any).applyUnlockedBadges);
+  const applyChristmasRewardResult = useAppStore(state => (state as any).applyChristmasRewardResult);
   const openChristmasUnlockModal = useAppStore(state => (state as any).openChristmasUnlockModal);
 
   const testedTheme = useAppStore(state => state.themeTest?.name);
@@ -490,13 +492,26 @@ export default function AppearanceScreen() {
     setClaimingChristmas(true);
     try {
       const res = await claimChristmasTheme();
-      if (Array.isArray(res?.unlocked_badges)) {
+      if (applyChristmasRewardResult) {
+        applyChristmasRewardResult(res);
+      } else if (Array.isArray(res?.unlocked_badges)) {
         applyUnlockedBadges?.(res.unlocked_badges);
       }
       setTheme('christmas');
-      openChristmasUnlockModal?.();
+      if (res?.xpAdded > 0) {
+        useToastStore.getState().showToast(
+          `🎄 +${res.xpAdded} XP añadidos a tu cuenta por Edición Navidad 2026`,
+          'success'
+        );
+        if (res?.leveledUp && res?.level) {
+          useToastStore.getState().showToast(`🎉 ¡Has subido al Nivel ${res.level}!`, 'success');
+        }
+      }
+      openChristmasUnlockModal?.({ xpAdded: res?.xpAdded ?? 0 });
     } catch (err: any) {
-      showToast(err?.message || 'No se pudo reclamar el tema.', true);
+      const msg = err?.message || 'No se pudo reclamar el tema.';
+      showToast(msg, true);
+      useToastStore.getState().showToast(msg, 'error');
     } finally {
       setClaimingChristmas(false);
     }

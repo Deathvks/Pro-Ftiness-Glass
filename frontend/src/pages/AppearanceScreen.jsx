@@ -213,6 +213,7 @@ export default function AppearanceScreen({ setView }) {
     christmasEffectsEnabled,
     setChristmasEffectsEnabled,
     applyUnlockedBadges,
+    applyChristmasRewardResult,
     openChristmasUnlockModal,
   } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
@@ -222,6 +223,7 @@ export default function AppearanceScreen({ setView }) {
     christmasEffectsEnabled: state.christmasEffectsEnabled,
     setChristmasEffectsEnabled: state.setChristmasEffectsEnabled,
     applyUnlockedBadges: state.applyUnlockedBadges,
+    applyChristmasRewardResult: state.applyChristmasRewardResult,
     openChristmasUnlockModal: state.openChristmasUnlockModal,
   })));
   const { addToast } = useToast();
@@ -303,11 +305,19 @@ export default function AppearanceScreen({ setView }) {
     setClaimingChristmas(true);
     try {
       const res = await claimChristmasTheme();
-      if (Array.isArray(res?.unlocked_badges)) {
+      if (applyChristmasRewardResult) {
+        applyChristmasRewardResult(res);
+      } else if (Array.isArray(res?.unlocked_badges)) {
         applyUnlockedBadges?.(res.unlocked_badges);
       }
       setTheme('christmas');
-      openChristmasUnlockModal?.();
+      if (res?.xpAdded > 0) {
+        addToast(`🎄 +${res.xpAdded} XP añadidos a tu cuenta por Edición Navidad 2026`, 'success');
+        if (res?.leveledUp && res?.level) {
+          addToast(`🎉 ¡Has subido al Nivel ${res.level}!`, 'success');
+        }
+      }
+      openChristmasUnlockModal?.({ xpAdded: res?.xpAdded ?? 0 });
     } catch (err) {
       addToast(err?.message || 'No se pudo reclamar el tema.', 'error');
     } finally {

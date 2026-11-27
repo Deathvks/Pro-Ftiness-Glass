@@ -1,17 +1,17 @@
 {
-  "version": "7.17.4",
-  "releaseNotes": "Actualización v7.17.4: marco navideño en avatares y nuevo reto de temporada Racha de Invierno con +400 XP e insignia Invierno Activo hasta el 6 de enero.",
+  "version": "7.17.5",
+  "releaseNotes": "Actualización v7.17.5: +250 XP de regalo al desbloquear Edición Navidad 2026 y abono retroactivo para quienes ya lo reclamaron.",
   "welcome": {
-    "title": "Evento de Navidad 2026 (v7.17.4)",
-    "subtitle": "Luce el aro festivo en tu avatar y completa el nuevo reto navideño antes del 6 de enero.",
+    "title": "Regalo Navidad 2026 (v7.17.5)",
+    "subtitle": "Ahora el tema Edición Navidad 2026 suma +250 XP directos en tu cuenta y recompensa retroactiva si ya lo tenías.",
     "features": [
       {
-        "title": "Marco Navideño en tu Avatar",
-        "description": "Al usar Invierno Glass (o tras desbloquearlo en campaña), tu avatar luce un degradado cristalino azul hielo y rojo navidad."
+        "title": "+250 XP con Invierno Glass",
+        "description": "Al reclamar el tema gratuito de Navidad antes del 6 de enero, recibes el tema permanente, la insignia Navidad 2026 y +250 XP."
       },
       {
-        "title": "Reto Racha de Invierno ❄️",
-        "description": "Completa 5 entrenamientos antes del 6 de enero en Retos → Generales para sumar +400 XP y la insignia «Invierno Activo»."
+        "title": "Regalo Retroactivo",
+        "description": "Si ya habías reclamado Invierno Glass antes de esta actualización, recibirás tus +250 XP al instante en cuanto abras la app."
       }
     ]
   }

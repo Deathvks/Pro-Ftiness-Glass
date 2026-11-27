@@ -56,6 +56,9 @@ export function formatXpReason(reason) {
     const m = trimmed.match(/^insignia:\s*(.+)$/i);
     return `desbloquear la insignia "${m[1]}"`;
   }
+  if (/^regalo\s+edici[oó]n\s+navidad\s+2026$/i.test(trimmed)) {
+    return 'reclamar el tema Edición Navidad 2026';
+  }
   if (/^por\s+/i.test(trimmed)) {
     return trimmed.replace(/^por\s+/i, '');
   }

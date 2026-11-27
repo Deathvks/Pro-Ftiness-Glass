@@ -13,6 +13,7 @@ import { getWeeklyTrainingTarget } from '../utils/weeklyTraining.js';
 
 const {
   User,
+  XpLog,
   BodyWeightLog,
   sequelize,
   Routine,
@@ -112,6 +113,20 @@ export const getMyProfile = async (req, res, next) => {
     } else if (!userData.unlocked_badges) {
       userData.unlocked_badges = [];
     }
+
+    const hasChristmasBadge =
+      Array.isArray(userData.unlocked_badges) &&
+      userData.unlocked_badges.includes(CHRISTMAS_THEME_BADGE_ID);
+    if (hasChristmasBadge && XpLog) {
+      const existingBonus = await XpLog.findOne({
+        where: { user_id: req.user.userId, reason: CHRISTMAS_CLAIM_XP_REASON },
+        attributes: ['id'],
+      });
+      userData.christmasXpBonusPending = !existingBonus;
+    } else {
+      userData.christmasXpBonusPending = false;
+    }
+    userData.christmasXpBonusAmount = CHRISTMAS_CLAIM_XP;
 
     res.json(userData);
   } catch (error) {
@@ -619,8 +634,46 @@ export const deleteMyAccount = async (req, res, next) => {
 };
 
 const CHRISTMAS_THEME_BADGE_ID = 'theme_christmas_2026';
+const CHRISTMAS_CLAIM_XP = 250;
+const CHRISTMAS_CLAIM_XP_REASON = 'Regalo Edición Navidad 2026';
 // Ventana promocional gratuita hasta fin del 6 de enero de 2027 (hora peninsular/UTC)
 const CHRISTMAS_PROMO_DEADLINE = new Date('2027-01-07T04:59:59.999Z');
+
+const parseUserBadges = (raw) => {
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw) || [];
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(raw) ? [...raw] : [];
+};
+
+const grantChristmasXpBonusIfEligible = async (user) => {
+  if (!XpLog) {
+    return { xpAdded: 0, xp: user.xp, level: user.level, leveledUp: false };
+  }
+  const existingBonus = await XpLog.findOne({
+    where: { user_id: user.id, reason: CHRISTMAS_CLAIM_XP_REASON },
+    attributes: ['id'],
+  });
+  if (existingBonus) {
+    return { xpAdded: 0, xp: user.xp, level: user.level, leveledUp: false };
+  }
+  const xpResult = await addXp(user.id, CHRISTMAS_CLAIM_XP, CHRISTMAS_CLAIM_XP_REASON, {
+    userInstance: user,
+  });
+  if (!xpResult?.success) {
+    return { xpAdded: 0, xp: user.xp, level: user.level, leveledUp: false };
+  }
+  return {
+    xpAdded: xpResult.xpAdded || CHRISTMAS_CLAIM_XP,
+    xp: xpResult.xp ?? user.xp,
+    level: xpResult.level ?? user.level,
+    leveledUp: Boolean(xpResult.leveledUp),
+  };
+};
 
 export const claimChristmasTheme = async (req, res, next) => {
   try {
@@ -630,22 +683,18 @@ export const claimChristmasTheme = async (req, res, next) => {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    let currentBadges = [];
-    if (typeof user.unlocked_badges === 'string') {
-      try {
-        currentBadges = JSON.parse(user.unlocked_badges) || [];
-      } catch {
-        currentBadges = [];
-      }
-    } else if (Array.isArray(user.unlocked_badges)) {
-      currentBadges = [...user.unlocked_badges];
-    }
+    const currentBadges = parseUserBadges(user.unlocked_badges);
 
     if (currentBadges.includes(CHRISTMAS_THEME_BADGE_ID)) {
+      const xpInfo = await grantChristmasXpBonusIfEligible(user);
       return res.json({
         claimed: true,
         alreadyClaimed: true,
         unlocked_badges: currentBadges,
+        xpAdded: xpInfo.xpAdded,
+        xp: xpInfo.xp,
+        level: xpInfo.level,
+        leveledUp: xpInfo.leveledUp,
         message: 'El Tema Navidad 2026 ya está desbloqueado en tu cuenta.',
       });
     }
@@ -665,11 +714,52 @@ export const claimChristmasTheme = async (req, res, next) => {
     const updatedBadges = [...currentBadges, CHRISTMAS_THEME_BADGE_ID];
     await user.update({ unlocked_badges: JSON.stringify(updatedBadges) });
 
+    const xpInfo = await grantChristmasXpBonusIfEligible(user);
+
     return res.json({
       claimed: true,
       alreadyClaimed: false,
       unlocked_badges: updatedBadges,
-      message: '¡Tema Navidad 2026 desbloqueado para siempre!',
+      xpAdded: xpInfo.xpAdded,
+      xp: xpInfo.xp,
+      level: xpInfo.level,
+      leveledUp: xpInfo.leveledUp,
+      message: '¡Tema Navidad 2026 y +250 XP desbloqueados para siempre!',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const claimChristmasXpBonus = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    const currentBadges = parseUserBadges(user.unlocked_badges);
+
+    if (!currentBadges.includes(CHRISTMAS_THEME_BADGE_ID)) {
+      return res.status(403).json({
+        error: 'Debes tener desbloqueada la Edición Navidad 2026 para reclamar este regalo de XP.',
+      });
+    }
+
+    const xpInfo = await grantChristmasXpBonusIfEligible(user);
+
+    return res.json({
+      claimed: true,
+      alreadyClaimed: xpInfo.xpAdded === 0,
+      unlocked_badges: currentBadges,
+      xpAdded: xpInfo.xpAdded,
+      xp: xpInfo.xp,
+      level: xpInfo.level,
+      leveledUp: xpInfo.leveledUp,
+      message: xpInfo.xpAdded > 0
+        ? `¡Has recibido +${xpInfo.xpAdded} XP por tu Edición Navidad 2026!`
+        : 'Tu regalo de XP de Navidad 2026 ya estaba acreditado en tu cuenta.',
     });
   } catch (error) {
     next(error);
@@ -684,6 +774,7 @@ const userController = {
   deleteMyAccount,
   updateGamificationStats,
   claimChristmasTheme,
+  claimChristmasXpBonus,
   exportMyData
 };
 
