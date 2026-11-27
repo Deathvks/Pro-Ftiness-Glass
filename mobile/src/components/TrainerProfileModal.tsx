@@ -4,8 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Dimensions,
+  useWindowDimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
@@ -27,7 +26,7 @@ import { LiquidCloseButton } from '@/components/ui/GlassButton';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
-import { getThemeBaseBackground, isAtmosphericTheme } from '@/constants/theme';
+import { getThemeBaseBackground } from '@/constants/theme';
 import { SocialUserAvatar, type AvatarUser } from '@/components/social/SocialUserAvatar';
 
 interface TrainerProfileModalProps {
@@ -58,6 +57,7 @@ export default function TrainerProfileModal({
   trainer,
 }: TrainerProfileModalProps) {
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
@@ -79,6 +79,8 @@ export default function TrainerProfileModal({
     setHeaderOpacity(opacity);
   };
 
+  const heroHeight = Math.min(410, Math.max(320, Math.round(windowHeight * 0.48)));
+
   return (
     <SwipeableSheetModal
       visible={visible}
@@ -88,6 +90,7 @@ export default function TrainerProfileModal({
       sheetStyle={[
         styles.modalContainer,
         {
+          height: windowHeight * 0.9,
           backgroundColor: surfaceColor,
           borderColor: getThemedModalBorderColor(theme),
           overflow: 'hidden',
@@ -95,33 +98,8 @@ export default function TrainerProfileModal({
       ]}
     >
       <ModalThemeBackground theme={theme} />
-      {/* Keep the full-width drag area outside the ScrollView so it can receive downward swipes. */}
-      <View style={styles.header}>
-        <View
-          pointerEvents="none"
-          style={[
-            styles.dragPill,
-            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.25)' },
-          ]}
-        />
-        {headerOpacity > 0.05 && (
-          <View pointerEvents="none" style={[styles.stickyHeaderContent, { opacity: headerOpacity }]}>
-            <SocialUserAvatar user={trainer} size={38} fallbackSource={require('@/assets/images/trainer-profile.jpg')} />
-            <Text style={[styles.stickyTitle, { color: colors.text }]}>ENTRENADOR</Text>
-          </View>
-        )}
-        <LiquidCloseButton
-          onPress={handleClose}
-          accessibilityLabel="Cerrar perfil del entrenador"
-          iconSize={20}
-          iconColor={colors.text}
-          strokeWidth={2.5}
-          hitSlop={8}
-          style={styles.closeBtn}
-        />
-      </View>
 
-      {/* Scrollable Content */}
+      {/* Scrollable Content starts from y = 0 behind the floating drag pill and close button */}
       <ScrollView
         style={styles.scrollArea}
         onScroll={handleScroll}
@@ -133,25 +111,23 @@ export default function TrainerProfileModal({
         ]}
       >
         {/* Hero Image Container */}
-        <View style={styles.heroWrap}>
+        <View style={[styles.heroWrap, { height: heroHeight }]}>
           <Image
             source={require('@/assets/images/trainer-profile.jpg')}
             style={styles.heroImage}
             contentFit="cover"
           />
           <LinearGradient
-            colors={['rgba(0,0,0,0.45)', 'transparent']}
+            colors={['rgba(0,0,0,0.5)', 'transparent']}
             style={styles.heroTopGrad}
           />
           <LinearGradient
             colors={[
               'transparent',
-              isAtmosphericTheme(theme)
-                ? isDark
-                  ? 'rgba(0, 0, 0, 0.42)'
-                  : 'rgba(255, 255, 255, 0.45)'
-                : surfaceColor,
+              isDark ? 'rgba(0, 0, 0, 0.52)' : 'rgba(255, 255, 255, 0.52)',
+              surfaceColor,
             ]}
+            locations={[0, 0.5, 1]}
             style={styles.heroBottomGrad}
           />
         </View>
@@ -251,15 +227,58 @@ export default function TrainerProfileModal({
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Floating top drag bar & sticky header overlaid cleanly on top of hero */}
+      <View pointerEvents="box-none" style={styles.header}>
+        <View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: surfaceColor,
+              opacity: headerOpacity,
+              borderBottomWidth: StyleSheet.hairlineWidth,
+              borderBottomColor: getThemedModalBorderColor(theme),
+            },
+          ]}
+        />
+        <View
+          pointerEvents="none"
+          style={[
+            styles.dragPill,
+            {
+              backgroundColor:
+                headerOpacity > 0.35
+                  ? isDark
+                    ? 'rgba(255, 255, 255, 0.42)'
+                    : 'rgba(0, 0, 0, 0.28)'
+                  : 'rgba(255, 255, 255, 0.55)',
+            },
+          ]}
+        />
+        {headerOpacity > 0.05 && (
+          <View pointerEvents="none" style={[styles.stickyHeaderContent, { opacity: headerOpacity }]}>
+            <SocialUserAvatar user={trainer} size={38} fallbackSource={require('@/assets/images/trainer-profile.jpg')} />
+            <Text style={[styles.stickyTitle, { color: colors.text }]}>ENTRENADOR</Text>
+          </View>
+        )}
+        <LiquidCloseButton
+          onPress={handleClose}
+          accessibilityLabel="Cerrar perfil del entrenador"
+          iconSize={20}
+          color={headerOpacity > 0.45 ? undefined : 'rgba(15, 23, 42, 0.45)'}
+          iconColor={headerOpacity > 0.45 ? colors.text : '#ffffff'}
+          strokeWidth={2.5}
+          hitSlop={8}
+          style={styles.closeBtn}
+        />
+      </View>
     </SwipeableSheetModal>
   );
 }
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
 const styles = StyleSheet.create({
   modalContainer: {
-    height: SCREEN_HEIGHT * 0.9,
     width: '100%',
     maxWidth: 580,
     alignSelf: 'center',
@@ -275,9 +294,13 @@ const styles = StyleSheet.create({
     elevation: 24,
   },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     height: HEADER_HEIGHT,
-    flexShrink: 0,
     paddingHorizontal: 16,
+    zIndex: 20,
   },
   dragPill: {
     alignSelf: 'center',
@@ -289,6 +312,7 @@ const styles = StyleSheet.create({
   stickyHeaderContent: {
     height: 38,
     marginTop: 9,
+    paddingRight: 52,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -312,8 +336,6 @@ const styles = StyleSheet.create({
   heroWrap: {
     position: 'relative',
     width: '100%',
-    height: SCREEN_HEIGHT * 0.44,
-    maxHeight: 380,
   },
   heroImage: {
     width: '100%',
@@ -324,18 +346,18 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 80,
+    height: 110,
   },
   heroBottomGrad: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 140,
+    height: '58%',
   },
   profileMetaWrap: {
     alignItems: 'center',
-    marginTop: -30,
+    marginTop: -64,
     paddingHorizontal: 20,
     marginBottom: 24,
   },

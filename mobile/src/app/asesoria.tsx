@@ -596,18 +596,20 @@ export default function AsesoriaScreen() {
             onPress={() => setShowTrainerProfile(true)}
             activeOpacity={0.7}
           >
-            <SocialUserAvatar user={trainer} size={38} fallbackSource={require('@/assets/images/trainer-profile.jpg')} />
-            <View>
-              <Text style={[styles.headerName, { color: colors.text }]} numberOfLines={1}>
+            <View style={{ flexShrink: 0 }}>
+              <SocialUserAvatar user={trainer} size={38} fallbackSource={require('@/assets/images/trainer-profile.jpg')} />
+            </View>
+            <View style={styles.headerMetaWrap}>
+              <Text style={[styles.headerName, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
                 {trainer.name}
               </Text>
-              <Text style={[styles.headerUsername, { color: colors.textSecondary }]}>
+              <Text style={[styles.headerUsername, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
                 @{trainer.username}
               </Text>
             </View>
           </TouchableOpacity>
         ) : (
-          <Text style={[styles.headerName, { color: colors.text }]}>Asesoría</Text>
+          <Text style={[styles.headerName, { color: colors.text, flex: 1 }]} numberOfLines={1}>Asesoría</Text>
         )}
 
         {trainer && (
@@ -947,12 +949,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    flexShrink: 0,
   },
   headerLoading: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     flex: 1,
+    minWidth: 0,
   },
   headerAvatarSkeleton: {
     width: 38,
@@ -974,6 +978,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     flex: 1,
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+  headerMetaWrap: {
+    flex: 1,
+    minWidth: 0,
   },
   headerName: {
     fontSize: 15,
@@ -987,6 +997,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
+    flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
