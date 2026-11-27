@@ -35,6 +35,7 @@ import {
   Medal,
   Pencil,
   Shield,
+  Snowflake,
   Sparkles,
   Star,
   Trophy,
@@ -95,6 +96,7 @@ const BADGE_DETAILS: Record<string, BadgeConfig> = {
   milestone_60: { name: 'Gran Maestro (Lvl 60)', desc: 'Alcanza el nivel 60', icon: Flame, color: '#FF69B4', bg: 'rgba(255, 105, 180, 0.15)' },
   milestone_70: { name: 'Épico (Lvl 70)', desc: 'Alcanza el nivel 70', icon: Crown, color: '#FF4500', bg: 'rgba(255, 69, 0, 0.15)' },
   milestone_80: { name: 'Leyenda (Lvl 80)', desc: 'Alcanza el nivel 80', icon: Sparkles, color: '#FFD700', bg: 'rgba(255, 215, 0, 0.15)' },
+  theme_christmas_2026: { name: 'Navidad 2026', desc: 'Edición Invierno Glass', icon: Snowflake, color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.16)' },
   default: { name: 'Insignia', desc: 'Logro desbloqueado', icon: Trophy, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
 };
 
@@ -283,7 +285,10 @@ export default function PublicProfileScreen() {
   const badges = useMemo(() => {
     const raw = Array.isArray(profile?.unlocked_badges) ? profile.unlocked_badges : [];
     return raw
-      .filter((b: any) => !String(typeof b === 'string' ? b : (b?.id || b?.badge_id || '')).startsWith('theme_'))
+      .filter((b: any) => {
+        const badgeId = String(typeof b === 'string' ? b : (b?.id || b?.badge_id || ''));
+        return badgeId === 'theme_christmas_2026' || !badgeId.startsWith('theme_');
+      })
       .map(resolveBadge);
   }, [profile]);
 

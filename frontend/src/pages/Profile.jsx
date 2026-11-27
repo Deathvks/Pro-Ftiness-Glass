@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
   ChevronLeft, ChevronRight, Save, User, UserCircle, Camera, AlertTriangle, Mail, AtSign, Key, Lock, ShieldCheck, Globe, LayoutTemplate, Trash2,
-  Trophy, Flame, Dumbbell, Crown, Star, Eye, EyeOff, CheckCircle2, X, Shield, Zap, Diamond, Sparkles, Medal
+  Trophy, Flame, Dumbbell, Crown, Star, Eye, EyeOff, CheckCircle2, X, Shield, Zap, Diamond, Sparkles, Medal, Snowflake
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ModalPortal from '../components/ModalPortal';
@@ -109,6 +109,13 @@ const BADGE_DETAILS = {
   milestone_80: { name: 'Leyenda (Lvl 80)', desc: 'Alcanza el nivel 80', icon: Sparkles, color: 'text-[#FFD700]', bg: 'bg-orange-500/10' },
   milestone_90: { name: 'Mítico (Lvl 90)', desc: 'Alcanza el nivel 90', icon: Crown, color: 'text-[#00FFFF]', bg: 'bg-[#9370DB]/10' },
   milestone_100: { name: 'Inmortal (Lvl 100)', desc: 'Alcanza el nivel 100', icon: Crown, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+  theme_christmas_2026: {
+    name: 'Navidad 2026',
+    desc: 'Reclama la edición Invierno Glass',
+    icon: Snowflake,
+    color: 'text-sky-400',
+    bg: 'bg-sky-500/15'
+  },
   default: {
     name: 'Insignia',
     desc: 'Logro desbloqueado',
@@ -554,11 +561,11 @@ const Profile = ({ onCancel, setView, navigate }) => {
             <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 px-4">Mis Insignias</h2>
             {(() => {
                 const visibleUnlockedBadges = (gamification?.unlockedBadges || []).filter(
-                    (id) => !String(id).startsWith('theme_')
+                    (id) => id === 'theme_christmas_2026' || !String(id).startsWith('theme_')
                 );
                 return visibleUnlockedBadges.length > 0 ? (
                 <div className="grid grid-cols-3 gap-3">
-                    {visibleUnlockedBadges.slice(0, 6).map((badgeId) => {
+                    {visibleUnlockedBadges.map((badgeId) => {
                         const badge = BADGE_DETAILS[badgeId] || BADGE_DETAILS.default;
                         return (
                             <div key={badgeId} className="flex flex-col items-center p-3 rounded-[20px] bg-bg-secondary ring-1 ring-glass-border shadow-sm text-center">

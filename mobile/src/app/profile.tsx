@@ -49,6 +49,7 @@ import {
   Medal,
   Sparkles,
   Award,
+  Snowflake,
 } from 'lucide-react-native';
 
 import useAppStore from '@/store/useAppStore';
@@ -79,6 +80,7 @@ const BADGE_DETAILS: Record<string, { name: string; desc: string; icon: any; col
   milestone_60: { name: 'Gran Maestro (Lvl 60)', desc: 'Alcanza el nivel 60', icon: Flame, color: '#FF69B4', bg: 'rgba(255, 105, 180, 0.15)' },
   milestone_70: { name: 'Épico (Lvl 70)', desc: 'Alcanza el nivel 70', icon: Crown, color: '#FF4500', bg: 'rgba(255, 69, 0, 0.15)' },
   milestone_80: { name: 'Leyenda (Lvl 80)', desc: 'Alcanza el nivel 80', icon: Sparkles, color: '#FFD700', bg: 'rgba(255, 215, 0, 0.15)' },
+  theme_christmas_2026: { name: 'Navidad 2026', desc: 'Edición Invierno Glass', icon: Snowflake, color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.16)' },
   default: { name: 'Insignia', desc: 'Logro desbloqueado', icon: Trophy, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
 };
 
@@ -390,7 +392,7 @@ export default function ProfileScreen() {
 
   const btnTextColor = getContrastTextColor(colors.tint);
   const unlockedBadges = (gamification?.unlockedBadges || []).filter(
-    (id: string) => !String(id).startsWith('theme_')
+    (id: string) => id === 'theme_christmas_2026' || !String(id).startsWith('theme_')
   );
 
   const cardBorderColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';

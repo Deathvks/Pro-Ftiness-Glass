@@ -101,6 +101,7 @@ const BADGES_MAP = {
     'milestone_80': { name: 'Leyenda (Lvl 80)', icon: '✨' },
     'milestone_90': { name: 'Mítico (Lvl 90)', icon: '🔱' },
     'milestone_100': { name: 'Inmortal (Lvl 100)', icon: '♾️' },
+    'theme_christmas_2026': { name: 'Navidad 2026', icon: '❄️' },
     'default': { name: 'Logro', icon: '🏅' }
 };
 
@@ -501,7 +502,10 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             ? JSON.parse(profile.unlocked_badges)
             : (profile.unlocked_badges || []));
         badges = Array.isArray(rawBadges)
-            ? rawBadges.filter((b) => !String(typeof b === 'string' ? b : (b?.id || b?.badge_id || '')).startsWith('theme_'))
+            ? rawBadges.filter((b) => {
+                const badgeId = String(typeof b === 'string' ? b : (b?.id || b?.badge_id || ''));
+                return badgeId === 'theme_christmas_2026' || !badgeId.startsWith('theme_');
+            })
             : [];
     } catch (e) {
         badges = [];

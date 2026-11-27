@@ -261,7 +261,8 @@ export function ChristmasUnlockModal() {
 
           <Text style={styles.subtitle}>
             Has reclamado <Text style={{ fontWeight: '800', color: '#ffffff' }}>Invierno Glass</Text>{' '}
-            antes del 6 de enero. Ya queda guardado en tu cuenta{' '}
+            y desbloqueado la insignia <Text style={{ fontWeight: '800', color: '#bae6fd' }}>Navidad 2026</Text>{' '}
+            antes del 6 de enero. Queda guardado en tu cuenta{' '}
             <Text style={{ fontWeight: '800', color: '#fda4af' }}>para siempre</Text>.
           </Text>
 

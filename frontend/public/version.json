@@ -1,17 +1,17 @@
 {
-  "version": "7.17.2",
-  "releaseNotes": "Actualización v7.17.2: modal de confirmación al copiar o importar rutinas en estilo bottom-sheet y 4 temas exclusivos reflejados en el Hub.",
+  "version": "7.17.3",
+  "releaseNotes": "Actualización v7.17.3: nueva insignia exclusiva visible Navidad 2026 en tu perfil y perfil público tras reclamar Invierno Glass.",
   "welcome": {
-    "title": "Novedades en Pro Fitness Glass (v7.17.2)",
-    "subtitle": "Confirmación antes de copiar cualquier rutina en todas las pantallas y actualización del catálogo a 4 temas exclusivos.",
+    "title": "Novedades en Pro Fitness Glass (v7.17.3)",
+    "subtitle": "Reclamar Invierno Glass ahora muestra la insignia especial Navidad 2026 en tu perfil.",
     "features": [
       {
-        "title": "Confirmación al Copiar Rutinas",
-        "description": "Ahora aparece un modal de confirmación desde abajo en móvil al copiar plantillas, duplicar tus rutinas o importar rutinas de otros atletas."
+        "title": "Insignia Exclusiva Navidad 2026",
+        "description": "Disponible al instante en «Mis Insignias» y en tu perfil público si ya reclamaste el tema Edición Navidad 2026."
       },
       {
-        "title": "Edición Navidad 2026 en Apariencia",
-        "description": "El Hub refleja ya los 4 temas exclusivos disponibles. ¡Reclama Invierno Glass gratis para siempre antes del 6 de enero!"
+        "title": "Invierno Glass hasta el 6 de enero",
+        "description": "Recuerda desbloquear el tema en Apariencia o Recompensas antes del 6 de enero para conservarlo para siempre."
       }
     ]
   }

@@ -167,7 +167,7 @@ export default function ChristmasUnlockModal() {
           </h2>
 
           <p className="relative z-10 text-sm text-slate-200/90 leading-relaxed mb-5">
-            Has reclamado <strong className="text-white">Invierno Glass</strong> antes del 6 de enero. Ya queda guardado en tu cuenta <strong className="text-[#fda4af]">para siempre</strong>.
+            Has reclamado <strong className="text-white">Invierno Glass</strong> y desbloqueado la insignia <strong className="text-sky-200">Navidad 2026</strong> antes del 6 de enero. Queda guardado en tu cuenta <strong className="text-[#fda4af]">para siempre</strong>.
           </p>
 
           <div className="relative z-10 grid grid-cols-3 gap-2 mb-6">
