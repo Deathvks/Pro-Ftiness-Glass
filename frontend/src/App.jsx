@@ -21,6 +21,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { trackRetentionEvent } from './services/notificationService';
 import { getPushTarget } from './config/pushRoutes';
+import { hasUnseenChristmasMission } from './utils/christmasTheme';
 
 import AuthScreens from './components/AuthScreens';
 import MainAppLayout from './components/MainAppLayout';
@@ -256,6 +257,7 @@ export default function App() {
     setShow2FAPromo,
     checkWelcomeModal,
     workoutLogCount,
+    unlockedBadges,
   } = useAppStore(useShallow(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
@@ -274,6 +276,7 @@ export default function App() {
     setShow2FAPromo: state.setShow2FAPromo,
     checkWelcomeModal: state.checkWelcomeModal,
     workoutLogCount: Array.isArray(state.workoutLog) ? state.workoutLog.length : 0,
+    unlockedBadges: state.gamification?.unlockedBadges || [],
   })));
 
   const computeHasSeenAllHubHighlights = useCallback(() => {
@@ -283,8 +286,9 @@ export default function App() {
     const tutorialsSeen = localStorage.getItem(`tutorials_opened_from_hub_${uid}`) === 'true';
     const challengesSeen = localStorage.getItem(`visited_challenges_v2_${uid}`) === 'true';
     const asesoriaSeen = ['trainer', 'admin'].includes(userProfile?.role) || localStorage.getItem(`visited_asesoria_${uid}`) === 'true';
-    return hubSeen && tutorialsSeen && challengesSeen && asesoriaSeen;
-  }, [userProfile?.id, userProfile?.role]);
+    const christmasMissionSeen = !hasUnseenChristmasMission(userProfile, unlockedBadges);
+    return hubSeen && tutorialsSeen && challengesSeen && asesoriaSeen && christmasMissionSeen;
+  }, [userProfile, unlockedBadges]);
 
   useEffect(() => {
     if (!userProfile?.id) return;

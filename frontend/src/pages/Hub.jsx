@@ -24,6 +24,7 @@ import apiClient from '../services/apiClient';
 import TutorialsCenter from '../components/TutorialsCenter';
 import { preloadViewChunk } from '../App';
 import { TUTORIAL_COMPLETION_ACTIONS } from '../data/tutorials';
+import { hasUnseenChristmasMission } from '../utils/christmasTheme';
 const CoachingPromoModal = lazy(() => import('../components/CoachingPromoModal'));
 
 const HubButton = ({ id, icon: Icon, title, description, onClick, onPreload, isComingSoon, badge, highlight = false }) => (
@@ -69,9 +70,11 @@ const HubButton = ({ id, icon: Icon, title, description, onClick, onPreload, isC
 
 export default function Hub({ setView }) {
   const userProfile = useAppStore(state => state.userProfile);
+  const unlockedBadges = useAppStore(state => state.gamification?.unlockedBadges || []);
   const unreadChats = useAppStore(state => state.unreadChats);
   const [visitedChallenges, setVisitedChallenges] = React.useState(true);
   const [visitedAsesoria, setVisitedAsesoria] = React.useState(true);
+  const [showChristmasMissionDot, setShowChristmasMissionDot] = useState(false);
   const [showCoachingPromo, setShowCoachingPromo] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [showTutorials, setShowTutorials] = useState(false);
@@ -112,9 +115,14 @@ export default function Hub({ setView }) {
 
   React.useEffect(() => {
     if (userProfile?.id) {
-      setVisitedChallenges(localStorage.getItem(`visited_challenges_v2_${userProfile.id}`) === 'true');
-      setVisitedAsesoria(localStorage.getItem(`visited_asesoria_${userProfile.id}`) === 'true');
-      
+      const syncBadges = () => {
+        setVisitedChallenges(localStorage.getItem(`visited_challenges_v2_${userProfile.id}`) === 'true');
+        setVisitedAsesoria(localStorage.getItem(`visited_asesoria_${userProfile.id}`) === 'true');
+        setShowChristmasMissionDot(hasUnseenChristmasMission(userProfile, unlockedBadges));
+      };
+      syncBadges();
+      window.addEventListener('hub-badges-updated', syncBadges);
+
       if (!['trainer', 'admin'].includes(userProfile?.role)) {
         const hasSeen = localStorage.getItem(`coaching_promo_seen_v2_${userProfile.id}`);
         if (!hasSeen) {
@@ -125,8 +133,10 @@ export default function Hub({ setView }) {
       if (userProfile?.role === 'admin') {
         preloadViewChunk('adminPanel');
       }
+
+      return () => window.removeEventListener('hub-badges-updated', syncBadges);
     }
-  }, [userProfile?.id, userProfile?.role]);
+  }, [userProfile, userProfile?.id, userProfile?.role, unlockedBadges]);
 
   const handleCloseCoachingPromo = () => {
     setShowCoachingPromo(false);
@@ -216,7 +226,7 @@ export default function Hub({ setView }) {
               window.dispatchEvent(new Event('hub-badges-updated'));
               setView('challenges');
             }}
-            badge={!visitedChallenges}
+            badge={!visitedChallenges || showChristmasMissionDot}
           />
 
           <HubButton 

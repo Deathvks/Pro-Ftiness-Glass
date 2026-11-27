@@ -15,6 +15,7 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ContentCardBackdrop } from '@/components/ui/ContentCardBackdrop';
 import {
   Trophy,
@@ -37,6 +38,7 @@ import * as Haptics from 'expo-haptics';
 
 import apiClient from '@/services/apiClient';
 import useAppStore from '@/store/useAppStore';
+import { hasUnseenChristmasMission } from '@/utils/christmasTheme';
 import { useToastStore } from '@/store/toastStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
@@ -269,6 +271,11 @@ export default function ChallengesScreen() {
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const userProfile = useAppStore(state => state.userProfile);
+  const unlockedBadges = useAppStore(state => state.gamification?.unlockedBadges || []);
+  const christmasMissionSeen = useAppStore(state => Boolean((state as any).christmasMissionSeen));
+  const syncChristmasMissionSeen = useAppStore(state => (state as any).syncChristmasMissionSeen);
+  const markChristmasMissionSeen = useAppStore(state => (state as any).markChristmasMissionSeen);
+  const showGeneralesMissionBadge = hasUnseenChristmasMission(userProfile, unlockedBadges, christmasMissionSeen);
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const tabContrastTextColor = getContrastTextColor(colors.tint);
@@ -302,6 +309,10 @@ export default function ChallengesScreen() {
   }, []);
 
   useEffect(() => {
+    if (userProfile?.id) {
+      AsyncStorage.setItem(`visited_challenges_v2_${userProfile.id}`, 'true').catch(() => {});
+      syncChristmasMissionSeen?.(userProfile.id);
+    }
     if (
       userProfile?.id &&
       typeof localStorage !== 'undefined' &&
@@ -310,7 +321,7 @@ export default function ChallengesScreen() {
       localStorage.setItem(`visited_challenges_v2_${userProfile.id}`, 'true');
     }
     fetchChallenges();
-  }, [userProfile?.id, fetchChallenges]);
+  }, [userProfile?.id, fetchChallenges, syncChristmasMissionSeen]);
 
   const safeChallenges = Array.isArray(challenges) ? challenges : [];
 
@@ -371,6 +382,9 @@ export default function ChallengesScreen() {
       Haptics.selectionAsync();
     } catch {}
     setActiveTab(tab);
+    if (tab === 'general' && userProfile?.id) {
+      markChristmasMissionSeen?.(userProfile.id);
+    }
   };
 
   return (
@@ -539,6 +553,7 @@ export default function ChallengesScreen() {
             activeOpacity={0.8}
             style={[
               styles.tabBtn,
+              { flexDirection: 'row', gap: 5 },
               activeTab === 'general' && {
                 backgroundColor: colors.tint,
                 shadowColor: colors.tint,
@@ -559,6 +574,16 @@ export default function ChallengesScreen() {
             >
               Generales
             </Text>
+            {showGeneralesMissionBadge && activeTab !== 'general' ? (
+              <View
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: 4,
+                  backgroundColor: colors.tint,
+                }}
+              />
+            ) : null}
           </TouchableOpacity>
 
           <TouchableOpacity

@@ -1,8 +1,10 @@
 import '@/utils/localStoragePolyfill';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { Appearance, Platform } from 'react-native';
 import * as SystemUI from 'expo-system-ui';
 import { getThemeBaseBackground } from '@/constants/theme';
+import { CHRISTMAS_MISSION_SEEN_PREFIX } from '@/utils/christmasTheme';
 import { createAuthSlice } from './authSlice';
 import { createDataSlice } from './dataSlice';
 import { createWorkoutSlice } from './workoutSlice';
@@ -249,6 +251,24 @@ const useAppStore = create((set, get) => ({
     christmasUnlockMeta: null,
     openChristmasUnlockModal: (meta = null) => set({ showChristmasUnlockModal: true, christmasUnlockMeta: meta }),
     closeChristmasUnlockModal: () => set({ showChristmasUnlockModal: false, christmasUnlockMeta: null }),
+    christmasMissionSeen: false,
+    syncChristmasMissionSeen: async (userId) => {
+        if (!userId) return;
+        try {
+            const val = await AsyncStorage.getItem(`${CHRISTMAS_MISSION_SEEN_PREFIX}${userId}`);
+            set({ christmasMissionSeen: val === 'true' });
+        } catch {}
+    },
+    markChristmasMissionSeen: (userId) => {
+        set({ christmasMissionSeen: true });
+        if (!userId) return;
+        AsyncStorage.setItem(`${CHRISTMAS_MISSION_SEEN_PREFIX}${userId}`, 'true').catch(() => {});
+        try {
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem(`${CHRISTMAS_MISSION_SEEN_PREFIX}${userId}`, 'true');
+            }
+        } catch {}
+    },
     ...createAuthSlice(set, get),
     ...createDataSlice(set, get),
     ...createWorkoutSlice(set, get),

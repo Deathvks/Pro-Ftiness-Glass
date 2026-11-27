@@ -10,6 +10,7 @@ import { Home, Users, Flame, Zap, LayoutGrid } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getInactiveTabColor, getThemeBaseBackground, getThemeSurfaceMode } from '@/constants/theme';
+import { hasUnseenChristmasMission } from '@/utils/christmasTheme';
 
 const TAB_ITEMS = {
   index: { label: 'Dashboard', icon: Home },
@@ -38,12 +39,15 @@ function dropLeft(index: number, cell: number) {
   return (index + 0.5) * cell - DROP_WIDTH / 2;
 }
 
-const TabItem = memo(function TabItem({ name, index, selected, highlighted, color, onPress }: {
+const TabItem = memo(function TabItem({ name, index, selected, highlighted, color, badge = false, badgeColor, badgeBorderColor, onPress }: {
   name: keyof typeof TAB_ITEMS;
   index: number;
   selected: boolean;
   highlighted: boolean;
   color: string;
+  badge?: boolean;
+  badgeColor?: string;
+  badgeBorderColor?: string;
   onPress: (index: number) => void;
 }) {
   const { icon: Icon, label } = TAB_ITEMS[name];
@@ -55,7 +59,20 @@ const TabItem = memo(function TabItem({ name, index, selected, highlighted, colo
       onPress={() => onPress(index)}
       style={styles.tabButton}
     >
-      <Icon size={highlighted ? 25 : 22} color={color} strokeWidth={highlighted ? 2.5 : 1.9} />
+      <View style={styles.iconContainer}>
+        <Icon size={highlighted ? 25 : 22} color={color} strokeWidth={highlighted ? 2.5 : 1.9} />
+        {badge ? (
+          <View
+            style={[
+              styles.badgeDot,
+              {
+                backgroundColor: badgeColor,
+                borderColor: badgeBorderColor,
+              },
+            ]}
+          />
+        ) : null}
+      </View>
     </Pressable>
   );
 });
@@ -63,6 +80,13 @@ const TabItem = memo(function TabItem({ name, index, selected, highlighted, colo
 export function FloatingLiquidGlassTabBar({ state, emitter, navigateToTab, insets }: BottomTabBarProps) {
   const colors = useAppColors();
   const activeTheme = useAppStore(state => state.theme);
+  const userProfile = useAppStore(state => state.userProfile);
+  const unlockedBadges = useAppStore(state => state.gamification?.unlockedBadges || []);
+  const christmasMissionSeen = useAppStore(state => Boolean((state as any).christmasMissionSeen));
+  const unreadChats = useAppStore(state => state.unreadChats);
+  const showHubBadge =
+    Number(unreadChats) > 0 ||
+    hasUnseenChristmasMission(userProfile, unlockedBadges, christmasMissionSeen);
   const surface = getThemeSurfaceMode(activeTheme);
   const theme = SURFACES[surface];
   const capsuleBackground = getThemeBaseBackground(activeTheme) + theme.alpha;
@@ -192,7 +216,11 @@ export function FloatingLiquidGlassTabBar({ state, emitter, navigateToTab, inset
               if (!TAB_ITEMS[name]) return null;
               const highlighted = (hovered ?? activeIndex) === index;
               return <TabItem key={route.key} name={name} index={index} selected={activeIndex === index}
-                highlighted={highlighted} color={highlighted ? colors.tint : inactiveInk} onPress={selectTab} />;
+                highlighted={highlighted} color={highlighted ? colors.tint : inactiveInk}
+                badge={name === 'hub' && showHubBadge}
+                badgeColor={colors.tint}
+                badgeBorderColor={getThemeBaseBackground(activeTheme)}
+                onPress={selectTab} />;
             })}
           </View>
         </View>
@@ -232,4 +260,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
   },
   tabButton: { flex: 1, height: '100%', alignItems: 'center', justifyContent: 'center' },
+  iconContainer: { position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  badgeDot: {
+    position: 'absolute',
+    top: -3,
+    right: -5,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    borderWidth: 1.5,
+  },
 });

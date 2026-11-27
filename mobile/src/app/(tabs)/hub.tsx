@@ -8,6 +8,7 @@ import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { hasUnseenChristmasMission } from '@/utils/christmasTheme';
 import { getThemeBaseBackground, getAppleCardSurfaceStyle, shouldUseContentGlass, usesFrontendCardSurface } from '@/constants/theme';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import GlobalHeader from '@/components/GlobalHeader';
@@ -241,34 +242,52 @@ export default function Hub() {
 
   const unreadChats = useAppStore(state => state.unreadChats);
   const fetchUnreadChats = useAppStore(state => state.fetchUnreadChats);
+  const unlockedBadges = useAppStore(state => state.gamification?.unlockedBadges || []);
+  const christmasMissionSeen = useAppStore(state => Boolean((state as any).christmasMissionSeen));
+  const syncChristmasMissionSeen = useAppStore(state => (state as any).syncChristmasMissionSeen);
   const showTutorialsCenter = useAppStore((state: any) => state.showTutorialsCenter);
   const setShowTutorialsCenter = useAppStore((state: any) => state.setShowTutorialsCenter);
   const startPageTutorial = useAppStore((state: any) => state.startPageTutorial);
   const [visitedAsesoria, setVisitedAsesoria] = useState(true);
+  const [visitedChallenges, setVisitedChallenges] = useState(true);
   const [hasOpenedTutorials, setHasOpenedTutorials] = useState(true);
   const [showRatingModal, setShowRatingModal] = useState(false);
+
+  const showChallengesBadge =
+    !visitedChallenges ||
+    hasUnseenChristmasMission(userProfile, unlockedBadges, christmasMissionSeen);
 
   useEffect(() => {
     if (userProfile?.id) {
       AsyncStorage.getItem(`visited_asesoria_${userProfile.id}`).then(val => {
         setVisitedAsesoria(val === 'true');
       });
+      AsyncStorage.getItem(`visited_challenges_v2_${userProfile.id}`).then(val => {
+        setVisitedChallenges(val === 'true');
+      });
       AsyncStorage.getItem(`tutorials_opened_from_hub_${userProfile.id}`).then(val => {
         setHasOpenedTutorials(val === 'true');
       });
+      syncChristmasMissionSeen?.(userProfile.id);
       fetchUnreadChats?.();
     }
-  }, [userProfile?.id, fetchUnreadChats]);
+  }, [userProfile?.id, fetchUnreadChats, syncChristmasMissionSeen]);
 
   useFocusEffect(
     useCallback(() => {
+      if (userProfile?.id) {
+        AsyncStorage.getItem(`visited_challenges_v2_${userProfile.id}`).then(val => {
+          setVisitedChallenges(val === 'true');
+        });
+        syncChristmasMissionSeen?.(userProfile.id);
+      }
       try {
         if (typeof localStorage !== 'undefined' && localStorage.getItem('open_tutorials_on_hub') === 'true') {
           localStorage.removeItem('open_tutorials_on_hub');
           setShowTutorialsCenter(true);
         }
       } catch {}
-    }, [setShowTutorialsCenter]),
+    }, [setShowTutorialsCenter, userProfile?.id, syncChristmasMissionSeen]),
   );
 
   const handleOpenTutorials = () => {
@@ -439,6 +458,7 @@ export default function Hub() {
                 description="Gana +1.000 XP para ambos y recompensas"
                 colors={colors}
                 iosBadgeColor="#FF9F0A"
+                badge={showChallengesBadge}
                 onPress={() => router.push('/challenges' as any)}
               />
             </TourTarget>

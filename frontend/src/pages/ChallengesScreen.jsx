@@ -6,6 +6,7 @@ import apiClient from '../services/apiClient';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import RewardsModal from '../components/RewardsModal';
+import { hasUnseenChristmasMission, markChristmasMissionSeen } from '../utils/christmasTheme';
 
 const ChallengesScreen = ({ setView }) => {
     const [challenges, setChallenges] = useState([]);
@@ -14,11 +15,14 @@ const ChallengesScreen = ({ setView }) => {
     const [showRewardsModal, setShowRewardsModal] = useState(false);
 
     const userProfile = useAppStore(state => state.userProfile);
+    const unlockedBadges = useAppStore(state => state.gamification?.unlockedBadges || []);
+    const [showGeneralesMissionBadge, setShowGeneralesMissionBadge] = useState(false);
     const { addToast } = useToast();
 
     useEffect(() => {
         if (userProfile?.id && localStorage.getItem(`visited_challenges_v2_${userProfile.id}`) !== 'true') {
             localStorage.setItem(`visited_challenges_v2_${userProfile.id}`, 'true');
+            window.dispatchEvent(new Event('hub-badges-updated'));
         }
         const fetchChallenges = async () => {
             try {
@@ -31,7 +35,20 @@ const ChallengesScreen = ({ setView }) => {
             }
         };
         fetchChallenges();
-    }, []);
+    }, [userProfile?.id]);
+
+    useEffect(() => {
+        if (!userProfile?.id) {
+            setShowGeneralesMissionBadge(false);
+            return;
+        }
+        if (activeTab === 'general') {
+            markChristmasMissionSeen(userProfile.id);
+            setShowGeneralesMissionBadge(false);
+            return;
+        }
+        setShowGeneralesMissionBadge(hasUnseenChristmasMission(userProfile, unlockedBadges));
+    }, [activeTab, userProfile, unlockedBadges]);
 
     const safeChallenges = Array.isArray(challenges) ? challenges : [];
 
@@ -124,13 +141,13 @@ const ChallengesScreen = ({ setView }) => {
                             Volver
                         </button>
                     </div>
-                    <header id="tutorial-challenges-header" className="px-6 pt-4 md:pt-6 pb-4 glassCardClass">
+                    <header id="tutorial-challenges-header" className="px-4 sm:px-6 pt-4 md:pt-6 pb-4 glassCardClass">
                         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight mb-2">
                             Retos y Misiones
                         </h1>
                         <p className="text-text-secondary text-sm">Completa retos para ganar XP y subir de nivel.</p>
                     </header>
-                <div className="px-6 mt-6">
+                <div className="px-4 sm:px-6 mt-6">
                     
                     {/* Referrals Infinite Challenge Card */}
                     <div className="mb-4">
@@ -181,27 +198,44 @@ const ChallengesScreen = ({ setView }) => {
                     </div>
 
                     {/* Tabs */}
-                    <div id="tutorial-challenges-tabs" className="flex gap-3 mb-8">
+                    <div id="tutorial-challenges-tabs" className="grid grid-cols-3 gap-2 sm:gap-3 mb-8 w-full">
                         <button 
+                            type="button"
                             data-tutorial="challenges-tab-daily"
-                            className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'daily' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
+                            className={`w-full min-w-0 py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-bold rounded-[18px] sm:rounded-[20px] flex items-center justify-center gap-1.5 text-center transition-all duration-300 cursor-pointer ${activeTab === 'daily' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
                             onClick={() => setActiveTab('daily')}
                         >
-                            Diarios
+                            <span className="truncate">Diarios</span>
                         </button>
                         <button 
+                            type="button"
                             data-tutorial="challenges-tab-general"
-                            className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'general' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
-                            onClick={() => setActiveTab('general')}
+                            className={`w-full min-w-0 py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-bold rounded-[18px] sm:rounded-[20px] flex items-center justify-center gap-1.5 text-center transition-all duration-300 cursor-pointer ${activeTab === 'general' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
+                            onClick={() => {
+                                setActiveTab('general');
+                                if (userProfile?.id) {
+                                    markChristmasMissionSeen(userProfile.id);
+                                    setShowGeneralesMissionBadge(false);
+                                }
+                            }}
                         >
-                            Generales
+                            <span className="truncate">Generales</span>
+                            {showGeneralesMissionBadge && activeTab !== 'general' && (
+                                <span
+                                    aria-label="Nueva misión de Navidad"
+                                    className="inline-block w-2 h-2 sm:w-2.5 sm:h-2.5 shrink-0 bg-accent rounded-full animate-pulse relative"
+                                >
+                                    <span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-75"></span>
+                                </span>
+                            )}
                         </button>
                         <button 
+                            type="button"
                             data-tutorial="challenges-tab-completed"
-                            className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'completed' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
+                            className={`w-full min-w-0 py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-bold rounded-[18px] sm:rounded-[20px] flex items-center justify-center gap-1.5 text-center transition-all duration-300 cursor-pointer ${activeTab === 'completed' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
                             onClick={() => setActiveTab('completed')}
                         >
-                            Completados
+                            <span className="truncate">Completados</span>
                         </button>
                     </div>
 

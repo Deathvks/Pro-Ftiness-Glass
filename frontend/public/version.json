@@ -1,8 +1,8 @@
 {
-  "version": "7.17.5",
-  "releaseNotes": "Actualización v7.17.5: +250 XP de regalo al desbloquear Edición Navidad 2026 y abono retroactivo para quienes ya lo reclamaron.",
+  "version": "7.17.6",
+  "releaseNotes": "Actualización v7.17.6: mejoras visuales en pestañas de Retos y Misiones e indicadores de misión de temporada en Menú, Retos y Generales.",
   "welcome": {
-    "title": "Regalo Navidad 2026 (v7.17.5)",
+    "title": "Regalo Navidad 2026 (v7.17.6)",
     "subtitle": "Ahora el tema Edición Navidad 2026 suma +250 XP directos en tu cuenta y recompensa retroactiva si ya lo tenías.",
     "features": [
       {
@@ -10,8 +10,8 @@
         "description": "Al reclamar el tema gratuito de Navidad antes del 6 de enero, recibes el tema permanente, la insignia Navidad 2026 y +250 XP."
       },
       {
-        "title": "Regalo Retroactivo",
-        "description": "Si ya habías reclamado Invierno Glass antes de esta actualización, recibirás tus +250 XP al instante en cuanto abras la app."
+        "title": "Reto Racha de Invierno ❄️",
+        "description": "Completa 5 entrenamientos antes del 6 de enero en Retos y Misiones → Generales para sumar +400 XP e insignia exclusiva."
       }
     ]
   }
