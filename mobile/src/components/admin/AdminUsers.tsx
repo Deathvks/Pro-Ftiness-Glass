@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, Check, Droplets, Mail, Monitor, Pencil, Plus, RefreshCw, Smartphone, Sparkles, Sun, Trash2, Users, X } from 'lucide-react-native';
+import { Camera, Check, Droplets, Mail, Monitor, Pencil, Plus, RefreshCw, Smartphone, Snowflake, Sparkles, Sun, Trash2, Users, X } from 'lucide-react-native';
 import { SocialUserAvatar } from '@/components/social/SocialUserAvatar';
 import { adminWrite, createUser, deleteUser, getAllUsers, updateUser } from '@/services/adminService';
 import useAppStore from '@/store/useAppStore';
@@ -18,6 +18,7 @@ type AdminUser = {
   beta_version?: string | null; is_beta?: boolean;
   goal?: string; height?: number; age?: number; routineCount?: number; workoutCount?: number; nutritionCount?: number;
   profile_image_url?: string;
+  hasChristmasBadge?: boolean; hasChristmasTheme?: boolean; hasChristmasMission?: boolean;
   hasVoluntaryPush?: boolean; hasVoluntaryEmail?: boolean; pushSubCount?: number;
   google_id?: string; discord_id?: string; x_id?: string; github_id?: string; spotify_id?: string; facebook_id?: string;
 };
@@ -25,6 +26,8 @@ const roles = [['user', 'Usuario'], ['trainer', 'Entrenador'], ['admin', 'Admini
 const roleLabel = (role: string) => roles.find(([value]) => value === role)?.[1] ?? role;
 const dateValue = (value?: string) => Date.parse(value ?? '') || 0;
 const getName = (user: AdminUser) => user.username || user.name || 'Usuario';
+const hasChristmasTheme = (user: AdminUser) =>
+  Boolean(user.hasChristmasTheme) || user.role === 'admin' || (user.referralCount ?? 0) >= 1;
 const unlocks = [
   { label: 'Galaxia', count: 3, icon: Sparkles, color: '#a855f7' },
   { label: 'Desierto', count: 5, icon: Sun, color: '#f59e0b' },
@@ -53,6 +56,7 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
   const [level, setLevel] = useState<number>(0);
   const [stage, setStage] = useState('all');
   const [consentFilter, setConsentFilter] = useState('all');
+  const [christmasFilter, setChristmasFilter] = useState<'all' | 'has' | 'claimed' | 'none'>('all');
   const [editor, setEditor] = useState<{ user?: AdminUser; photo?: boolean } | null>(null);
   const { busy, run } = useAdminAction();
   const regularUsers = users.filter(user => !['admin', 'trainer', 'entrenador'].includes(user.role));
@@ -98,6 +102,8 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
   const versionBreakdown = Array.from(versionCounts.entries())
     .map(([version, count]) => ({ version, count }))
     .sort((a, b) => b.count - a.count || b.version.localeCompare(a.version));
+  const christmasUsersCount = users.filter(hasChristmasTheme).length;
+  const christmasClaimedCount = users.filter(u => Boolean(u.hasChristmasBadge)).length;
 
   const filtered = users.filter(user => {
     const platform = user.latest_device || 'web';
@@ -118,11 +124,18 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
       (consentFilter === 'voluntary_push' && Boolean(user.hasVoluntaryPush)) ||
       (consentFilter === 'voluntary_email' && Boolean(user.hasVoluntaryEmail)) ||
       (consentFilter === 'only_mandatory' && !user.hasVoluntaryPush && !user.hasVoluntaryEmail);
+    const hasChristmas = hasChristmasTheme(user);
+    const matchesChristmas =
+      christmasFilter === 'all' ||
+      (christmasFilter === 'has' && hasChristmas) ||
+      (christmasFilter === 'claimed' && Boolean(user.hasChristmasBadge)) ||
+      (christmasFilter === 'none' && !hasChristmas);
     return (role === 'all' || userRole === role) && (device === 'all' || deviceGroup === device) &&
       matchesVersion &&
       (!level || (userLevel >= level && (level === 41 || userLevel < level + 10))) &&
       (stage === 'all' || (funnelUsers.has(user.id) && stages[stage](user))) &&
       matchesConsent &&
+      matchesChristmas &&
       adminSearch(search, user.username, user.name, user.email);
   }).sort((a, b) => {
     if (sort === 'name') return getName(a).localeCompare(getName(b), 'es');
@@ -134,6 +147,7 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
     <>
       <AdminTiles tiles={[
         { label: 'Total usuarios', value: users.length, icon: Users },
+        { label: 'Navidad', value: christmasUsersCount, detail: `${christmasClaimedCount} reclamados`, icon: Snowflake, color: '#e11d48' },
         ...unlocks.map(({ label, count, icon, color }) => ({ label, icon, color, value: users.filter(user => user.role === 'admin' || (user.referralCount ?? 0) >= count).length })),
       ]} />
       <AdminCard title="Embudo de activación y abandono">
@@ -171,6 +185,21 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
           ]}
           value={consentFilter}
           onChange={setConsentFilter}
+        />
+      </AdminCard>
+      <AdminCard title="Tema Navidad 2026">
+        <AdminText secondary>
+          Con acceso: {christmasUsersCount} · Reclamados: {christmasClaimedCount} · Sin él: {Math.max(0, users.length - christmasUsersCount)}
+        </AdminText>
+        <AdminSegments
+          options={[
+            ['all', 'Todos'],
+            ['has', `Con Navidad (${christmasUsersCount})`],
+            ['claimed', `Reclamados (${christmasClaimedCount})`],
+            ['none', 'Sin Navidad'],
+          ]}
+          value={christmasFilter}
+          onChange={setChristmasFilter}
         />
       </AdminCard>
       <AdminCard title="Versiones y canal Beta">
@@ -215,7 +244,7 @@ function UserDirectory({ users, reload }: { users: AdminUser[]; reload: () => vo
         </View>
         <AdminBadge>{filtered.length} resultados</AdminBadge>
       </AdminCard>
-      <AdminRecords key={JSON.stringify([search, role, device, versionFilter, level, stage, consentFilter, period, sort])} items={filtered} keyFor={user => String(user.id)} render={user => (
+      <AdminRecords key={JSON.stringify([search, role, device, versionFilter, level, stage, consentFilter, christmasFilter, period, sort])} items={filtered} keyFor={user => String(user.id)} render={user => (
         <UserSummaryCard user={user} online={now - dateValue(user.lastSeen) < 5 * 60_000} profileComplete={!stages.profile(user)}
           onEdit={() => setEditor({ user })} onPhoto={() => setEditor({ user, photo: true })}
           deleteDisabled={busy || String(user.id) === String(currentUser?.id)}
@@ -274,6 +303,9 @@ function UserSummaryCard({ user, online, profileComplete, onEdit, onPhoto, onDel
         <View style={userCardStyles.tags}>
           <AdminBadge tone={user.role === 'admin' ? 'accent' : trainer ? 'warning' : 'neutral'}>{roleLabel(user.role)}</AdminBadge>
           <AdminBadge>Nivel {user.level ?? 1}</AdminBadge>
+          {hasChristmasTheme(user) && (
+            <AdminBadge tone="danger">{user.hasChristmasBadge ? 'Navidad ✓' : 'Navidad · Auto'}</AdminBadge>
+          )}
           {(user.beta_version || user.latest_app_version) && (
             <AdminBadge tone={user.is_beta ? 'warning' : 'blue'}>
               {user.is_beta ? `Beta · v${user.beta_version || user.latest_app_version}` : `v${user.latest_app_version}`}
@@ -300,6 +332,15 @@ function UserSummaryCard({ user, online, profileComplete, onEdit, onPhoto, onDel
           <View accessible accessibilityLabel={`${user.referralCount ?? 0} referidos`} style={[userCardStyles.referralCount, { backgroundColor: colors.border }]}>
             <Text style={[userCardStyles.provider, { color: colors.text }]}>{user.referralCount ?? 0}</Text>
           </View>
+          {hasChristmasTheme(user) && (
+            <View
+              accessible
+              accessibilityLabel={user.hasChristmasBadge ? 'Navidad 2026 reclamado' : 'Navidad 2026 desbloqueado'}
+              style={[userCardStyles.unlock, { backgroundColor: '#e11d48', borderColor: colors.card }]}
+            >
+              <Snowflake color="#fff" size={10} />
+            </View>
+          )}
           {unlocks.filter(item => user.role === 'admin' || (user.referralCount ?? 0) >= item.count).map(({ label, icon: Icon, color }) => (
             <View accessible accessibilityLabel={label} key={label} style={[userCardStyles.unlock, { backgroundColor: color, borderColor: colors.card }]}>
               <Icon color={getContrastTextColor(color)} size={10} />

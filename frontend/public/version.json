@@ -1,17 +1,17 @@
 {
-  "version": "7.18.4",
-  "releaseNotes": "Actualización v7.18.4: sanitización DOMPurify en descripciones HTML de ejercicios y cifrado de sesión con expo-secure-store en app nativa.",
+  "version": "7.18.5",
+  "releaseNotes": "Actualización v7.18.5: seguimiento y filtro del Tema Navidad 2026 en el panel de administración (Web, Capacitor y Nativo).",
   "welcome": {
-    "title": "Novedades Pro Fitness Glass (v7.18.4)",
-    "subtitle": "Mayor protección frente a XSS en Web/Capacitor y almacenamiento cifrado por hardware en Android.",
+    "title": "Novedades Pro Fitness Glass (v7.18.5)",
+    "subtitle": "Control completo de desbloqueos y reclamaciones del Tema Navidad 2026 desde Administración.",
     "features": [
       {
-        "title": "Sanitización HTML con DOMPurify",
-        "description": "Todas las descripciones de ejercicios pasan por DOMPurify antes de renderizarse en Web, PWA y Capacitor."
+        "title": "Estadísticas de Tema Navidad 2026",
+        "description": "Nuevo contador total y de usuarios que han reclamado el tema navideño en Web, Capacitor y App Nativa."
       },
       {
-        "title": "Sesión cifrada en Nativo",
-        "description": "Migración automática del token JWT a expo-secure-store (Android Keystore) en la app nativa."
+        "title": "Filtro e Insignias por Usuario",
+        "description": "Filtra el directorio por usuarios con Navidad, reclamado o sin él, e identifica al instante quién lo tiene activo."
       }
     ]
   }

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle, Check, Camera,
-  Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw,
+  Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, Snowflake, RefreshCw,
   BellRing, Mail, Lock, Tag
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
@@ -368,6 +368,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
   const [funnelRange, setFunnelRange] = useState('30d'); // '7d' | '30d' | 'all'
   const [funnelStageFilter, setFunnelStageFilter] = useState('ALL'); // 'ALL' | 'STUCK_PROFILE' | 'STUCK_ROUTINE' | 'STUCK_WORKOUT1' | 'STUCK_WORKOUT2' | 'STUCK_NUTRITION'
   const [consentFilter, setConsentFilter] = useState('ALL'); // 'ALL' | 'ANY_VOLUNTARY' | 'VOLUNTARY_PUSH' | 'VOLUNTARY_EMAIL' | 'ONLY_MANDATORY'
+  const [christmasFilter, setChristmasFilter] = useState('ALL'); // 'ALL' | 'HAS_CHRISTMAS' | 'CLAIMED' | 'NO_CHRISTMAS'
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState(() => localStorage.getItem('admin_users_sort') || 'default');
 
@@ -757,6 +758,17 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
         return true;
       });
     }
+
+    if (christmasFilter !== 'ALL') {
+      filtered = filtered.filter(u => {
+        const hasTheme = Boolean(u.hasChristmasTheme) || u.role === 'admin' || (u.referralCount || 0) >= 1;
+        const claimed = Boolean(u.hasChristmasBadge);
+        if (christmasFilter === 'HAS_CHRISTMAS') return hasTheme;
+        if (christmasFilter === 'CLAIMED') return claimed;
+        if (christmasFilter === 'NO_CHRISTMAS') return !hasTheme;
+        return true;
+      });
+    }
     
     switch (sortBy) {
       case 'date':
@@ -768,7 +780,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
       default:
         return filtered.sort((a, b) => getTime(b.lastSeen) - getTime(a.lastSeen));
     }
-  }, [users, sortBy, searchQuery, roleFilter, platformFilter, versionFilter, levelFilter, funnelStageFilter, funnelRange, consentFilter]);
+  }, [users, sortBy, searchQuery, roleFilter, platformFilter, versionFilter, levelFilter, funnelStageFilter, funnelRange, consentFilter, christmasFilter]);
 
   const totalPages = Math.ceil(reports.length / REPORTS_PER_PAGE);
   const currentReports = useMemo(() => {
@@ -779,6 +791,8 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
   const galaxyUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 3).length, [users]);
   const desertUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 5).length, [users]);
   const oceanUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 7).length, [users]);
+  const christmasUsersCount = useMemo(() => users.filter(user => Boolean(user.hasChristmasTheme) || user.role === 'admin' || (user.referralCount || 0) >= 1).length, [users]);
+  const christmasClaimedCount = useMemo(() => users.filter(user => Boolean(user.hasChristmasBadge)).length, [users]);
 
   const retentionFunnel = useMemo(() => {
     const now = Date.now();
@@ -1010,7 +1024,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
           /* --- CONTENIDO PESTAÑA USUARIOS --- */
           <>
             {/* Bento Overview Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
               <div className="bg-black/5 dark:bg-white/5 rounded-3xl p-5 ring-1 ring-black/5 dark:ring-white/10 flex flex-col justify-center relative overflow-hidden">
                 <div className="absolute -top-4 -right-4 p-4 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
                    <Users size={100} />
@@ -1018,6 +1032,30 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                 <span className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1 relative z-10">Total Usuarios</span>
                 <span className="text-4xl font-black text-text-primary relative z-10">{users.length}</span>
               </div>
+              <button
+                type="button"
+                onClick={() => setChristmasFilter(prev => prev === 'HAS_CHRISTMAS' ? 'ALL' : 'HAS_CHRISTMAS')}
+                className={`text-left rounded-3xl p-5 flex flex-col justify-center relative overflow-hidden transition-all cursor-pointer ${
+                  christmasFilter !== 'ALL'
+                    ? 'bg-[#e11d48]/15 ring-2 ring-[#e11d48]/60 shadow-md shadow-[#e11d48]/10'
+                    : 'bg-[#e11d48]/5 ring-1 ring-[#e11d48]/20 hover:ring-[#e11d48]/45'
+                }`}
+                title="Pulsa para filtrar quién tiene el tema de Navidad"
+              >
+                <div className="absolute -top-4 -right-4 p-4 opacity-10 pointer-events-none">
+                   <Snowflake size={100} className="text-[#e11d48]" />
+                </div>
+                <div className="flex items-center justify-between gap-2 mb-1 relative z-10">
+                  <span className="text-xs font-bold text-[#e11d48] uppercase tracking-wider">Navidad</span>
+                  {christmasFilter !== 'ALL' && (
+                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-[#e11d48]/20 text-[#e11d48]">Filtrado</span>
+                  )}
+                </div>
+                <span className="text-4xl font-black text-[#e11d48] relative z-10">{christmasUsersCount}</span>
+                <span className="text-[11px] font-bold text-text-secondary mt-1 relative z-10">
+                  {christmasClaimedCount} reclamados
+                </span>
+              </button>
               <div className="bg-[#a855f7]/5 rounded-3xl p-5 ring-1 ring-[#a855f7]/20 flex flex-col justify-center relative overflow-hidden">
                 <div className="absolute -top-4 -right-4 p-4 opacity-10 pointer-events-none">
                    <Sparkles size={100} className="text-[#a855f7]" />
@@ -1442,7 +1480,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
               </div>
 
               {/* Controles de Filtrado en Grid para mejor ajuste */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 w-full">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 w-full">
                 
                 {/* Filtro: Rol */}
                 <div className="w-full z-40">
@@ -1505,6 +1543,21 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                         value: `VER:${item.version}`,
                         label: `v${item.version} (${item.count})`,
                       })),
+                    ]}
+                    className="w-full text-sm font-bold"
+                  />
+                </div>
+
+                {/* Filtro: Tema Navidad */}
+                <div className="w-full z-20">
+                  <CustomSelect
+                    value={christmasFilter}
+                    onChange={setChristmasFilter}
+                    options={[
+                      { value: 'ALL', label: 'Navidad: Todos' },
+                      { value: 'HAS_CHRISTMAS', label: `Con Navidad (${christmasUsersCount})` },
+                      { value: 'CLAIMED', label: `Reclamado (${christmasClaimedCount})` },
+                      { value: 'NO_CHRISTMAS', label: `Sin Navidad (${Math.max(0, users.length - christmasUsersCount)})` },
                     ]}
                     className="w-full text-sm font-bold"
                   />
@@ -1683,6 +1736,14 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                                     Solo oblig.
                                   </span>
                                 )}
+                                {(Boolean(user.hasChristmasTheme) || (user.referralCount || 0) >= 1 || user.role === 'admin') && (
+                                  <span
+                                    className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#e11d48]/15 text-[#e11d48]"
+                                    title={user.hasChristmasBadge ? 'Tema Navidad 2026 reclamado' : 'Tema Navidad 2026 desbloqueado por referido/admin'}
+                                  >
+                                    {user.hasChristmasBadge ? 'Navidad ✓' : 'Navidad · Auto'}
+                                  </span>
+                                )}
                                 <span
                                   className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
                                     Number(user.workoutCount || 0) >= 1
@@ -1712,6 +1773,14 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                             <div className="flex justify-center items-center gap-1.5">
                               <span className="text-sm font-black text-text-primary bg-black/5 dark:bg-white/5 w-8 h-8 rounded-full flex items-center justify-center ring-1 ring-black/5 dark:ring-white/10">{user.referralCount || 0}</span>
                               <div className="flex -space-x-1 ml-1">
+                                {(Boolean(user.hasChristmasTheme) || (user.referralCount || 0) >= 1 || user.role === 'admin') && (
+                                  <div
+                                    className="w-5 h-5 rounded-full bg-[#e11d48] flex items-center justify-center ring-2 ring-bg-primary z-40"
+                                    title={user.hasChristmasBadge ? 'Navidad 2026 (conseguido/reclamado)' : 'Navidad 2026 (desbloqueado por referido/admin)'}
+                                  >
+                                    <Snowflake size={10} className="text-white" />
+                                  </div>
+                                )}
                                 {(user.referralCount >= 3 || user.role === 'admin') && (
                                   <div className="w-5 h-5 rounded-full bg-[#a855f7] flex items-center justify-center ring-2 ring-bg-primary z-30" title="Galaxia">
                                     <Sparkles size={10} className="text-white" />
@@ -1849,6 +1918,11 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                               Solo obligatorias
                             </span>
                           )}
+                          {(Boolean(user.hasChristmasTheme) || (user.referralCount || 0) >= 1 || user.role === 'admin') && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-[#e11d48]/15 text-[#e11d48]">
+                              {user.hasChristmasBadge ? 'Navidad ✓' : 'Navidad · Auto'}
+                            </span>
+                          )}
                         </div>
 
                         <div className="flex items-center justify-between border-t border-black/5 dark:border-white/5 pt-3">
@@ -1860,6 +1934,14 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
                           <div className="flex justify-center items-center gap-1.5 mt-1 sm:mt-0">
                             <span className="text-sm font-black text-text-primary bg-black/5 dark:bg-white/5 w-8 h-8 rounded-full flex items-center justify-center ring-1 ring-black/5 dark:ring-white/10">{user.referralCount || 0}</span>
                             <div className="flex -space-x-1 ml-1">
+                              {(Boolean(user.hasChristmasTheme) || (user.referralCount || 0) >= 1 || user.role === 'admin') && (
+                                <div
+                                  className="w-5 h-5 rounded-full bg-[#e11d48] flex items-center justify-center ring-2 ring-bg-primary z-40"
+                                  title={user.hasChristmasBadge ? 'Navidad 2026 (conseguido/reclamado)' : 'Navidad 2026 (desbloqueado por referido/admin)'}
+                                >
+                                  <Snowflake size={10} className="text-white" />
+                                </div>
+                              )}
                               {(user.referralCount >= 3 || user.role === 'admin') && (
                                 <div className="w-5 h-5 rounded-full bg-[#a855f7] flex items-center justify-center ring-2 ring-bg-primary z-30" title="Galaxia">
                                   <Sparkles size={10} className="text-white" />

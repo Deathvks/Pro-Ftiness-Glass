@@ -2,7 +2,7 @@
   "expo": {
     "name": "Pro Fitness Glass",
     "slug": "mobile",
-    "version": "8.0.3-beta.1",
+    "version": "8.0.3-beta.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "profitnessglass",
@@ -21,7 +21,7 @@
       }
     },
     "android": {
-      "versionCode": 813,
+      "versionCode": 814,
       "package": "com.profitnessglass.app",
       "googleServicesFile": "./google-services.json",
       "blockedPermissions": [

@@ -18,6 +18,21 @@ import {
 
 const User = db.User;
 const SystemSettings = db.SystemSettings;
+const CHRISTMAS_THEME_BADGE_ID = 'theme_christmas_2026';
+const CHRISTMAS_MISSION_BADGE_ID = 'event_christmas_2026';
+
+const parseUserBadges = (raw) => {
+  if (Array.isArray(raw)) return raw.map(String);
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
 
 // Obtener configuración del sistema
 export const getAllUsers = async (req, res, next) => {
@@ -56,6 +71,7 @@ export const getAllUsers = async (req, res, next) => {
           'email_marketing_consent',
           'email_coaching_consent',
           'push_consents',
+          'unlocked_badges',
           ['created_at', 'createdAt'],
         ],
         order: [['created_at', 'DESC']],
@@ -162,6 +178,12 @@ export const getAllUsers = async (req, res, next) => {
 
     const enrichedUsers = users.map(u => {
       const uid = Number(u.id);
+      const { unlocked_badges: rawUnlockedBadges, ...userFields } = u;
+      const parsedBadges = parseUserBadges(rawUnlockedBadges);
+      const referralCount = refMap.get(uid) || 0;
+      const hasChristmasBadge = parsedBadges.includes(CHRISTMAS_THEME_BADGE_ID);
+      const hasChristmasTheme = Boolean(hasChristmasBadge || u.role === 'admin' || referralCount >= 1);
+      const hasChristmasMission = parsedBadges.includes(CHRISTMAS_MISSION_BADGE_ID);
       let parsedPush = u.push_consents;
       if (typeof parsedPush === 'string') {
         try { parsedPush = JSON.parse(parsedPush); } catch { parsedPush = null; }
@@ -175,9 +197,12 @@ export const getAllUsers = async (req, res, next) => {
       const versionMeta = versionMap.get(uid);
 
       return {
-        ...u,
+        ...userFields,
         push_consents: parsedPush || null,
-        referralCount: refMap.get(uid) || 0,
+        referralCount,
+        hasChristmasBadge,
+        hasChristmasTheme,
+        hasChristmasMission,
         latest_device: devMap.get(uid) || null,
         latest_app_version: versionMeta?.latest_app_version || null,
         latest_app_channel: versionMeta?.latest_app_channel || null,
