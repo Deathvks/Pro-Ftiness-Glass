@@ -6,6 +6,7 @@ import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import UserAvatar from './UserAvatar';
 import ConfirmationModal from './ConfirmationModal';
+import { decideSmartStoryFit, captureVideoAmbientBackdrop } from '../utils/storyMedia';
 
 const DEFAULT_STORY_DURATION = 5000;
 
@@ -293,6 +294,8 @@ const StoryViewer = ({ userId, onClose }) => {
   const [progress, setProgress] = useState(0);
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const [mediaError, setMediaError] = useState(false);
+  const [mediaFit, setMediaFit] = useState('contain');
+  const [videoAmbientBg, setVideoAmbientBg] = useState(null);
   const [isMuted, setIsMuted] = useState(true);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -399,6 +402,8 @@ const StoryViewer = ({ userId, onClose }) => {
     setIsPaused(false);
     setMediaLoaded(false);
     setMediaError(false);
+    setMediaFit('contain');
+    setVideoAmbientBg(null);
     setShowLikesList(false);
     startTimeRef.current = null;
     pausedTimeRef.current = 0;
@@ -483,8 +488,23 @@ const StoryViewer = ({ userId, onClose }) => {
     };
   }, [isPaused, mediaLoaded, mediaError, isVideo, showDeleteConfirm, showLikesList, goToNext]);
 
-  const handleVideoLoadedMetadata = () => {
+  const handleVideoLoadedMetadata = (e) => {
+    const video = e?.currentTarget;
+    if (video?.videoWidth && video?.videoHeight) {
+      setMediaFit(decideSmartStoryFit(video.videoWidth, video.videoHeight));
+    }
     setMediaLoaded(true);
+  };
+
+  const handleVideoLoadedData = (e) => {
+    const video = e?.currentTarget;
+    if (video?.videoWidth && video?.videoHeight) {
+      const fit = decideSmartStoryFit(video.videoWidth, video.videoHeight);
+      if (fit === 'contain' && !videoAmbientBg) {
+        const backdrop = captureVideoAmbientBackdrop(video);
+        if (backdrop) setVideoAmbientBg(backdrop);
+      }
+    }
   };
 
   const handleVideoCanPlay = () => {
@@ -859,34 +879,63 @@ const StoryViewer = ({ userId, onClose }) => {
 
           currentMediaUrl && (
           isVideo ?
-          <video
-            ref={videoRef}
-            key={currentStory.id}
-            src={currentMediaUrl}
-            className={`w-full h-full object-contain transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
-            playsInline
-            webkit-playsinline="true"
-            autoPlay
-            preload="auto"
-            muted={isMuted}
-            onLoadedMetadata={handleVideoLoadedMetadata}
-            onCanPlay={handleVideoCanPlay}
-            onError={(e) => {
-              console.error("Video Error:", e.nativeEvent);
-              setMediaError(true);
-              setMediaLoaded(true);
-            }}
-            style={hdrStyles} /> :
+          <>
+            {mediaFit === 'contain' && videoAmbientBg && (
+              <img
+                src={videoAmbientBg}
+                alt=""
+                aria-hidden="true"
+                className={`absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60 brightness-75 pointer-events-none transition-opacity duration-300 ${mediaLoaded ? 'opacity-60' : 'opacity-0'}`}
+              />
+            )}
+            <video
+              ref={videoRef}
+              key={currentStory.id}
+              src={currentMediaUrl}
+              className={`relative z-10 w-full h-full ${mediaFit === 'cover' ? 'object-cover' : 'object-contain'} transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
+              playsInline
+              webkit-playsinline="true"
+              autoPlay
+              preload="auto"
+              muted={isMuted}
+              onLoadedMetadata={handleVideoLoadedMetadata}
+              onLoadedData={handleVideoLoadedData}
+              onCanPlay={handleVideoCanPlay}
+              onError={(e) => {
+                console.error("Video Error:", e.nativeEvent);
+                setMediaError(true);
+                setMediaLoaded(true);
+              }}
+              style={hdrStyles}
+            />
+          </> :
 
-
-          <img
-            key={currentStory.id}
-            src={currentMediaUrl}
-            alt="Story"
-            className={`w-full h-full object-contain transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
-            onLoad={() => setMediaLoaded(true)}
-            onError={() => {setMediaError(true);setMediaLoaded(true);}}
-            style={hdrStyles} />)
+          <>
+            {mediaFit === 'contain' && (
+              <img
+                src={currentMediaUrl}
+                alt=""
+                aria-hidden="true"
+                className={`absolute inset-0 w-full h-full object-cover blur-2xl scale-110 brightness-75 pointer-events-none transition-opacity duration-300 ${mediaLoaded ? 'opacity-60' : 'opacity-0'}`}
+                style={hdrStyles}
+              />
+            )}
+            <img
+              key={currentStory.id}
+              src={currentMediaUrl}
+              alt="Story"
+              className={`relative z-10 w-full h-full ${mediaFit === 'cover' ? 'object-cover' : 'object-contain'} transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
+              onLoad={(e) => {
+                const img = e?.currentTarget;
+                if (img?.naturalWidth && img?.naturalHeight) {
+                  setMediaFit(decideSmartStoryFit(img.naturalWidth, img.naturalHeight));
+                }
+                setMediaLoaded(true);
+              }}
+              onError={() => {setMediaError(true);setMediaLoaded(true);}}
+              style={hdrStyles}
+            />
+          </>)
 
 
 

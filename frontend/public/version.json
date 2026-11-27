@@ -1,17 +1,17 @@
 {
-  "version": "7.18.5",
-  "releaseNotes": "Actualización v7.18.5: seguimiento y filtro del Tema Navidad 2026 en el panel de administración (Web, Capacitor y Nativo).",
+  "version": "7.18.6",
+  "releaseNotes": "Actualización v7.18.6: adaptación automática de historias a formato móvil 9:16 (sin recorte obligatorio) en Web, Capacitor y backend.",
   "welcome": {
-    "title": "Novedades Pro Fitness Glass (v7.18.5)",
-    "subtitle": "Control completo de desbloqueos y reclamaciones del Tema Navidad 2026 desde Administración.",
+    "title": "Historias Inteligentes para Móvil (v7.18.6)",
+    "subtitle": "Sube cualquier foto o vídeo vertical, cuadrado u horizontal sin tener que ajustarlo manualmente.",
     "features": [
       {
-        "title": "Estadísticas de Tema Navidad 2026",
-        "description": "Nuevo contador total y de usuarios que han reclamado el tema navideño en Web, Capacitor y App Nativa."
+        "title": "Adaptación Automática 9:16",
+        "description": "Las fotos verticales rellenan la pantalla y las cuadradas u horizontales se encajan completas con fondo desenfocado ambiental."
       },
       {
-        "title": "Filtro e Insignias por Usuario",
-        "description": "Filtra el directorio por usuarios con Navidad, reclamado o sin él, e identifica al instante quién lo tiene activo."
+        "title": "Ajuste Opcional en Un Toque",
+        "description": "Puedes alternar entre Rellenar y Encajar o abrir el recorte fino solo si quieres personalizarlo."
       }
     ]
   }

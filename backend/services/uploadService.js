@@ -244,11 +244,17 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
     const newPath = path.join(dir, newFilename);
 
     const isProfilePic = dir.includes('profiles');
+    const isStoryPic = dir.includes('stories');
     const imagePipeline = sharp(file.path, { limitInputPixels: false });
     const metadata = await imagePipeline.metadata();
     
     const isSourceHighDepth = metadata.depth === 'ushort' || metadata.depth === 'float';
     const shouldProcessAsHDR = isHDRRequested && isSourceHighDepth;
+    const isAnimated = Number(metadata.pages || 1) > 1;
+    const isRotated90 = Number(metadata.orientation || 0) >= 5 && Number(metadata.orientation || 0) <= 8;
+    const srcW = isRotated90 ? metadata.height : metadata.width;
+    const srcH = isRotated90 ? metadata.width : metadata.height;
+    const srcAspect = srcW && srcH ? srcW / srcH : 9 / 16;
 
     let finalPipeline = sharp(file.path, { limitInputPixels: false }).rotate();
 
@@ -256,6 +262,32 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
       finalPipeline = finalPipeline.resize(300, 300, {
         fit: 'cover'
       });
+    } else if (isStoryPic && !isAnimated && !shouldProcessAsHDR) {
+      if (Math.abs(srcAspect - 9 / 16) <= 0.03) {
+        finalPipeline = finalPipeline.resize(1080, 1920, {
+          fit: 'inside',
+          withoutEnlargement: true
+        });
+      } else if (srcAspect >= 0.45 && srcAspect <= 0.65) {
+        finalPipeline = finalPipeline.resize(1080, 1920, {
+          fit: 'cover',
+          position: 'centre'
+        });
+      } else {
+        const [bgBuffer, fgBuffer] = await Promise.all([
+          sharp(file.path, { limitInputPixels: false })
+            .rotate()
+            .resize(1080, 1920, { fit: 'cover', position: 'centre' })
+            .blur(36)
+            .modulate({ brightness: 0.52, saturation: 1.15 })
+            .toBuffer(),
+          sharp(file.path, { limitInputPixels: false })
+            .rotate()
+            .resize(1040, 1820, { fit: 'inside', withoutEnlargement: true })
+            .toBuffer(),
+        ]);
+        finalPipeline = sharp(bgBuffer).composite([{ input: fgBuffer, gravity: 'centre' }]);
+      }
     } else {
       finalPipeline = finalPipeline.resize(1080, 1920, { 
         fit: 'inside', 
