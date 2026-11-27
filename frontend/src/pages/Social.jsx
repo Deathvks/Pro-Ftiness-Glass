@@ -223,7 +223,9 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
     if (!pixelCrop) throw new Error('Area de recorte no definida');
 
     const image = new Image();
-    image.crossOrigin = 'anonymous';
+    if (/^https?:/i.test(imageSrc)) {
+        image.crossOrigin = 'anonymous';
+    }
     image.src = imageSrc;
     await new Promise((resolve, reject) => {
         image.onload = resolve;
@@ -424,6 +426,39 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     const cameraPhotoInputRef = useRef(null);
     const cameraVideoInputRef = useRef(null);
     const previewVideoRef = useRef(null);
+    const previewUrlRef = useRef(null);
+    const rawImageUrlRef = useRef(null);
+
+    const replacePreviewUrl = (nextUrl) => {
+        if (previewUrlRef.current && previewUrlRef.current.startsWith('blob:') && previewUrlRef.current !== nextUrl) {
+            URL.revokeObjectURL(previewUrlRef.current);
+        }
+        previewUrlRef.current = nextUrl;
+        setPreview(nextUrl);
+    };
+
+    const replaceRawImageUrl = (nextUrl) => {
+        if (rawImageUrlRef.current && rawImageUrlRef.current.startsWith('blob:') && rawImageUrlRef.current !== nextUrl) {
+            URL.revokeObjectURL(rawImageUrlRef.current);
+        }
+        rawImageUrlRef.current = nextUrl;
+        setRawImageSrc(nextUrl);
+    };
+
+    const resetSelectedMedia = () => {
+        setFile(null);
+        setOriginalFile(null);
+        setFitMode('cover');
+        setCanPreviewImage(true);
+        setVideoIsWide(false);
+        setVideoAmbientBg(null);
+        setUploadHintError('');
+        setIsPreparing(false);
+        replacePreviewUrl(null);
+        replaceRawImageUrl(null);
+        setCanUseHDR(false);
+        setIsHDR(false);
+    };
 
     const applyPreparedImage = async (source, fileName, mode = 'auto', hdrActive = false) => {
         setIsPreparing(true);
@@ -436,12 +471,9 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
             setFile(prepared.file);
             setFitMode(prepared.fitMode);
             setCanPreviewImage(prepared.canPreviewInBrowser !== false);
-            setPreview((prev) => {
-                if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
-                return prepared.canPreviewInBrowser !== false
-                    ? URL.createObjectURL(prepared.file)
-                    : null;
-            });
+            replacePreviewUrl(
+                prepared.canPreviewInBrowser !== false ? URL.createObjectURL(prepared.file) : null
+            );
         } finally {
             setIsPreparing(false);
         }
@@ -456,12 +488,14 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
         setVideoAmbientBg(null);
 
         if (isVideoFile(selected)) {
+            setIsPreparing(true);
             const videoUrl = URL.createObjectURL(selected);
             const videoElement = document.createElement('video');
             videoElement.preload = 'metadata';
             videoElement.onloadedmetadata = () => {
-                window.URL.revokeObjectURL(videoUrl);
                 if (videoElement.duration > 15) {
+                    URL.revokeObjectURL(videoUrl);
+                    setIsPreparing(false);
                     setUploadHintError('El vídeo no puede durar más de 15 segundos.');
                     e.target.value = '';
                     return;
@@ -469,23 +503,19 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                 const vw = videoElement.videoWidth || 0;
                 const vh = videoElement.videoHeight || 0;
                 setVideoIsWide(Boolean(vw && vh && vw / vh > 0.68));
-                setPreview((prev) => {
-                    if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
-                    return URL.createObjectURL(selected);
-                });
-                setRawImageSrc((prev) => {
-                    if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
-                    return null;
-                });
+                replaceRawImageUrl(null);
+                replacePreviewUrl(videoUrl);
                 setOriginalFile(selected);
                 setFile(selected);
                 setFitMode('video');
                 setCanPreviewImage(true);
                 setCanUseHDR(false);
                 setIsHDR(false);
+                setIsPreparing(false);
             };
             videoElement.onerror = () => {
-                window.URL.revokeObjectURL(videoUrl);
+                URL.revokeObjectURL(videoUrl);
+                setIsPreparing(false);
                 setUploadHintError('No se pudo leer este vídeo. Prueba con MP4, MOV o WebM.');
             };
             videoElement.src = videoUrl;
@@ -493,16 +523,14 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
         }
 
         // Imagen: preparar automáticamente en formato móvil 9:16 sin obligar al usuario a recortar
+        setIsPreparing(true);
         const potentialHDR = isPotentialHDRImageFile(selected);
         setCanUseHDR(potentialHDR);
         setIsHDR(potentialHDR);
         setOriginalFile(selected);
 
         const objectUrl = URL.createObjectURL(selected);
-        setRawImageSrc((prev) => {
-            if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
-            return objectUrl;
-        });
+        replaceRawImageUrl(objectUrl);
 
         await applyPreparedImage(selected, selected.name, 'auto', potentialHDR);
     };
@@ -526,10 +554,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
             setFile(croppedFile);
             setFitMode('cover');
             setCanPreviewImage(true);
-            setPreview((prev) => {
-                if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
-                return URL.createObjectURL(croppedFile);
-            });
+            replacePreviewUrl(URL.createObjectURL(croppedFile));
             setIsCropping(false);
         } catch (error) {
             console.error('Error al recortar la imagen de historia:', error);
@@ -543,10 +568,14 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
 
     useEffect(() => {
         return () => {
-            if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview);
-            if (rawImageSrc && rawImageSrc.startsWith('blob:')) URL.revokeObjectURL(rawImageSrc);
+            if (previewUrlRef.current && previewUrlRef.current.startsWith('blob:')) {
+                URL.revokeObjectURL(previewUrlRef.current);
+            }
+            if (rawImageUrlRef.current && rawImageUrlRef.current.startsWith('blob:')) {
+                URL.revokeObjectURL(rawImageUrlRef.current);
+            }
         };
-    }, [preview, rawImageSrc]);
+    }, []);
 
     useEffect(() => {
         if (preview && isVideoFile(file) && previewVideoRef.current) {
@@ -630,36 +659,223 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     return (
         <>
             <ModalPortal>
-                <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 pt-[calc(var(--safe-top,env(safe-area-inset-top,0px))+16px)] animate-[fade-in_0.2s_ease-out]" onClick={onClose}>
-                    <GlassCard className="glass w-full max-w-md p-0 mt-auto sm:mt-0 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col max-h-[calc(100vh-var(--safe-top,env(safe-area-inset-top,0px))-16px)] sm:max-h-[90vh] bg-bg-primary overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                    
-                        {/* Drag Handle para móvil */}
-                        <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-4 sm:hidden shrink-0" />
+                {isPreparing || file ? (
+                    <div
+                        className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center pt-[var(--safe-top,env(safe-area-inset-top,0px))] pb-[var(--safe-bottom,env(safe-area-inset-bottom,0px))] md:p-4 animate-[fade-in_0.2s_ease-out]"
+                        onClick={onClose}
+                    >
+                        <div
+                            className="relative w-full flex-1 md:flex-none md:w-[420px] md:h-[85vh] md:max-h-[880px] max-w-[460px] flex flex-col gap-3 px-2 sm:px-0 py-2"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Marco 9:16 estilo Instagram respetando notch superior e inferior */}
+                            <div className="relative flex-1 min-h-0 w-full bg-[#0b0d12] rounded-[24px] overflow-hidden ring-1 ring-white/10 shadow-2xl flex items-center justify-center">
+                                {/* Barra superior flotante sobre la historia */}
+                                <div className="absolute top-0 inset-x-0 z-30 flex items-center justify-between gap-2 p-3.5 bg-gradient-to-b from-black/70 via-black/30 to-transparent">
+                                    <button
+                                        type="button"
+                                        onClick={resetSelectedMedia}
+                                        disabled={isUploading}
+                                        className="w-10 h-10 rounded-full bg-black/55 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/75 transition-all active:scale-95 disabled:opacity-50"
+                                        title="Elegir otro archivo"
+                                        aria-label="Elegir otro archivo"
+                                    >
+                                        <ChevronLeft size={22} />
+                                    </button>
 
-                        {/* Header transparente sin background */}
-                        <div className="px-5 sm:px-8 pt-4 sm:pt-8 pb-4 flex justify-between items-center z-10 shrink-0">
-                            <h3 className="text-xl font-bold text-text-primary">Nueva Historia</h3>
-                            <button onClick={onClose} className="p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
-                                <X size={20} className="text-text-secondary" />
-                            </button>
+                                    <div className="flex items-center gap-2">
+                                        {isHDR && (
+                                            <span className="px-3 py-1.5 rounded-full bg-black/55 backdrop-blur-md text-white text-xs font-bold flex items-center gap-1">
+                                                <Zap size={13} className="fill-current text-accent" /> HDR
+                                            </span>
+                                        )}
+
+                                        {!isPreparing && !isVideoFile(file) && rawImageSrc && canPreviewImage && fitMode !== 'original' && (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleToggleFitMode}
+                                                    disabled={isUploading}
+                                                    className="px-3 py-1.5 bg-black/55 backdrop-blur-md text-white text-xs font-bold rounded-full hover:bg-black/80 transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
+                                                    title={fitMode === 'contain' ? 'Rellenar toda la pantalla' : 'Encajar foto completa sin recortar'}
+                                                >
+                                                    {fitMode === 'contain' ? <Maximize2 size={13} /> : <Minimize2 size={13} />}
+                                                    <span>{fitMode === 'contain' ? 'Rellenar' : 'Encajar'}</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsCropping(true)}
+                                                    disabled={isUploading}
+                                                    className="px-3 py-1.5 bg-black/55 backdrop-blur-md text-white text-xs font-bold rounded-full hover:bg-black/80 transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
+                                                >
+                                                    <Crop size={13} /> Recortar
+                                                </button>
+                                            </>
+                                        )}
+
+                                        <button
+                                            type="button"
+                                            onClick={onClose}
+                                            disabled={isUploading}
+                                            className="w-10 h-10 rounded-full bg-black/55 backdrop-blur-md text-white flex items-center justify-center hover:bg-red-500 transition-all active:scale-95 disabled:opacity-50"
+                                            title="Cerrar"
+                                            aria-label="Cerrar"
+                                        >
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Contenido visual / Preview */}
+                                {isPreparing ? (
+                                    <div className="flex flex-col items-center justify-center gap-3 px-6 text-center text-white">
+                                        <Spinner size={36} />
+                                        <p className="text-sm font-bold">Preparando vista móvil...</p>
+                                        <p className="text-xs text-white/60">Adaptando automáticamente a formato 9:16</p>
+                                    </div>
+                                ) : isVideoFile(file) ? (
+                                    <>
+                                        {videoIsWide && videoAmbientBg && (
+                                            <img
+                                                src={videoAmbientBg}
+                                                alt=""
+                                                aria-hidden="true"
+                                                className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-65 brightness-75 pointer-events-none"
+                                            />
+                                        )}
+                                        <video
+                                            ref={previewVideoRef}
+                                            src={preview}
+                                            onLoadedMetadata={handleVideoLoad}
+                                            onLoadedData={handleVideoFrameReady}
+                                            className={`relative z-10 w-full h-full ${videoIsWide ? 'object-contain' : 'object-cover'}`}
+                                            controls
+                                            playsInline
+                                        />
+                                    </>
+                                ) : canPreviewImage && preview ? (
+                                    <>
+                                        <img
+                                            src={preview}
+                                            alt=""
+                                            aria-hidden="true"
+                                            className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60 brightness-75 pointer-events-none"
+                                        />
+                                        <img
+                                            src={preview}
+                                            alt="Vista previa de historia"
+                                            onError={() => setCanPreviewImage(false)}
+                                            className="relative z-10 w-full h-full object-contain"
+                                        />
+                                    </>
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center gap-3 px-6 text-center text-white/90 bg-gradient-to-b from-slate-900 to-black">
+                                        <div className="w-14 h-14 rounded-2xl bg-accent/20 text-accent flex items-center justify-center">
+                                            <ImageIcon size={28} />
+                                        </div>
+                                        <p className="text-sm font-bold">Imagen {isHDR ? 'HDR' : ''} lista para subir</p>
+                                        <p className="text-xs text-white/60">
+                                            Se adaptará automáticamente a formato vertical 9:16 al publicarse.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Overlay claro de subida en progreso */}
+                                {isUploading && (
+                                    <div className="absolute inset-0 z-40 bg-black/65 backdrop-blur-sm flex flex-col items-center justify-center gap-3 text-white">
+                                        <Spinner size={36} />
+                                        <p className="text-sm font-bold tracking-wide">Subiendo historia...</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Barra inferior de privacidad y publicar (siempre dentro del safe-area inferior) */}
+                            <div className="shrink-0 flex flex-col gap-2.5 px-1">
+                                <div className="flex gap-2 w-full">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPrivacy('friends')}
+                                        disabled={isUploading}
+                                        className={`flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold transition-all ring-1 ${
+                                            privacy === 'friends'
+                                                ? 'bg-accent text-accent-contrast ring-accent shadow-lg shadow-accent/25'
+                                                : 'bg-white/10 text-white/80 ring-white/10 hover:bg-white/15'
+                                        }`}
+                                    >
+                                        <Users size={16} /><span>Amigos</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setPrivacy('public')}
+                                        disabled={isUploading}
+                                        className={`flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold transition-all ring-1 ${
+                                            privacy === 'public'
+                                                ? 'bg-accent text-accent-contrast ring-accent shadow-lg shadow-accent/25'
+                                                : 'bg-white/10 text-white/80 ring-white/10 hover:bg-white/15'
+                                        }`}
+                                    >
+                                        <Globe size={16} /><span>Público</span>
+                                    </button>
+
+                                    {canUseHDR && (
+                                        <button
+                                            type="button"
+                                            onClick={toggleHDR}
+                                            disabled={isUploading || isPreparing}
+                                            className={`px-3.5 py-2.5 rounded-2xl flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold transition-all ring-1 ${
+                                                isHDR
+                                                    ? 'bg-accent text-accent-contrast ring-accent shadow-lg shadow-accent/25'
+                                                    : 'bg-white/10 text-white/75 ring-white/10 hover:bg-white/15'
+                                            }`}
+                                        >
+                                            <Zap size={16} className={isHDR ? 'fill-current' : ''} />
+                                            HDR
+                                        </button>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={handleSubmit}
+                                    disabled={!file || isUploading || isPreparing}
+                                    className="w-full py-3.5 bg-accent text-accent-contrast font-extrabold rounded-2xl hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-accent/25 text-sm sm:text-base"
+                                >
+                                    {isUploading ? (
+                                        <>
+                                            <Spinner size={18} />
+                                            <span>Subiendo historia...</span>
+                                        </>
+                                    ) : (
+                                        'Compartir Historia'
+                                    )}
+                                </button>
+                            </div>
                         </div>
+                    </div>
+                ) : (
+                    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 pt-[calc(var(--safe-top,env(safe-area-inset-top,0px))+16px)] animate-[fade-in_0.2s_ease-out]" onClick={onClose}>
+                        <GlassCard className="glass w-full max-w-md p-0 mt-auto sm:mt-0 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col max-h-[calc(100vh-var(--safe-top,env(safe-area-inset-top,0px))-16px)] sm:max-h-[90vh] bg-bg-primary overflow-hidden" onClick={(e) => e.stopPropagation()}>
 
-                        <div className="flex-1 overflow-y-auto px-5 sm:px-8 pb-[calc(2rem+var(--safe-bottom))] sm:pb-8 flex flex-col custom-scrollbar pt-2">
-                            {uploadHintError && (
-                                <div className="mb-3 px-3.5 py-2.5 rounded-2xl bg-red-500/10 ring-1 ring-red-500/25 text-red-500 text-xs font-bold text-center">
-                                    {uploadHintError}
-                                </div>
-                            )}
+                            {/* Drag Handle para móvil */}
+                            <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-4 sm:hidden shrink-0" />
 
-                            {isPreparing ? (
-                                <div className="flex-1 flex flex-col items-center justify-center w-full min-h-[260px] sm:aspect-[9/16] bg-black/5 dark:bg-white/5 rounded-[24px] gap-3">
-                                    <Spinner size={32} />
-                                    <p className="text-xs font-bold text-text-secondary">
-                                        Adaptando automáticamente a formato móvil 9:16...
-                                    </p>
-                                </div>
-                            ) : !file ? (
-                                <div className="grid grid-cols-3 gap-3 sm:gap-4 w-full my-auto">
+                            {/* Header transparente sin background */}
+                            <div className="px-5 sm:px-8 pt-4 sm:pt-8 pb-4 flex justify-between items-center z-10 shrink-0">
+                                <h3 className="text-xl font-bold text-text-primary">Nueva Historia</h3>
+                                <button onClick={onClose} className="p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
+                                    <X size={20} className="text-text-secondary" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto px-5 sm:px-8 pb-[calc(2rem+var(--safe-bottom))] sm:pb-8 flex flex-col custom-scrollbar pt-2">
+                                {uploadHintError && (
+                                    <div className="mb-4 px-3.5 py-2.5 rounded-2xl bg-red-500/10 ring-1 ring-red-500/25 text-red-500 text-xs font-bold text-center">
+                                        {uploadHintError}
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-3 gap-3 sm:gap-4 w-full my-auto py-2">
                                     <div
                                         onClick={() => cameraPhotoInputRef.current?.click()}
                                         className="aspect-square ring-2 ring-dashed ring-accent/30 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer hover:bg-accent/5 hover:ring-accent/50 transition-all group"
@@ -689,151 +905,15 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                         </div>
                                         <p className="text-text-secondary font-bold text-xs sm:text-sm">Galería</p>
                                     </div>
-
-                                    <input type="file" ref={galleryInputRef} onChange={handleFileChange} accept="image/*,video/*" className="hidden" onClick={(e) => onInputClick(e, 'gallery')} />
-                                    <input type="file" ref={cameraPhotoInputRef} onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" onClick={(e) => onInputClick(e, 'camera')} />
-                                    <input type="file" ref={cameraVideoInputRef} onChange={handleFileChange} accept="video/*" capture="environment" className="hidden" onClick={(e) => onInputClick(e, 'video')} />
                                 </div>
-                            ) : (
-                                <div className="flex-1 flex flex-col relative w-full h-[60vh] sm:h-auto sm:aspect-[9/16] bg-black rounded-[24px] overflow-hidden shadow-inner group">
-                                    {isVideoFile(file) ? (
-                                        <>
-                                            {videoIsWide && videoAmbientBg && (
-                                                <img
-                                                    src={videoAmbientBg}
-                                                    alt=""
-                                                    aria-hidden="true"
-                                                    className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-65 brightness-75 pointer-events-none"
-                                                />
-                                            )}
-                                            <video
-                                                ref={previewVideoRef}
-                                                src={preview}
-                                                onLoadedMetadata={handleVideoLoad}
-                                                onLoadedData={handleVideoFrameReady}
-                                                className={`relative z-10 w-full h-full ${videoIsWide ? 'object-contain' : 'object-cover'}`}
-                                                controls
-                                                playsInline
-                                            />
-                                        </>
-                                    ) : canPreviewImage && preview ? (
-                                        <img
-                                            src={preview}
-                                            alt="Preview"
-                                            onError={() => setCanPreviewImage(false)}
-                                            className="w-full h-full object-contain"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center gap-3 px-6 text-center text-white/90 bg-gradient-to-b from-slate-900 to-black">
-                                            <div className="w-14 h-14 rounded-2xl bg-accent/20 text-accent flex items-center justify-center">
-                                                <ImageIcon size={28} />
-                                            </div>
-                                            <p className="text-sm font-bold">Imagen {isHDR ? 'HDR' : ''} lista para subir</p>
-                                            <p className="text-xs text-white/60">
-                                                Se adaptará automáticamente a formato vertical 9:16 al publicarse.
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {/* Opciones opcionales (cero pasos obligatorios): alternar Encajar/Rellenar o recorte fino */}
-                                    {!isVideoFile(file) && rawImageSrc && canPreviewImage && fitMode !== 'original' && (
-                                        <div className="absolute bottom-4 left-4 flex items-center gap-2 z-20">
-                                            <button
-                                                type="button"
-                                                onClick={handleToggleFitMode}
-                                                className="px-3 py-2 bg-black/70 backdrop-blur-md text-white text-xs font-bold rounded-full hover:bg-black/90 transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
-                                                title={fitMode === 'contain' ? 'Rellenar toda la pantalla' : 'Encajar foto completa sin recortar'}
-                                            >
-                                                {fitMode === 'contain' ? <Maximize2 size={13} /> : <Minimize2 size={13} />}
-                                                <span>{fitMode === 'contain' ? 'Rellenar' : 'Encajar'}</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsCropping(true)}
-                                                className="px-3 py-2 bg-black/70 backdrop-blur-md text-white text-xs font-bold rounded-full hover:bg-black/90 transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
-                                            >
-                                                <Crop size={13} /> Recortar
-                                            </button>
-                                        </div>
-                                    )}
-                                    
-                                    <button
-                                        onClick={() => { 
-                                            setFile(null); 
-                                            setOriginalFile(null);
-                                            setFitMode('cover');
-                                            setCanPreviewImage(true);
-                                            setVideoIsWide(false);
-                                            setVideoAmbientBg(null);
-                                            setUploadHintError('');
-                                            if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview);
-                                            if (rawImageSrc && rawImageSrc.startsWith('blob:')) URL.revokeObjectURL(rawImageSrc);
-                                            setPreview(null); 
-                                            setRawImageSrc(null); 
-                                            setCanUseHDR(false); 
-                                            setIsHDR(false); 
-                                        }}
-                                        className="absolute top-4 right-4 p-3 bg-black/60 backdrop-blur-md text-white rounded-full hover:bg-red-500 transition-colors shadow-lg group-hover:opacity-100 sm:opacity-0 z-20"
-                                    >
-                                        <X size={20} />
-                                    </button>
-                                    
-                                    {isHDR && (
-                                        <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/60 backdrop-blur-md text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1 z-20">
-                                            <Zap size={14} className="fill-current text-accent" /> HDR
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="flex gap-2 w-full mt-6 mb-4">
-                                <button
-                                    onClick={() => setPrivacy('friends')}
-                                    className={`flex-1 py-3 px-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1 
-                                        ${privacy === 'friends'
-                                            ? 'bg-accent text-accent-contrast ring-accent shadow-lg shadow-accent/20 scale-[1.02]'
-                                             : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
-                                         }`}
-                                >
-                                    <Users size={18} /><span>Amigos</span>
-                                </button>
-
-                                <button
-                                    onClick={() => setPrivacy('public')}
-                                    className={`flex-1 py-3 px-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1 
-                                        ${privacy === 'public'
-                                            ? 'bg-accent text-accent-contrast ring-accent shadow-lg shadow-accent/20 scale-[1.02]'
-                                             : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
-                                         }`}
-                                >
-                                    <Globe size={18} /><span>Público</span>
-                                </button>
-
-                                {canUseHDR && (
-                                    <button
-                                        onClick={toggleHDR}
-                                        className={`flex-initial px-4 py-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1
-                                            ${isHDR
-                                                ? 'bg-accent text-accent-contrast ring-accent shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)] animate-pulse-slow'
-                                                : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 opacity-60 hover:opacity-100'
-                                            }`}
-                                    >
-                                        <Zap size={18} className={isHDR ? "fill-current" : ""} />
-                                        HDR {isHDR ? 'ON' : 'OFF'}
-                                    </button>
-                                )}
                             </div>
+                        </GlassCard>
+                    </div>
+                )}
 
-                            <button
-                                onClick={handleSubmit}
-                                disabled={!file || isUploading || isPreparing}
-                                className="w-full py-4 mt-auto mb-2 bg-accent text-accent-contrast font-bold rounded-[20px] hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-accent/20"
-                            >
-                                {isUploading ? <Spinner size={20} color="#ffffff" /> : 'Compartir Historia'}
-                            </button>
-                        </div>
-                    </GlassCard>
-                </div>
+                <input type="file" ref={galleryInputRef} onChange={handleFileChange} accept="image/*,video/*" className="hidden" onClick={(e) => onInputClick(e, 'gallery')} />
+                <input type="file" ref={cameraPhotoInputRef} onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" onClick={(e) => onInputClick(e, 'camera')} />
+                <input type="file" ref={cameraVideoInputRef} onChange={handleFileChange} accept="video/*" capture="environment" className="hidden" onClick={(e) => onInputClick(e, 'video')} />
             </ModalPortal>
 
             {isCropping && rawImageSrc && (

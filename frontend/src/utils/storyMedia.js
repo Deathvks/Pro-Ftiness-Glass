@@ -54,7 +54,9 @@ export const decideSmartStoryFit = (width, height) => {
 export const loadImageElement = (src) =>
   new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    if (/^https?:/i.test(src)) {
+      img.crossOrigin = 'anonymous';
+    }
     img.onload = () => resolve(img);
     img.onerror = (err) => reject(err || new Error('No se pudo decodificar la imagen'));
     img.src = src;

@@ -1,17 +1,17 @@
 {
-  "version": "7.18.6",
-  "releaseNotes": "Actualización v7.18.6: adaptación automática de historias a formato móvil 9:16 (sin recorte obligatorio) en Web, Capacitor y backend.",
+  "version": "7.18.7",
+  "releaseNotes": "Actualización v7.18.7: vista previa a pantalla completa estilo Instagram en historias (con estado de carga y respeto al notch superior y barra inferior).",
   "welcome": {
-    "title": "Historias Inteligentes para Móvil (v7.18.6)",
-    "subtitle": "Sube cualquier foto o vídeo vertical, cuadrado u horizontal sin tener que ajustarlo manualmente.",
+    "title": "Historias Estilo Instagram (v7.18.7)",
+    "subtitle": "Previsualización instantánea 9:16 con indicador de carga y ajuste limpio dentro del notch superior e inferior.",
     "features": [
       {
-        "title": "Adaptación Automática 9:16",
-        "description": "Las fotos verticales rellenan la pantalla y las cuadradas u horizontales se encajan completas con fondo desenfocado ambiental."
+        "title": "Vista Previa y Carga Claros",
+        "description": "Previsualización inmediata a tamaño completo y overlay visible mientras se prepara o sube la historia."
       },
       {
-        "title": "Ajuste Opcional en Un Toque",
-        "description": "Puedes alternar entre Rellenar y Encajar o abrir el recorte fino solo si quieres personalizarlo."
+        "title": "Marco Seguro (Notch y Barra Inferior)",
+        "description": "Tanto al publicar como al ver historias, la tarjeta respeta la zona segura superior e inferior igual que Instagram."
       }
     ]
   }

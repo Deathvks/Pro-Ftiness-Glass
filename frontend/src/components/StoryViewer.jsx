@@ -742,7 +742,7 @@ const StoryViewer = ({ userId, onClose }) => {
   const likesCount = Array.isArray(currentStory?.likes) ? currentStory.likes.length : typeof currentStory?.likes === 'number' ? currentStory.likes : 0;
 
   return <ModalPortal>
-    <div className={`fixed inset-0 z-[100] bg-black/95 flex items-center justify-center ${isClosingStory ? 'animate-slide-out' : 'animate-fade-in'}`}>
+    <div className={`fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center pt-[var(--safe-top,env(safe-area-inset-top,0px))] pb-[var(--safe-bottom,env(safe-area-inset-bottom,0px))] md:p-4 ${isClosingStory ? 'animate-slide-out' : 'animate-fade-in'}`}>
       <style>
         {`
           @keyframes slideInUp {
@@ -766,7 +766,7 @@ const StoryViewer = ({ userId, onClose }) => {
       <div className="absolute inset-0" onClick={animateAndClose} />
 
       <div
-        className={`relative w-full h-full md:w-[420px] md:h-[85vh] md:max-h-[900px] bg-black md:rounded-2xl overflow-hidden shadow-2xl flex flex-col select-none touch-none ${
+        className={`relative w-full flex-1 min-h-0 max-w-[460px] md:flex-none md:w-[420px] md:h-[85vh] md:max-h-[900px] bg-black rounded-[22px] md:rounded-2xl overflow-hidden shadow-2xl flex flex-col select-none touch-none ${
           isDragging ? 'transition-none' : 'transition-transform duration-200 ease-out'
         }`}
         style={{
@@ -775,8 +775,8 @@ const StoryViewer = ({ userId, onClose }) => {
         }}
         onClick={(e) => e.stopPropagation()}>
         
-        {/* Barras de Progreso */}
-        <div className="absolute top-0 left-0 right-0 z-30 flex gap-1 p-2 pt-[calc(0.5rem+var(--safe-top))] bg-gradient-to-b from-black/60 to-transparent">
+        {/* Barras de Progreso (dentro del marco redondeado, bajo el notch) */}
+        <div className="absolute top-0 left-0 right-0 z-30 flex gap-1 px-3 pt-3 pb-2 bg-gradient-to-b from-black/60 to-transparent">
           {activeStories.map((item, index) => {
             const isPast = index < currentIndex;
             const isCurrent = index === currentIndex;
@@ -796,7 +796,7 @@ const StoryViewer = ({ userId, onClose }) => {
         </div>
 
         {/* Header Usuario */}
-        <div className="absolute top-[calc(1.5rem+var(--safe-top))] left-0 right-0 z-50 flex items-center justify-between px-4 pt-2">
+        <div className="absolute top-6 left-0 right-0 z-50 flex items-center justify-between px-4 pt-1">
           <div className="flex items-center gap-3">
             <UserAvatar
               user={isMyStory ? userProfile : (storyData.user || userProfile)}
@@ -885,7 +885,7 @@ const StoryViewer = ({ userId, onClose }) => {
                 src={videoAmbientBg}
                 alt=""
                 aria-hidden="true"
-                className={`absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60 brightness-75 pointer-events-none transition-opacity duration-300 ${mediaLoaded ? 'opacity-60' : 'opacity-0'}`}
+                className={`absolute inset-0 w-full h-full object-cover blur-2xl scale-110 brightness-75 pointer-events-none transition-opacity duration-300 ${mediaLoaded ? 'opacity-60' : 'opacity-0'}`}
               />
             )}
             <video
@@ -911,20 +911,18 @@ const StoryViewer = ({ userId, onClose }) => {
           </> :
 
           <>
-            {mediaFit === 'contain' && (
-              <img
-                src={currentMediaUrl}
-                alt=""
-                aria-hidden="true"
-                className={`absolute inset-0 w-full h-full object-cover blur-2xl scale-110 brightness-75 pointer-events-none transition-opacity duration-300 ${mediaLoaded ? 'opacity-60' : 'opacity-0'}`}
-                style={hdrStyles}
-              />
-            )}
+            <img
+              src={currentMediaUrl}
+              alt=""
+              aria-hidden="true"
+              className={`absolute inset-0 w-full h-full object-cover blur-2xl scale-110 brightness-75 pointer-events-none transition-opacity duration-300 ${mediaLoaded ? 'opacity-60' : 'opacity-0'}`}
+              style={hdrStyles}
+            />
             <img
               key={currentStory.id}
               src={currentMediaUrl}
               alt="Story"
-              className={`relative z-10 w-full h-full ${mediaFit === 'cover' ? 'object-cover' : 'object-contain'} transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
+              className={`relative z-10 w-full h-full object-contain transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
               onLoad={(e) => {
                 const img = e?.currentTarget;
                 if (img?.naturalWidth && img?.naturalHeight) {
@@ -976,7 +974,7 @@ const StoryViewer = ({ userId, onClose }) => {
 
         {/* Footer */}
         {!isMyStory &&
-        <div className="absolute bottom-0 left-0 right-0 z-30 p-6 bg-gradient-to-t from-black/60 to-transparent pb-10">
+        <div className="absolute bottom-0 left-0 right-0 z-30 p-5 bg-gradient-to-t from-black/65 to-transparent pb-6">
               <div className="flex items-center justify-end">
                   <button
               onClick={handleLike}
@@ -996,7 +994,7 @@ const StoryViewer = ({ userId, onClose }) => {
         }
         
         {isMyStory &&
-        <div className="absolute bottom-0 left-0 right-0 z-50 p-6 bg-gradient-to-t from-black/60 to-transparent pb-10 pointer-events-none">
+        <div className="absolute bottom-0 left-0 right-0 z-50 p-5 bg-gradient-to-t from-black/65 to-transparent pb-6 pointer-events-none">
               <div className="flex items-center justify-center gap-2 text-white/90 drop-shadow-md pointer-events-auto">
                   <button
               onClick={handleOpenLikesList}
