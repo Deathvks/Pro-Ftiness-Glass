@@ -1,17 +1,17 @@
 {
-  "version": "7.16.69",
-  "releaseNotes": "Actualización v7.16.69: el modal de cookies en Ajustes se abre en la vista principal (Rechazar todo, Configurar, Aceptar todo) y sale desde la parte inferior en móvil y Capacitor.",
+  "version": "7.17.0",
+  "releaseNotes": "Actualización v7.17.0: llega la Edición Navidad 2026 (tema Invierno Glass con copos de nieve cristalinos y acento rojo navideño) y +1.000 XP para ambos al invitar amigos.",
   "welcome": {
-    "title": "Modal de Cookies Mejorado",
-    "subtitle": "El aviso de privacidad y cookies ahora aparece como hoja inferior nativa en móvil y muestra primero las tres acciones principales.",
+    "title": "Edición Navidad 2026: Invierno Glass",
+    "subtitle": "Desbloquea el nuevo tema estacional antes del 6 de enero para conservarlo para siempre y suma +1.000 XP para ti y cada amigo invitado.",
     "features": [
       {
-        "title": "Vista Principal al Abrir desde Ajustes",
-        "description": "Al pulsar Cookies en Ajustes se muestran directamente Rechazar todo, Configurar y Aceptar todo."
+        "title": "Tema Invierno Glass y Copos Reales",
+        "description": "Fondo azul noche invernal con nieve cristalina animada, acento rojo navideño y control de rendimiento desde Apariencia."
       },
       {
-        "title": "Diseño Bottom-Sheet en Móvil y Capacitor",
-        "description": "Desliza desde abajo al ras de la pantalla con soporte para barra inferior segura."
+        "title": "+1.000 XP para Ambos al Invitar",
+        "description": "Tanto quien invita como el amigo registrado reciben +1.000 XP al instante y progreso hacia temas exclusivos."
       }
     ]
   }
