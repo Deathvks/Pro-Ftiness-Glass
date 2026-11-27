@@ -18,6 +18,7 @@ import {
   Users,
   Sparkles,
 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import { APP_VERSION, isNewerVersion } from '../config/version';
 import { supportEmail } from '../config/mailContacts';
 import useAppStore from '../store/useAppStore';
@@ -66,30 +67,32 @@ const SettingsItem = ({
       id={id}
       type={onClick ? 'button' : undefined}
       onClick={onClick}
-      className={`flex items-center gap-3 sm:gap-4 w-full p-4 rounded-[20px] transition-all duration-300 group text-left border border-black/5 dark:border-white/5
+      className={`flex items-start sm:items-center gap-3 sm:gap-4 w-full p-3.5 sm:p-4 rounded-[20px] transition-all duration-300 group text-left border border-black/5 dark:border-white/5
       ${onClick ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10' : 'bg-black/5 dark:bg-white/5 text-text-primary'}`}
     >
       {Icon && (
         <div
-          className={`p-2.5 rounded-[14px] shrink-0 transition-transform ${onClick ? 'group-hover:scale-110' : ''} ${iconColor ? '' : 'bg-black/5 dark:bg-white/5 text-accent'}`}
+          className={`p-2 sm:p-2.5 rounded-[14px] shrink-0 mt-0.5 sm:mt-0 transition-transform ${onClick ? 'group-hover:scale-110' : ''} ${iconColor ? '' : 'bg-black/5 dark:bg-white/5 text-accent'}`}
           style={iconColor ? { backgroundColor: `${iconColor}1A`, color: iconColor } : undefined}
         >
           <Icon size={20} strokeWidth={2.2} />
         </div>
       )}
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-bold leading-tight text-text-primary truncate">{title}</div>
-        {subtitle && (
-          <div className="text-[11px] sm:text-xs font-medium mt-0.5 text-text-secondary truncate">
-            {subtitle}
-          </div>
-        )}
+      <div className="flex-1 min-w-0 flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex-1 min-w-[140px]">
+          <div className="text-sm font-bold leading-snug text-text-primary break-words">{title}</div>
+          {subtitle && (
+            <div className="text-[11px] sm:text-xs font-medium mt-0.5 text-text-secondary leading-snug break-words">
+              {subtitle}
+            </div>
+          )}
+        </div>
+        {action ? (
+          <div className="shrink-0">{action}</div>
+        ) : showChevron ? (
+          <ChevronRight size={18} className="text-text-muted shrink-0" />
+        ) : null}
       </div>
-      {action ? (
-        <div className="shrink-0 ml-1 sm:ml-2">{action}</div>
-      ) : showChevron ? (
-        <ChevronRight size={18} className="text-text-muted shrink-0 ml-1 sm:ml-2" />
-      ) : null}
     </Component>
   );
 };
@@ -137,11 +140,15 @@ export default function SupportScreen() {
     };
   }, []);
 
+  const platformLabel = Capacitor.isNativePlatform()
+    ? (Capacitor.getPlatform() === 'ios' ? 'App iOS' : 'App Android')
+    : 'Web / PWA';
+
   const glassCardClass =
-    'glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300 mb-6';
+    'glass p-4 sm:p-6 md:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300 mb-6';
 
   return (
-    <div id="tutorial-support-main" className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-4xl mx-auto animate-[fade-in_0.3s_ease-out]">
+    <div id="tutorial-support-main" className="px-3 sm:px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-4xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
         <title>Soporte - Pro Fitness Glass</title>
       </Helmet>
@@ -214,10 +221,10 @@ export default function SupportScreen() {
               icon={Binary}
               iconColor="#5E5CE6"
               title="Versión de App"
-              subtitle={`v${APP_VERSION} · Web / PWA`}
+              subtitle={`v${APP_VERSION} · ${platformLabel}`}
               action={
                 <span
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap ${
                     isUpToDate
                       ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
                       : 'bg-amber-500/15 text-amber-500 border-amber-500/30'

@@ -1,17 +1,17 @@
 {
-  "version": "7.18.1",
-  "releaseNotes": "Actualización v7.18.1: optimización SEO de enlaces principales (Rutinas, Ejercicios, Calculadoras, Noticias y Acceso) y sitemap dinámico para Google Sitelinks.",
+  "version": "7.18.2",
+  "releaseNotes": "Actualización v7.18.2: corrección de lectura en el apartado Versión de App (Soporte) en web móvil y Capacitor Android.",
   "welcome": {
-    "title": "Novedades Pro Fitness Glass (v7.18.1)",
-    "subtitle": "Navegación mejorada hacia rutinas de gimnasio, guía de ejercicios, calculadoras e inicio de sesión.",
+    "title": "Novedades Pro Fitness Glass (v7.18.2)",
+    "subtitle": "Mejoras visuales en la pantalla de Soporte y optimización de enlaces principales.",
     "features": [
       {
-        "title": "Acceso directo a Rutinas y Ejercicios",
-        "description": "Encuentra al instante plantillas Push Pull Legs, Torso Pierna, guías técnicas y calculadoras desde la página principal."
+        "title": "Versión de App legible en móvil",
+        "description": "Corregido el recorte con puntos suspensivos en Versión de App y añadida detección de plataforma en Android Capacitor y Web."
       },
       {
-        "title": "SEO y Sitelinks optimizados",
-        "description": "Estructura de navegación, datos estructurados y sitemap XML completo para descubrir todas las secciones públicas en Google."
+        "title": "Acceso directo y Sitelinks SEO",
+        "description": "Navegación mejorada hacia rutinas de gimnasio, guía de ejercicios, calculadoras e inicio de sesión."
       }
     ]
   }
