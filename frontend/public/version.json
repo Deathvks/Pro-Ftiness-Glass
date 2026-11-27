@@ -1,17 +1,17 @@
 {
-  "version": "7.17.1",
-  "releaseNotes": "Actualización v7.17.1: modal festivo con nieve al desbloquear el tema Invierno Glass, toasts en ajustes de notificaciones y mejoras en detección de nuevas versiones y retención 72h.",
+  "version": "7.17.2",
+  "releaseNotes": "Actualización v7.17.2: modal de confirmación al copiar o importar rutinas en estilo bottom-sheet y 4 temas exclusivos reflejados en el Hub.",
   "welcome": {
-    "title": "Navidad 2026: Invierno Glass (v7.17.1)",
-    "subtitle": "Nuevo modal navideño con nieve al desbloquear el tema, avisos de confirmación en todos los ajustes de notificaciones y aviso de actualización mejorado.",
+    "title": "Novedades en Pro Fitness Glass (v7.17.2)",
+    "subtitle": "Confirmación antes de copiar cualquier rutina en todas las pantallas y actualización del catálogo a 4 temas exclusivos.",
     "features": [
       {
-        "title": "Modal Navideño al Desbloquear",
-        "description": "Pulsa «Desbloquear» en Apariencia o Recompensas para estrenar Invierno Glass con copos cayendo dentro del modal."
+        "title": "Confirmación al Copiar Rutinas",
+        "description": "Ahora aparece un modal de confirmación desde abajo en móvil al copiar plantillas, duplicar tus rutinas o importar rutinas de otros atletas."
       },
       {
-        "title": "Feedback Instantáneo y Mejoras",
-        "description": "Confirmación toast al activar o desactivar cualquier ajuste de notificación y aviso de recarga reforzado al publicar versiones."
+        "title": "Edición Navidad 2026 en Apariencia",
+        "description": "El Hub refleja ya los 4 temas exclusivos disponibles. ¡Reclama Invierno Glass gratis para siempre antes del 6 de enero!"
       }
     ]
   }
