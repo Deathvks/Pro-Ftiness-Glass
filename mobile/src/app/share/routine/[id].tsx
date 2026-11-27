@@ -43,6 +43,7 @@ import GlobalHeader from '@/components/GlobalHeader';
 import ThemeBackground from '@/components/ThemeBackground';
 import { AndroidHeaderBlurTarget } from '@/components/AndroidHeaderBlur';
 import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview';
+import ConfirmBottomSheet from '@/components/modals/ConfirmBottomSheet';
 
 export default function SharedRoutinePreviewScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -64,6 +65,7 @@ export default function SharedRoutinePreviewScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const androidBlurTarget = useRef<React.ComponentRef<typeof View>>(null);
@@ -385,7 +387,13 @@ export default function SharedRoutinePreviewScreen() {
                 </View>
 
                 <TouchableOpacity
-                  onPress={handleImport}
+                  onPress={() => {
+                    if (!isAuthenticated) {
+                      void handleImport();
+                      return;
+                    }
+                    setShowImportConfirm(true);
+                  }}
                   disabled={importing}
                   activeOpacity={0.85}
                   style={[
@@ -525,6 +533,19 @@ export default function SharedRoutinePreviewScreen() {
           hideRightButtons
         />
       </View>
+
+      <ConfirmBottomSheet
+        visible={showImportConfirm}
+        title="Copiar rutina"
+        message={`¿Quieres copiar "${routine?.name || 'esta rutina'}" en Mis Rutinas?`}
+        confirmText="Copiar rutina"
+        cancelText="Cancelar"
+        isLoading={importing}
+        onConfirm={() => handleImport().finally(() => setShowImportConfirm(false))}
+        onCancel={() => {
+          if (!importing) setShowImportConfirm(false);
+        }}
+      />
     </View>
   );
 }

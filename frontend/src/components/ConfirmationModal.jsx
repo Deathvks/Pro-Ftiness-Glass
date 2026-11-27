@@ -7,11 +7,13 @@ import useAppStore from '../store/useAppStore';
 import useModalLock from '../hooks/useModalLock';
 
 const ConfirmationModal = ({
+  title = null,
   message,
   onConfirm,
   onCancel,
   confirmText = "Confirmar",
   cancelText = "Cancelar",
+  confirmVariant = "danger",
   isLoading = false,
   withPassword = false // Nueva prop para indicar si esta acción requiere contraseña
 }) => {
@@ -55,7 +57,10 @@ const ConfirmationModal = ({
           <span className="w-12 h-1.5 bg-black/20 dark:bg-white/25 rounded-full block" />
         </button>
         
-        <p className="text-lg mb-6 text-text-primary">{message}</p>
+        {title && (
+          <h3 className="text-xl font-bold text-text-primary mb-2">{title}</h3>
+        )}
+        <p className={title ? "text-sm sm:text-base mb-6 text-text-secondary" : "text-lg mb-6 text-text-primary"}>{message}</p>
 
         {showPasswordInput &&
         <div className="mb-6">
@@ -74,9 +79,13 @@ const ConfirmationModal = ({
           <button
             onClick={handleConfirm}
             disabled={isLoading || showPasswordInput && !password.trim()}
-            className="flex items-center justify-center gap-2 px-6 py-3 sm:py-2 rounded-xl font-bold bg-[#ef4444] text-white hover:bg-[#ef4444]/80 transition disabled:opacity-70 whitespace-nowrap shadow-md shadow-[#ef4444]/20">
+            className={`flex items-center justify-center gap-2 px-6 py-3 sm:py-2 rounded-xl font-bold transition disabled:opacity-70 whitespace-nowrap shadow-md ${
+              confirmVariant === 'accent'
+                ? 'bg-accent text-accent-contrast hover:brightness-110 shadow-accent/20'
+                : 'bg-[#ef4444] text-white hover:bg-[#ef4444]/80 shadow-[#ef4444]/20'
+            }`}>
             
-            {isLoading ? <Spinner size={18} color="white" /> : confirmText}
+            {isLoading ? <Spinner size={18} color="currentColor" /> : confirmText}
           </button>
           <button
             onClick={onCancel}

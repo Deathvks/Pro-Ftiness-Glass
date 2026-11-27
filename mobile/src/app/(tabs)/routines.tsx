@@ -36,6 +36,7 @@ import { TourTarget } from '@/components/tutorials/TourTarget';
 import { RoutinesTabs } from '@/components/routines/RoutinesTabs';
 import { FolderList } from '@/components/routines/FolderList';
 import { RoutineCard } from '@/components/routines/RoutineCard';
+import ConfirmBottomSheet from '@/components/modals/ConfirmBottomSheet';
 import { PromoBanner } from '@/components/nutrition/PromoBanner';
 import {
   WeeklyMuscleVolumeCard,
@@ -100,6 +101,8 @@ export default function RoutinesScreen() {
   const [sharingRoutine, setSharingRoutine] = useState<any | null>(null);
   const [volumeFilterRoutine, setVolumeFilterRoutine] = useState<any | null>(null);
   const [shareData, setShareData] = useState<any | null>(null);
+  const [routineToDuplicate, setRoutineToDuplicate] = useState<any | null>(null);
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   const workoutStartTime = useAppStore(state => state.workoutStartTime);
   const workoutAccumulatedTime = useAppStore(state => state.workoutAccumulatedTime);
@@ -249,6 +252,7 @@ export default function RoutinesScreen() {
 
   // Duplicar rutina
   const handleDuplicateRoutine = async (routine: any) => {
+    setIsDuplicating(true);
     try {
       const exercises = routine.exercises || routine.RoutineExercises || [];
       const copy = {
@@ -282,6 +286,9 @@ export default function RoutinesScreen() {
       }
     } catch (e: any) {
       Alert.alert('Error', e.message || 'No se pudo duplicar la rutina.');
+    } finally {
+      setIsDuplicating(false);
+      setRoutineToDuplicate(null);
     }
   };
 
@@ -702,7 +709,7 @@ export default function RoutinesScreen() {
                     routine={routine}
                     onPressStart={() => handleStartWorkout(routine)}
                     onPressEdit={() => handleEditRoutine(routine)}
-                    onPressDuplicate={() => handleDuplicateRoutine(routine)}
+                    onPressDuplicate={() => setRoutineToDuplicate(routine)}
                     onPressDelete={() => handleDeleteRoutine(routine.id)}
                     onPressShare={() => handleStoriesShare(routine)}
                     onPressPrivacy={() => setSharingRoutine(routine)}
@@ -817,6 +824,20 @@ export default function RoutinesScreen() {
         visible={!!shareData}
         workoutData={shareData}
         onClose={() => setShareData(null)}
+      />
+
+      {/* Modal Confirmación Duplicar Rutina */}
+      <ConfirmBottomSheet
+        visible={Boolean(routineToDuplicate)}
+        title="Duplicar rutina"
+        message={`¿Quieres copiar "${routineToDuplicate?.name || ''}" en Mis Rutinas?`}
+        confirmText="Copiar rutina"
+        cancelText="Cancelar"
+        isLoading={isDuplicating}
+        onConfirm={() => (routineToDuplicate ? handleDuplicateRoutine(routineToDuplicate) : undefined)}
+        onCancel={() => {
+          if (!isDuplicating) setRoutineToDuplicate(null);
+        }}
       />
     </AnimatedScreen>
   );

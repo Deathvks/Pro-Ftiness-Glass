@@ -199,6 +199,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
     const [showComments, setShowComments] = useState({});
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [commentToDelete, setCommentToDelete] = useState(null);
+    const [routineToImport, setRoutineToImport] = useState(null);
     const [pendingRequestsLocal, setPendingRequestsLocal] = useState({});
     const [sendingRequestId, setSendingRequestId] = useState(null);
     const [showGymModal, setShowGymModal] = useState(false);
@@ -499,6 +500,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
             showToast(error.message || 'Error al importar la rutina', 'error');
         } finally {
             setIsActionLoading(false);
+            setRoutineToImport(null);
         }
     };
 
@@ -1208,7 +1210,10 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                             {log.routine_id && !isMe && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleImportRoutine(log.routine_id)}
+                                                    onClick={() => setRoutineToImport({
+                                                        id: log.routine_id,
+                                                        name: log.routine?.name || log.routine_name || 'esta rutina'
+                                                    })}
                                                     disabled={isActionLoading}
                                                     className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-accent/10 text-accent rounded-[14px] hover:bg-accent hover:text-accent-contrast transition-all text-[10px] sm:text-xs font-bold disabled:opacity-50 hover:shadow-md"
                                                     title="Importar Rutina"
@@ -1556,6 +1561,19 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                     onCancel={() => setCommentToDelete(null)}
                     confirmText="Eliminar"
                     cancelText="Cancelar"
+                    isLoading={isActionLoading}
+                />
+            )}
+
+            {routineToImport && (
+                <ConfirmationModal
+                    title="Copiar rutina"
+                    message={`¿Quieres copiar "${routineToImport.name}" en tu biblioteca? Se guardará en "Importadas del Muro".`}
+                    onConfirm={() => handleImportRoutine(routineToImport.id)}
+                    onCancel={() => !isActionLoading && setRoutineToImport(null)}
+                    confirmText="Copiar rutina"
+                    cancelText="Cancelar"
+                    confirmVariant="accent"
                     isLoading={isActionLoading}
                 />
             )}

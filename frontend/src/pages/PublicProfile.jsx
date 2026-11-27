@@ -160,6 +160,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeletingFriend, setIsDeletingFriend] = useState(false);
     const [downloadingRoutineId, setDownloadingRoutineId] = useState(null);
+    const [routineToImport, setRoutineToImport] = useState(null);
     
     const [viewingStory, setViewingStory] = useState(false);
     const [viewingRoutine, setViewingRoutine] = useState(null);
@@ -436,6 +437,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             addToast(error.message, 'error');
         } finally {
             setDownloadingRoutineId(null);
+            setRoutineToImport(null);
         }
     };
 
@@ -606,7 +608,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
   
                         <div className="p-4 sm:p-6 border-t border-black/5 dark:border-white/10 bg-bg-primary z-10 shrink-0">
                              <button 
-                                 onClick={() => { handleDownloadRoutine(viewingRoutine.id); setViewingRoutine(null); }}
+                                 onClick={() => { setRoutineToImport(viewingRoutine); setViewingRoutine(null); }}
                                  disabled={downloadingRoutineId === viewingRoutine.id}
                                  className="w-full py-4 rounded-[20px] bg-accent hover:scale-[1.02] active:scale-95 text-accent-contrast font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-accent/20 disabled:opacity-50 disabled:hover:scale-100"
                              >
@@ -1143,7 +1145,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                             <button 
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    handleDownloadRoutine(routine.id);
+                                                    setRoutineToImport(routine);
                                                 }}
                                                 disabled={downloadingRoutineId === routine.id}
                                                 className="w-full py-3.5 rounded-[20px] bg-accent hover:scale-[1.02] active:scale-95 text-sm font-bold text-accent-contrast flex items-center justify-center gap-2 transition-all shadow-lg shadow-accent/20 disabled:opacity-50 disabled:hover:scale-100"
@@ -1205,6 +1207,20 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         handleRemoveGym();
                     }}
                     onCancel={() => setShowRemoveGymConfirm(false)}
+                />
+            )}
+
+            {/* --- MODAL CONFIRMACIÓN IMPORTAR RUTINA --- */}
+            {routineToImport && (
+                <ConfirmationModal
+                    title="Copiar rutina"
+                    message={`¿Quieres copiar "${routineToImport.name}" en tu colección de rutinas?`}
+                    confirmText="Copiar rutina"
+                    cancelText="Cancelar"
+                    confirmVariant="accent"
+                    isLoading={downloadingRoutineId === routineToImport.id}
+                    onConfirm={() => handleDownloadRoutine(routineToImport.id)}
+                    onCancel={() => downloadingRoutineId == null && setRoutineToImport(null)}
                 />
             )}
 

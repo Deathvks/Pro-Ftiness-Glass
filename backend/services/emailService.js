@@ -558,3 +558,54 @@ export const sendWeeklyRecapEmail = async ({ userId, email, userName, stats = {}
     html
   }, 'training', recipient.id);
 };
+
+/**
+ * Envía la promoción del tema Edición Navidad 2026 estrictamente a usuarios con consentimiento opcional verificado.
+ */
+export const sendChristmasThemePromoEmail = async ({ userId, email, userName }) => {
+  const recipient = await findOptionalEmailRecipient(email, userId);
+  const eligibility = await getOptionalEmailEligibility([recipient], 'training');
+  const emailStatus = eligibility.get(Number(recipient?.id));
+  if (!emailStatus?.allowed) {
+    return { success: true, skipped: true, skipReason: emailStatus?.reason || 'consent_missing_or_invalid' };
+  }
+
+  const baseUrl = (process.env.FRONTEND_URL || 'https://profitnessglass.es').replace(/\/+$/, '');
+  const claimUrl = `${baseUrl}/appearance`;
+  const safeName = userName || 'Atleta';
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(160deg, #091326 0%, #0f1f3d 55%, #16294b 100%); color: #f8fafc; border-radius: 26px; overflow: hidden; border: 1px solid rgba(125, 211, 252, 0.28);">
+      <div style="padding: 36px 28px; text-align: center;">
+        <div style="display: inline-block; padding: 7px 16px; border-radius: 999px; background-color: rgba(225, 29, 72, 0.2); border: 1px solid rgba(251, 113, 133, 0.35); color: #fda4af; font-size: 11px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 18px;">
+          ❄️ EDICIÓN NAVIDAD 2026 · TEMA GRATIS
+        </div>
+        <h2 style="color: #ffffff; font-size: 25px; font-weight: 900; margin: 0 0 12px; line-height: 1.25;">
+          Desbloquea el tema Edición Navidad gratis para siempre 🎄
+        </h2>
+        <p style="color: #cbd5e1; font-size: 15px; line-height: 1.6; margin: 0 0 22px;">
+          Hola <strong style="color: #ffffff;">${safeName}</strong>, ya tienes disponible el tema <strong style="color: #bae6fd;">Azul noche invernal y cristal helado</strong> con nieve sutil y acento rojo navideño.
+        </p>
+        <div style="background: rgba(186, 230, 253, 0.08); border: 1px solid rgba(186, 230, 253, 0.22); border-radius: 18px; padding: 18px 20px; margin: 0 0 26px; text-align: left;">
+          <p style="margin: 0 0 8px; color: #e0f2fe; font-size: 14px; line-height: 1.55;">
+            ✨ <strong>Gratis para siempre</strong> si lo reclamas antes del <strong>6 de enero</strong> (o invitando a 1 amigo).
+          </p>
+          <p style="margin: 0; color: #cbd5e1; font-size: 13.5px; line-height: 1.5;">
+            Una vez lo desbloquees en <strong>Apariencia</strong>, se quedará guardado en tu cuenta para usarlo cuando quieras.
+          </p>
+        </div>
+        <div style="text-align: center; margin: 10px 0 6px;">
+          <a href="${claimUrl}" style="background-color: #e11d48; color: #ffffff; padding: 15px 32px; text-decoration: none; border-radius: 999px; font-weight: 800; font-size: 15px; display: inline-block;">
+            Reclamar tema gratis
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+
+  return sendOptionalMailAndLog({
+    to: recipient.email,
+    subject: '🎄 Reclama gratis para siempre el tema Edición Navidad 2026',
+    html,
+  }, 'training', recipient.id);
+};

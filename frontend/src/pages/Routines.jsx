@@ -407,6 +407,7 @@ const Routines = ({ setView, mainContentRef, navParams }) => {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showDataTransferModal, setShowDataTransferModal] = useState(false);
   const [routineToDelete, setRoutineToDelete] = useState(null);
+  const [routineToDuplicate, setRoutineToDuplicate] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -1265,7 +1266,7 @@ const Routines = ({ setView, mainContentRef, navParams }) => {
                           </button>
                           )}
                         <button
-                          onClick={() => duplicateRoutine(routine)}
+                          onClick={() => setRoutineToDuplicate(routine)}
                           className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent transition-colors"
                           title="Duplicar"
                         >
@@ -1550,6 +1551,23 @@ const Routines = ({ setView, mainContentRef, navParams }) => {
             onClose={() => setShowDataTransferModal(false)}
           />
         </Suspense>
+      )}
+
+      {routineToDuplicate && (
+        <ConfirmationModal
+          title="Duplicar rutina"
+          message={`¿Quieres copiar "${routineToDuplicate.name}" en Mis Rutinas?`}
+          confirmText="Copiar rutina"
+          cancelText="Cancelar"
+          confirmVariant="accent"
+          isLoading={isLoading}
+          onConfirm={async () => {
+            const target = routineToDuplicate;
+            await duplicateRoutine(target);
+            setRoutineToDuplicate(null);
+          }}
+          onCancel={() => !isLoading && setRoutineToDuplicate(null)}
+        />
       )}
 
       {isLoading && (

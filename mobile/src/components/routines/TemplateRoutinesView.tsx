@@ -27,6 +27,7 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getAppleCardSurfaceStyle, shouldUseContentGlass, getUnselectedControlColors } from '@/constants/theme';
 import { useRouter } from 'expo-router';
+import ConfirmBottomSheet from '@/components/modals/ConfirmBottomSheet';
 
 const DEFAULT_TEMPLATES = [
   {
@@ -127,6 +128,8 @@ export function TemplateRoutinesView() {
   const [query, setQuery] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string>('all');
   const [copiedIds, setCopiedIds] = useState<Record<string, boolean>>({});
+  const [templateToCopy, setTemplateToCopy] = useState<typeof DEFAULT_TEMPLATES[0] | null>(null);
+  const [isCopying, setIsCopying] = useState(false);
 
   const folders = useMemo(() => {
     const list = DEFAULT_TEMPLATES.map(t => t.folder);
@@ -143,6 +146,7 @@ export function TemplateRoutinesView() {
   }, [query, selectedFolder]);
 
   const handleCopyTemplate = async (template: typeof DEFAULT_TEMPLATES[0]) => {
+    setIsCopying(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
@@ -161,18 +165,23 @@ export function TemplateRoutinesView() {
       })),
     };
 
-    const res = await createRoutine(payload);
-    if (res && res.success !== false) {
-      setCopiedIds(prev => ({ ...prev, [template.id]: true }));
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
-      Alert.alert(
-        '¡Plantilla copiada! 🎉',
-        `"${template.name}" se ha añadido a tu lista de Mis Rutinas.`
-      );
-    } else {
-      Alert.alert('Error', res?.message || 'No se pudo copiar la rutina.');
+    try {
+      const res = await createRoutine(payload);
+      if (res && res.success !== false) {
+        setCopiedIds(prev => ({ ...prev, [template.id]: true }));
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {}
+        Alert.alert(
+          '¡Plantilla copiada! 🎉',
+          `"${template.name}" se ha añadido a tu lista de Mis Rutinas.`
+        );
+      } else {
+        Alert.alert('Error', res?.message || 'No se pudo copiar la rutina.');
+      }
+    } finally {
+      setIsCopying(false);
+      setTemplateToCopy(null);
     }
   };
 
@@ -352,7 +361,7 @@ export function TemplateRoutinesView() {
               {/* Botones de acción (Copiar / Iniciar) */}
               <View style={styles.btnRow}>
                 <TouchableOpacity
-                  onPress={() => handleCopyTemplate(item)}
+                  onPress={() => setTemplateToCopy(item)}
                   activeOpacity={0.8}
                   style={[
                     styles.copyBtn,
@@ -389,6 +398,19 @@ export function TemplateRoutinesView() {
           );
         })}
       </View>
+
+      <ConfirmBottomSheet
+        visible={Boolean(templateToCopy)}
+        title="Copiar plantilla"
+        message={`¿Quieres copiar "${templateToCopy?.name || ''}" en Mis Rutinas?`}
+        confirmText="Copiar rutina"
+        cancelText="Cancelar"
+        isLoading={isCopying}
+        onConfirm={() => (templateToCopy ? handleCopyTemplate(templateToCopy) : undefined)}
+        onCancel={() => {
+          if (!isCopying) setTemplateToCopy(null);
+        }}
+      />
     </View>
   );
 }

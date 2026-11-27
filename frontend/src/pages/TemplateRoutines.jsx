@@ -6,6 +6,7 @@ import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '../hooks/useToast';
 import CustomSelect from '../components/CustomSelect';
+import ConfirmationModal from '../components/ConfirmationModal';
 import { useAppTheme } from '../hooks/useAppTheme';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
@@ -152,6 +153,8 @@ const TemplateRoutines = ({ setView }) => {
   const [selectedCategory, setSelectedCategory] = useState(() => localStorage.getItem('templateRoutinesSelectedCategory') || 'all');
   const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem('templateRoutinesSelectedDifficulty') || 'all');
   const [showFilters, setShowFilters] = useState(() => localStorage.getItem('templateRoutinesShowFilters') === 'true');
+  const [copyConfirm, setCopyConfirm] = useState(null);
+  const [isCopying, setIsCopying] = useState(false);
 
   useEffect(() => { localStorage.setItem('templateRoutinesSearchQuery', searchQuery); }, [searchQuery]);
   useEffect(() => { localStorage.setItem('templateRoutinesSelectedCategory', selectedCategory); }, [selectedCategory]);
@@ -185,6 +188,7 @@ const TemplateRoutines = ({ setView }) => {
   };
 
   const handleCopyToMyRoutines = async (template) => {
+    setIsCopying(true);
     try {
       const result = await createRoutine({
         name: `${template.name} (Copia)`,
@@ -195,13 +199,20 @@ const TemplateRoutines = ({ setView }) => {
       else throw new Error(result.message);
     } catch (error) {
       addToast(error.message || 'Error al copiar rutina.', 'error');
+    } finally {
+      setIsCopying(false);
+      setCopyConfirm(null);
     }
   };
 
   const handleCopyFullRoutine = async (category, routines) => {
     const dayRoutines = routines.filter(r => /^Día \d+:/.test(r.name)).sort((a, b) => parseInt(a.name.match(/^Día (\d+):/)[1]) - parseInt(b.name.match(/^Día (\d+):/)[1]));
-    if (!dayRoutines.length) return addToast('No hay días para copiar.', 'warning');
+    if (!dayRoutines.length) {
+      setCopyConfirm(null);
+      return addToast('No hay días para copiar.', 'warning');
+    }
 
+    setIsCopying(true);
     try {
       for (const template of dayRoutines) {
         const result = await createRoutine({
@@ -214,6 +225,9 @@ const TemplateRoutines = ({ setView }) => {
       addToast(`Rutina completa '${category}' copiada.`, 'success');
     } catch (error) {
       addToast('Error al copiar la rutina completa.', 'error');
+    } finally {
+      setIsCopying(false);
+      setCopyConfirm(null);
     }
   };
 
@@ -341,7 +355,7 @@ const TemplateRoutines = ({ setView }) => {
                   </span>
                   {isMultiDay && (
                     <button 
-                      onClick={() => handleCopyFullRoutine(category, routinesForCategory)} 
+                      onClick={() => setCopyConfirm({ type: 'full', category, routines: routinesForCategory })} 
                       className="flex items-center gap-1.5 px-4 py-2 rounded-md bg-accent/10 text-accent font-bold uppercase tracking-wider text-[10px] sm:text-xs ring-1 ring-accent/30 hover:bg-accent/20 transition-all active:scale-95"
                     >
                       <Copy size={16} strokeWidth={2.5} /> Copiar Todo
@@ -403,7 +417,7 @@ const TemplateRoutines = ({ setView }) => {
                       
                       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8 pt-6 border-t border-black/5 dark:border-white/10">
                         <button 
-                          onClick={() => handleCopyToMyRoutines(routine)} 
+                          onClick={() => setCopyConfirm({ type: 'single', template: routine })} 
                           className="w-full sm:flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-[16px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-95 text-base"
                         >
                           <Copy size={20} strokeWidth={2.5} /> Copiar
@@ -436,6 +450,28 @@ const TemplateRoutines = ({ setView }) => {
             Limpiar filtros
           </button>
         </GlassCard>
+      )}
+
+      {copyConfirm && (
+        <ConfirmationModal
+          title={copyConfirm.type === 'full' ? 'Copiar programa completo' : 'Copiar rutina'}
+          message={
+            copyConfirm.type === 'full'
+              ? `¿Quieres copiar todos los días de "${copyConfirm.category}" a Mis Rutinas?`
+              : `¿Quieres copiar "${copyConfirm.template?.name || 'esta plantilla'}" a Mis Rutinas?`
+          }
+          confirmText="Copiar"
+          cancelText="Cancelar"
+          confirmVariant="accent"
+          isLoading={isCopying}
+          onConfirm={() => {
+            if (copyConfirm.type === 'full') {
+              return handleCopyFullRoutine(copyConfirm.category, copyConfirm.routines);
+            }
+            return handleCopyToMyRoutines(copyConfirm.template);
+          }}
+          onCancel={() => !isCopying && setCopyConfirm(null)}
+        />
       )}
     </div>
   );

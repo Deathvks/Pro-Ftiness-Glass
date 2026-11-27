@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { getPublicRoutine, forkRoutine } from '../services/routineService';
 import GlassCard from '../components/GlassCard';
+import ConfirmationModal from '../components/ConfirmationModal';
 import Spinner from '../components/Spinner';
 import ExerciseMedia from '../components/ExerciseMedia';
 import { useToast } from '../hooks/useToast';
@@ -41,6 +42,7 @@ const SharedRoutinePreview = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
   
   // Estados para manejar errores de carga en imágenes
   const [coverError, setCoverError] = useState(false);
@@ -88,6 +90,7 @@ const SharedRoutinePreview = () => {
       addToast(err.message || 'Error al importar la rutina.', 'error');
     } finally {
       setImporting(false);
+      setShowImportConfirm(false);
     }
   };
 
@@ -252,7 +255,13 @@ const SharedRoutinePreview = () => {
                         )}
 
                         <button
-                            onClick={handleImport}
+                            onClick={() => {
+                                if (!userProfile) {
+                                    handleImport();
+                                    return;
+                                }
+                                setShowImportConfirm(true);
+                            }}
                             disabled={importing}
                             className="w-full py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg bg-accent text-bg-secondary hover:brightness-110 shadow-lg shadow-accent/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -338,6 +347,19 @@ const SharedRoutinePreview = () => {
             </div>
         </div>
       </div>
+
+      {showImportConfirm && (
+        <ConfirmationModal
+          title="Copiar rutina"
+          message={`¿Quieres copiar "${routine?.name || 'esta rutina'}" en tus rutinas?`}
+          confirmText="Copiar rutina"
+          cancelText="Cancelar"
+          confirmVariant="accent"
+          isLoading={importing}
+          onConfirm={handleImport}
+          onCancel={() => !importing && setShowImportConfirm(false)}
+        />
+      )}
     </div>
   );
 };

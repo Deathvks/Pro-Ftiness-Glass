@@ -43,6 +43,7 @@ import socialService from '@/services/socialService';
 import * as userService from '@/services/userService';
 import { forkRoutine } from '@/services/routineService';
 import { enrichGymWithMedia } from '@/utils/gymMedia';
+import ConfirmBottomSheet from '@/components/modals/ConfirmBottomSheet';
 import { TourTarget } from '@/components/tutorials/TourTarget';
 import { getSocket } from '@/services/socket';
 import { SocialUserAvatar } from './SocialUserAvatar';
@@ -128,6 +129,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
   const [pendingRequestsLocal, setPendingRequestsLocal] = useState<{ [id: string]: boolean }>({});
   const [sendingRequestId, setSendingRequestId] = useState<any>(null);
   const [showGymModal, setShowGymModal] = useState(false);
+  const [routineToImport, setRoutineToImport] = useState<{ id: any; name: string } | null>(null);
   const [gymLogoError, setGymLogoError] = useState(false);
   const [gymPhotoError, setGymPhotoError] = useState(false);
   const [gymBgError, setGymBgError] = useState(false);
@@ -394,6 +396,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
       Alert.alert('Error', err.message || 'Error al importar la rutina');
     } finally {
       setIsActionLoading(false);
+      setRoutineToImport(null);
     }
   };
 
@@ -1384,7 +1387,12 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
               </View>
               {log.routine_id && !isMe && (
                 <TouchableOpacity
-                  onPress={() => handleImportRoutine(log.routine_id)}
+                  onPress={() =>
+                    setRoutineToImport({
+                      id: log.routine_id,
+                      name: log.routine?.name || log.routine_name || 'esta rutina',
+                    })
+                  }
                   style={[styles.importBtn, { backgroundColor: colors.tint + '15' }]}
                 >
                   <Download size={12} color={colors.tint} />
@@ -1771,6 +1779,19 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
         onClose={() => setShowGymModal(false)}
         onSave={handleSaveGymFromFeed}
         onRemove={handleRemoveGymFromFeed}
+      />
+
+      <ConfirmBottomSheet
+        visible={Boolean(routineToImport)}
+        title="Copiar rutina"
+        message={`¿Quieres copiar "${routineToImport?.name || ''}" en tu biblioteca? Se guardará en "Importadas del Muro".`}
+        confirmText="Copiar rutina"
+        cancelText="Cancelar"
+        isLoading={isActionLoading}
+        onConfirm={() => (routineToImport ? handleImportRoutine(routineToImport.id) : undefined)}
+        onCancel={() => {
+          if (!isActionLoading) setRoutineToImport(null);
+        }}
       />
     </View>
   );

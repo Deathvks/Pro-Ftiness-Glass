@@ -1,6 +1,6 @@
 const destinationPaths = new Set([
   '/', '/dashboard', '/asesoria', '/trainerPanel', '/routines', '/social', '/progress',
-  '/nutrition', '/profile', '/challenges', '/notifications', '/adminPanel'
+  '/nutrition', '/profile', '/appearance', '/challenges', '/notifications', '/adminPanel'
 ]);
 
 function internalDestination(value) {

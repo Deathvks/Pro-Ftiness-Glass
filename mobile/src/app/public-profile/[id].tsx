@@ -55,6 +55,7 @@ import { SocialUserAvatar, type AvatarUser } from '@/components/social/SocialUse
 import { GymLocationModal } from '@/components/modals/GymLocationModal';
 import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview';
 import { SwipeableBottomSheet, getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
+import ConfirmBottomSheet from '@/components/modals/ConfirmBottomSheet';
 import {
   getAppleCardSurfaceStyle,
   getThemeBaseBackground,
@@ -202,6 +203,7 @@ export default function PublicProfileScreen() {
   const [friendBusy, setFriendBusy] = useState(false);
   const [badgePage, setBadgePage] = useState(0);
   const [selectedRoutine, setSelectedRoutine] = useState<PublicRoutine | null>(null);
+  const [routineToImport, setRoutineToImport] = useState<PublicRoutine | null>(null);
   const [importingId, setImportingId] = useState<string | number | null>(null);
   const [showGymModal, setShowGymModal] = useState(false);
 
@@ -381,6 +383,7 @@ export default function PublicProfileScreen() {
       showToast(err?.message || 'No se pudo importar la rutina.', 'error');
     } finally {
       setImportingId(null);
+      setRoutineToImport(null);
     }
   };
 
@@ -939,7 +942,7 @@ export default function PublicProfileScreen() {
                                   android_ripple={{ color: 'rgba(255,255,255,0.22)' }}
                                   onPress={(e) => {
                                     e.stopPropagation();
-                                    void handleImportRoutine(routine);
+                                    setRoutineToImport(routine);
                                   }}
                                   style={({ pressed }) => [
                                     styles.importChipBtn,
@@ -1053,7 +1056,13 @@ export default function PublicProfileScreen() {
                   <Pressable
                     disabled={importingId != null}
                     android_ripple={{ color: 'rgba(255,255,255,0.22)' }}
-                    onPress={() => void handleImportRoutine(selectedRoutine)}
+                    onPress={() => {
+                      const target = selectedRoutine;
+                      setSelectedRoutine(null);
+                      setTimeout(() => {
+                        setRoutineToImport(target);
+                      }, 280);
+                    }}
                     style={({ pressed }) => [
                       styles.primaryBtn,
                       { width: '100%' },
@@ -1088,6 +1097,19 @@ export default function PublicProfileScreen() {
           onRemove={handleRemoveMyGym}
         />
       )}
+
+      <ConfirmBottomSheet
+        visible={Boolean(routineToImport)}
+        title="Copiar rutina"
+        message={`¿Quieres copiar "${routineToImport?.name || 'esta rutina'}" a tu colección de rutinas?`}
+        confirmText="Copiar rutina"
+        cancelText="Cancelar"
+        isLoading={routineToImport != null && importingId != null}
+        onConfirm={() => (routineToImport ? handleImportRoutine(routineToImport) : undefined)}
+        onCancel={() => {
+          if (importingId == null) setRoutineToImport(null);
+        }}
+      />
     </AnimatedScreen>
   );
 }
