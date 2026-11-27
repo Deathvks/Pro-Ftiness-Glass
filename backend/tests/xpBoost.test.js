@@ -1,5 +1,8 @@
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
+
+process.env.NODE_ENV = 'test';
+
 import {
   XP_BOOST_DURATION_MS,
   createXpBoostPayload,
@@ -10,7 +13,14 @@ import {
 import { addXp } from '../services/gamificationService.js';
 import models from '../models/index.js';
 
-const { XpLog } = models;
+const { XpLog, sequelize } = models;
+
+after(async () => {
+  try {
+    await sequelize?.close?.();
+  } catch {}
+  process.exit(0);
+});
 
 test('niveles acabados en 5 y 0 devuelven x1.5 y x2 exclusivamente', () => {
   for (const lvl of [5, 15, 25, 35, 45, 95]) {

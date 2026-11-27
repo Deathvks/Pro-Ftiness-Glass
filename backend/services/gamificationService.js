@@ -184,20 +184,22 @@ export const addXp = async (userId, amount, reason = 'Actividad completada', opt
             });
 
             // Emitir evento socket para el Toast global en tiempo real
-            try {
-                import('../server.js').then(({ io }) => {
-                    if (io) {
-                        io.to(userId.toString()).emit('GAMIFICATION_EVENT', {
-                            type: 'level_up',
-                            newLevel: newLevel,
-                            leveledUp: true,
-                            xpBoost: currentBoostAfter,
-                            boostActivated,
-                        });
-                    }
-                });
-            } catch (err) {
-                console.error("Error emitiendo level_up socket:", err);
+            if (process.env.NODE_ENV !== 'test') {
+                try {
+                    import('../server.js').then(({ io }) => {
+                        if (io) {
+                            io.to(userId.toString()).emit('GAMIFICATION_EVENT', {
+                                type: 'level_up',
+                                newLevel: newLevel,
+                                leveledUp: true,
+                                xpBoost: currentBoostAfter,
+                                boostActivated,
+                            });
+                        }
+                    });
+                } catch (err) {
+                    console.error("Error emitiendo level_up socket:", err);
+                }
             }
         }
 
