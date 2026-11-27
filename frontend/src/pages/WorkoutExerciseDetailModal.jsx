@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import DOMPurify from 'dompurify';
 import { X, Dumbbell, Repeat, Clock, FileText, Image as ImageIcon, Target, Sparkles, Loader2, AlertCircle, ChevronDown, Play, WifiOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ExerciseMedia from '../components/ExerciseMedia';
@@ -153,6 +154,10 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
   }, [localIsLoading, nameKey, getOrFetchAllExercises]);
 
   const description = localDetails.description || localDetails.description_es || null;
+  const sanitizedDescription = useMemo(
+    () => (description ? DOMPurify.sanitize(String(description)) : null),
+    [description]
+  );
   const translatedName = localDetails.name || exercise.name;
 
   // --- CORRECCIÓN DE PRIORIDAD ---
@@ -390,11 +395,11 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
                   {t('description', { ns: 'exercise_ui' })}
                 </h3>
 
-                {description ? (
+                {sanitizedDescription ? (
                   <div className="bg-black/5 dark:bg-white/5 rounded-[24px] p-5 sm:p-6 ring-1 ring-black/5 dark:ring-white/10 shadow-inner">
                     <div
                       className="prose prose-sm dark:prose-invert max-w-none text-text-primary font-medium leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: description }}
+                      dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
                     />
                   </div>
                 ) : localIsLoading ? (

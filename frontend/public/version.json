@@ -1,17 +1,17 @@
 {
-  "version": "7.18.3",
-  "releaseNotes": "Actualización v7.18.3: endurecimiento de seguridad en subidas de archivos multimedia y protección privada para capturas de reportes.",
+  "version": "7.18.4",
+  "releaseNotes": "Actualización v7.18.4: sanitización DOMPurify en descripciones HTML de ejercicios y cifrado de sesión con expo-secure-store en app nativa.",
   "welcome": {
-    "title": "Novedades Pro Fitness Glass (v7.18.3)",
-    "subtitle": "Refuerzo de seguridad en servidor, Web, PWA, Capacitor y App Nativa.",
+    "title": "Novedades Pro Fitness Glass (v7.18.4)",
+    "subtitle": "Mayor protección frente a XSS en Web/Capacitor y almacenamiento cifrado por hardware en Android.",
     "features": [
       {
-        "title": "Validación estricta de subidas multimedia",
-        "description": "Verificación de extensiones permitidas y cabeceras binarias reales en vídeos e imágenes para bloquear archivos maliciosos."
+        "title": "Sanitización HTML con DOMPurify",
+        "description": "Todas las descripciones de ejercicios pasan por DOMPurify antes de renderizarse en Web, PWA y Capacitor."
       },
       {
-        "title": "Capturas de reportes 100% privadas",
-        "description": "Las imágenes de reportes se guardan fuera de la carpeta pública y solo son accesibles mediante sesión verificada de administrador."
+        "title": "Sesión cifrada en Nativo",
+        "description": "Migración automática del token JWT a expo-secure-store (Android Keystore) en la app nativa."
       }
     ]
   }

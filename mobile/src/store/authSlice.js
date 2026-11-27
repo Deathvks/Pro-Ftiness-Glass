@@ -1,4 +1,4 @@
-import '@/utils/localStoragePolyfill';
+import { removeSecureTokenItem, setSecureTokenItem } from '@/utils/localStoragePolyfill';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as authService from '../services/authService';
 import * as userService from '../services/userService';
@@ -6,9 +6,10 @@ import { APP_VERSION, CURRENT_WELCOME_TITLE, hasSeenCurrentWelcome } from '../co
 
 let welcomeDismissedInSession = false;
 
-// Esta función se encarga de limpiar el almacenamiento local relacionado con la sesión.
+// Esta función se encarga de limpiar el almacenamiento local y cifrado relacionado con la sesión.
 const clearAuthStorage = () => {
-    localStorage.removeItem('pro_fitness_token');
+    removeSecureTokenItem('pro_fitness_token');
+    removeSecureTokenItem('fittrack_token');
     localStorage.removeItem('lastView');
     localStorage.removeItem('templateRoutinesSearchQuery');
     localStorage.removeItem('templateRoutinesSelectedCategory');
@@ -19,8 +20,8 @@ const clearAuthStorage = () => {
 // Completa la sesión tras login/2FA/OAuth sin exponer un perfil parcial sin `goal`
 // antes de que fetchInitialData() cargue el perfil completo desde el backend.
 const completeAuthenticatedSession = (set, { token, user }) => {
-    localStorage.removeItem('fittrack_token');
-    localStorage.setItem('pro_fitness_token', token);
+    removeSecureTokenItem('fittrack_token');
+    setSecureTokenItem('pro_fitness_token', token);
     const hasFullProfile = Boolean(user && Object.prototype.hasOwnProperty.call(user, 'goal'));
     set({
         token,
