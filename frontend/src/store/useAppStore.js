@@ -121,6 +121,10 @@ const useAppStore = create((set, get) => ({
         }));
     },
 
+    showChristmasUnlockModal: false,
+    openChristmasUnlockModal: () => set({ showChristmasUnlockModal: true }),
+    closeChristmasUnlockModal: () => set({ showChristmasUnlockModal: false }),
+
     // --- Configuración Global: Tour Guiado General con persistencia robusta por usuario ---
     tourCompleted: (() => {
         try {

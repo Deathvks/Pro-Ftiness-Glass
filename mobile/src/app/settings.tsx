@@ -70,6 +70,7 @@ import { WorkoutDataTransferModal } from '@/components/modals/WorkoutDataTransfe
 import { TourTarget } from '@/components/tutorials/TourTarget';
 import { useRegisterTourScroll } from '@/components/tutorials/tourRegistry';
 import useAppStore from '@/store/useAppStore';
+import { useToastStore } from '@/store/toastStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import {
   getThemeBaseBackground,
@@ -438,7 +439,7 @@ export default function SettingsScreen() {
       friends: 'Solo Amigos',
       private: 'Privado (No subir al muro)',
     };
-    useAppStore.getState().showToast?.(`Visibilidad: ${labels[val]}`);
+    useToastStore.getState().showToast(`Visibilidad: ${labels[val]}`);
   };
 
   const handleToggleNotifyFriends = (next: boolean) => {
@@ -451,7 +452,7 @@ export default function SettingsScreen() {
         localStorage.setItem('globalNotifyFriends', String(next));
       }
     } catch {}
-    useAppStore.getState().showToast?.(
+    useToastStore.getState().showToast(
       next ? 'Aviso a amigos al terminar entreno activado' : 'Aviso a amigos desactivado'
     );
   };
@@ -471,7 +472,7 @@ export default function SettingsScreen() {
       gym: 'Mi Gimnasio / Ciudad',
       friends: 'Amigos',
     };
-    useAppStore.getState().showToast?.(`Pestaña inicial: ${names[scope]}`);
+    useToastStore.getState().showToast(`Pestaña inicial: ${names[scope]}`);
   };
 
   // Toggle de preferencias de perfil / privacidad en el servidor
@@ -494,7 +495,7 @@ export default function SettingsScreen() {
         updatePayload.emailConsentVersion = consentVersion;
       }
       await userService.updateUserProfile(updatePayload);
-      useAppStore.getState().showToast?.(`${label}: ${nextVal ? 'activado' : 'desactivado'}`);
+      useToastStore.getState().showToast(`${label}: ${nextVal ? 'activado' : 'desactivado'}`);
     } catch (err) {
       setUserProfile({ ...userProfile, [field]: currentVal });
       Alert.alert('Error', `No se pudo actualizar ${label.toLowerCase()}.`);
@@ -511,7 +512,7 @@ export default function SettingsScreen() {
     setUserProfile({ ...userProfile, training_reminder_hour: hour });
     try {
       await userService.updateUserProfile({ training_reminder_hour: hour });
-      useAppStore.getState().showToast?.(`Recordatorio fijado a las ${String(hour).padStart(2, '0')}:00`);
+      useToastStore.getState().showToast(`Recordatorio fijado a las ${String(hour).padStart(2, '0')}:00`);
     } catch {
       setUserProfile({ ...userProfile, training_reminder_hour: prevHour });
       Alert.alert('Error', 'No se pudo actualizar la hora del recordatorio.');
@@ -535,7 +536,7 @@ export default function SettingsScreen() {
 
     try {
       await userService.updateUserProfile({ login_email_notifications: nextVal });
-      useAppStore.getState().showToast?.(
+      useToastStore.getState().showToast(
         nextVal ? 'Alertas de login por email activadas' : 'Alertas de login desactivadas'
       );
     } catch {
@@ -571,13 +572,13 @@ export default function SettingsScreen() {
             permissionStatus: 'granted',
             hasRemoteToken: Boolean(res.endpoint),
           }));
-          useAppStore.getState().showToast?.(res.message);
+          useToastStore.getState().showToast(res.message);
         }
       } else {
         await unregisterDevicePushNotifications(userProfile?.id);
         setPushEnabled(false);
         setDevicePushMeta(prev => ({ ...prev, hasRemoteToken: false }));
-        useAppStore.getState().showToast?.('Notificaciones pausadas en este dispositivo');
+        useToastStore.getState().showToast('Notificaciones pausadas en este dispositivo');
       }
     } finally {
       setIsTogglingDevicePush(false);
@@ -597,7 +598,7 @@ export default function SettingsScreen() {
       if (purpose === 'training') {
         await syncTrainingPushPreference(userProfile?.id, nextVal);
       }
-      useAppStore.getState().showToast?.(`Preferencia push ${nextVal ? 'activada' : 'desactivada'}`);
+      useToastStore.getState().showToast(`Preferencia push ${nextVal ? 'activada' : 'desactivada'}`);
     } catch {
       setPushPreferences(prev => ({ ...prev, [purpose]: current }));
       Alert.alert('Error', 'No se pudo guardar la preferencia push.');
@@ -610,7 +611,7 @@ export default function SettingsScreen() {
   const handleExportData = async (format: 'json' | 'csv') => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      useAppStore.getState().showToast?.(`Generando archivo ${format.toUpperCase()}...`);
+      useToastStore.getState().showToast(`Generando archivo ${format.toUpperCase()}...`);
       const blob = await userService.exportMyData(format);
       const textData = await blob.text();
       const filename = `profitnessglass_datos_${new Date().toISOString().slice(0, 10)}.${format}`;
@@ -642,11 +643,11 @@ export default function SettingsScreen() {
   const handleStartOfflineDownload = async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      useAppStore.getState().showToast?.('Descargando ejercicios en segundo plano...');
+      useToastStore.getState().showToast('Descargando ejercicios en segundo plano...');
       const res = await startOfflineDownloadSession();
       if (res) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        useAppStore.getState().showToast?.(`¡Biblioteca offline lista: ${res.exerciseCount} ejercicios guardados!`);
+        useToastStore.getState().showToast(`¡Biblioteca offline lista: ${res.exerciseCount} ejercicios guardados!`);
       }
     } catch (err: any) {
       if (err?.message !== 'Descarga cancelada') {
@@ -660,7 +661,7 @@ export default function SettingsScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
     cancelOfflineDownloadSession();
-    useAppStore.getState().showToast?.('Descarga cancelada.');
+    useToastStore.getState().showToast('Descarga cancelada.');
   };
 
   const handleDeleteOfflineCache = () => {
@@ -677,7 +678,7 @@ export default function SettingsScreen() {
               await deleteOfflineExercises();
               const stats = await getOfflineStorageStats();
               setOfflineStats(stats);
-              useAppStore.getState().showToast?.('Espacio offline liberado correctamente.');
+              useToastStore.getState().showToast('Espacio offline liberado correctamente.');
             } catch {
               Alert.alert('Error', 'No se pudo liberar el espacio offline.');
             }
@@ -711,7 +712,7 @@ export default function SettingsScreen() {
           try {
             await sessionService.revokeSession(sessionId);
             setSessions(prev => prev.filter(s => s.id !== sessionId));
-            useAppStore.getState().showToast?.('Sesión cerrada con éxito.');
+            useToastStore.getState().showToast('Sesión cerrada con éxito.');
           } catch {
             Alert.alert('Error', 'No se pudo cerrar la sesión.');
           } finally {
@@ -735,7 +736,7 @@ export default function SettingsScreen() {
             try {
               await sessionService.revokeAllOtherSessions();
               await loadSessions();
-              useAppStore.getState().showToast?.('Se han cerrado todas las otras sesiones.');
+              useToastStore.getState().showToast('Se han cerrado todas las otras sesiones.');
             } catch {
               Alert.alert('Error', 'No se pudieron revocar las otras sesiones.');
             }
@@ -932,7 +933,7 @@ export default function SettingsScreen() {
                         value={restSoundEnabled}
                         onValueChange={val => {
                           setRestSoundEnabled(val);
-                          useAppStore.getState().showToast?.(val ? 'Sonido de descanso activado' : 'Sonido desactivado');
+                          useToastStore.getState().showToast(val ? 'Sonido de descanso activado' : 'Sonido desactivado');
                         }}
                         tintColor={colors.tint}
                         isDark={isDark}
@@ -956,7 +957,7 @@ export default function SettingsScreen() {
                         value={hapticsEnabled}
                         onValueChange={val => {
                           setHapticsEnabled(val);
-                          useAppStore.getState().showToast?.(val ? 'Vibración háptica activada' : 'Vibración desactivada');
+                          useToastStore.getState().showToast(val ? 'Vibración háptica activada' : 'Vibración desactivada');
                         }}
                         tintColor={colors.tint}
                         isDark={isDark}

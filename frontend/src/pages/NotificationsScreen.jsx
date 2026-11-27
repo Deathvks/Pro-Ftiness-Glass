@@ -146,6 +146,14 @@ const NotificationSettingsModal = ({ onClose, userId }) => {
     } else {
       await scheduleDailyReminders();
     }
+
+    const label = category === 'engagement' ? 'Motivación Diaria' : 'Recordatorios Rutinarios';
+    addToast(
+      category === 'engagement'
+        ? (enabled ? 'Motivación Diaria activada' : 'Motivación Diaria desactivada')
+        : (enabled ? 'Recordatorios Rutinarios activados' : 'Recordatorios Rutinarios desactivados'),
+      'success'
+    );
   };
 
   return (

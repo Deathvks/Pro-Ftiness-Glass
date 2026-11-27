@@ -218,6 +218,9 @@ const useAppStore = create((set, get) => ({
             },
         }));
     },
+    showChristmasUnlockModal: false,
+    openChristmasUnlockModal: () => set({ showChristmasUnlockModal: true }),
+    closeChristmasUnlockModal: () => set({ showChristmasUnlockModal: false }),
     ...createAuthSlice(set, get),
     ...createDataSlice(set, get),
     ...createWorkoutSlice(set, get),

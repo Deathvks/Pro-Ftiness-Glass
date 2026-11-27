@@ -1,5 +1,6 @@
 /* frontend/src/components/VersionUpdater.jsx */
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Sparkles, RefreshCw, X } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { APP_VERSION, hasSeenCurrentWelcome, isNewerVersion } from '../config/version';
@@ -57,10 +58,18 @@ const SWUpdaterCore = () => {
     if (Capacitor.isNativePlatform()) return;
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
 
+    const handleControllerChange = () => {
+      checkForNewVersion(true);
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+
     navigator.serviceWorker
-      .register('/sw.js', { scope: '/' })
+      .register('/sw.js', { scope: '/', updateViaCache: 'none' })
       .then((registration) => {
         if (!registration) return;
+
+        // Comprobar si hay nueva versión de sw.js en el servidor desde el inicio
+        registration.update().catch(() => {});
 
         // Si ya hay un worker en espera de activación:
         if (registration.waiting) {
@@ -72,7 +81,10 @@ const SWUpdaterCore = () => {
           const installingWorker = registration.installing;
           if (installingWorker) {
             installingWorker.addEventListener('statechange', () => {
-              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              if (
+                (installingWorker.state === 'installed' || installingWorker.state === 'activated') &&
+                navigator.serviceWorker.controller
+              ) {
                 checkForNewVersion(true);
               }
             });
@@ -80,6 +92,10 @@ const SWUpdaterCore = () => {
         });
       })
       .catch(() => {});
+
+    return () => {
+      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+    };
   }, [checkForNewVersion]);
 
   // 3. Comprobar al arrancar si hay versión pendiente o WelcomeModal que mostrar
@@ -153,8 +169,13 @@ const SWUpdaterCore = () => {
     document.addEventListener('visibilitychange', handleVisibility);
     window.addEventListener('popstate', handlePopState);
 
-    // Intervalo activo cada 30 segundos (en vez de 5 minutos)
-    const interval = setInterval(() => checkForNewVersion(false), 30 * 1000);
+    // Intervalo activo cada 30 segundos: comprobar version.json y actualización de Service Worker
+    const interval = setInterval(() => {
+      checkForNewVersion(false);
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration().then(reg => reg?.update?.().catch(() => {})).catch(() => {});
+      }
+    }, 30 * 1000);
 
     return () => {
       clearTimeout(initialTimer);
@@ -245,12 +266,12 @@ const SWUpdaterCore = () => {
     return null;
   }
 
-  // Pill sutil, moderno, 100% adaptado a temas y responsive en cualquier móvil
-  return (
+  // Pill sutil, moderno, 100% adaptado a temas y responsive en cualquier móvil (en portal para evitar recortes de z-index)
+  const banner = (
     <div
       role="status"
       aria-live="polite"
-      className="fixed left-1/2 -translate-x-1/2 z-[200] animate-[fade-in_0.3s_ease-out] w-auto max-w-[calc(100vw-1.5rem)] px-1"
+      className="fixed left-1/2 -translate-x-1/2 z-[99999] animate-[fade-in_0.3s_ease-out] w-auto max-w-[calc(100vw-1.5rem)] px-1 pointer-events-auto"
       style={{ top: 'calc(var(--safe-top, 0px) + 0.65rem)' }}
     >
       <div className="flex items-center gap-2 sm:gap-3 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-bg-secondary/95 text-text-primary shadow-2xl border border-glass-border ring-1 ring-accent/30 dark:ring-accent/40 backdrop-blur-2xl transition-colors">
@@ -283,6 +304,11 @@ const SWUpdaterCore = () => {
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined' && document.body) {
+    return createPortal(banner, document.body);
+  }
+  return banner;
 };
 
 const VersionUpdater = () => {

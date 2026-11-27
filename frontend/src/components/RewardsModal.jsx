@@ -35,7 +35,7 @@ const REWARDS = [
     icon: Snowflake,
     accentHex: '#e11d48',
     captionColorClass: 'text-[#e11d48] dark:text-[#fda4af]',
-    variants: [{ id: 'christmas', label: 'Usar tema', testLabel: 'Probar 10s' }],
+    variants: [{ id: 'christmas', label: 'Usar', testLabel: 'Probar 10s' }],
   },
   {
     id: 'galaxy',
@@ -91,6 +91,7 @@ export default function RewardsModal({ isOpen, onClose }) {
   const userProfile = useAppStore((state) => state.userProfile);
   const unlockedBadges = useAppStore((state) => state.gamification?.unlockedBadges || []);
   const applyUnlockedBadges = useAppStore((state) => state.applyUnlockedBadges);
+  const openChristmasUnlockModal = useAppStore((state) => state.openChristmasUnlockModal);
   const { addToast } = useToast();
   const { theme, activeTheme, setTheme, startThemeTest, isTestingTheme, testTimeLeft } = useAppTheme();
   const [dragOffsetY, setDragOffsetY] = useState(0);
@@ -119,8 +120,8 @@ export default function RewardsModal({ isOpen, onClose }) {
         applyUnlockedBadges?.(res.unlocked_badges);
       }
       setTheme('christmas', false);
-      addToast(res?.message || '¡Tema Navidad 2026 desbloqueado para siempre!', 'success');
       onClose();
+      openChristmasUnlockModal?.();
     } catch (err) {
       addToast(err?.message || 'No se pudo reclamar el tema.', 'error');
     } finally {
@@ -434,7 +435,7 @@ export default function RewardsModal({ isOpen, onClose }) {
                                 className="flex-1 min-w-[140px] py-2 px-3 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-[#e11d48] to-[#f59e0b] hover:brightness-110 transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-70"
                               >
                                 <FaGift size={11} />
-                                <span>{claimingChristmas ? 'Reclamando...' : 'Reclamar tema'}</span>
+                                <span>{claimingChristmas ? 'Desbloqueando...' : 'Desbloquear'}</span>
                               </button>
                             )}
                           </>

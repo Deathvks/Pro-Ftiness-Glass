@@ -38,6 +38,7 @@ const CookieConsentBanner = lazy(() => import('./CookieConsentBanner'));
 import AIInfoModal from './AIInfoModal';
 const MilestoneLevelUpModal = lazy(() => import('./MilestoneLevelUpModal'));
 const ReferralSuccessAnimation = lazy(() => import('./ReferralSuccessAnimation'));
+const ChristmasUnlockModal = lazy(() => import('./ChristmasUnlockModal'));
 const GlobalRatingPrompt = lazy(() => import('./GlobalRatingPrompt'));
 
 // Constantes
@@ -1816,6 +1817,7 @@ export default function MainAppLayout({
 
       <Suspense fallback={null}>
         <ReferralSuccessAnimation />
+        <ChristmasUnlockModal />
       </Suspense>
     </div>
   );

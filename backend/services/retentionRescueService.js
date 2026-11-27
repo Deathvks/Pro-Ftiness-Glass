@@ -365,7 +365,14 @@ export const getRetentionRescueOverview = async () => {
     const createdAt = plain.createdAt ? new Date(plain.createdAt) : new Date(nowMs - 7 * 86400000);
     const lastSeenDate = plain.lastSeen ? new Date(plain.lastSeen) : null;
     const lastWorkoutDate = wStat?.lastWorkoutDate ? new Date(wStat.lastWorkoutDate) : null;
-    const lastNutritionDate = nStat?.lastNutritionDate ? new Date(`${nStat.lastNutritionDate}T20:00:00Z`) : null;
+    const rawNutritionDate = nStat?.lastNutritionDate ? new Date(`${nStat.lastNutritionDate}T12:00:00Z`) : null;
+    // Si registró nutrición el mismo día que lastSeen, usar lastSeen como referencia exacta en lugar de inventar una hora posterior.
+    const lastNutritionDate =
+      rawNutritionDate && !Number.isNaN(rawNutritionDate.getTime())
+        ? lastSeenDate && rawNutritionDate.toISOString().slice(0, 10) === lastSeenDate.toISOString().slice(0, 10)
+          ? lastSeenDate
+          : rawNutritionDate
+        : null;
 
     // Última actividad registrada de entrenamiento o comida (o fecha de registro si nunca registró)
     const logDates = [lastWorkoutDate, lastNutritionDate].filter(d => d && !Number.isNaN(d.getTime()));

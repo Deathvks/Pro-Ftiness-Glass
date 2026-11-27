@@ -61,7 +61,7 @@ const REWARDS: RewardItem[] = [
     textLight: '#be123c',
     textDark: '#fda4af',
     iconName: 'snowflake',
-    variants: [{ id: 'christmas', label: 'Usar tema', testLabel: 'Probar 10s' }],
+    variants: [{ id: 'christmas', label: 'Usar', testLabel: 'Probar 10s' }],
   },
   {
     id: 'galaxy',
@@ -143,8 +143,10 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
         applyUnlockedBadges?.(res.unlocked_badges);
       }
       setTheme('christmas');
-      useToastStore.getState().showToast(res?.message || '¡Tema Navidad 2026 desbloqueado para siempre!', 'success');
       onClose();
+      setTimeout(() => {
+        (useAppStore.getState() as any).openChristmasUnlockModal?.();
+      }, Platform.OS === 'ios' ? 220 : 60);
     } catch (err: any) {
       useToastStore.getState().showToast(err?.message || 'No se pudo reclamar el tema.', 'error');
     } finally {
@@ -492,7 +494,7 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
                           >
                             <FontAwesome5 name="gift" size={10} color="#ffffff" />
                             <Text style={[styles.variantBtnText, { color: '#ffffff' }]}>
-                              {claimingChristmas ? 'Reclamando...' : 'Reclamar tema'}
+                              {claimingChristmas ? 'Desbloqueando...' : 'Desbloquear'}
                             </Text>
                           </TouchableOpacity>
                         )}

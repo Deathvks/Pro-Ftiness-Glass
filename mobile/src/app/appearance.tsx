@@ -160,11 +160,11 @@ const SPECIAL_THEMES: SpecialTheme[] = [
     previewCaption: 'Invierno Glass · Nieve',
     tint: '#e11d48',
     requiredReferrals: 1,
-    icon: ChristmasIcon,
-    variants: [{ id: 'christmas', label: 'Aplicar', testLabel: 'Probar 10s' }],
     textLight: '#be123c',
     textDark: '#fda4af',
     info: 'El Tema Navidad usa su propio acento rojo invernal (desactiva el acento manual).',
+    icon: ChristmasIcon,
+    variants: [{ id: 'christmas', label: 'Usar', testLabel: 'Probar 10s' }],
   },
   {
     key: 'galaxy',
@@ -334,6 +334,7 @@ export default function AppearanceScreen() {
   const christmasEffectsEnabled = useAppStore(state => (state as any).christmasEffectsEnabled !== false);
   const setChristmasEffectsEnabled = useAppStore(state => (state as any).setChristmasEffectsEnabled);
   const applyUnlockedBadges = useAppStore(state => (state as any).applyUnlockedBadges);
+  const openChristmasUnlockModal = useAppStore(state => (state as any).openChristmasUnlockModal);
 
   const testedTheme = useAppStore(state => state.themeTest?.name);
   const startThemeTest = useAppStore(state => (state as any).startThemeTest);
@@ -493,7 +494,7 @@ export default function AppearanceScreen() {
         applyUnlockedBadges?.(res.unlocked_badges);
       }
       setTheme('christmas');
-      showToast(res?.message || '¡Tema Navidad 2026 desbloqueado para siempre!');
+      openChristmasUnlockModal?.();
     } catch (err: any) {
       showToast(err?.message || 'No se pudo reclamar el tema.', true);
     } finally {
@@ -956,7 +957,7 @@ export default function AppearanceScreen() {
                             >
                               <FontAwesome5 name="gift" size={11} color="#ffffff" />
                               <Text style={[styles.themeInviteInlineBtnText, { color: '#ffffff' }]} numberOfLines={1}>
-                                {claimingChristmas ? 'Reclamando...' : 'Reclamar tema'}
+                                {claimingChristmas ? 'Desbloqueando...' : 'Desbloquear'}
                               </Text>
                             </Pressable>
                           ) : (

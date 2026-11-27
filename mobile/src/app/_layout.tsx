@@ -39,6 +39,7 @@ import { ForcePasswordResetModal } from '@/components/modals/ForcePasswordResetM
 import { EmailVerificationModal } from '@/components/modals/EmailVerificationModal';
 import { TwoFactorPromoModal } from '@/components/modals/TwoFactorPromoModal';
 import { MilestoneLevelUpModal } from '@/components/modals/MilestoneLevelUpModal';
+import { ChristmasUnlockModal } from '@/components/modals/ChristmasUnlockModal';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -704,6 +705,7 @@ export default function RootLayout() {
         <StoryHost />
         <VersionUpdater />
         <WelcomeModal visible={welcomeVisible} />
+        <ChristmasUnlockModal />
         <DomainMigrationModal />
         <CookieConsentBanner />
         <ForcePasswordResetModal visible={forceResetVisible} />

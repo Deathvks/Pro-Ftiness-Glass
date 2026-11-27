@@ -1,17 +1,17 @@
 {
-  "version": "7.17.0",
-  "releaseNotes": "Actualización v7.17.0: llega la Edición Navidad 2026 (tema Invierno Glass con copos de nieve cristalinos y acento rojo navideño) y +1.000 XP para ambos al invitar amigos.",
+  "version": "7.17.1",
+  "releaseNotes": "Actualización v7.17.1: modal festivo con nieve al desbloquear el tema Invierno Glass, toasts en ajustes de notificaciones y mejoras en detección de nuevas versiones y retención 72h.",
   "welcome": {
-    "title": "Edición Navidad 2026: Invierno Glass",
-    "subtitle": "Desbloquea el nuevo tema estacional antes del 6 de enero para conservarlo para siempre y suma +1.000 XP para ti y cada amigo invitado.",
+    "title": "Navidad 2026: Invierno Glass (v7.17.1)",
+    "subtitle": "Nuevo modal navideño con nieve al desbloquear el tema, avisos de confirmación en todos los ajustes de notificaciones y aviso de actualización mejorado.",
     "features": [
       {
-        "title": "Tema Invierno Glass y Copos Reales",
-        "description": "Fondo azul noche invernal con nieve cristalina animada, acento rojo navideño y control de rendimiento desde Apariencia."
+        "title": "Modal Navideño al Desbloquear",
+        "description": "Pulsa «Desbloquear» en Apariencia o Recompensas para estrenar Invierno Glass con copos cayendo dentro del modal."
       },
       {
-        "title": "+1.000 XP para Ambos al Invitar",
-        "description": "Tanto quien invita como el amigo registrado reciben +1.000 XP al instante y progreso hacia temas exclusivos."
+        "title": "Feedback Instantáneo y Mejoras",
+        "description": "Confirmación toast al activar o desactivar cualquier ajuste de notificación y aviso de recarga reforzado al publicar versiones."
       }
     ]
   }

@@ -213,6 +213,7 @@ export default function AppearanceScreen({ setView }) {
     christmasEffectsEnabled,
     setChristmasEffectsEnabled,
     applyUnlockedBadges,
+    openChristmasUnlockModal,
   } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     unlockedBadges: state.gamification?.unlockedBadges || [],
@@ -221,6 +222,7 @@ export default function AppearanceScreen({ setView }) {
     christmasEffectsEnabled: state.christmasEffectsEnabled,
     setChristmasEffectsEnabled: state.setChristmasEffectsEnabled,
     applyUnlockedBadges: state.applyUnlockedBadges,
+    openChristmasUnlockModal: state.openChristmasUnlockModal,
   })));
   const { addToast } = useToast();
   const { 
@@ -305,7 +307,7 @@ export default function AppearanceScreen({ setView }) {
         applyUnlockedBadges?.(res.unlocked_badges);
       }
       setTheme('christmas');
-      addToast(res?.message || '¡Tema Navidad 2026 desbloqueado para siempre!', 'success');
+      openChristmasUnlockModal?.();
     } catch (err) {
       addToast(err?.message || 'No se pudo reclamar el tema.', 'error');
     } finally {
@@ -707,7 +709,7 @@ export default function AppearanceScreen({ setView }) {
                     onClick={() => handleThemeClick('christmas')}
                     className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${theme === 'christmas' ? 'bg-[#e11d48] text-white shadow-lg shadow-[#e11d48]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#e11d48]/20 text-[#e11d48] dark:text-[#fda4af]'}`}
                   >
-                    {theme === 'christmas' ? 'Activo' : 'Aplicar'}
+                    {theme === 'christmas' ? 'Activo' : 'Usar'}
                   </button>
                 ) : (
                   <>
@@ -734,7 +736,7 @@ export default function AppearanceScreen({ setView }) {
                         className="px-3.5 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-[#e11d48] to-[#f59e0b] text-white shadow-md shadow-[#e11d48]/25 hover:brightness-110 transition-all inline-flex items-center gap-1.5 whitespace-nowrap cursor-pointer disabled:opacity-70"
                       >
                         <FaGift size={11} />
-                        <span>{claimingChristmas ? 'Reclamando...' : 'Reclamar tema'}</span>
+                        <span>{claimingChristmas ? 'Desbloqueando...' : 'Desbloquear'}</span>
                       </button>
                     ) : (
                       <button

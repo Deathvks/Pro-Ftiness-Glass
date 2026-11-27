@@ -213,6 +213,24 @@ const VersionBadge = ({ user }) => {
 };
 
 // Componente para el indicador de estado
+const formatAccurateOfflineDistance = (date) => {
+  const diffMs = Math.max(0, Date.now() - date.getTime());
+  const totalMinutes = Math.floor(diffMs / 60000);
+  if (totalMinutes < 60) {
+    return `hace ${Math.max(1, totalMinutes)} min`;
+  }
+  const totalHours = Math.floor(diffMs / 3600000);
+  if (totalHours < 24) {
+    return `hace ${totalHours} h`;
+  }
+  if (totalHours < 72) {
+    const days = Math.floor(totalHours / 24);
+    const remHours = totalHours % 24;
+    return remHours > 0 ? `hace ${days}d ${remHours}h` : `hace ${days} días`;
+  }
+  return formatDistanceToNow(date, { addSuffix: true, locale: es });
+};
+
 const StatusIndicator = ({ lastSeen }) => {
   const [isOnline, setIsOnline] = useState(false);
 
@@ -250,7 +268,7 @@ const StatusIndicator = ({ lastSeen }) => {
       </div>
       {lastSeen && (
         <span className="text-[10px] text-text-secondary mt-0.5">
-          {formatDistanceToNow(new Date(lastSeen), { addSuffix: true, locale: es })}
+          {formatAccurateOfflineDistance(new Date(lastSeen))}
         </span>
       )}
     </div>
