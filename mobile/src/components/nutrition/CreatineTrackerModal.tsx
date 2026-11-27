@@ -366,11 +366,16 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
               {/* Promedio */}
               <View style={[styles.statCard, getAppleSheetCardStyle(isDark, 20, theme)]}>
                 <Zap size={22} color="#a855f7" strokeWidth={2} />
-                <Text style={[styles.statValue, { color: colors.text }]}>
+                <Text
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.75}
+                  style={[styles.statValue, { color: colors.text }]}
+                >
                   {stats.averageGrams ? stats.averageGrams.toFixed(1) : '0.0'}
                   <Text style={{ fontSize: 14 }}>g</Text>
                 </Text>
-                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                <Text numberOfLines={1} style={[styles.statLabel, { color: colors.textSecondary }]}>
                   Promedio
                 </Text>
               </View>
@@ -423,7 +428,12 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                             placeholderTextColor={colors.textMuted}
                             editable={!isSubmitting}
                           />
-                          <Text style={[styles.inputUnit, { color: colors.textSecondary }]}>gramos</Text>
+                          <Text
+                            numberOfLines={1}
+                            style={[styles.inputUnit, { color: colors.textSecondary }]}
+                          >
+                            gramos
+                          </Text>
                         </View>
 
                         {/* Presets Chips Liquid Glass */}
@@ -457,6 +467,9 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                                 activeOpacity={0.75}
                               >
                                 <Text
+                                  numberOfLines={1}
+                                  adjustsFontSizeToFit
+                                  minimumFontScale={0.78}
                                   style={[
                                     styles.presetChipText,
                                     {
@@ -564,8 +577,16 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                                 },
                               ]}
                             >
-                              <Text style={[styles.gramsBadgeText, { color: isDark ? '#c084fc' : '#9333ea' }]}>
-                                {log.grams}g
+                              <Text
+                                numberOfLines={1}
+                                adjustsFontSizeToFit
+                                minimumFontScale={0.75}
+                                style={[styles.gramsBadgeText, { color: isDark ? '#c084fc' : '#9333ea' }]}
+                              >
+                                {Number.isFinite(Number(log.grams))
+                                  ? parseFloat(Number(log.grams).toFixed(2))
+                                  : log.grams}
+                                g
                               </Text>
                             </View>
 
@@ -959,6 +980,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 10,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 18,
@@ -968,10 +990,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     flex: 1,
+    minWidth: 0,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   inputUnit: {
     fontSize: 13,
     fontWeight: '700',
+    flexShrink: 0,
   },
   presetsRow: {
     flexDirection: 'row',
@@ -979,7 +1005,9 @@ const styles = StyleSheet.create({
   },
   presetChip: {
     flex: 1,
+    minWidth: 0,
     paddingVertical: 10,
+    paddingHorizontal: 4,
     borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
@@ -1038,20 +1066,25 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   gramsBadge: {
-    width: 44,
-    height: 44,
+    minWidth: 52,
+    minHeight: 44,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(168, 85, 247, 0.15)',
+    flexShrink: 0,
   },
   gramsBadgeText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '900',
     color: '#a855f7',
+    fontVariant: ['tabular-nums'],
   },
   historyInfo: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
   },
   historyDate: {
