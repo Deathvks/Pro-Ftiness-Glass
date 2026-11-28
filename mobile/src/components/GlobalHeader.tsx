@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Image, Text, StyleSheet, Animated, Platform, TouchableOpacity } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
-import { Sparkles, Bell, ChevronLeft, CirclePlay } from 'lucide-react-native';
+import { Sparkles, Bell, ChevronLeft, Play } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useAppStore from '@/store/useAppStore';
 import { selectHasUnseenStory, selectFirstAvailableStoryTarget } from '@/store/storySlice';
@@ -240,7 +240,7 @@ export default function GlobalHeader({
                         <ChevronLeft size={23} color={colors.text} strokeWidth={2.3} />
                     </GlassButton>
                 ) : (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={{ position: 'relative' }}>
                         <TouchableOpacity
                             accessibilityRole="button"
                             accessibilityLabel={hasUnseenStory ? 'Ver mi historia' : 'Mi perfil'}
@@ -255,6 +255,7 @@ export default function GlobalHeader({
                             <TouchableOpacity
                                 accessibilityRole="button"
                                 accessibilityLabel={storyTarget.hasUnseen ? 'Ver historias nuevas' : 'Ver historias'}
+                                hitSlop={6}
                                 onPress={() => {
                                     try {
                                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -263,65 +264,37 @@ export default function GlobalHeader({
                                 }}
                                 activeOpacity={0.72}
                                 style={{
-                                    height: 32,
-                                    paddingHorizontal: 10,
-                                    borderRadius: 16,
+                                    position: 'absolute',
+                                    bottom: -2,
+                                    right: -4,
+                                    minWidth: 18,
+                                    height: 18,
+                                    paddingHorizontal: storyTarget.hasUnseen && (storyTarget.unseenUsers || 0) > 1 ? 4 : 0,
+                                    borderRadius: 9,
                                     flexDirection: 'row',
                                     alignItems: 'center',
-                                    gap: 5,
-                                    borderWidth: 1,
-                                    borderColor: storyTarget.hasUnseen
-                                        ? colors.tint
-                                        : isDark
-                                            ? 'rgba(255,255,255,0.22)'
-                                            : 'rgba(0,0,0,0.16)',
-                                    backgroundColor: storyTarget.hasUnseen
-                                        ? colors.tint + '22'
-                                        : isDark
-                                            ? 'rgba(255,255,255,0.08)'
-                                            : 'rgba(0,0,0,0.05)',
+                                    justifyContent: 'center',
+                                    gap: 2,
+                                    borderWidth: 2,
+                                    borderColor: colors.background,
+                                    backgroundColor: storyTarget.hasUnseen ? colors.tint : colors.card,
                                 }}
                             >
-                                {storyTarget.hasUnseen ? (
-                                    <Sparkles size={13} color={colors.tint} strokeWidth={2.4} />
-                                ) : (
-                                    <CirclePlay size={14} color={colors.text} strokeWidth={2.2} />
-                                )}
-                                <Text
-                                    style={{
-                                        fontSize: 11,
-                                        fontWeight: '800',
-                                        color: storyTarget.hasUnseen ? colors.tint : colors.text,
-                                    }}
-                                >
-                                    Historias
-                                </Text>
-                                {(storyTarget.unseenUsers || storyTarget.totalUsers) > 0 && (
-                                    <View
+                                <Play
+                                    size={8}
+                                    color={storyTarget.hasUnseen ? getContrastTextColor(colors.tint) : colors.text}
+                                    fill={storyTarget.hasUnseen ? getContrastTextColor(colors.tint) : colors.text}
+                                />
+                                {storyTarget.hasUnseen && (storyTarget.unseenUsers || 0) > 1 && (
+                                    <Text
                                         style={{
-                                            minWidth: 16,
-                                            height: 16,
-                                            paddingHorizontal: 4,
-                                            borderRadius: 8,
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            backgroundColor: storyTarget.hasUnseen
-                                                ? colors.tint
-                                                : isDark
-                                                    ? 'rgba(255,255,255,0.16)'
-                                                    : 'rgba(0,0,0,0.12)',
+                                            fontSize: 9,
+                                            fontWeight: '900',
+                                            color: getContrastTextColor(colors.tint),
                                         }}
                                     >
-                                        <Text
-                                            style={{
-                                                fontSize: 10,
-                                                fontWeight: '900',
-                                                color: storyTarget.hasUnseen ? getContrastTextColor(colors.tint) : colors.textSecondary,
-                                            }}
-                                        >
-                                            {storyTarget.hasUnseen ? storyTarget.unseenUsers : storyTarget.totalUsers}
-                                        </Text>
-                                    </View>
+                                        {storyTarget.unseenUsers}
+                                    </Text>
                                 )}
                             </TouchableOpacity>
                         )}

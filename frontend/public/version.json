@@ -1,17 +1,17 @@
 {
-  "version": "7.18.11",
-  "releaseNotes": "Actualización v7.18.11: acceso promocional claro a Historias desde cabecera y barra lateral, deslizamiento horizontal continuo entre usuarios al ver historias y convivencia de borde de historia y usuario en sidebar y cabecera.",
+  "version": "7.18.12",
+  "releaseNotes": "Actualización v7.18.12: la cabecera móvil deja libre todo el espacio para los títulos de página colocando un mini acceso en la esquina del avatar y llevando el botón promocional de Historias al inicio del Dashboard.",
   "welcome": {
-    "title": "Novedades Pro Fitness Glass (v7.18.11)",
-    "subtitle": "Mejoras en Historias y avatares para Web, PWA, Capacitor y Nativo.",
+    "title": "Novedades Pro Fitness Glass (v7.18.12)",
+    "subtitle": "Cabecera despejada y acceso promocional a Historias en Dashboard para Web, PWA, Capacitor y Nativo.",
     "features": [
       {
-        "title": "Historias continuas con swipe horizontal",
-        "description": "Desliza de lado a lado (o toca los laterales) para recorrer todas las historias de distintos usuarios sin interrupciones, incluso empezando por las tuyas."
+        "title": "Cabecera limpia y legible",
+        "description": "Los títulos de cada pantalla vuelven a mostrarse completos sin quedar cortados por botones en el header."
       },
       {
-        "title": "Indicador promocional y doble borde",
-        "description": "Nuevo distintivo 'Historias' con contador en cabecera y sidebar, y doble aro concéntrico para que el borde de historia y el de usuario convivan a la vez."
+        "title": "Acceso promocional en Inicio",
+        "description": "Nueva píldora de Historias con contador junto al selector de gimnasio en Dashboard y acceso rápido en la esquina del avatar."
       }
     ]
   }

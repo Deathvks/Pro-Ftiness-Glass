@@ -57,6 +57,7 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 
 import useAppStore from '@/store/useAppStore';
+import { selectFirstAvailableStoryTarget } from '@/store/storySlice';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getAppleCardSurfaceStyle, isAtmosphericTheme, shouldUseContentGlass } from '@/constants/theme';
 import { getContrastColor, getContrastTextColor } from '@/utils/colorUtils';
@@ -194,6 +195,20 @@ export default function Dashboard() {
   const updateTodayBodyWeight = useAppStore(state => state.updateTodayBodyWeight);
   const addGamificationEvents = useAppStore(state => state.addGamificationEvents);
   const fetchDataForDate = useAppStore(state => state.fetchDataForDate);
+  const storiesState = useAppStore(state => state.stories);
+  const myStoriesState = useAppStore(state => state.myStories);
+  const storyViewerId = useAppStore(state => state.storyViewerId);
+  const token = useAppStore(state => state.token);
+  const dashboardStoryTarget = useMemo(
+    () => selectFirstAvailableStoryTarget({
+      token,
+      userProfile,
+      storyViewerId,
+      stories: storiesState,
+      myStories: myStoriesState,
+    }),
+    [token, userProfile, storyViewerId, storiesState, myStoriesState]
+  );
 
   // El entrenamiento solo cuenta como activo y visible a partir del segundo 1
   const isWorkoutTimerActive = useMemo(() => {
@@ -683,6 +698,64 @@ export default function Dashboard() {
                 {currentGym?.name || 'Localizar gimnasio'}
               </Text>
             </TouchableOpacity>
+            {dashboardStoryTarget.userId != null && (
+              <TouchableOpacity
+                onPress={() => {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  } catch {}
+                  useAppStore.getState().openStory(dashboardStoryTarget.userId);
+                }}
+                style={[
+                  styles.gymPill,
+                  {
+                    backgroundColor: dashboardStoryTarget.hasUnseen ? colors.tint + '22' : iconBadgeBg,
+                    borderColor: dashboardStoryTarget.hasUnseen
+                      ? colors.tint + '66'
+                      : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'),
+                  },
+                ]}
+                activeOpacity={0.75}
+              >
+                {dashboardStoryTarget.hasUnseen ? (
+                  <Sparkles size={13} color={colors.tint} strokeWidth={2.4} />
+                ) : (
+                  <Play size={12} color={colors.tint} />
+                )}
+                <Text
+                  style={[
+                    styles.gymPillText,
+                    { color: dashboardStoryTarget.hasUnseen ? colors.text : colors.textSecondary },
+                  ]}
+                  numberOfLines={1}
+                >
+                  Historias
+                </Text>
+                <View
+                  style={{
+                    minWidth: 16,
+                    height: 16,
+                    paddingHorizontal: 4,
+                    borderRadius: 8,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: dashboardStoryTarget.hasUnseen
+                      ? colors.tint
+                      : (isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.1)'),
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontWeight: '900',
+                      color: dashboardStoryTarget.hasUnseen ? tintContrastText : colors.textSecondary,
+                    }}
+                  >
+                    {dashboardStoryTarget.hasUnseen ? (dashboardStoryTarget.unseenUsers || 1) : (dashboardStoryTarget.totalUsers || 1)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>

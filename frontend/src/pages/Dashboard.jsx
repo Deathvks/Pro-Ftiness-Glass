@@ -41,6 +41,7 @@ import { isSameDay } from '../utils/helpers';
 import { getTrainingWeek, trainingDateFormatter } from '../utils/weeklyTraining';
 import { isWorkoutDoneToday } from '../store/workoutSlice';
 import useAppStore from '../store/useAppStore';
+import { getFirstAvailableStoryTarget } from '../store/storySlice';
 import { getLevelProgress } from '../store/gamificationSlice';
 import CircularProgress from '../components/CircularProgress';
 import CreatinaTracker from '../components/CreatinaTracker';
@@ -220,7 +221,8 @@ const Dashboard = ({ setView }) => {
     updateTodayBodyWeight, startWorkout, startSimpleWorkout, nutritionLog,
     waterLog, todaysCreatineLog, fetchDataForDate,
     completedRoutineIdsToday, activeWorkout, gamification, fetchTodaysCompletedRoutines, stopWorkout,
-    checkStreak: _checkStreak, addXp: _addXp, addGamificationEvents, personalRecords
+    checkStreak: _checkStreak, addXp: _addXp, addGamificationEvents, personalRecords,
+    stories, myStories, socialFriends, openStory
   } = useAppStore(useShallow(state => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
@@ -242,8 +244,17 @@ const Dashboard = ({ setView }) => {
     checkStreak: state.checkStreak,
     addXp: state.addXp,
     addGamificationEvents: state.addGamificationEvents,
-    personalRecords: state.personalRecords || []
+    personalRecords: state.personalRecords || [],
+    stories: state.stories || [],
+    myStories: state.myStories || [],
+    socialFriends: state.socialFriends || [],
+    openStory: state.openStory
   })));
+
+  const dashboardStoryTarget = useMemo(
+    () => getFirstAvailableStoryTarget({ userProfile, stories, myStories, socialFriends }),
+    [userProfile, stories, myStories, socialFriends]
+  );
 
   const { cancelLoginReminder } = useLocalNotifications();
 
@@ -859,6 +870,32 @@ const Dashboard = ({ setView }) => {
                 </span>
               )}
             </button>
+            {dashboardStoryTarget.userId != null && (
+              <button
+                type="button"
+                onClick={() => openStory?.(dashboardStoryTarget.userId)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all duration-200 active:scale-95 shadow-sm text-xs font-bold ${
+                  dashboardStoryTarget.hasUnseen
+                    ? 'bg-gradient-to-r from-accent/20 via-accent/10 to-transparent border-accent/45 text-text-primary hover:border-accent shadow-accent/20'
+                    : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/10 text-text-secondary hover:text-text-primary'
+                }`}
+                title={dashboardStoryTarget.hasUnseen ? 'Ver historias nuevas' : 'Ver historias activas'}
+              >
+                {dashboardStoryTarget.hasUnseen ? (
+                  <Sparkles className="w-3.5 h-3.5 text-accent shrink-0 animate-pulse" />
+                ) : (
+                  <Play className="w-3 h-3 text-accent shrink-0" />
+                )}
+                <span>Historias</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none ${
+                  dashboardStoryTarget.hasUnseen
+                    ? 'bg-accent text-accent-contrast'
+                    : 'bg-black/10 dark:bg-white/10 text-text-secondary'
+                }`}>
+                  {dashboardStoryTarget.hasUnseen ? (dashboardStoryTarget.unseenUsers || 1) : (dashboardStoryTarget.totalUsers || 1)}
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
