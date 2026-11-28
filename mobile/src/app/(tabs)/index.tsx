@@ -729,13 +729,13 @@ export default function Dashboard() {
                   ]}
                   numberOfLines={1}
                 >
-                  Historias
+                  {dashboardStoryTarget.hasUnseen ? 'Ver historias' : 'Historias'}
                 </Text>
                 <View
                   style={{
                     minWidth: 16,
                     height: 16,
-                    paddingHorizontal: 4,
+                    paddingHorizontal: 5,
                     borderRadius: 8,
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -746,12 +746,15 @@ export default function Dashboard() {
                 >
                   <Text
                     style={{
-                      fontSize: 10,
+                      fontSize: 9.5,
                       fontWeight: '900',
                       color: dashboardStoryTarget.hasUnseen ? tintContrastText : colors.textSecondary,
+                      textTransform: 'uppercase',
                     }}
                   >
-                    {dashboardStoryTarget.hasUnseen ? (dashboardStoryTarget.unseenUsers || 1) : (dashboardStoryTarget.totalUsers || 1)}
+                    {dashboardStoryTarget.hasUnseen
+                      ? `${dashboardStoryTarget.unseenUsers || 1} ${(dashboardStoryTarget.unseenUsers || 1) === 1 ? 'nueva' : 'nuevas'}`
+                      : (dashboardStoryTarget.totalUsers || 1)}
                   </Text>
                 </View>
               </TouchableOpacity>

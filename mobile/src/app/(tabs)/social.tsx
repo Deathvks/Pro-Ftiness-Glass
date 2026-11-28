@@ -242,60 +242,109 @@ export default function SocialScreen() {
 
             {/* Stories Horizontal Bar */}
             <TourTarget id="#social-stories">
-            <View style={styles.storiesSection}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.storiesContainer}
-              >
-                {/* My Story Bubble */}
-                <StoryBubble
-                  user={{
-                    ...userProfile,
-                    username: userProfile?.username || 'Yo',
-                  }}
-                  isMe={true}
-                  hasStories={myStories.length > 0}
-                  hasUnseen={myStoriesUnseen}
-                  onClick={handleMyStoryClick}
-                  onAdd={initiateStoryUpload}
-                />
+            {(() => {
+              const unseenUsers = (myStoriesUnseen ? 1 : 0) + visibleStories.filter((su: any) =>
+                su && (su.hasUnseen !== undefined ? su.hasUnseen : su.items?.some((it: any) => !it.viewed))
+              ).length;
+              const firstTargetId = myStoriesUnseen
+                ? userProfile?.id
+                : (visibleStories.find((su: any) => su && (su.hasUnseen !== undefined ? su.hasUnseen : su.items?.some((it: any) => !it.viewed)))?.userId
+                    ?? (myStories.length > 0 ? userProfile?.id : visibleStories[0]?.userId));
 
-                {/* Other Users' Stories */}
-                {visibleStories.map((storyUser: any) => {
-                  const rawUser = storyUser.user || {};
-                  const username = storyUser.username || rawUser.username || 'Usuario';
-                  const avatar =
-                    storyUser.profile_image_url ||
-                    rawUser.profile_image_url ||
-                    storyUser.avatar ||
-                    rawUser.avatar;
-                  const hasUnseen =
-                    storyUser.hasUnseen !== undefined
-                      ? storyUser.hasUnseen
-                      : storyUser.items?.some((item: any) => !item.viewed);
-
-                  return (
+              return (
+                <View
+                  style={[
+                    styles.storiesSection,
+                    {
+                      marginHorizontal: 14,
+                      borderRadius: 20,
+                      paddingTop: 10,
+                      paddingBottom: 6,
+                      borderWidth: 1,
+                      borderColor: unseenUsers > 0 ? colors.tint + '55' : (theme === 'light' || theme === 'ocean' || theme === 'desert' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)'),
+                      backgroundColor: unseenUsers > 0 ? colors.tint + '12' : 'transparent',
+                    },
+                  ]}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, marginBottom: 8 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: unseenUsers > 0 ? colors.tint : colors.textSecondary }} />
+                      <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase', color: colors.text }}>
+                        Historias
+                      </Text>
+                    </View>
+                    {unseenUsers > 0 && firstTargetId != null && (
+                      <TouchableOpacity
+                        activeOpacity={0.75}
+                        onPress={() => openStory(firstTargetId)}
+                        style={{
+                          backgroundColor: colors.tint,
+                          paddingHorizontal: 9,
+                          paddingVertical: 3,
+                          borderRadius: 999,
+                        }}
+                      >
+                        <Text style={{ fontSize: 10, fontWeight: '900', color: getContrastTextColor(colors.tint), textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                          {unseenUsers} {unseenUsers === 1 ? 'nueva • Ver' : 'nuevas • Ver'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={[styles.storiesContainer, { paddingHorizontal: 12 }]}
+                  >
+                    {/* My Story Bubble */}
                     <StoryBubble
-                      key={storyUser.userId}
                       user={{
-                        ...rawUser,
-                        id: storyUser.userId,
-                        username,
-                        avatar,
-                        profile_image_url: avatar,
-                        role: storyUser.role ?? rawUser.role,
-                        trainer_id: storyUser.trainer_id ?? rawUser.trainer_id,
+                        ...userProfile,
+                        username: userProfile?.username || 'Yo',
                       }}
-                      isMe={false}
-                      hasStories={true}
-                      hasUnseen={hasUnseen}
-                      onClick={() => openStory(storyUser.userId)}
+                      isMe={true}
+                      hasStories={myStories.length > 0}
+                      hasUnseen={myStoriesUnseen}
+                      onClick={handleMyStoryClick}
+                      onAdd={initiateStoryUpload}
                     />
-                  );
-                })}
-              </ScrollView>
-            </View>
+
+                    {/* Other Users' Stories */}
+                    {visibleStories.map((storyUser: any) => {
+                      const rawUser = storyUser.user || {};
+                      const username = storyUser.username || rawUser.username || 'Usuario';
+                      const avatar =
+                        storyUser.profile_image_url ||
+                        rawUser.profile_image_url ||
+                        storyUser.avatar ||
+                        rawUser.avatar;
+                      const hasUnseen =
+                        storyUser.hasUnseen !== undefined
+                          ? storyUser.hasUnseen
+                          : storyUser.items?.some((item: any) => !item.viewed);
+
+                      return (
+                        <StoryBubble
+                          key={storyUser.userId}
+                          user={{
+                            ...rawUser,
+                            id: storyUser.userId,
+                            username,
+                            avatar,
+                            profile_image_url: avatar,
+                            role: storyUser.role ?? rawUser.role,
+                            trainer_id: storyUser.trainer_id ?? rawUser.trainer_id,
+                          }}
+                          isMe={false}
+                          hasStories={true}
+                          hasUnseen={hasUnseen}
+                          onClick={() => openStory(storyUser.userId)}
+                        />
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              );
+            })()}
             </TourTarget>
 
             {/* Horizontal Navigation Tabs */}

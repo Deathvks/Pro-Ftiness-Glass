@@ -52,6 +52,31 @@ export function StoryBubble({
       >
         <SocialUserAvatar user={user} size={58} showStoryIndicator={false} />
 
+        {!isMe && hasStories && hasUnseen && (
+          <View
+            style={{
+              position: 'absolute',
+              top: -4,
+              alignSelf: 'center',
+              backgroundColor: colors.tint,
+              paddingHorizontal: 5,
+              paddingVertical: 1.5,
+              borderRadius: 999,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 8,
+                fontWeight: '900',
+                color: plusTextColor,
+                letterSpacing: 0.4,
+              }}
+            >
+              NUEVA
+            </Text>
+          </View>
+        )}
+
         {isMe && onAdd && (
           <TouchableOpacity
             activeOpacity={0.85}

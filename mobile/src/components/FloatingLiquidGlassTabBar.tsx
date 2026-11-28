@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { Home, Users, Flame, Zap, LayoutGrid } from 'lucide-react-native';
 
 import useAppStore from '@/store/useAppStore';
+import { selectFirstAvailableStoryTarget } from '@/store/storySlice';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getInactiveTabColor, getThemeBaseBackground, getThemeSurfaceMode } from '@/constants/theme';
 import { hasUnseenChristmasMission } from '@/utils/christmasTheme';
@@ -84,9 +85,27 @@ export function FloatingLiquidGlassTabBar({ state, emitter, navigateToTab, inset
   const unlockedBadges = useAppStore(state => state.gamification?.unlockedBadges || []);
   const christmasMissionSeen = useAppStore(state => Boolean((state as any).christmasMissionSeen));
   const unreadChats = useAppStore(state => state.unreadChats);
+  const token = useAppStore(state => state.token);
+  const storyViewerId = useAppStore(state => state.storyViewerId);
+  const storiesState = useAppStore(state => state.stories);
+  const myStoriesState = useAppStore(state => state.myStories);
+  const socialRequests = useAppStore(state => state.socialRequests);
+  const hasUnseenStories = useMemo(
+    () =>
+      selectFirstAvailableStoryTarget({
+        token,
+        userProfile,
+        storyViewerId,
+        stories: storiesState,
+        myStories: myStoriesState,
+      }).hasUnseen,
+    [token, userProfile, storyViewerId, storiesState, myStoriesState]
+  );
   const showHubBadge =
     Number(unreadChats) > 0 ||
     hasUnseenChristmasMission(userProfile, unlockedBadges, christmasMissionSeen);
+  const showSocialBadge =
+    Boolean(hasUnseenStories) || (socialRequests?.received?.length || 0) > 0;
   const surface = getThemeSurfaceMode(activeTheme);
   const theme = SURFACES[surface];
   const capsuleBackground = getThemeBaseBackground(activeTheme) + theme.alpha;
@@ -217,7 +236,7 @@ export function FloatingLiquidGlassTabBar({ state, emitter, navigateToTab, inset
               const highlighted = (hovered ?? activeIndex) === index;
               return <TabItem key={route.key} name={name} index={index} selected={activeIndex === index}
                 highlighted={highlighted} color={highlighted ? colors.tint : inactiveInk}
-                badge={name === 'hub' && showHubBadge}
+                badge={(name === 'hub' && showHubBadge) || (name === 'social' && showSocialBadge)}
                 badgeColor={colors.tint}
                 badgeBorderColor={getThemeBaseBackground(activeTheme)}
                 onPress={selectTab} />;

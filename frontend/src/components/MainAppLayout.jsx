@@ -1548,9 +1548,12 @@ export default function MainAppLayout({
                       }`}
                       style={{ WebkitTapHighlightColor: 'transparent' }}
                     >
-                      <Play size={8} fill="currentColor" strokeWidth={2.5} />
+                      {headerStoryState.hasUnseen && (
+                        <span className="absolute -inset-0.5 rounded-full bg-accent animate-ping opacity-55 pointer-events-none" />
+                      )}
+                      <Play size={8} fill="currentColor" strokeWidth={2.5} className="relative z-10" />
                       {headerStoryState.hasUnseen && (headerStoryState.unseenUsers || 0) > 1 && (
-                        <span className="text-[9px] font-black leading-none">
+                        <span className="relative z-10 text-[9px] font-black leading-none">
                           {headerStoryState.unseenUsers}
                         </span>
                       )}
@@ -1720,6 +1723,7 @@ export default function MainAppLayout({
               
               const isSocial = item.id === 'social';
               const pendingCount = isSocial ? (socialRequests?.received?.length || 0) : 0;
+              const showAnimatedDot = pendingCount === 0 && (item.badge || (isSocial && headerStoryState.hasUnseen));
 
               return (
                 <button
@@ -1733,7 +1737,7 @@ export default function MainAppLayout({
                   <div className={`transition-transform duration-200 ease-out ${isVisuallyActive ? 'scale-110' : 'group-hover:scale-105'} relative`} style={{ WebkitBackfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
                     {typeof item.icon === 'function' ? item.icon(isVisuallyActive) : item.icon}
                     {pendingCount > 0 && <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-accent rounded-full border-[1.5px] border-bg-primary z-10 pointer-events-none"></span>}
-                    {pendingCount === 0 && item.badge && (
+                    {showAnimatedDot && (
                       <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-accent rounded-full border-[1.5px] border-bg-primary z-10 pointer-events-none">
                         <span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-75"></span>
                       </span>

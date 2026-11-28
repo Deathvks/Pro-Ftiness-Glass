@@ -218,7 +218,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
                 onClick={() => navigate(item.id)}
                 badgeCount={item.id === 'social' ? (socialRequests?.received?.length || 0) : 0}
                 isCollapsed={isCollapsed}
-                badge={item.badge}
+                badge={item.id === 'social' ? (item.badge || sidebarStoryTarget.hasUnseen) : item.badge}
             />
             ))}
         </div>

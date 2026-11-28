@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Easing, Platform } from 'react-native';
 import { NativeTabs } from 'expo-router/native-tabs';
 import { Tabs } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
+import { selectFirstAvailableStoryTarget } from '@/store/storySlice';
 import { getInactiveTabColor, getThemeSurfaceMode } from '@/constants/theme';
 import { FloatingLiquidGlassTabBar } from '@/components/FloatingLiquidGlassTabBar';
 import { hasUnseenChristmasMission } from '@/utils/christmasTheme';
@@ -75,9 +76,27 @@ function NativeAppTabs() {
   const unlockedBadges = useAppStore(state => state.gamification?.unlockedBadges || []);
   const christmasMissionSeen = useAppStore(state => Boolean((state as any).christmasMissionSeen));
   const unreadChats = useAppStore(state => state.unreadChats);
+  const token = useAppStore(state => state.token);
+  const storyViewerId = useAppStore(state => state.storyViewerId);
+  const storiesState = useAppStore(state => state.stories);
+  const myStoriesState = useAppStore(state => state.myStories);
+  const socialRequests = useAppStore(state => state.socialRequests);
+  const hasUnseenStories = useMemo(
+    () =>
+      selectFirstAvailableStoryTarget({
+        token,
+        userProfile,
+        storyViewerId,
+        stories: storiesState,
+        myStories: myStoriesState,
+      }).hasUnseen,
+    [token, userProfile, storyViewerId, storiesState, myStoriesState]
+  );
   const showHubBadge =
     Number(unreadChats) > 0 ||
     hasUnseenChristmasMission(userProfile, unlockedBadges, christmasMissionSeen);
+  const showSocialBadge =
+    Boolean(hasUnseenStories) || (socialRequests?.received?.length || 0) > 0;
   const surfaceMode = getThemeSurfaceMode(activeTheme);
   const isDark = surfaceMode !== 'light';
   const inactiveInk = getInactiveTabColor(activeTheme, colors.text);
@@ -114,6 +133,7 @@ function NativeAppTabs() {
       <NativeTabs.Trigger name="social">
         <NativeTabs.Trigger.Label>Comunidad</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: "person.2", selected: "person.2" }} md="group" />
+        <NativeTabs.Trigger.Badge hidden={!showSocialBadge} selectedBackgroundColor={colors.tint}>•</NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="nutrition">

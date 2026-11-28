@@ -876,7 +876,7 @@ const Dashboard = ({ setView }) => {
                 onClick={() => openStory?.(dashboardStoryTarget.userId)}
                 className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all duration-200 active:scale-95 shadow-sm text-xs font-bold ${
                   dashboardStoryTarget.hasUnseen
-                    ? 'bg-gradient-to-r from-accent/20 via-accent/10 to-transparent border-accent/45 text-text-primary hover:border-accent shadow-accent/20'
+                    ? 'bg-gradient-to-r from-accent/25 via-accent/15 to-accent/5 border-accent/60 text-text-primary hover:border-accent shadow-md shadow-accent/25'
                     : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/10 text-text-secondary hover:text-text-primary'
                 }`}
                 title={dashboardStoryTarget.hasUnseen ? 'Ver historias nuevas' : 'Ver historias activas'}
@@ -886,13 +886,16 @@ const Dashboard = ({ setView }) => {
                 ) : (
                   <Play className="w-3 h-3 text-accent shrink-0" />
                 )}
-                <span>Historias</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none ${
+                <span>{dashboardStoryTarget.hasUnseen ? 'Ver historias' : 'Historias'}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none uppercase tracking-wider ${
                   dashboardStoryTarget.hasUnseen
                     ? 'bg-accent text-accent-contrast'
                     : 'bg-black/10 dark:bg-white/10 text-text-secondary'
                 }`}>
-                  {dashboardStoryTarget.hasUnseen ? (dashboardStoryTarget.unseenUsers || 1) : (dashboardStoryTarget.totalUsers || 1)}
+                  {dashboardStoryTarget.hasUnseen
+                    ? `${dashboardStoryTarget.unseenUsers || 1} ${(dashboardStoryTarget.unseenUsers || 1) === 1 ? 'nueva' : 'nuevas'}`
+                    : (dashboardStoryTarget.totalUsers || 1)
+                  }
                 </span>
               </button>
             )}

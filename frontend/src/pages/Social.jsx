@@ -126,6 +126,12 @@ const StoryBubble = ({ user, isMe, hasStories, hasUnseen, onClick, onAdd }) => {
                     />
                 </div>
 
+                {!isMe && hasStories && hasUnseen && (
+                    <span className="absolute -top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-accent text-accent-contrast text-[8px] font-black uppercase tracking-wider shadow-md z-20 pointer-events-none">
+                        Nueva
+                    </span>
+                )}
+
                 {isMe && (
                     <button
                         onClick={(e) => {
@@ -1741,8 +1747,44 @@ export default function Social({ setView }) {
             />
 
             {/* --- Carrusel de Historias --- */}
-            <section id="social-stories" className="mb-8 overflow-x-auto no-scrollbar pb-4 pt-2 max-w-3xl mx-auto mask-linear-fade">
-                <div className="flex items-start gap-4 px-2">
+            {(() => {
+                const safeVisibleStories = Array.isArray(visibleStories) ? visibleStories : [];
+                const unseenCount = (myStoriesUnseen ? 1 : 0) + safeVisibleStories.filter(s =>
+                    s && (s.hasUnseen !== undefined ? s.hasUnseen : s.items?.some(item => !item.viewed))
+                ).length;
+                const firstTargetUserId = myStoriesUnseen
+                    ? userProfile?.id
+                    : (safeVisibleStories.find(s => s && (s.hasUnseen !== undefined ? s.hasUnseen : s.items?.some(item => !item.viewed)))?.userId
+                        ?? (Array.isArray(myStories) && myStories.length > 0 ? userProfile?.id : safeVisibleStories[0]?.userId));
+
+                return (
+                    <section
+                        id="social-stories"
+                        className={`mb-8 max-w-3xl mx-auto rounded-[24px] p-3 transition-all ${
+                            unseenCount > 0
+                                ? 'bg-gradient-to-r from-accent/15 via-accent/5 to-transparent border border-accent/35 shadow-sm shadow-accent/15'
+                                : 'bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5'
+                        }`}
+                    >
+                        <div className="flex items-center justify-between gap-2 px-1.5 mb-2.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${unseenCount > 0 ? 'bg-accent animate-pulse' : 'bg-text-muted opacity-50'}`} />
+                                <span className="text-xs font-extrabold uppercase tracking-wider text-text-primary truncate">
+                                    Historias
+                                </span>
+                            </div>
+                            {unseenCount > 0 && firstTargetUserId != null && (
+                                <button
+                                    type="button"
+                                    onClick={() => setViewingStoryUserId(firstTargetUserId)}
+                                    className="px-2.5 py-0.5 rounded-full bg-accent text-accent-contrast text-[10px] font-black uppercase tracking-wider shadow-sm hover:brightness-110 active:scale-95 transition-all shrink-0"
+                                >
+                                    {unseenCount} {unseenCount === 1 ? 'nueva • Ver' : 'nuevas • Ver'}
+                                </button>
+                            )}
+                        </div>
+                        <div className="overflow-x-auto no-scrollbar pb-1 pt-1 mask-linear-fade">
+                            <div className="flex items-start gap-4 px-1">
                     {/* Mi Historia / Subir */}
                     <StoryBubble
                         user={{
@@ -1757,7 +1799,7 @@ export default function Social({ setView }) {
                     />
 
                     {/* Historias de Amigos */}
-                    {(Array.isArray(visibleStories) ? visibleStories : []).map(storyUser => {
+                    {safeVisibleStories.map(storyUser => {
                         if (!storyUser) return null;
                         const rawUser = storyUser.user || storyUser;
                         const username = storyUser.username || rawUser.username || 'Usuario';
@@ -1789,8 +1831,11 @@ export default function Social({ setView }) {
                             />
                         );
                     })}
-                </div>
-            </section>
+                            </div>
+                        </div>
+                    </section>
+                );
+            })()}
 
             {/* --- Pestañas Horizontales --- */}
             <div id="social-tabs" className="flex overflow-x-auto no-scrollbar gap-2.5 mb-8 py-2 px-1 -mx-1 md:justify-center mask-linear-fade">
