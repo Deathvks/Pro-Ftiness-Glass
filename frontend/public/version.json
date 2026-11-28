@@ -1,17 +1,13 @@
 {
-  "version": "7.18.14",
-  "releaseNotes": "Actualización v7.18.14: el avatar de la cabecera abre siempre tu Perfil sin mini-botones superpuestos, dejando el acceso dedicado a Historias en Inicio, Comunidad y Sidebar.",
+  "version": "7.18.15",
+  "releaseNotes": "Actualización v7.18.15: el feed de Comunidad en la app nativa muestra ahora las miniaturas reales de cada ejercicio realizado igual que en Web y Capacitor.",
   "welcome": {
-    "title": "Novedades Pro Fitness Glass (v7.18.14)",
-    "subtitle": "Navegación más limpia entre Perfil e Historias para Web, PWA, Capacitor y Nativo.",
+    "title": "Novedades Pro Fitness Glass (v7.18.15)",
+    "subtitle": "Mejora visual en Comunidad para la app nativa.",
     "features": [
       {
-        "title": "Cabecera 100% directa al Perfil",
-        "description": "Al tocar tu avatar en la cabecera entras siempre a tu Perfil sin pulsaciones accidentales ni títulos recortados."
-      },
-      {
-        "title": "Accesos claros a Historias",
-        "description": "Entra cómodamente a Historias desde la píldora destacada en Inicio, la franja de Comunidad (con punto en el navbar) o el Sidebar en escritorio."
+        "title": "Fotos de ejercicios en Comunidad",
+        "description": "Los entrenamientos compartidos en el feed nativo muestran ahora la imagen de cada ejercicio realizado."
       }
     ]
   }

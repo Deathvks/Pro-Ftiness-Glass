@@ -49,7 +49,7 @@ import { getSocket } from '@/services/socket';
 import { SocialUserAvatar } from './SocialUserAvatar';
 import { Image as ExpoImage } from 'expo-image';
 import { GymLocationModal } from '@/components/modals/GymLocationModal';
-import { getContrastTextColor } from '@/utils/routineHelpers';
+import { getContrastTextColor, getDisplayImageUrl } from '@/utils/routineHelpers';
 
 type ScopeType = 'global' | 'gym' | 'friends';
 type GymFilterType = 'all' | 'same_gym' | 'same_city';
@@ -90,6 +90,30 @@ const parseProfileGym = (raw: any) => {
   }
 };
 
+const FeedExerciseThumb = ({ uri, bgColor, iconColor }: { uri: string | null; bgColor: string; iconColor: string }) => {
+  const [failed, setFailed] = useState(false);
+
+  if (!uri || failed) {
+    return (
+      <View style={[styles.exerciseIconWrap, { backgroundColor: bgColor }]}>
+        <Dumbbell size={18} color={iconColor} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.exerciseIconWrap, { backgroundColor: bgColor }]}>
+      <ExpoImage
+        source={{ uri }}
+        contentFit="cover"
+        transition={150}
+        style={StyleSheet.absoluteFill}
+        onError={() => setFailed(true)}
+      />
+    </View>
+  );
+};
+
 interface FeedProps {
   onNavigateProfile?: (userId: any) => void;
   visibleStories?: any[];
@@ -105,7 +129,19 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
   const accentTextColor = getContrastTextColor(colors.tint);
 
   const userProfile = useAppStore(state => state.userProfile);
-  const exercises = useAppStore(state => state.exercises) || [];
+  const exercises = useAppStore(state => state.exercises);
+  const exerciseImageMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (!Array.isArray(exercises)) return map;
+    for (const ex of exercises) {
+      const key = typeof ex?.name === 'string' ? ex.name.toLowerCase().trim() : '';
+      const img = ex?.image_url_start || ex?.image_url || (Array.isArray(ex?.images) ? ex.images[0] : null);
+      if (key && img && !map.has(key)) {
+        map.set(key, img);
+      }
+    }
+    return map;
+  }, [exercises]);
   const sendFriendRequest = useAppStore(state => state.sendFriendRequest);
   const setUserProfile = useAppStore(state => state.setUserProfile);
 
@@ -1440,11 +1476,19 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
               <View style={styles.exercisesListContainer}>
                 {log.WorkoutLogDetails.slice(0, 4).map((detail: any, dIdx: number) => {
                   const sets = Array.isArray(detail?.WorkoutLogSets) ? detail.WorkoutLogSets : [];
+                  const rawImg =
+                    detail?.image_url ||
+                    exerciseImageMap.get(String(detail?.exercise_name || '').toLowerCase().trim()) ||
+                    null;
+                  const finalImgUrl = getDisplayImageUrl(rawImg);
+
                   return (
                     <View key={dIdx} style={styles.exerciseDetailRow}>
-                      <View style={[styles.exerciseIconWrap, { backgroundColor: tertiarySurface }]}>
-                        <Dumbbell size={14} color={colors.textSecondary} />
-                      </View>
+                      <FeedExerciseThumb
+                        uri={finalImgUrl}
+                        bgColor={tertiarySurface}
+                        iconColor={colors.textSecondary}
+                      />
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={[styles.exerciseDetailName, { color: colors.text }]} numberOfLines={1}>
                           {detail.exercise_name || 'Ejercicio'}
@@ -2333,9 +2377,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   exerciseIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 9,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
