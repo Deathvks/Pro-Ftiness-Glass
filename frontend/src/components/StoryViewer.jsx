@@ -220,7 +220,11 @@ const StoryViewer = ({ userId, onClose }) => {
    } = useAppStore(useShallow(state => ({ stories: state.stories, myStories: state.myStories, userProfile: state.userProfile, markStoryAsViewed: state.markStoryAsViewed, likeStory: state.likeStory, deleteMyStory: state.deleteMyStory })));
 
   const [viewingUserId, setViewingUserId] = useState(userId);
-  const isMyStory = viewingUserId === userProfile?.id;
+  useEffect(() => {
+    setViewingUserId(userId);
+  }, [userId]);
+
+  const isMyStory = userProfile?.id != null && String(viewingUserId) === String(userProfile.id);
   const [isClosingStory, setIsClosingStory] = useState(false);
 
   const getFullImageUrl = useCallback((path) => {
@@ -230,6 +234,30 @@ const StoryViewer = ({ userId, onClose }) => {
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     return `${SERVER_URL}${cleanPath}`;
   }, []);
+
+  const isFreshItem = useCallback((item) => {
+    const expiry = item?.expires_at || item?.expiresAt;
+    if (!expiry) return true;
+    return new Date(expiry).getTime() > Date.now();
+  }, []);
+
+  // Cola ordenada de usuarios con historias activas: primero mis historias (si hay) y luego comunidad
+  const storyQueue = useMemo(() => {
+    const list = [];
+    const ownItems = (Array.isArray(myStories) ? myStories : []).filter(isFreshItem);
+    if (ownItems.length > 0 && userProfile?.id != null) {
+      list.push({ userId: userProfile.id, isMe: true, items: ownItems });
+    }
+    for (const group of Array.isArray(stories) ? stories : []) {
+      if (!group || group.userId == null) continue;
+      if (userProfile?.id != null && String(group.userId) === String(userProfile.id)) continue;
+      const items = (group.items || []).filter(isFreshItem);
+      if (items.length > 0) {
+        list.push({ userId: group.userId, isMe: false, items });
+      }
+    }
+    return list;
+  }, [myStories, stories, userProfile?.id, isFreshItem]);
 
   const storyData = useMemo(() => {
     if (isMyStory) {
@@ -242,7 +270,7 @@ const StoryViewer = ({ userId, onClose }) => {
       };
     }
 
-    const group = stories.find((s) => s.userId === viewingUserId);
+    const group = stories.find((s) => String(s.userId) === String(viewingUserId));
     if (!group) return null;
 
     const rawUser = group.user || group;
@@ -359,43 +387,50 @@ const StoryViewer = ({ userId, onClose }) => {
     }, 280);
   }, [onClose]);
 
+  const currentQueueIndex = useMemo(
+    () => storyQueue.findIndex((g) => String(g.userId) === String(viewingUserId)),
+    [storyQueue, viewingUserId]
+  );
+
+  const goToNextUser = useCallback(() => {
+    if (currentQueueIndex !== -1 && currentQueueIndex < storyQueue.length - 1) {
+      const nextGroup = storyQueue[currentQueueIndex + 1];
+      const firstUnviewed = nextGroup.isMe
+        ? 0
+        : nextGroup.items.findIndex((s) => !s.viewed);
+      setViewingUserId(nextGroup.userId);
+      setCurrentIndex(firstUnviewed !== -1 ? firstUnviewed : 0);
+      return true;
+    }
+    animateAndClose();
+    return false;
+  }, [currentQueueIndex, storyQueue, animateAndClose]);
+
+  const goToPrevUser = useCallback((startAtLast = false) => {
+    if (currentQueueIndex > 0) {
+      const prevGroup = storyQueue[currentQueueIndex - 1];
+      setViewingUserId(prevGroup.userId);
+      setCurrentIndex(startAtLast ? Math.max(0, prevGroup.items.length - 1) : 0);
+      return true;
+    }
+    return false;
+  }, [currentQueueIndex, storyQueue]);
+
   const goToNext = useCallback(() => {
     if (currentIndex < activeStories.length - 1) {
       setCurrentIndex((prev) => prev + 1);
     } else {
-      if (isMyStory) {
-        animateAndClose();
-      } else {
-        const currentGroupIndex = stories.findIndex((s) => s.userId === viewingUserId);
-        let foundNext = false;
-        for (let i = currentGroupIndex + 1; i < stories.length; i++) {
-          const group = stories[i];
-          const validItems = (group.items || []).filter((item) => {
-            const expiry = item.expires_at || item.expiresAt;
-            if (!expiry) return true;
-            return new Date(expiry) > new Date();
-          });
-
-          if (validItems.length > 0) {
-            const firstUnviewed = validItems.findIndex((s) => !s.viewed);
-            setViewingUserId(group.userId);
-            setCurrentIndex(firstUnviewed !== -1 ? firstUnviewed : 0);
-            foundNext = true;
-            break;
-          }
-        }
-        if (!foundNext) {
-          animateAndClose();
-        }
-      }
+      goToNextUser();
     }
-  }, [currentIndex, activeStories.length, isMyStory, animateAndClose, stories, viewingUserId]);
+  }, [currentIndex, activeStories.length, goToNextUser]);
 
-  const goToPrev = () => {
+  const goToPrev = useCallback(() => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
+    } else {
+      goToPrevUser(true);
     }
-  };
+  }, [currentIndex, goToPrevUser]);
 
   useLayoutEffect(() => {
     setProgress(0);
@@ -514,6 +549,7 @@ const StoryViewer = ({ userId, onClose }) => {
   };
 
   const [dragY, setDragY] = useState(0);
+  const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
   // Bloqueo total de scroll en el body para evitar que el fondo se mueva o descoloque el visor
@@ -543,9 +579,15 @@ const StoryViewer = ({ userId, onClose }) => {
     const currentY = e.touches[0].clientY;
     const currentX = e.touches[0].clientX;
     const deltaY = currentY - touchStartY.current;
-    const deltaX = Math.abs(currentX - touchStartX.current);
+    const deltaX = currentX - touchStartX.current;
 
-    if (Math.abs(deltaY) > 8 && Math.abs(deltaY) > deltaX) {
+    if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY) * 1.1) {
+      // Deslizar horizontal para cambiar de persona
+      setDragX(deltaX * 0.45);
+      setDragY(0);
+      setIsDragging(true);
+    } else if (Math.abs(deltaY) > 8 && Math.abs(deltaY) > Math.abs(deltaX)) {
+      setDragX(0);
       if (deltaY > 0) {
         // Deslizar hacia abajo: sigue el dedo suavemente para cerrar
         setDragY(deltaY);
@@ -563,18 +605,35 @@ const StoryViewer = ({ userId, onClose }) => {
     const touchEndX = e.changedTouches[0].clientX;
 
     const diffY = touchEndY - touchStartY.current;
-    const diffX = Math.abs(touchEndX - touchStartX.current);
+    const rawDiffX = touchEndX - touchStartX.current;
+    const diffX = Math.abs(rawDiffX);
 
     setIsDragging(false);
 
+    // Deslizar horizontal izquierda/derecha (> 55px) para ir de una persona a otra
+    if (diffX > 55 && diffX > Math.abs(diffY)) {
+      setDragX(0);
+      setDragY(0);
+      setIsPaused(false);
+      if (e && e.cancelable) e.preventDefault();
+      if (rawDiffX < 0) {
+        goToNextUser();
+      } else if (!goToPrevUser(false) && currentIndex > 0) {
+        goToPrev();
+      }
+      return;
+    }
+
     // Deslizar abajo para cerrar (> 70px)
     if (diffY > 70 && diffX < 80) {
+      setDragX(0);
       animateAndClose();
       return;
     }
 
     // Deslizar arriba para ver likes (< -50px)
     if (diffY < -50 && diffX < 80) {
+      setDragX(0);
       setDragY(0);
       if (isMyStory) {
         handleOpenLikesList(e);
@@ -585,6 +644,7 @@ const StoryViewer = ({ userId, onClose }) => {
     }
 
     // Volver a posición normal
+    setDragX(0);
     setDragY(0);
     handlePauseEnd(e, action);
   };
@@ -770,7 +830,7 @@ const StoryViewer = ({ userId, onClose }) => {
           isDragging ? 'transition-none' : 'transition-transform duration-200 ease-out'
         }`}
         style={{
-          transform: dragY !== 0 ? `translateY(${dragY}px)` : undefined,
+          transform: (dragX !== 0 || dragY !== 0) ? `translate3d(${dragX}px, ${dragY}px, 0)` : undefined,
           opacity: dragY > 0 ? Math.max(0.3, 1 - dragY / 500) : 1
         }}
         onClick={(e) => e.stopPropagation()}>

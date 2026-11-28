@@ -22,34 +22,63 @@ export function selectHasActiveStory(state, userId) {
   return selectUserStories(state, userId).some(item => isActive(item, now));
 }
 
+export function selectActiveStoryQueue(state) {
+  const myId = state?.userProfile?.id;
+  if (!state?.token || myId == null || !sameId(state.storyViewerId, myId)) {
+    return EMPTY_STORIES;
+  }
+  const now = Date.now();
+  const list = [];
+  const ownActive = (Array.isArray(state.myStories) ? state.myStories : []).filter(item => isActive(item, now));
+  if (ownActive.length > 0) {
+    list.push({ userId: myId, isMe: true, items: ownActive });
+  }
+  for (const group of Array.isArray(state.stories) ? state.stories : []) {
+    if (!group || group.userId == null || sameId(group.userId, myId)) continue;
+    const activeItems = (Array.isArray(group.items) ? group.items : []).filter(item => isActive(item, now));
+    if (activeItems.length > 0) {
+      list.push({ userId: group.userId, isMe: false, items: activeItems });
+    }
+  }
+  return list;
+}
+
 export function selectFirstAvailableStoryTarget(state) {
   const myId = state?.userProfile?.id;
   if (!state?.token || myId == null || !sameId(state.storyViewerId, myId)) {
-    return { userId: null, hasUnseen: false, hasOwn: false };
+    return { userId: null, hasUnseen: false, hasOwn: false, totalUsers: 0, unseenUsers: 0 };
   }
   const now = Date.now();
   const ownActive = (Array.isArray(state.myStories) ? state.myStories : []).filter(item => isActive(item, now));
   const groups = (Array.isArray(state.stories) ? state.stories : [])
+    .filter(group => group && !sameId(group.userId, myId))
     .map(group => ({
       ...group,
       activeItems: (Array.isArray(group?.items) ? group.items : []).filter(item => isActive(item, now)),
     }))
     .filter(group => group.activeItems.length > 0);
 
-  if (ownActive.some(item => !item.viewed)) {
-    return { userId: myId, hasUnseen: true, hasOwn: true };
+  const ownHasUnseen = ownActive.some(item => !item.viewed);
+  const unseenOthersCount = groups.filter(
+    group => group.hasUnseen || group.activeItems.some(item => !item.viewed)
+  ).length;
+  const totalUsers = (ownActive.length > 0 ? 1 : 0) + groups.length;
+  const unseenUsers = (ownHasUnseen ? 1 : 0) + unseenOthersCount;
+
+  if (ownHasUnseen) {
+    return { userId: myId, hasUnseen: true, hasOwn: true, totalUsers, unseenUsers };
   }
   const unseenGroup = groups.find(group => group.hasUnseen || group.activeItems.some(item => !item.viewed));
   if (unseenGroup?.userId != null) {
-    return { userId: unseenGroup.userId, hasUnseen: true, hasOwn: ownActive.length > 0 };
+    return { userId: unseenGroup.userId, hasUnseen: true, hasOwn: ownActive.length > 0, totalUsers, unseenUsers };
   }
   if (ownActive.length > 0) {
-    return { userId: myId, hasUnseen: false, hasOwn: true };
+    return { userId: myId, hasUnseen: false, hasOwn: true, totalUsers, unseenUsers };
   }
   if (groups[0]?.userId != null) {
-    return { userId: groups[0].userId, hasUnseen: false, hasOwn: false };
+    return { userId: groups[0].userId, hasUnseen: false, hasOwn: false, totalUsers, unseenUsers };
   }
-  return { userId: null, hasUnseen: false, hasOwn: false };
+  return { userId: null, hasUnseen: false, hasOwn: false, totalUsers: 0, unseenUsers: 0 };
 }
 
 function updateStoryGroups(groups, update) {

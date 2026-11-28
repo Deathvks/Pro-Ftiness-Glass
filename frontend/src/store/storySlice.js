@@ -21,23 +21,31 @@ export const getFirstAvailableStoryTarget = (state) => {
   const now = Date.now();
   const isFresh = (item) => Boolean(item && (!item.expiresAt || Date.parse(item.expiresAt) > now));
   const ownActive = (Array.isArray(state?.myStories) ? state.myStories : []).filter(isFresh);
-  const others = getVisibleCommunityStories(state);
+  const others = getVisibleCommunityStories(state).filter(
+    (g) => myId == null || String(g.userId) !== String(myId)
+  );
+  const ownHasUnseen = myId != null && ownActive.some((s) => !s.viewed);
+  const unseenOthersCount = others.filter(
+    (g) => g.hasUnseen || g.items?.some((s) => isFresh(s) && !s.viewed)
+  ).length;
+  const totalUsers = (myId != null && ownActive.length > 0 ? 1 : 0) + others.length;
+  const unseenUsers = (ownHasUnseen ? 1 : 0) + unseenOthersCount;
 
-  if (myId != null && ownActive.some((s) => !s.viewed)) {
-    return { userId: myId, hasUnseen: true, hasOwn: true };
+  if (ownHasUnseen) {
+    return { userId: myId, hasUnseen: true, hasOwn: true, totalUsers, unseenUsers };
   }
   const unseenGroup = others.find((g) => g.hasUnseen || g.items?.some((s) => isFresh(s) && !s.viewed));
   if (unseenGroup?.userId != null) {
-    return { userId: unseenGroup.userId, hasUnseen: true, hasOwn: ownActive.length > 0 };
+    return { userId: unseenGroup.userId, hasUnseen: true, hasOwn: ownActive.length > 0, totalUsers, unseenUsers };
   }
   if (myId != null && ownActive.length > 0) {
-    return { userId: myId, hasUnseen: false, hasOwn: true };
+    return { userId: myId, hasUnseen: false, hasOwn: true, totalUsers, unseenUsers };
   }
   const firstGroup = others[0];
   if (firstGroup?.userId != null) {
-    return { userId: firstGroup.userId, hasUnseen: false, hasOwn: false };
+    return { userId: firstGroup.userId, hasUnseen: false, hasOwn: false, totalUsers, unseenUsers };
   }
-  return { userId: null, hasUnseen: false, hasOwn: false };
+  return { userId: null, hasUnseen: false, hasOwn: false, totalUsers: 0, unseenUsers: 0 };
 };
 
 export const createStorySlice = (set, get) => ({

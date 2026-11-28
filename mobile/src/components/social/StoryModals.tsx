@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Animated, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions,
+  ActivityIndicator, Animated, Image, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions,
 } from 'react-native';
 import {
   Camera, Check, Clock, Globe, Heart, Image as ImageIcon, Shield, ShieldAlert, Sparkles, Trash2, Users, X, Zap,
@@ -17,7 +17,7 @@ import { LiquidGlassSwitch } from '@/components/ui/LiquidGlassSwitch';
 import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import { getThemeBaseBackground, getThemeSurfaceMode, getUnselectedControlColors } from '@/constants/theme';
 import useAppStore from '@/store/useAppStore';
-import { selectUserStories } from '@/store/storySlice';
+import { selectUserStories, selectActiveStoryQueue } from '@/store/storySlice';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
@@ -351,13 +351,33 @@ export function StoryViewerModal({
   const [viewerSize, setViewerSize] = useState<{ width: number; height: number }>();
   const frameWidth = Math.min(viewerSize?.width ?? window.width, (viewerSize?.height ?? window.height) * STORY_ASPECT_RATIO);
   const userProfile = useAppStore(state => state.userProfile);
-  const group = useAppStore(state => state.stories.find((story: { userId: string | number }) => String(story.userId) === String(userId)));
+  const stories = useAppStore(state => state.stories);
+  const myStories = useAppStore(state => state.myStories);
+  const storyViewerId = useAppStore(state => state.storyViewerId);
+  const token = useAppStore(state => state.token);
+  const openStory = useAppStore(state => state.openStory);
+
+  const group = useMemo(
+    () => stories.find((story: { userId: string | number }) => String(story.userId) === String(userId)),
+    [stories, userId]
+  );
   const items = useAppStore(state => selectUserStories(state, userId));
   const likeStory = useAppStore(state => state.likeStory);
   const markStoryAsViewed = useAppStore(state => state.markStoryAsViewed);
   const deleteMyStory = useAppStore(state => state.deleteMyStory);
 
-  const isMe = String(userId) === String(userProfile?.id);
+  const isMe = userProfile?.id != null && String(userId) === String(userProfile.id);
+
+  // Cola ordenada de usuarios con historias activas (mis historias + comunidad)
+  const storyQueue = useMemo(
+    () => selectActiveStoryQueue({ token, storyViewerId, userProfile, stories, myStories }),
+    [token, storyViewerId, userProfile, stories, myStories]
+  );
+
+  const currentQueueIndex = useMemo(
+    () => storyQueue.findIndex(entry => String(entry.userId) === String(userId)),
+    [storyQueue, userId]
+  );
 
   // Get current user's story items
   const storyUser = isMe
@@ -371,15 +391,103 @@ export function StoryViewerModal({
       }
     : group;
 
-  const [index, setCurrentIndex] = useState(() => Math.max(0, items.findIndex((item: { viewed: boolean }) => !item.viewed)));
-  const currentIndex = Math.min(index, items.length - 1);
+  const initialUserIndex = Math.max(0, items.findIndex((item: { viewed: boolean }) => !item.viewed));
+  const [cursor, setCursor] = useState<{ userId: string | number; index: number }>(() => ({
+    userId,
+    index: initialUserIndex,
+  }));
+  const currentIndex = items.length > 0
+    ? Math.min(String(cursor.userId) === String(userId) ? cursor.index : initialUserIndex, items.length - 1)
+    : 0;
+  const setCurrentIndex = useCallback(
+    (nextIndex: number) => setCursor({ userId, index: nextIndex }),
+    [userId]
+  );
+
   const [progressAnim] = useState(() => new Animated.Value(0));
+  const [swipeAnim] = useState(() => new Animated.ValueXY({ x: 0, y: 0 }));
   const [mediaState, setMediaState] = useState<{ id: string | number; failed: boolean }>();
 
   const currentStory = items[currentIndex];
   const storyId = currentStory?.id;
   const mediaFailed = mediaState?.id === storyId && mediaState?.failed;
   const mediaReady = mediaState?.id === storyId && mediaState?.failed === false;
+
+  const goToNextUser = useCallback(() => {
+    if (currentQueueIndex !== -1 && currentQueueIndex < storyQueue.length - 1) {
+      const nextGroup = storyQueue[currentQueueIndex + 1];
+      const firstUnviewed = nextGroup.isMe
+        ? 0
+        : nextGroup.items.findIndex((item: { viewed?: boolean }) => !item.viewed);
+      setCursor({ userId: nextGroup.userId, index: firstUnviewed !== -1 ? firstUnviewed : 0 });
+      openStory(nextGroup.userId);
+      return true;
+    }
+    onClose();
+    return false;
+  }, [currentQueueIndex, storyQueue, openStory, onClose]);
+
+  const goToPrevUser = useCallback((startAtLast = false) => {
+    if (currentQueueIndex > 0) {
+      const prevGroup = storyQueue[currentQueueIndex - 1];
+      setCursor({
+        userId: prevGroup.userId,
+        index: startAtLast ? Math.max(0, prevGroup.items.length - 1) : 0,
+      });
+      openStory(prevGroup.userId);
+      return true;
+    }
+    return false;
+  }, [currentQueueIndex, storyQueue, openStory]);
+
+  const handlePrev = useCallback(() => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    } else {
+      goToPrevUser(true);
+    }
+  }, [currentIndex, setCurrentIndex, goToPrevUser]);
+
+  const handleNext = useCallback(() => {
+    if (currentIndex < items.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      goToNextUser();
+    }
+  }, [currentIndex, items.length, setCurrentIndex, goToNextUser]);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_evt, gesture) =>
+          Math.abs(gesture.dx) > 14 || Math.abs(gesture.dy) > 18,
+        onPanResponderMove: (_evt, gesture) => {
+          if (Math.abs(gesture.dx) >= Math.abs(gesture.dy)) {
+            swipeAnim.setValue({ x: gesture.dx * 0.45, y: 0 });
+          } else if (gesture.dy > 0) {
+            swipeAnim.setValue({ x: 0, y: gesture.dy * 0.6 });
+          }
+        },
+        onPanResponderRelease: (_evt, gesture) => {
+          swipeAnim.setValue({ x: 0, y: 0 });
+          if (Math.abs(gesture.dx) > Math.abs(gesture.dy) && (Math.abs(gesture.dx) > 50 || Math.abs(gesture.vx) > 0.5)) {
+            if (gesture.dx < 0) {
+              goToNextUser();
+            } else if (!goToPrevUser(false) && currentIndex > 0) {
+              handlePrev();
+            }
+            return;
+          }
+          if (gesture.dy > 80 && Math.abs(gesture.dx) < 80) {
+            onClose();
+          }
+        },
+        onPanResponderTerminate: () => {
+          swipeAnim.setValue({ x: 0, y: 0 });
+        },
+      }),
+    [swipeAnim, goToNextUser, goToPrevUser, currentIndex, handlePrev, onClose]
+  );
 
   useEffect(() => {
     if (!items.length) onClose();
@@ -399,30 +507,12 @@ export function StoryViewerModal({
 
     animation.start(({ finished }) => {
       if (finished) {
-        if (currentIndex < items.length - 1) {
-          setCurrentIndex(currentIndex + 1);
-        } else {
-          onClose();
-        }
+        handleNext();
       }
     });
 
     return () => animation.stop();
-  }, [currentIndex, items.length, markStoryAsViewed, mediaReady, onClose, progressAnim, storyId, userId]);
-
-  const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentIndex < items.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      onClose();
-    }
-  };
+  }, [currentIndex, markStoryAsViewed, mediaReady, progressAnim, storyId, userId, handleNext]);
 
   const handleLike = () => {
     if (userId && currentStory?.id) {
@@ -434,7 +524,7 @@ export function StoryViewerModal({
     if (currentStory?.id) {
       deleteMyStory(currentStory.id);
       if (items.length <= 1) {
-        onClose();
+        goToNextUser();
       } else {
         setCurrentIndex(Math.min(currentIndex, items.length - 2));
       }
@@ -458,9 +548,16 @@ export function StoryViewerModal({
   return (
     <Modal visible presentationStyle="fullScreen" statusBarTranslucent navigationBarTranslucent animationType="fade" onRequestClose={onClose}>
       <StatusBar style="light" />
-      <View style={styles.viewerContainer} onLayout={({ nativeEvent: { layout: { width, height } } }) => {
-        if (width > 0 && height > 0) setViewerSize(previous => previous?.width === width && previous.height === height ? previous : { width, height });
-      }}>
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={[
+          styles.viewerContainer,
+          { transform: [{ translateX: swipeAnim.x }, { translateY: swipeAnim.y }] },
+        ]}
+        onLayout={({ nativeEvent: { layout: { width, height } } }) => {
+          if (width > 0 && height > 0) setViewerSize(previous => previous?.width === width && previous.height === height ? previous : { width, height });
+        }}
+      >
         {/* Story Media */}
         <View pointerEvents="none" style={[styles.storyFrame, { width: frameWidth, aspectRatio: STORY_ASPECT_RATIO }]}>
           {mediaUrl && !mediaFailed ? (
@@ -492,7 +589,7 @@ export function StoryViewerModal({
 
         {/* Tap areas for Prev / Next */}
         <View style={StyleSheet.absoluteFill}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Historia anterior" disabled={currentIndex === 0} style={styles.tapLeft} onPress={handlePrev} />
+          <Pressable accessibilityRole="button" accessibilityLabel="Historia anterior" disabled={currentIndex === 0 && currentQueueIndex <= 0} style={styles.tapLeft} onPress={handlePrev} />
           <Pressable accessibilityRole="button" accessibilityLabel="Siguiente historia" style={styles.tapRight} onPress={handleNext} />
         </View>
 
@@ -569,7 +666,7 @@ export function StoryViewerModal({
             </Pressable>
           )}
         </View>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }

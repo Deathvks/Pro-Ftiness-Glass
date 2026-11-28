@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { SocialUserAvatar } from '@/components/social/SocialUserAvatar';
 import { getThemeBaseBackground } from '@/constants/theme';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import { androidHeaderBlurAvailable, type HeaderBlurRef } from '@/components/AndroidHeaderBlur';
 
 // Tinte de fondo para el efecto cristal en web
@@ -262,17 +263,18 @@ export default function GlobalHeader({
                                 }}
                                 activeOpacity={0.72}
                                 style={{
-                                    width: 34,
-                                    height: 34,
-                                    borderRadius: 17,
+                                    height: 32,
+                                    paddingHorizontal: 10,
+                                    borderRadius: 16,
+                                    flexDirection: 'row',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderWidth: 2,
+                                    gap: 5,
+                                    borderWidth: 1,
                                     borderColor: storyTarget.hasUnseen
                                         ? colors.tint
                                         : isDark
-                                            ? 'rgba(255,255,255,0.28)'
-                                            : 'rgba(0,0,0,0.18)',
+                                            ? 'rgba(255,255,255,0.22)'
+                                            : 'rgba(0,0,0,0.16)',
                                     backgroundColor: storyTarget.hasUnseen
                                         ? colors.tint + '22'
                                         : isDark
@@ -280,25 +282,46 @@ export default function GlobalHeader({
                                             : 'rgba(0,0,0,0.05)',
                                 }}
                             >
-                                <CirclePlay
-                                    size={17}
-                                    color={storyTarget.hasUnseen ? colors.tint : colors.text}
-                                    strokeWidth={2.2}
-                                />
-                                {storyTarget.hasUnseen && (
+                                {storyTarget.hasUnseen ? (
+                                    <Sparkles size={13} color={colors.tint} strokeWidth={2.4} />
+                                ) : (
+                                    <CirclePlay size={14} color={colors.text} strokeWidth={2.2} />
+                                )}
+                                <Text
+                                    style={{
+                                        fontSize: 11,
+                                        fontWeight: '800',
+                                        color: storyTarget.hasUnseen ? colors.tint : colors.text,
+                                    }}
+                                >
+                                    Historias
+                                </Text>
+                                {(storyTarget.unseenUsers || storyTarget.totalUsers) > 0 && (
                                     <View
                                         style={{
-                                            position: 'absolute',
-                                            top: -2,
-                                            right: -2,
-                                            width: 9,
-                                            height: 9,
-                                            borderRadius: 4.5,
-                                            backgroundColor: colors.tint,
-                                            borderWidth: 1.5,
-                                            borderColor: colors.background,
+                                            minWidth: 16,
+                                            height: 16,
+                                            paddingHorizontal: 4,
+                                            borderRadius: 8,
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            backgroundColor: storyTarget.hasUnseen
+                                                ? colors.tint
+                                                : isDark
+                                                    ? 'rgba(255,255,255,0.16)'
+                                                    : 'rgba(0,0,0,0.12)',
                                         }}
-                                    />
+                                    >
+                                        <Text
+                                            style={{
+                                                fontSize: 10,
+                                                fontWeight: '900',
+                                                color: storyTarget.hasUnseen ? getContrastTextColor(colors.tint) : colors.textSecondary,
+                                            }}
+                                        >
+                                            {storyTarget.hasUnseen ? storyTarget.unseenUsers : storyTarget.totalUsers}
+                                        </Text>
+                                    </View>
                                 )}
                             </TouchableOpacity>
                         )}

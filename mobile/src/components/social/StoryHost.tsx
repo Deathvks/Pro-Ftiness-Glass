@@ -52,5 +52,5 @@ export function StoryHost() {
   }, [myStories, stories]);
 
   if (!token || userId == null || viewingUserId == null) return null;
-  return <StoryViewerModal key={viewingUserId} userId={viewingUserId} onClose={closeStory} />;
+  return <StoryViewerModal userId={viewingUserId} onClose={closeStory} />;
 }

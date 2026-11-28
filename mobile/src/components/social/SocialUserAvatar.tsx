@@ -48,6 +48,7 @@ export function UserRoleAvatarRing({ user, size = 44, gapColor, style, children,
     <View style={[{
       width: size, height: size, borderRadius: size / 2, flexShrink: 0,
       borderWidth: storyBorder, borderColor: tint, padding: unseen ? gap : 0,
+      backgroundColor: unseen ? (gapColor ?? themeBackground) : undefined,
     }, style]}>
       <LinearGradient colors={role.colors} start={START} end={END}
         style={[styles.fill, { borderRadius: radius, padding: ring, overflow: 'hidden' }]}>

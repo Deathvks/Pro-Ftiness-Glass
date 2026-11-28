@@ -135,17 +135,17 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
     const roleConfig = getUserRoleRingConfig(userProfile, userProfile, activeTheme);
 
     if (hasStories && hasUnseen) {
-      const storyRingClass = roleConfig.type === 'admin'
-        ? `${roleConfig.borderClass} ${roleConfig.glowClass}`
-        : 'bg-accent shadow-md shadow-accent/40';
       return (
-        <div 
+        <div
           className="w-10 h-10 shrink-0 aspect-square relative select-none cursor-pointer"
-          title={`${userProfile?.username || 'Perfil'} • Historias sin ver`}
+          title={`${userProfile?.username || 'Perfil'} • ${roleConfig.title} • Historias sin ver`}
         >
-          <div className={`absolute inset-0 rounded-full ${storyRingClass} animate-pulse-slow pointer-events-none`} />
+          {/* Aro exterior de historia sin ver + separador para convivir con el aro de usuario */}
+          <div className="absolute inset-0 rounded-full bg-accent shadow-md shadow-accent/40 animate-pulse-slow pointer-events-none" />
           <div className="absolute inset-[2px] rounded-full bg-bg-primary dark:bg-[#121214] pointer-events-none" />
-          <div className="absolute inset-[4px] rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
+          <div className={`absolute inset-[3.5px] rounded-full ${roleConfig.borderClass} ${roleConfig.glowClass} pointer-events-none`} />
+          <div className="absolute inset-[5.5px] rounded-full bg-bg-primary dark:bg-[#121214] pointer-events-none" />
+          <div className="absolute inset-[7px] rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
             {InnerContent}
           </div>
           {isUnstableOrOffline && (
@@ -253,13 +253,52 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
 
 
             {sidebarStoryTarget.userId != null && (
-                <SidebarItem
-                    label="Historias"
-                    icon={<FaCirclePlay className="w-5 h-5" />}
+                <button
+                    type="button"
                     onClick={() => openStory?.(sidebarStoryTarget.userId)}
-                    badge={sidebarStoryTarget.hasUnseen}
-                    isCollapsed={isCollapsed}
-                />
+                    title={isCollapsed ? `Historias (${sidebarStoryTarget.unseenUsers || sidebarStoryTarget.totalUsers || 1})` : undefined}
+                    className={`flex items-center w-full rounded-2xl font-bold transition-all duration-300 overflow-hidden mb-1.5 ${
+                        isCollapsed ? 'justify-center p-3.5' : 'px-4 py-3 gap-3'
+                    } ${
+                        sidebarStoryTarget.hasUnseen
+                            ? 'bg-gradient-to-r from-accent/20 via-accent/10 to-transparent border border-accent/40 text-text-primary shadow-sm shadow-accent/20 hover:border-accent hover:scale-[1.01]'
+                            : 'bg-bg-secondary/70 border border-glass-border text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5'
+                    }`}
+                >
+                    <div className="relative flex items-center justify-center shrink-0">
+                        <FaCirclePlay className={`w-5 h-5 ${sidebarStoryTarget.hasUnseen ? 'text-accent' : 'text-text-secondary'}`} />
+                        {sidebarStoryTarget.hasUnseen && isCollapsed && (
+                            <span className="absolute -top-1.5 -right-1.5 px-1 min-w-[16px] h-4 flex items-center justify-center bg-accent text-accent-contrast rounded-full text-[9px] font-black shadow-sm">
+                                {sidebarStoryTarget.unseenUsers || 1}
+                            </span>
+                        )}
+                    </div>
+                    {!isCollapsed && (
+                        <>
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                                <span className="text-sm font-extrabold tracking-tight truncate">
+                                    Historias
+                                </span>
+                                <span className={`text-[10px] font-semibold truncate ${sidebarStoryTarget.hasUnseen ? 'text-accent' : 'text-text-muted'}`}>
+                                    {sidebarStoryTarget.hasUnseen
+                                        ? `${sidebarStoryTarget.unseenUsers || 1} ${(sidebarStoryTarget.unseenUsers || 1) === 1 ? 'nueva por ver' : 'nuevas por ver'}`
+                                        : `${sidebarStoryTarget.totalUsers || 1} ${(sidebarStoryTarget.totalUsers || 1) === 1 ? 'historia activa' : 'historias activas'}`
+                                    }
+                                </span>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black shrink-0 ${
+                                sidebarStoryTarget.hasUnseen
+                                    ? 'bg-accent text-accent-contrast shadow-sm'
+                                    : 'bg-black/10 dark:bg-white/10 text-text-secondary'
+                            }`}>
+                                {sidebarStoryTarget.hasUnseen
+                                    ? (sidebarStoryTarget.unseenUsers || 1)
+                                    : (sidebarStoryTarget.totalUsers || 1)
+                                }
+                            </span>
+                        </>
+                    )}
+                </button>
             )}
 
             <SidebarItem

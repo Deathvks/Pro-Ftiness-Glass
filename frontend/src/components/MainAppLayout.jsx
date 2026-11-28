@@ -22,7 +22,7 @@ import * as userService from '../services/userService';
 // Componentes UI
 import Sidebar from './Sidebar';
 import ModalPortal from './ModalPortal';
-import { Palette, RefreshCw, AlertTriangle, PlayCircle } from 'lucide-react';
+import { Palette, RefreshCw, AlertTriangle, PlayCircle, Sparkles } from 'lucide-react';
 import Spinner from './Spinner';
 import { lazyWithRetry } from '../utils/lazyWithRetry';
 import { getFirstAvailableStoryTarget } from '../store/storySlice';
@@ -1517,7 +1517,7 @@ export default function MainAppLayout({
                 </button>
               ) : (
                 <div className="flex items-center gap-2 shrink-0 relative z-20">
-                  <div className={`rounded-full p-[1.5px] transition-all ${hasOwnUnseenStory ? 'ring-2 ring-accent shadow-sm shadow-accent/40' : ''}`}>
+                  <div className={`rounded-full transition-all ${hasOwnUnseenStory ? 'p-[2px] bg-bg-primary dark:bg-[#121214] ring-2 ring-accent shadow-sm shadow-accent/40' : ''}`}>
                     <UserAvatar
                       user={userProfile}
                       size={8}
@@ -1538,16 +1538,27 @@ export default function MainAppLayout({
                       onClick={() => openStory?.(headerStoryState.userId)}
                       title={headerStoryState.hasUnseen ? 'Ver historias nuevas' : 'Ver historias'}
                       aria-label="Entrar en historias"
-                      className={`relative w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-95 border-2 ${
+                      className={`relative h-8 px-2.5 rounded-full flex items-center gap-1.5 shrink-0 transition-transform active:scale-95 border ${
                         headerStoryState.hasUnseen
-                          ? 'border-accent bg-accent/15 text-accent shadow-sm shadow-accent/30'
-                          : 'border-black/15 dark:border-white/25 bg-black/5 dark:bg-white/10 text-text-primary'
+                          ? 'border-accent/60 bg-gradient-to-r from-accent/20 via-accent/15 to-accent/5 text-accent shadow-sm shadow-accent/30'
+                          : 'border-black/15 dark:border-white/20 bg-black/5 dark:bg-white/10 text-text-primary'
                       }`}
                       style={{ WebkitTapHighlightColor: 'transparent' }}
                     >
-                      <PlayCircle size={16} strokeWidth={2.3} />
-                      {headerStoryState.hasUnseen && (
-                        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-accent border-2 border-bg-primary" />
+                      {headerStoryState.hasUnseen ? (
+                        <Sparkles size={13} strokeWidth={2.4} className="shrink-0 animate-pulse" />
+                      ) : (
+                        <PlayCircle size={14} strokeWidth={2.2} className="shrink-0" />
+                      )}
+                      <span className="text-[11px] font-extrabold tracking-tight">Historias</span>
+                      {(headerStoryState.unseenUsers || headerStoryState.totalUsers) > 0 && (
+                        <span className={`px-1.5 min-w-[16px] h-4 rounded-full flex items-center justify-center text-[10px] font-black leading-none ${
+                          headerStoryState.hasUnseen
+                            ? 'bg-accent text-accent-contrast shadow-xs'
+                            : 'bg-black/10 dark:bg-white/15 text-text-secondary'
+                        }`}>
+                          {headerStoryState.hasUnseen ? headerStoryState.unseenUsers : headerStoryState.totalUsers}
+                        </span>
                       )}
                     </button>
                   )}
