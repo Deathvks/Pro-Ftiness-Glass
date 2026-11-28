@@ -25,15 +25,16 @@ type AvatarRingProps = {
   gapColor?: string;
   style?: StyleProp<ViewStyle>;
   showStoryIndicator?: boolean;
+  maskStaffRoles?: boolean;
 };
 
 const START = { x: 0, y: 1 };
 const END = { x: 1, y: 0 };
 
-export function UserRoleAvatarRing({ user, size = 44, gapColor, style, children, showStoryIndicator = true }: AvatarRingProps & { children: React.ReactNode }) {
+export function UserRoleAvatarRing({ user, size = 44, gapColor, style, children, showStoryIndicator = true, maskStaffRoles = false }: AvatarRingProps & { children: React.ReactNode }) {
   const activeTheme = useAppStore(state => state.theme);
   const viewerProfile = useAppStore(state => state.userProfile);
-  const role = getUserRoleRingConfig(user, viewerProfile, activeTheme);
+  const role = getUserRoleRingConfig(user, viewerProfile, activeTheme, { maskStaffRoles });
   const themeBackground = useAppStore(state => getThemeBaseBackground(state.theme));
   const unseen = useAppStore(state => showStoryIndicator && selectHasUnseenStory(state, user?.id));
   const { tint } = useAppColors();
@@ -59,7 +60,7 @@ export function UserRoleAvatarRing({ user, size = 44, gapColor, style, children,
 }
 
 export const SocialUserAvatar = React.memo(function SocialUserAvatar({
-  user, size = 44, gapColor, style, fallbackSource, showStoryIndicator = true, openStoryOnPress = true,
+  user, size = 44, gapColor, style, fallbackSource, showStoryIndicator = true, openStoryOnPress = true, maskStaffRoles = false,
 }: AvatarRingProps & { fallbackSource?: number; openStoryOnPress?: boolean }) {
   const colors = useAppStore(state => Colors[state.theme as ThemeColor] ?? Colors.dark);
   const canOpenStory = useAppStore(state => openStoryOnPress && showStoryIndicator && selectHasUnseenStory(state, user?.id));
@@ -69,7 +70,7 @@ export const SocialUserAvatar = React.memo(function SocialUserAvatar({
     ? raw : BACKEND_BASE_URL + (raw.startsWith('/') ? raw : '/' + raw));
 
   const avatar = (
-    <UserRoleAvatarRing user={user} size={size} gapColor={gapColor} style={style} showStoryIndicator={showStoryIndicator}>
+    <UserRoleAvatarRing user={user} size={size} gapColor={gapColor} style={style} showStoryIndicator={showStoryIndicator} maskStaffRoles={maskStaffRoles}>
       <AvatarPicture key={uri ?? ''} uri={uri || undefined} fallbackSource={fallbackSource}>
         <View style={[StyleSheet.absoluteFill, styles.placeholder, { backgroundColor: colors.card }]}>
           <User size={Math.round(size * 0.48)} color={colors.textSecondary} />

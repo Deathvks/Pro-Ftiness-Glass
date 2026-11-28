@@ -457,7 +457,15 @@ export const getLeaderboard = async (req, res) => {
             limit: 50,
             attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'streak', 'role', 'trainer_id', 'unlocked_badges']
         });
-        res.json(users.map(publicUserData));
+        // En rankings, administradores y entrenadores se exponen con rol normal ('user')
+        res.json(users.map(user => {
+            const pub = publicUserData(user);
+            if (pub?.role === 'trainer' || pub?.role === 'admin') {
+                pub.role = 'user';
+                pub.trainer_id = null;
+            }
+            return pub;
+        }));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

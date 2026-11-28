@@ -27,6 +27,7 @@ const UserAvatar = ({
     size = 10, 
     className = "", 
     showRoleRing = true,
+    maskStaffRoles = false,
     gapClass = "bg-bg-primary dark:bg-[#121214]",
     onClick,
     showNetworkStatus = true
@@ -50,7 +51,7 @@ const UserAvatar = ({
     const showUnstableNetworkBadge = showNetworkStatus && isCurrentUser && (!isOnline || syncQueue.length > 0);
 
     const sizeClass = SIZE_MAP[size] || (typeof size === 'number' ? `w-${size} h-${size}` : 'w-10 h-10');
-    const roleConfig = getUserRoleRingConfig(user, viewerProfile, activeTheme);
+    const roleConfig = getUserRoleRingConfig(user, viewerProfile, activeTheme, { maskStaffRoles });
 
     const getSecureImageUrl = () => {
         const rawUrl = user?.profile_image_url || user?.avatar || user?.profile_image || user?.avatar_url;

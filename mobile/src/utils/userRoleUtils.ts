@@ -27,20 +27,41 @@ export interface RoleUser {
   christmas_unlocked?: boolean;
 }
 
-export const getUserRoleType = (user?: RoleUser | null, viewer: RoleUser | null = null): UserRoleType => {
+export type RoleDisplayOptions = {
+  maskStaffRoles?: boolean;
+};
+
+export const getUserRoleType = (
+  user?: RoleUser | null,
+  viewer: RoleUser | null = null,
+  options: RoleDisplayOptions = {}
+): UserRoleType => {
   if (!user) return 'user';
+  const maskStaffRoles = Boolean(options.maskStaffRoles);
   const role = String(user.role || '').toLowerCase().trim();
   const viewerRole = String(viewer?.role || '').toLowerCase().trim();
   const isViewerSelf = user.id != null && viewer?.id != null && String(user.id) === String(viewer.id);
 
-  if (role === 'admin' || user.isAdmin === true || user.is_admin === true) {
-    return isViewerSelf && viewerRole === 'admin' ? 'admin' : 'user';
-  }
-  if (isViewerSelf && viewerRole === 'admin') {
-    return 'admin';
-  }
-  if (role === 'trainer' || user.isTrainer === true) {
-    return 'trainer';
+  if (maskStaffRoles) {
+    if (
+      role === 'admin' ||
+      user.isAdmin === true ||
+      user.is_admin === true ||
+      role === 'trainer' ||
+      user.isTrainer === true
+    ) {
+      return 'user';
+    }
+  } else {
+    if (role === 'admin' || user.isAdmin === true || user.is_admin === true) {
+      return isViewerSelf && viewerRole === 'admin' ? 'admin' : 'user';
+    }
+    if (isViewerSelf && viewerRole === 'admin') {
+      return 'admin';
+    }
+    if (role === 'trainer' || user.isTrainer === true) {
+      return 'trainer';
+    }
   }
   const isInAsesoria =
     role === 'trainee' ||
@@ -96,9 +117,10 @@ const ROLE_RINGS: Record<UserRoleType, UserRoleRingConfig> = {
 export const getUserRoleRingConfig = (
   user?: RoleUser | null,
   viewer: RoleUser | null = null,
-  activeTheme?: string | null
+  activeTheme?: string | null,
+  options: RoleDisplayOptions = {}
 ): UserRoleRingConfig => {
-  const base = ROLE_RINGS[getUserRoleType(user, viewer)];
+  const base = ROLE_RINGS[getUserRoleType(user, viewer, options)];
   const isViewerSelf = Boolean(
     user && viewer && user.id != null && viewer.id != null && String(user.id) === String(viewer.id)
   );

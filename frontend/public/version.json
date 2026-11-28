@@ -1,17 +1,17 @@
 {
-  "version": "7.18.8",
-  "releaseNotes": "Actualización v7.18.8: borde navideño en Ranking/Tribus/Historias, burbujas de historias niveladas en Comunidad y acceso directo a Historias desde el header.",
+  "version": "7.18.9",
+  "releaseNotes": "Actualización v7.18.9: los administradores y entrenadores muestran su borde de usuario normal (o variante Navidad si está desbloqueada) en el Ranking Global y de Tribus.",
   "welcome": {
-    "title": "Novedades Pro Fitness Glass (v7.18.8)",
-    "subtitle": "Mejoras visuales en Ranking, Comunidad e Historias para Web, PWA, Capacitor y Nativo.",
+    "title": "Novedades Pro Fitness Glass (v7.18.9)",
+    "subtitle": "Mejoras visuales en Ranking Global y Ranking de Tribus para Web, PWA, Capacitor y Nativo.",
     "features": [
       {
-        "title": "Marco Navideño en Ranking y Tribus",
-        "description": "Los atletas con la edición Navidad 2026 muestran ahora su borde especial también en el Ranking Global, Tribus e Historias."
+        "title": "Borde neutro en Rankings",
+        "description": "En Ranking Global y de Tribus, administradores y entrenadores aparecen ahora con el borde normal de usuario o con el borde modificado de Navidad 2026 si la tienen desbloqueada."
       },
       {
-        "title": "Historias alineadas y en el Header",
-        "description": "Alineación uniforme de las burbujas de historias en Comunidad y acceso directo desde la barra superior en móvil y escritorio."
+        "title": "Paridad multiplataforma",
+        "description": "Comportamiento unificado entre Web, PWA, Capacitor y la app nativa de Android."
       }
     ]
   }

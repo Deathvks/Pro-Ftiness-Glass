@@ -1461,7 +1461,7 @@ export default function Social({ setView }) {
                                 {index + 1 === 1 ? <Medal size={20} className="text-yellow-400 drop-shadow-md sm:w-6 sm:h-6" /> : index + 1 === 2 ? <Medal size={20} className="text-gray-400 drop-shadow-md sm:w-6 sm:h-6" /> : index + 1 === 3 ? <Medal size={20} className="text-amber-700 drop-shadow-md sm:w-6 sm:h-6" /> : <span className="text-xs sm:text-sm opacity-60">#{index + 1}</span>}
                             </div>
                             <div className="flex-1 flex items-center gap-2 sm:gap-4 min-w-0 pl-1 sm:pl-2">
-                                <UserAvatar user={fixedUser} size={10} className="w-8 h-8 sm:w-10 sm:h-10 shadow-sm shrink-0" />
+                                <UserAvatar user={fixedUser} size={10} maskStaffRoles className="w-8 h-8 sm:w-10 sm:h-10 shadow-sm shrink-0" />
                                 <span className={`truncate text-xs sm:text-base ${isMe ? 'text-accent font-extrabold' : 'text-text-primary font-bold'}`}>{user.username} {isMe && "(Tú)"}</span>
                             </div>
                             <div className="w-12 sm:w-16 flex justify-end shrink-0 -my-2">
@@ -1542,7 +1542,7 @@ export default function Social({ setView }) {
                                         {index + 1 === 1 ? <Medal size={20} className="text-yellow-400 drop-shadow-md sm:w-6 sm:h-6" /> : index + 1 === 2 ? <Medal size={20} className="text-gray-400 drop-shadow-md sm:w-6 sm:h-6" /> : index + 1 === 3 ? <Medal size={20} className="text-amber-700 drop-shadow-md sm:w-6 sm:h-6" /> : <span className="text-xs sm:text-sm opacity-60">#{index + 1}</span>}
                                     </div>
                                     <div className="flex-1 flex items-center gap-2 sm:gap-4 min-w-0 pl-1 sm:pl-2">
-                                        <UserAvatar user={fixedUser} size={10} className="w-8 h-8 sm:w-10 sm:h-10 shadow-sm shrink-0" />
+                                        <UserAvatar user={fixedUser} size={10} maskStaffRoles className="w-8 h-8 sm:w-10 sm:h-10 shadow-sm shrink-0" />
                                         <div className="flex flex-col min-w-0">
                                             <span className={`truncate text-xs sm:text-base ${isMe ? 'text-accent font-extrabold' : 'text-text-primary font-bold'}`}>{user.username} {isMe && "(Tú)"}</span>
                                             <span className="text-[9px] sm:text-[10px] font-bold text-text-tertiary capitalize mt-0.5 bg-black/5 dark:bg-white/5 px-1.5 sm:px-2 py-0.5 rounded-md w-fit">{user.SquadMember?.role}</span>

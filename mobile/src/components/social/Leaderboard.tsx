@@ -151,7 +151,7 @@ export function Leaderboard({ onNavigateProfile }: LeaderboardProps) {
         <View style={styles.rankCol}>{rankNode}</View>
 
         <View style={styles.athleteCol}>
-          <SocialUserAvatar user={user} size={30} />
+          <SocialUserAvatar user={user} size={30} maskStaffRoles />
           <Text
             style={[
               styles.athleteName,

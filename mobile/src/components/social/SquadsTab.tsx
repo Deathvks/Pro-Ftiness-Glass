@@ -307,7 +307,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
                   <View style={{ width: 32, alignItems: 'center' }}>{medal}</View>
 
                   <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingLeft: 8 }}>
-                    <SocialUserAvatar user={member} size={36} />
+                    <SocialUserAvatar user={member} size={36} maskStaffRoles />
                     <View style={{ marginLeft: 10, flex: 1 }}>
                       <Text
                         style={[

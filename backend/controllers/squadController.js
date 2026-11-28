@@ -103,7 +103,7 @@ export const getSquadLeaderboard = async (req, res) => {
           publicMember.christmas_unlocked = hasChristmasBadge(publicMember.unlocked_badges);
           delete publicMember.unlocked_badges;
         }
-        if (publicMember.role === 'admin') {
+        if (publicMember.role === 'admin' || publicMember.role === 'trainer') {
           publicMember.role = 'user';
           publicMember.trainer_id = null;
         }
