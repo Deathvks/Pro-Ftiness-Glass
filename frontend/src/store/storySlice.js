@@ -2,10 +2,57 @@
 import api from '../services/apiClient';
 import { initSocket } from '../services/socket';
 
+export const getVisibleCommunityStories = (state) => {
+  const groups = Array.isArray(state?.stories) ? state.stories : [];
+  const friendsList = Array.isArray(state?.socialFriends) ? state.socialFriends : [];
+  const now = Date.now();
+  return groups.filter((group) => {
+    if (!group || !Array.isArray(group.items)) return false;
+    const hasActiveItems = group.items.some((item) => item && (!item.expiresAt || Date.parse(item.expiresAt) > now));
+    if (!hasActiveItems) return false;
+    const isFriend = friendsList.some((f) => f && String(f.id) === String(group.userId));
+    const hasPublic = group.items.some((item) => item && item.privacy === 'public');
+    return isFriend || hasPublic;
+  });
+};
+
+export const getFirstAvailableStoryTarget = (state) => {
+  const myId = state?.userProfile?.id;
+  const now = Date.now();
+  const isFresh = (item) => Boolean(item && (!item.expiresAt || Date.parse(item.expiresAt) > now));
+  const ownActive = (Array.isArray(state?.myStories) ? state.myStories : []).filter(isFresh);
+  const others = getVisibleCommunityStories(state);
+
+  if (myId != null && ownActive.some((s) => !s.viewed)) {
+    return { userId: myId, hasUnseen: true, hasOwn: true };
+  }
+  const unseenGroup = others.find((g) => g.hasUnseen || g.items?.some((s) => isFresh(s) && !s.viewed));
+  if (unseenGroup?.userId != null) {
+    return { userId: unseenGroup.userId, hasUnseen: true, hasOwn: ownActive.length > 0 };
+  }
+  if (myId != null && ownActive.length > 0) {
+    return { userId: myId, hasUnseen: false, hasOwn: true };
+  }
+  const firstGroup = others[0];
+  if (firstGroup?.userId != null) {
+    return { userId: firstGroup.userId, hasUnseen: false, hasOwn: false };
+  }
+  return { userId: null, hasUnseen: false, hasOwn: false };
+};
+
 export const createStorySlice = (set, get) => ({
   stories: [], // Historias de amigos/públicas
   myStories: [], // Mis historias activas
+  viewingStoryUserId: null,
   isStoriesLoading: false,
+
+  openStory: (userId) => {
+    if (userId == null) return false;
+    set({ viewingStoryUserId: userId });
+    return true;
+  },
+
+  closeStory: () => set({ viewingStoryUserId: null }),
 
   // --- Acciones ---
 

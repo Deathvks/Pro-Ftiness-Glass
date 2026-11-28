@@ -6,6 +6,15 @@ const { Squad, SquadMember, User } = models;
 
 const generateInviteCode = () => crypto.randomBytes(4).toString('hex').toUpperCase();
 
+const hasChristmasBadge = (rawBadges) => {
+  try {
+    const list = typeof rawBadges === 'string' ? JSON.parse(rawBadges) : rawBadges;
+    return Array.isArray(list) && list.includes('theme_christmas_2026');
+  } catch {
+    return false;
+  }
+};
+
 export const createSquad = async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -79,7 +88,7 @@ export const getSquadLeaderboard = async (req, res) => {
         model: User,
         as: 'Members',
         // CORRECCIÓN: 'last_active' -> 'lastSeen'
-        attributes: ['id', 'username', 'profile_image_url', 'xp', 'streak', 'lastSeen', 'role', 'trainer_id'],
+        attributes: ['id', 'username', 'profile_image_url', 'xp', 'streak', 'lastSeen', 'role', 'trainer_id', 'unlocked_badges'],
         through: { attributes: ['role'] }
       }]
     });
@@ -90,6 +99,10 @@ export const getSquadLeaderboard = async (req, res) => {
       .sort((a, b) => (b.xp || 0) - (a.xp || 0))
       .map(member => {
         const publicMember = member.toJSON();
+        if (publicMember.unlocked_badges !== undefined) {
+          publicMember.christmas_unlocked = hasChristmasBadge(publicMember.unlocked_badges);
+          delete publicMember.unlocked_badges;
+        }
         if (publicMember.role === 'admin') {
           publicMember.role = 'user';
           publicMember.trainer_id = null;

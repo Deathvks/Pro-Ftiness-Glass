@@ -1,8 +1,9 @@
 /* frontend/src/components/Sidebar.jsx */
 import React, { useState, useEffect, Suspense } from 'react';
 import { UserIcon } from '@heroicons/react/24/outline';
-import { FaBrain, FaBell, FaChevronLeft, FaChevronRight, FaRightFromBracket } from 'react-icons/fa6';
+import { FaBrain, FaBell, FaChevronLeft, FaChevronRight, FaRightFromBracket, FaCirclePlay } from 'react-icons/fa6';
 import useAppStore from '../store/useAppStore';
+import { getFirstAvailableStoryTarget } from '../store/storySlice';
 import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 import NetworkIndicatorBadge from './NetworkIndicatorBadge';
 import { lazyWithRetry } from '../utils/lazyWithRetry';
@@ -59,6 +60,10 @@ const SidebarItem = ({ label, icon, isActive, onClick, onPreload, onIconClick, b
 const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_BASE_URL = '', handleLogoutClick, unreadCount = 0 }) => {
   const socialRequests = useAppStore(state => state.socialRequests);
   const myStories = useAppStore(state => state.myStories);
+  const stories = useAppStore(state => state.stories);
+  const socialFriends = useAppStore(state => state.socialFriends);
+  const activeTheme = useAppStore(state => state.theme);
+  const openStory = useAppStore(state => state.openStory);
   const isOnline = useAppStore(state => state.isOnline ?? true);
   const syncQueue = useAppStore(state => state.syncQueue || []);
   const isUnstableOrOffline = !isOnline || syncQueue.length > 0;
@@ -76,6 +81,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
 
   const hasStories = myStories && myStories.length > 0;
   const hasUnseen = hasStories && myStories.some(s => !s.viewed);
+  const sidebarStoryTarget = getFirstAvailableStoryTarget({ userProfile, stories, myStories, socialFriends });
 
   useEffect(() => {
     const updateAILimits = () => {
@@ -126,7 +132,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
       </div>
     );
 
-    const roleConfig = getUserRoleRingConfig(userProfile, userProfile);
+    const roleConfig = getUserRoleRingConfig(userProfile, userProfile, activeTheme);
 
     if (hasStories && hasUnseen) {
       const storyRingClass = roleConfig.type === 'admin'
@@ -245,6 +251,16 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
             </button>
 
 
+
+            {sidebarStoryTarget.userId != null && (
+                <SidebarItem
+                    label="Historias"
+                    icon={<FaCirclePlay className="w-5 h-5" />}
+                    onClick={() => openStory?.(sidebarStoryTarget.userId)}
+                    badge={sidebarStoryTarget.hasUnseen}
+                    isCollapsed={isCollapsed}
+                />
+            )}
 
             <SidebarItem
                 label="Notificaciones"

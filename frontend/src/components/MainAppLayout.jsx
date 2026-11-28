@@ -22,8 +22,10 @@ import * as userService from '../services/userService';
 // Componentes UI
 import Sidebar from './Sidebar';
 import ModalPortal from './ModalPortal';
-import { Palette, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Palette, RefreshCw, AlertTriangle, PlayCircle } from 'lucide-react';
 import Spinner from './Spinner';
+import { lazyWithRetry } from '../utils/lazyWithRetry';
+import { getFirstAvailableStoryTarget } from '../store/storySlice';
 import PRToast from './PRToast';
 import AndroidDownloadPrompt from './AndroidDownloadPrompt';
 import APKUpdater from './APKUpdater';
@@ -41,6 +43,7 @@ const ReferralSuccessAnimation = lazy(() => import('./ReferralSuccessAnimation')
 const ChristmasUnlockModal = lazy(() => import('./ChristmasUnlockModal'));
 const ChristmasRetroBonusModal = lazy(() => import('./ChristmasRetroBonusModal'));
 const GlobalRatingPrompt = lazy(() => import('./GlobalRatingPrompt'));
+const StoryViewer = lazyWithRetry(() => import('./StoryViewer'), 'storyViewer');
 
 // Constantes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -426,6 +429,14 @@ export default function MainAppLayout({
     socialRequests,
     fetchFriendRequests,
     subscribeToSocialEvents,
+    stories,
+    myStories,
+    socialFriends,
+    viewingStoryUserId,
+    openStory,
+    closeStory,
+    fetchStories,
+    subscribeToStories,
     show2FAPromo,
     tourActive,
   } = useAppStore(useShallow(state => ({
@@ -452,9 +463,31 @@ export default function MainAppLayout({
     socialRequests: state.socialRequests || [],
     fetchFriendRequests: state.fetchFriendRequests,
     subscribeToSocialEvents: state.subscribeToSocialEvents,
+    stories: state.stories || [],
+    myStories: state.myStories || [],
+    socialFriends: state.socialFriends || [],
+    viewingStoryUserId: state.viewingStoryUserId,
+    openStory: state.openStory,
+    closeStory: state.closeStory,
+    fetchStories: state.fetchStories,
+    subscribeToStories: state.subscribeToStories,
     show2FAPromo: state.show2FAPromo,
     tourActive: state.tourActive,
   })));
+
+  const headerStoryState = React.useMemo(
+    () => getFirstAvailableStoryTarget({ userProfile, stories, myStories, socialFriends }),
+    [userProfile, stories, myStories, socialFriends]
+  );
+  const hasOwnUnseenStory = Boolean(
+    Array.isArray(myStories) && myStories.some((s) => s && !s.viewed)
+  );
+
+  useEffect(() => {
+    if (!isAuthenticated || !userProfile?.id) return;
+    subscribeToStories?.();
+    fetchStories?.(userProfile.id);
+  }, [isAuthenticated, userProfile?.id, subscribeToStories, fetchStories]);
 
   const [showAIModal, setShowAIModal] = useState(false);
   const [showAccentUnlockModal, setShowAccentUnlockModal] = useState(false);
@@ -1483,13 +1516,42 @@ export default function MainAppLayout({
                   <FaChevronLeft className="w-5 h-5" />
                 </button>
               ) : (
-                <UserAvatar
-                  user={userProfile}
-                  size={8}
-                  showRoleRing={true}
-                  className="shrink-0 relative z-20 cursor-pointer active:scale-95 transition-transform"
-                  onClick={() => navigate('profile')}
-                />
+                <div className="flex items-center gap-2 shrink-0 relative z-20">
+                  <div className={`rounded-full p-[1.5px] transition-all ${hasOwnUnseenStory ? 'ring-2 ring-accent shadow-sm shadow-accent/40' : ''}`}>
+                    <UserAvatar
+                      user={userProfile}
+                      size={8}
+                      showRoleRing={true}
+                      className="shrink-0 cursor-pointer active:scale-95 transition-transform"
+                      onClick={() => {
+                        if (hasOwnUnseenStory && userProfile?.id) {
+                          openStory?.(userProfile.id);
+                        } else {
+                          navigate('profile');
+                        }
+                      }}
+                    />
+                  </div>
+                  {headerStoryState.userId != null && (
+                    <button
+                      type="button"
+                      onClick={() => openStory?.(headerStoryState.userId)}
+                      title={headerStoryState.hasUnseen ? 'Ver historias nuevas' : 'Ver historias'}
+                      aria-label="Entrar en historias"
+                      className={`relative w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-95 border-2 ${
+                        headerStoryState.hasUnseen
+                          ? 'border-accent bg-accent/15 text-accent shadow-sm shadow-accent/30'
+                          : 'border-black/15 dark:border-white/25 bg-black/5 dark:bg-white/10 text-text-primary'
+                      }`}
+                      style={{ WebkitTapHighlightColor: 'transparent' }}
+                    >
+                      <PlayCircle size={16} strokeWidth={2.3} />
+                      {headerStoryState.hasUnseen && (
+                        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-accent border-2 border-bg-primary" />
+                      )}
+                    </button>
+                  )}
+                </div>
               )}
                 {view !== 'dashboard' && (
                   <span
@@ -1739,6 +1801,10 @@ export default function MainAppLayout({
 
         {showCodeVerificationModal && (
           <EmailVerification email={verificationEmail} onSuccess={() => { setShowCodeVerificationModal(false); fetchInitialData(); }} onBack={() => { setShowCodeVerificationModal(false); setShowEmailVerificationModal(true); }} backButtonText="Volver" />
+        )}
+
+        {viewingStoryUserId != null && (
+          <StoryViewer userId={viewingStoryUserId} onClose={closeStory} />
         )}
       </Suspense>
 

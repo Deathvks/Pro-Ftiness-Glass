@@ -58,7 +58,7 @@ export const searchUsers = async (req, res) => {
                     { is_public_profile: true } 
                 ]
             },
-            attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id'],
+            attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id', 'unlocked_badges'],
             limit: 20 
         });
 
@@ -69,7 +69,8 @@ export const searchUsers = async (req, res) => {
             level: user.show_level_xp ? user.level : null,
             xp: user.show_level_xp ? user.xp : null,
             role: user.role === 'admin' ? 'user' : user.role,
-            trainer_id: user.role === 'admin' ? null : user.trainer_id
+            trainer_id: user.role === 'admin' ? null : user.trainer_id,
+            christmas_unlocked: hasChristmasBadge(user.unlocked_badges)
         }));
 
         res.json(results);
@@ -142,7 +143,7 @@ export const getFriendRequests = async (req, res) => {
             include: [{
                 model: User,
                 as: 'Requester',
-                attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id']
+                attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id', 'unlocked_badges']
             }]
         });
 
@@ -154,7 +155,7 @@ export const getFriendRequests = async (req, res) => {
             include: [{
                 model: User,
                 as: 'Addressee',
-                attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id']
+                attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id', 'unlocked_badges']
             }]
         });
 
@@ -165,7 +166,8 @@ export const getFriendRequests = async (req, res) => {
             level: user.show_level_xp ? user.level : null,
             xp: user.show_level_xp ? user.xp : null,
             role: user.role === 'admin' ? 'user' : user.role,
-            trainer_id: user.role === 'admin' ? null : user.trainer_id
+            trainer_id: user.role === 'admin' ? null : user.trainer_id,
+            christmas_unlocked: hasChristmasBadge(user.unlocked_badges)
         });
 
         const formattedReceived = received.map(req => ({
@@ -266,8 +268,8 @@ export const getFriends = async (req, res) => {
                 status: 'accepted'
             },
             include: [
-                { model: User, as: 'Requester', attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id'] },
-                { model: User, as: 'Addressee', attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id'] }
+                { model: User, as: 'Requester', attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id', 'unlocked_badges'] },
+                { model: User, as: 'Addressee', attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id', 'unlocked_badges'] }
             ]
         });
 
@@ -280,7 +282,8 @@ export const getFriends = async (req, res) => {
                 level: friend.show_level_xp ? friend.level : null,
                 xp: friend.show_level_xp ? friend.xp : null,
                 role: friend.role === 'admin' ? 'user' : friend.role,
-                trainer_id: friend.role === 'admin' ? null : friend.trainer_id
+                trainer_id: friend.role === 'admin' ? null : friend.trainer_id,
+                christmas_unlocked: hasChristmasBadge(friend.unlocked_badges)
             };
         });
 
@@ -452,7 +455,7 @@ export const getLeaderboard = async (req, res) => {
             },
             order: [['xp', 'DESC']],
             limit: 50,
-            attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'streak', 'role', 'trainer_id']
+            attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'streak', 'role', 'trainer_id', 'unlocked_badges']
         });
         res.json(users.map(publicUserData));
     } catch (error) {

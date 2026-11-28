@@ -101,28 +101,28 @@ const PrivacyBanner = ({ privacy, onNavigate }) => {
 // --- Subcomponente: Burbuja de Historia ---
 const StoryBubble = ({ user, isMe, hasStories, hasUnseen, onClick, onAdd }) => {
     return (
-        <div className="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer group relative">
+        <div className="flex flex-col items-center gap-1.5 min-w-[80px] cursor-pointer group relative">
             <div
                 className={`
-                    relative rounded-full transition-all duration-300
+                    relative rounded-full transition-all duration-300 p-1
                     ${hasStories
                         ? (hasUnseen
-                            ? 'p-1 ring-2 ring-accent shadow-lg shadow-accent/40 animate-pulse-slow bg-bg-primary'
-                            : 'p-1 ring-2 ring-black/10 dark:ring-white/20 bg-bg-primary'
+                            ? 'ring-2 ring-accent shadow-lg shadow-accent/40 animate-pulse-slow bg-bg-primary'
+                            : 'ring-2 ring-black/10 dark:ring-white/20 bg-bg-primary'
                         )
-                        : ''
+                        : 'ring-2 ring-transparent bg-transparent'
                     }
                 `}
                 onClick={onClick}
             >
-                <div className={`${hasStories ? 'p-0.5 bg-bg-primary' : 'p-0'} rounded-full relative z-10`}>
+                <div className={`p-0.5 ${hasStories ? 'bg-bg-primary' : 'bg-transparent'} rounded-full relative z-10`}>
                     <UserAvatar
                         user={{
                             ...user,
                             profile_image_url: user.profile_image_url || user.avatar
                         }}
                         size={16}
-                        className="w-16 h-16 sm:w-18 sm:h-18 transition-transform duration-300 group-hover:scale-105"
+                        className="w-16 h-16 sm:w-[72px] sm:h-[72px] transition-transform duration-300 group-hover:scale-105"
                     />
                 </div>
 
@@ -132,13 +132,13 @@ const StoryBubble = ({ user, isMe, hasStories, hasUnseen, onClick, onAdd }) => {
                             e.stopPropagation();
                             onAdd();
                         }}
-                        className="absolute bottom-0 right-0 bg-[var(--color-accent)] text-accent-contrast rounded-full p-[5px] sm:p-1.5 border-[3px] border-bg-primary hover:scale-110 transition-all duration-300 z-20 bg-gradient-to-br from-white/25 to-transparent backdrop-blur-[12px] shadow-[0_4px_15px_var(--color-accent-transparent),inset_0_2px_2px_rgba(255,255,255,0.4)] hover:brightness-110 hover:shadow-[0_8px_20px_var(--color-accent-transparent),inset_0_2px_2px_rgba(255,255,255,0.5)]"
+                        className="absolute bottom-0.5 right-0.5 bg-[var(--color-accent)] text-accent-contrast rounded-full p-[5px] sm:p-1.5 border-[3px] border-bg-primary hover:scale-110 transition-all duration-300 z-20 bg-gradient-to-br from-white/25 to-transparent backdrop-blur-[12px] shadow-[0_4px_15px_var(--color-accent-transparent),inset_0_2px_2px_rgba(255,255,255,0.4)] hover:brightness-110 hover:shadow-[0_8px_20px_var(--color-accent-transparent),inset_0_2px_2px_rgba(255,255,255,0.5)]"
                     >
                         <Plus size={12} strokeWidth={3} className="text-accent-contrast" />
                     </button>
                 )}
             </div>
-            <span className={`text-[11px] sm:text-xs font-bold truncate w-20 text-center mt-1 transition-colors ${hasUnseen ? 'text-text-primary' : 'text-text-secondary group-hover:text-text-primary'}`}>
+            <span className={`text-[11px] sm:text-xs font-bold truncate w-20 text-center transition-colors ${hasUnseen ? 'text-text-primary' : 'text-text-secondary group-hover:text-text-primary'}`}>
                 {isMe ? 'Tu historia' : (user.username || 'Usuario').split(' ')[0]}
             </span>
         </div>

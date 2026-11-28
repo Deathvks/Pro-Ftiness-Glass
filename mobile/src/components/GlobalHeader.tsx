@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import { View, Image, Text, StyleSheet, Animated, Platform, TouchableOpacity } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
-import { Sparkles, Bell, ChevronLeft } from 'lucide-react-native';
+import { Sparkles, Bell, ChevronLeft, CirclePlay } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useAppStore from '@/store/useAppStore';
-import { selectHasUnseenStory } from '@/store/storySlice';
+import { selectHasUnseenStory, selectFirstAvailableStoryTarget } from '@/store/storySlice';
 import { useAppColors } from '@/hooks/useAppColors';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { AiInfoModal } from '@/components/modals/AiInfoModal';
@@ -79,6 +79,20 @@ export default function GlobalHeader({
 
     const userProfile = useAppStore(state => state.userProfile);
     const hasUnseenStory = useAppStore(state => selectHasUnseenStory(state, state.userProfile?.id));
+    const storiesState = useAppStore(state => state.stories);
+    const myStoriesState = useAppStore(state => state.myStories);
+    const storyViewerId = useAppStore(state => state.storyViewerId);
+    const token = useAppStore(state => state.token);
+    const storyTarget = useMemo(
+        () => selectFirstAvailableStoryTarget({
+            token,
+            userProfile,
+            storyViewerId,
+            stories: storiesState,
+            myStories: myStoriesState,
+        }),
+        [token, userProfile, storyViewerId, storiesState, myStoriesState]
+    );
 
     const isDark = !['light', 'ocean', 'desert'].includes(theme);
     const colorScheme = isDark ? 'dark' : 'light';
@@ -202,7 +216,7 @@ export default function GlobalHeader({
                 }}
             >
             {/* Left: Profile or Back Button & Title */}
-            <View pointerEvents="box-none" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, marginRight: 8 }}>
+            <View pointerEvents="box-none" style={{ flexDirection: 'row', alignItems: 'center', gap: showBackButton ? 12 : 8, flex: 1, marginRight: 8 }}>
                 {showBackButton ? (
                     <GlassButton 
                         onPress={() => {
@@ -225,16 +239,70 @@ export default function GlobalHeader({
                         <ChevronLeft size={23} color={colors.text} strokeWidth={2.3} />
                     </GlassButton>
                 ) : (
-                    <TouchableOpacity
-                        accessibilityRole="button"
-                        accessibilityLabel={hasUnseenStory ? 'Ver mi historia' : 'Mi perfil'}
-                        onPress={() => {
-                            if (!hasUnseenStory || !useAppStore.getState().openStory(userProfile?.id)) router.push('/profile');
-                        }}
-                        activeOpacity={0.72}
-                    >
-                        <SocialUserAvatar user={userProfile} size={40} openStoryOnPress={false} />
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <TouchableOpacity
+                            accessibilityRole="button"
+                            accessibilityLabel={hasUnseenStory ? 'Ver mi historia' : 'Mi perfil'}
+                            onPress={() => {
+                                if (!hasUnseenStory || !useAppStore.getState().openStory(userProfile?.id)) router.push('/profile');
+                            }}
+                            activeOpacity={0.72}
+                        >
+                            <SocialUserAvatar user={userProfile} size={38} openStoryOnPress={false} />
+                        </TouchableOpacity>
+                        {storyTarget.userId != null && (
+                            <TouchableOpacity
+                                accessibilityRole="button"
+                                accessibilityLabel={storyTarget.hasUnseen ? 'Ver historias nuevas' : 'Ver historias'}
+                                onPress={() => {
+                                    try {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    } catch {}
+                                    useAppStore.getState().openStory(storyTarget.userId);
+                                }}
+                                activeOpacity={0.72}
+                                style={{
+                                    width: 34,
+                                    height: 34,
+                                    borderRadius: 17,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderWidth: 2,
+                                    borderColor: storyTarget.hasUnseen
+                                        ? colors.tint
+                                        : isDark
+                                            ? 'rgba(255,255,255,0.28)'
+                                            : 'rgba(0,0,0,0.18)',
+                                    backgroundColor: storyTarget.hasUnseen
+                                        ? colors.tint + '22'
+                                        : isDark
+                                            ? 'rgba(255,255,255,0.08)'
+                                            : 'rgba(0,0,0,0.05)',
+                                }}
+                            >
+                                <CirclePlay
+                                    size={17}
+                                    color={storyTarget.hasUnseen ? colors.tint : colors.text}
+                                    strokeWidth={2.2}
+                                />
+                                {storyTarget.hasUnseen && (
+                                    <View
+                                        style={{
+                                            position: 'absolute',
+                                            top: -2,
+                                            right: -2,
+                                            width: 9,
+                                            height: 9,
+                                            borderRadius: 4.5,
+                                            backgroundColor: colors.tint,
+                                            borderWidth: 1.5,
+                                            borderColor: colors.background,
+                                        }}
+                                    />
+                                )}
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 )}
                 {title && (
                     <Text
@@ -255,7 +323,7 @@ export default function GlobalHeader({
             {/* Center: Logo (Only Dashboard) */}
             <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: insets.top, bottom: 0, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
                 {isDashboard && !title && (
-                    <Image source={require('@/assets/images/logo.webp')} style={{ width: 160, height: 40, resizeMode: 'contain', borderRadius: 8 }} />
+                    <Image source={require('@/assets/images/logo.webp')} style={{ width: 132, height: 36, resizeMode: 'contain', borderRadius: 8 }} />
                 )}
             </View>
 

@@ -17,6 +17,41 @@ export function selectHasUnseenStory(state, userId) {
   return selectUserStories(state, userId).some(item => !item.viewed && isActive(item, now));
 }
 
+export function selectHasActiveStory(state, userId) {
+  const now = Date.now();
+  return selectUserStories(state, userId).some(item => isActive(item, now));
+}
+
+export function selectFirstAvailableStoryTarget(state) {
+  const myId = state?.userProfile?.id;
+  if (!state?.token || myId == null || !sameId(state.storyViewerId, myId)) {
+    return { userId: null, hasUnseen: false, hasOwn: false };
+  }
+  const now = Date.now();
+  const ownActive = (Array.isArray(state.myStories) ? state.myStories : []).filter(item => isActive(item, now));
+  const groups = (Array.isArray(state.stories) ? state.stories : [])
+    .map(group => ({
+      ...group,
+      activeItems: (Array.isArray(group?.items) ? group.items : []).filter(item => isActive(item, now)),
+    }))
+    .filter(group => group.activeItems.length > 0);
+
+  if (ownActive.some(item => !item.viewed)) {
+    return { userId: myId, hasUnseen: true, hasOwn: true };
+  }
+  const unseenGroup = groups.find(group => group.hasUnseen || group.activeItems.some(item => !item.viewed));
+  if (unseenGroup?.userId != null) {
+    return { userId: unseenGroup.userId, hasUnseen: true, hasOwn: ownActive.length > 0 };
+  }
+  if (ownActive.length > 0) {
+    return { userId: myId, hasUnseen: false, hasOwn: true };
+  }
+  if (groups[0]?.userId != null) {
+    return { userId: groups[0].userId, hasUnseen: false, hasOwn: false };
+  }
+  return { userId: null, hasUnseen: false, hasOwn: false };
+}
+
 function updateStoryGroups(groups, update) {
   let changed = false;
   const result = groups.flatMap(group => {
