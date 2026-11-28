@@ -33,35 +33,21 @@ export type RoleDisplayOptions = {
 
 export const getUserRoleType = (
   user?: RoleUser | null,
-  viewer: RoleUser | null = null,
-  options: RoleDisplayOptions = {}
+  _viewer: RoleUser | null = null,
+  _options: RoleDisplayOptions = {}
 ): UserRoleType => {
   if (!user) return 'user';
-  const maskStaffRoles = Boolean(options.maskStaffRoles);
   const role = String(user.role || '').toLowerCase().trim();
-  const viewerRole = String(viewer?.role || '').toLowerCase().trim();
-  const isViewerSelf = user.id != null && viewer?.id != null && String(user.id) === String(viewer.id);
 
-  if (maskStaffRoles) {
-    if (
-      role === 'admin' ||
-      user.isAdmin === true ||
-      user.is_admin === true ||
-      role === 'trainer' ||
-      user.isTrainer === true
-    ) {
-      return 'user';
-    }
-  } else {
-    if (role === 'admin' || user.isAdmin === true || user.is_admin === true) {
-      return isViewerSelf && viewerRole === 'admin' ? 'admin' : 'user';
-    }
-    if (isViewerSelf && viewerRole === 'admin') {
-      return 'admin';
-    }
-    if (role === 'trainer' || user.isTrainer === true) {
-      return 'trainer';
-    }
+  // Administradores y entrenadores muestran siempre el rango base normal ('user')
+  if (
+    role === 'admin' ||
+    user.isAdmin === true ||
+    user.is_admin === true ||
+    role === 'trainer' ||
+    user.isTrainer === true
+  ) {
+    return 'user';
   }
   const isInAsesoria =
     role === 'trainee' ||

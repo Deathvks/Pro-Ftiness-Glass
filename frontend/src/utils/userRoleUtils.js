@@ -8,44 +8,24 @@ import { hasChristmasThemeUnlocked, isChristmasPromoActive } from './christmasTh
  * - 'asesoria': Usuario miembro de la asesoría con preparador
  * - 'user': Usuario estándar / atleta
  */
-export const getUserRoleType = (user, viewer = null, options = {}) => {
+export const getUserRoleType = (user) => {
   if (!user) return 'user';
 
-  const maskStaffRoles = Boolean(options?.maskStaffRoles);
   const role = String(user.role || '').toLowerCase().trim();
-  const viewerRole = String(viewer?.role || '').toLowerCase().trim();
-  const isViewerSelf = user.id != null && viewer?.id != null && String(user.id) === String(viewer.id);
 
-  // En rankings, administradores y entrenadores deben mostrarse como usuarios normales
-  // (borde normal o su variante de Navidad si la tienen desbloqueada).
-  if (maskStaffRoles) {
-    if (
-      role === 'admin' ||
-      user.isAdmin === true ||
-      user.is_admin === true ||
-      role === 'trainer' ||
-      user.isTrainer === true
-    ) {
-      return 'user';
-    }
-  } else {
-    // El propio administrador conserva su distintivo; para el resto es un usuario normal.
-    if (role === 'admin' || user.isAdmin === true || user.is_admin === true) {
-      return isViewerSelf && viewerRole === 'admin' ? 'admin' : 'user';
-    }
-    // Algunas respuestas públicas ya ocultan el rol. Si es el usuario actual,
-    // usamos su rol autenticado para mostrarle su propio distintivo.
-    if (isViewerSelf && viewerRole === 'admin') {
-      return 'admin';
-    }
-
-    // 2. Entrenador
-    if (role === 'trainer' || user.isTrainer === true) {
-      return 'trainer';
-    }
+  // Administradores y entrenadores muestran siempre el rango base normal ('user'),
+  // preservando su borde de Navidad si lo tienen desbloqueado.
+  if (
+    role === 'admin' ||
+    user.isAdmin === true ||
+    user.is_admin === true ||
+    role === 'trainer' ||
+    user.isTrainer === true
+  ) {
+    return 'user';
   }
 
-  // 3. Miembro de la Asesoría (trainee o con trainer_id asignado)
+  // Miembro de la Asesoría (trainee o con trainer_id asignado)
   const isInAsesoria = 
     role === 'trainee' || 
     Boolean(user.trainer_id) || 
@@ -64,8 +44,8 @@ export const getUserRoleType = (user, viewer = null, options = {}) => {
  * Devuelve la configuración visual estilo historias de Instagram para el avatar según su rol:
  * Borde con degradado de colores específicos + glow + textos
  */
-export const getUserRoleRingConfig = (user, viewer = null, activeTheme = null, options = {}) => {
-  const roleType = getUserRoleType(user, viewer, options);
+export const getUserRoleRingConfig = (user, viewer = null, activeTheme = null) => {
+  const roleType = getUserRoleType(user);
 
   const isViewerSelf = Boolean(
     user && viewer && user.id != null && viewer.id != null && String(user.id) === String(viewer.id)

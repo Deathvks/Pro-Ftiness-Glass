@@ -510,7 +510,7 @@ export default function PublicProfileScreen() {
                   <Text style={[styles.username, { color: colors.text }]}>
                     {profile.username || 'Atleta'}
                   </Text>
-                  {(profile.role === 'trainer' || profile.role === 'admin' || profile.is_friend) && (
+                  {profile.is_friend && (
                     <BadgeCheck size={20} color="#3b82f6" />
                   )}
                 </View>
