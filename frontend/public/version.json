@@ -1,17 +1,17 @@
 {
-  "version": "7.18.13",
-  "releaseNotes": "Actualización v7.18.13: indicador de punto en Comunidad (navbar y sidebar) cuando hay historias nuevas o solicitudes, y bloque destacado de Historias con etiqueta 'NUEVA' para incentivar su visualización.",
+  "version": "7.18.14",
+  "releaseNotes": "Actualización v7.18.14: el avatar de la cabecera abre siempre tu Perfil sin mini-botones superpuestos, dejando el acceso dedicado a Historias en Inicio, Comunidad y Sidebar.",
   "welcome": {
-    "title": "Novedades Pro Fitness Glass (v7.18.13)",
-    "subtitle": "Notificación visual en Comunidad e Historias más visibles en Web, PWA, Capacitor y Nativo.",
+    "title": "Novedades Pro Fitness Glass (v7.18.14)",
+    "subtitle": "Navegación más limpia entre Perfil e Historias para Web, PWA, Capacitor y Nativo.",
     "features": [
       {
-        "title": "Aviso en Comunidad",
-        "description": "Punto de acento en el icono de Comunidad (barra inferior y menú lateral) cuando hay historias nuevas por ver o solicitudes."
+        "title": "Cabecera 100% directa al Perfil",
+        "description": "Al tocar tu avatar en la cabecera entras siempre a tu Perfil sin pulsaciones accidentales ni títulos recortados."
       },
       {
-        "title": "Historias destacadas",
-        "description": "Burbujas con insignia NUEVA, franja destacada en Comunidad con botón de acceso rápido y llamada a la acción en Inicio."
+        "title": "Accesos claros a Historias",
+        "description": "Entra cómodamente a Historias desde la píldora destacada en Inicio, la franja de Comunidad (con punto en el navbar) o el Sidebar en escritorio."
       }
     ]
   }

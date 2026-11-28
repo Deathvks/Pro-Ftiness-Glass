@@ -22,7 +22,7 @@ import * as userService from '../services/userService';
 // Componentes UI
 import Sidebar from './Sidebar';
 import ModalPortal from './ModalPortal';
-import { Palette, RefreshCw, AlertTriangle, Play } from 'lucide-react';
+import { Palette, RefreshCw, AlertTriangle } from 'lucide-react';
 import Spinner from './Spinner';
 import { lazyWithRetry } from '../utils/lazyWithRetry';
 import { getFirstAvailableStoryTarget } from '../store/storySlice';
@@ -1523,42 +1523,9 @@ export default function MainAppLayout({
                       size={8}
                       showRoleRing={true}
                       className="shrink-0 cursor-pointer active:scale-95 transition-transform"
-                      onClick={() => {
-                        if (hasOwnUnseenStory && userProfile?.id) {
-                          openStory?.(userProfile.id);
-                        } else {
-                          navigate('profile');
-                        }
-                      }}
+                      onClick={() => navigate('profile')}
                     />
                   </div>
-                  {headerStoryState.userId != null && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openStory?.(headerStoryState.userId);
-                      }}
-                      title={headerStoryState.hasUnseen ? 'Ver historias nuevas' : 'Ver historias'}
-                      aria-label="Entrar en historias"
-                      className={`absolute -bottom-1 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center gap-0.5 border-2 border-bg-primary dark:border-[#121214] transition-transform active:scale-90 shadow-sm ${
-                        headerStoryState.hasUnseen
-                          ? 'bg-accent text-accent-contrast'
-                          : 'bg-bg-secondary text-text-primary'
-                      }`}
-                      style={{ WebkitTapHighlightColor: 'transparent' }}
-                    >
-                      {headerStoryState.hasUnseen && (
-                        <span className="absolute -inset-0.5 rounded-full bg-accent animate-ping opacity-55 pointer-events-none" />
-                      )}
-                      <Play size={8} fill="currentColor" strokeWidth={2.5} className="relative z-10" />
-                      {headerStoryState.hasUnseen && (headerStoryState.unseenUsers || 0) > 1 && (
-                        <span className="relative z-10 text-[9px] font-black leading-none">
-                          {headerStoryState.unseenUsers}
-                        </span>
-                      )}
-                    </button>
-                  )}
                 </div>
               )}
                 {view !== 'dashboard' && (

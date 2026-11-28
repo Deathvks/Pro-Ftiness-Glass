@@ -1,10 +1,9 @@
 import React, { useMemo } from 'react';
 import { View, Image, Text, StyleSheet, Animated, Platform, TouchableOpacity } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
-import { Sparkles, Bell, ChevronLeft, Play } from 'lucide-react-native';
+import { Sparkles, Bell, ChevronLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useAppStore from '@/store/useAppStore';
-import { selectHasUnseenStory, selectFirstAvailableStoryTarget } from '@/store/storySlice';
 import { useAppColors } from '@/hooks/useAppColors';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { AiInfoModal } from '@/components/modals/AiInfoModal';
@@ -14,7 +13,6 @@ import * as Haptics from 'expo-haptics';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { SocialUserAvatar } from '@/components/social/SocialUserAvatar';
 import { getThemeBaseBackground } from '@/constants/theme';
-import { getContrastTextColor } from '@/utils/colorUtils';
 import { androidHeaderBlurAvailable, type HeaderBlurRef } from '@/components/AndroidHeaderBlur';
 
 // Tinte de fondo para el efecto cristal en web
@@ -79,21 +77,6 @@ export default function GlobalHeader({
     const unreadCount = notifications.filter((n: any) => !n.is_read).length;
 
     const userProfile = useAppStore(state => state.userProfile);
-    const hasUnseenStory = useAppStore(state => selectHasUnseenStory(state, state.userProfile?.id));
-    const storiesState = useAppStore(state => state.stories);
-    const myStoriesState = useAppStore(state => state.myStories);
-    const storyViewerId = useAppStore(state => state.storyViewerId);
-    const token = useAppStore(state => state.token);
-    const storyTarget = useMemo(
-        () => selectFirstAvailableStoryTarget({
-            token,
-            userProfile,
-            storyViewerId,
-            stories: storiesState,
-            myStories: myStoriesState,
-        }),
-        [token, userProfile, storyViewerId, storiesState, myStoriesState]
-    );
 
     const isDark = !['light', 'ocean', 'desert'].includes(theme);
     const colorScheme = isDark ? 'dark' : 'light';
@@ -240,65 +223,14 @@ export default function GlobalHeader({
                         <ChevronLeft size={23} color={colors.text} strokeWidth={2.3} />
                     </GlassButton>
                 ) : (
-                    <View style={{ position: 'relative' }}>
-                        <TouchableOpacity
-                            accessibilityRole="button"
-                            accessibilityLabel={hasUnseenStory ? 'Ver mi historia' : 'Mi perfil'}
-                            onPress={() => {
-                                if (!hasUnseenStory || !useAppStore.getState().openStory(userProfile?.id)) router.push('/profile');
-                            }}
-                            activeOpacity={0.72}
-                        >
-                            <SocialUserAvatar user={userProfile} size={38} openStoryOnPress={false} />
-                        </TouchableOpacity>
-                        {storyTarget.userId != null && (
-                            <TouchableOpacity
-                                accessibilityRole="button"
-                                accessibilityLabel={storyTarget.hasUnseen ? 'Ver historias nuevas' : 'Ver historias'}
-                                hitSlop={6}
-                                onPress={() => {
-                                    try {
-                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    } catch {}
-                                    useAppStore.getState().openStory(storyTarget.userId);
-                                }}
-                                activeOpacity={0.72}
-                                style={{
-                                    position: 'absolute',
-                                    bottom: -2,
-                                    right: -4,
-                                    minWidth: 18,
-                                    height: 18,
-                                    paddingHorizontal: storyTarget.hasUnseen && (storyTarget.unseenUsers || 0) > 1 ? 4 : 0,
-                                    borderRadius: 9,
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: 2,
-                                    borderWidth: 2,
-                                    borderColor: colors.background,
-                                    backgroundColor: storyTarget.hasUnseen ? colors.tint : colors.card,
-                                }}
-                            >
-                                <Play
-                                    size={8}
-                                    color={storyTarget.hasUnseen ? getContrastTextColor(colors.tint) : colors.text}
-                                    fill={storyTarget.hasUnseen ? getContrastTextColor(colors.tint) : colors.text}
-                                />
-                                {storyTarget.hasUnseen && (storyTarget.unseenUsers || 0) > 1 && (
-                                    <Text
-                                        style={{
-                                            fontSize: 9,
-                                            fontWeight: '900',
-                                            color: getContrastTextColor(colors.tint),
-                                        }}
-                                    >
-                                        {storyTarget.unseenUsers}
-                                    </Text>
-                                )}
-                            </TouchableOpacity>
-                        )}
-                    </View>
+                    <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel="Mi perfil"
+                        onPress={() => router.push('/profile')}
+                        activeOpacity={0.72}
+                    >
+                        <SocialUserAvatar user={userProfile} size={38} openStoryOnPress={false} />
+                    </TouchableOpacity>
                 )}
                 {title && (
                     <Text
